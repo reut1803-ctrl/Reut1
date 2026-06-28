@@ -9,7 +9,7 @@ export const DEFAULT_THEME = {
   primary_color: '#4F46E5',
   secondary_color: '#EC4899',
   accent_color: '#10B981',
-  font_family: 'Inter, system-ui, sans-serif',
+  font_family: 'Assistant, system-ui, sans-serif',
   background_color: '#F9FAFB',
   text_color: '#111827',
 };

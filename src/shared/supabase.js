@@ -36,8 +36,10 @@ export const supabase = isDemoMode
 // Public storage URL helper for branding assets (logos etc.).
 export function brandingAssetUrl(path) {
   if (!path) return null;
-  // Already an absolute URL? return as-is.
+  // כתובת אינטרנט מלאה / תמונה מוטמעת (data:) / נתיב מקומי — מחזירים כמו שהוא.
   if (/^https?:\/\//i.test(path)) return path;
+  if (path.startsWith('data:')) return path;
+  if (path.startsWith('/')) return path;
   const { data } = supabase.storage.from('branding').getPublicUrl(path);
   return data?.publicUrl ?? null;
 }

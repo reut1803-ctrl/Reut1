@@ -4,8 +4,30 @@
 // =====================================================================
 import { useEffect, useState } from 'react';
 import { useApp } from '../shared/AppContext';
-import { supabase } from '../shared/supabase';
+import { supabase, isDemoMode } from '../shared/supabase';
 import { themeApi, questionsApi } from '../shared/api';
+
+// גופנים עבריים לבחירה (נטענים ב-index.html)
+const FONT_OPTIONS = [
+  { label: 'אסיסטנט (ברירת מחדל)', value: 'Assistant, sans-serif' },
+  { label: 'היבּו', value: 'Heebo, sans-serif' },
+  { label: 'רוּבּיק', value: 'Rubik, sans-serif' },
+  { label: 'ורלה ראונד (עגול)', value: '"Varela Round", sans-serif' },
+  { label: 'אָלֶף', value: 'Alef, sans-serif' },
+  { label: 'פרנק רוהל (קלאסי/סריף)', value: '"Frank Ruhl Libre", serif' },
+  { label: 'סקולר וואן (כותרות)', value: '"Secular One", sans-serif' },
+  { label: 'סואץ (כותרות/סריף)', value: '"Suez One", serif' },
+];
+
+// קריאת קובץ תמונה כ-data URL לתצוגה מיידית
+function readAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 // ---------------------------------------------------------- Branding tab
 function BrandingPanel() {
@@ -41,19 +63,26 @@ function BrandingPanel() {
     }
   };
 
-  // Upload a high-res logo to the public `branding` bucket.
+  // העלאת לוגו: תצוגה מיידית, ובמצב אמיתי גם שמירה ב-storage.
   const uploadLogo = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setStatus('uploading');
     setError(null);
     try {
-      const path = `logo-${Date.now()}-${file.name}`;
-      const { error: upErr } = await supabase.storage
-        .from('branding')
-        .upload(path, file, { upsert: true });
-      if (upErr) throw upErr;
-      setForm((prev) => ({ ...prev, logo_url: path }));
+      // 1) תצוגה מיידית — הלוגו מתחלף על המסך מיד.
+      const dataUrl = await readAsDataURL(file);
+      setForm((prev) => ({ ...prev, logo_url: dataUrl }));
+
+      // 2) במצב אמיתי (מחובר ל-Supabase) — מעלים גם לאחסון הקבוע.
+      if (!isDemoMode) {
+        const path = `logo-${Date.now()}-${file.name}`;
+        const { error: upErr } = await supabase.storage
+          .from('branding')
+          .upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        setForm((prev) => ({ ...prev, logo_url: path }));
+      }
       setStatus('idle');
     } catch (err) {
       setError(err.message);
@@ -90,8 +119,27 @@ function BrandingPanel() {
       </div>
 
       <div className="field">
-        <label className="field__label">גופן</label>
-        <input className="input" value={form.font_family || ''} onChange={set('font_family')} />
+        <label className="field__label">גופן (סגנון הכתב)</label>
+        <select
+          className="input"
+          value={form.font_family || ''}
+          onChange={set('font_family')}
+          style={{ fontFamily: form.font_family || undefined }}
+        >
+          {/* אם הגופן הנוכחי אינו ברשימה — מוסיפים אותו כאפשרות */}
+          {form.font_family &&
+            !FONT_OPTIONS.some((f) => f.value === form.font_family) && (
+              <option value={form.font_family}>{form.font_family}</option>
+            )}
+          {FONT_OPTIONS.map((f) => (
+            <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        <p className="field__help">
+          הכתב בכל האתר משתנה לפי הבחירה. אפשר לראות תצוגה מקדימה למעלה לאחר שמירה.
+        </p>
       </div>
 
       {error && <p className="form-error">{error}</p>}

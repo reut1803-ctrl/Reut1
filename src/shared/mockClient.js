@@ -30,7 +30,7 @@ const theme = {
   primary_color: '#6D28D9',
   secondary_color: '#DB2777',
   accent_color: '#059669',
-  font_family: 'Inter, system-ui, sans-serif',
+  font_family: 'Assistant, system-ui, sans-serif',
   background_color: '#FBF7FF',
   text_color: '#1F2937',
   extra: {},

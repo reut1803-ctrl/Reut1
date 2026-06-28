@@ -217,7 +217,7 @@ create table if not exists public.theme_settings (
   primary_color   text    not null default '#4F46E5',
   secondary_color text    not null default '#EC4899',
   accent_color    text    not null default '#10B981',
-  font_family     text    not null default 'Inter, system-ui, sans-serif',
+  font_family     text    not null default 'Assistant, system-ui, sans-serif',
   background_color text   not null default '#F9FAFB',
   text_color      text    not null default '#111827',
   extra           jsonb   not null default '{}'::jsonb,
