@@ -25,7 +25,7 @@ const ADMIN = {
 
 const theme = {
   id: true,
-  brand_name: 'Heart2Heart Matchmaking',
+  brand_name: 'לב אל לב — שידוכים בקהילה',
   logo_url: '/logo.svg',
   primary_color: '#6D28D9',
   secondary_color: '#DB2777',

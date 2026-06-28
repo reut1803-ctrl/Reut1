@@ -23,7 +23,7 @@ function buildSlots(dateStr) {
 }
 
 function fmtTime(date) {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
 }
 
 function todayStr() {
@@ -58,7 +58,7 @@ export default function Scheduler({ matchmakerId, candidate, onBooked }) {
 
   const handleBook = async (slot) => {
     if (!candidate) {
-      setError('Select a candidate first.');
+      setError('יש לבחור מועמד/ת קודם.');
       return;
     }
     setBusy(true);
@@ -74,7 +74,7 @@ export default function Scheduler({ matchmakerId, candidate, onBooked }) {
       // Unique / exclusion violation => slot already taken.
       setError(
         err.code === '23505' || err.code === '23P01'
-          ? 'That slot was just taken. Pick another.'
+          ? 'המשבצת הזו נתפסה הרגע. נא לבחור משבצת אחרת.'
           : err.message
       );
     } finally {
@@ -88,7 +88,7 @@ export default function Scheduler({ matchmakerId, candidate, onBooked }) {
     <div className="scheduler">
       <div className="scheduler__toolbar">
         <label className="field__label" htmlFor="sched-day">
-          Day
+          תאריך
         </label>
         <input
           id="sched-day"
@@ -100,7 +100,8 @@ export default function Scheduler({ matchmakerId, candidate, onBooked }) {
         />
         {candidate && (
           <span className="scheduler__candidate">
-            Booking for <strong>{candidate.full_name || 'candidate'}</strong>
+            קובע ראיון עבור{' '}
+            <strong>{candidate.full_name || 'מועמד/ת'}</strong>
           </span>
         )}
       </div>
@@ -123,7 +124,7 @@ export default function Scheduler({ matchmakerId, candidate, onBooked }) {
               }
               disabled={isBooked || isPast || busy}
               onClick={() => handleBook(slot)}
-              title={isBooked ? 'Already booked' : 'Book this slot'}
+              title={isBooked ? 'משבצת תפוסה' : 'קביעת ראיון במשבצת זו'}
             >
               {fmtTime(slot)}
             </button>

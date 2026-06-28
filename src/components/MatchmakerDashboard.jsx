@@ -12,6 +12,22 @@ import {
   summariesApi,
 } from '../shared/api';
 
+// תוויות בעברית לסטטוס הראיון ולמגדר
+const STATUS_LABELS = {
+  scheduled: 'מתוזמן',
+  completed: 'בוצע',
+  cancelled: 'בוטל',
+  no_show: 'לא הגיע/ה',
+};
+const GENDER_LABELS = { female: 'אישה', male: 'גבר', any: '—' };
+
+function statusLabel(status) {
+  return STATUS_LABELS[status] || status;
+}
+function genderLabel(gender) {
+  return GENDER_LABELS[gender] || gender || '—';
+}
+
 function CandidateProfile({ candidate }) {
   const { staff } = useApp();
   const [answers, setAnswers] = useState([]);
@@ -41,19 +57,19 @@ function CandidateProfile({ candidate }) {
   };
 
   if (!candidate) {
-    return <p className="muted">Select an interview to view the candidate.</p>;
+    return <p className="muted">בחר/י ראיון כדי לצפות בפרטי המועמד/ת.</p>;
   }
 
   return (
     <div className="profile">
-      <h3 className="profile__name">{candidate.full_name || 'Candidate'}</h3>
+      <h3 className="profile__name">{candidate.full_name || 'מועמד/ת'}</h3>
       <p className="muted">
-        {candidate.gender} · {candidate.city || '—'}
+        {genderLabel(candidate.gender)} · {candidate.city || '—'}
       </p>
 
       <section className="profile__section">
-        <h4>Answers</h4>
-        {answers.length === 0 && <p className="muted">No answers yet.</p>}
+        <h4>תשובות</h4>
+        {answers.length === 0 && <p className="muted">אין תשובות עדיין.</p>}
         <dl className="answers">
           {answers.map((a) => (
             <div className="answers__row" key={a.id}>
@@ -68,28 +84,28 @@ function CandidateProfile({ candidate }) {
       </section>
 
       <section className="profile__section">
-        <h4>Admin summaries</h4>
-        {summaries.length === 0 && <p className="muted">None.</p>}
+        <h4>סיכומי מנהלת</h4>
+        {summaries.length === 0 && <p className="muted">אין סיכומים.</p>}
         {summaries.map((s) => (
           <blockquote className="summary" key={s.id}>
             {s.summary}
-            <footer>— {s.author?.full_name || 'Admin'}</footer>
+            <footer>— {s.author?.full_name || 'מנהלת'}</footer>
           </blockquote>
         ))}
       </section>
 
       <section className="profile__section">
-        <h4>My private notes</h4>
+        <h4>הערות אישיות שלי</h4>
         <div className="note-composer">
           <textarea
             className="input"
             rows={3}
-            placeholder="Add a private brainstorming note…"
+            placeholder="הוספת הערה אישית לסיעור מוחות…"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
           />
           <button type="button" className="btn btn--primary" onClick={addNote}>
-            Add note
+            הוספת הערה
           </button>
         </div>
         {notes.map((n) => (
@@ -127,10 +143,10 @@ export default function MatchmakerDashboard() {
   return (
     <div className="dashboard">
       <div className="dashboard__list card">
-        <h2>My interviews</h2>
+        <h2>הראיונות שלי</h2>
         {error && <p className="form-error">{error}</p>}
         {interviews.length === 0 && (
-          <p className="muted">No interviews scheduled yet.</p>
+          <p className="muted">אין ראיונות מתוזמנים עדיין.</p>
         )}
         <ul className="interview-list">
           {interviews.map((iv) => (
@@ -149,15 +165,17 @@ export default function MatchmakerDashboard() {
                 onClick={() => setSelected(iv.candidate)}
               >
                 <span className="interview-list__time">
-                  {new Date(iv.slot_start).toLocaleString([], {
+                  {new Date(iv.slot_start).toLocaleString('he-IL', {
                     dateStyle: 'medium',
                     timeStyle: 'short',
                   })}
                 </span>
                 <span className="interview-list__name">
-                  {iv.candidate?.full_name || 'Candidate'}
+                  {iv.candidate?.full_name || 'מועמד/ת'}
                 </span>
-                <span className={`badge badge--${iv.status}`}>{iv.status}</span>
+                <span className={`badge badge--${iv.status}`}>
+                  {statusLabel(iv.status)}
+                </span>
               </button>
               <div className="interview-list__actions">
                 <button
@@ -165,14 +183,14 @@ export default function MatchmakerDashboard() {
                   className="btn btn--ghost btn--sm"
                   onClick={() => setStatus(iv.id, 'completed')}
                 >
-                  Done
+                  בוצע
                 </button>
                 <button
                   type="button"
                   className="btn btn--ghost btn--sm"
                   onClick={() => setStatus(iv.id, 'no_show')}
                 >
-                  No-show
+                  לא הגיע/ה
                 </button>
               </div>
             </li>

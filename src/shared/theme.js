@@ -4,7 +4,7 @@
 // =====================================================================
 
 export const DEFAULT_THEME = {
-  brand_name: 'Matchmaking Platform',
+  brand_name: 'פלטפורמת שידוכים',
   logo_url: null,
   primary_color: '#4F46E5',
   secondary_color: '#EC4899',

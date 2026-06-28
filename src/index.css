@@ -21,6 +21,16 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+  direction: rtl;
+  text-align: right;
+}
+
+/* טפסים ושדות מיושרים לימין בעברית */
+.input,
+.field__label,
+.summary,
+.note {
+  text-align: right;
 }
 
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }

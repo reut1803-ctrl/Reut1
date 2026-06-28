@@ -17,23 +17,26 @@ export default function Navigation() {
   const linkClass = ({ isActive }) =>
     'nav__link' + (isActive ? ' nav__link--active' : '');
 
+  // תרגום התפקיד לעברית לתצוגה
+  const roleLabel = staff?.role === 'admin' ? 'מנהלת' : 'שדכן/ית';
+
   return (
-    <nav className="nav" aria-label="Primary">
+    <nav className="nav" aria-label="ניווט ראשי">
       <ul className="nav__links">
         <li>
           <NavLink to="/dashboard" className={linkClass}>
-            Dashboard
+            לוח ראיונות
           </NavLink>
         </li>
         <li>
           <NavLink to="/schedule" className={linkClass}>
-            Schedule
+            קביעת ראיון
           </NavLink>
         </li>
         {isAdmin && (
           <li>
             <NavLink to="/admin" className={linkClass}>
-              Admin
+              ניהול
             </NavLink>
           </li>
         )}
@@ -43,11 +46,11 @@ export default function Navigation() {
         {staff && (
           <span className="nav__user-name">
             {staff.full_name}
-            <span className="nav__user-role">{staff.role}</span>
+            <span className="nav__user-role">{roleLabel}</span>
           </span>
         )}
         <button type="button" className="btn btn--ghost" onClick={handleSignOut}>
-          Sign out
+          התנתקות
         </button>
       </div>
     </nav>

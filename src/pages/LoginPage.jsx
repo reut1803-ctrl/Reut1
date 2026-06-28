@@ -34,9 +34,9 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <form className="card auth-card" onSubmit={submit}>
-        <h2>Staff sign in</h2>
+        <h2>כניסת צוות</h2>
         <div className="field">
-          <label className="field__label" htmlFor="email">Email</label>
+          <label className="field__label" htmlFor="email">אימייל</label>
           <input
             id="email"
             type="email"
@@ -47,7 +47,7 @@ export default function LoginPage() {
           />
         </div>
         <div className="field">
-          <label className="field__label" htmlFor="password">Password</label>
+          <label className="field__label" htmlFor="password">סיסמה</label>
           <input
             id="password"
             type="password"
@@ -59,7 +59,7 @@ export default function LoginPage() {
         </div>
         {error && <p className="form-error">{error}</p>}
         <button type="submit" className="btn btn--primary" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
+          {busy ? 'מתחבר…' : 'כניסה'}
         </button>
       </form>
     </div>

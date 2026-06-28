@@ -212,7 +212,7 @@ comment on table public.admin_summaries is
 -- ======================================================================
 create table if not exists public.theme_settings (
   id              boolean primary key default true,           -- singleton guard
-  brand_name      text    not null default 'Matchmaking Platform',
+  brand_name      text    not null default 'פלטפורמת שידוכים',
   logo_url        text,                                         -- high-res logo path / public URL
   primary_color   text    not null default '#4F46E5',
   secondary_color text    not null default '#EC4899',

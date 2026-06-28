@@ -1,100 +1,48 @@
-# Matchmaking & Interview Management Platform
+# פלטפורמת שידוכים וניהול ראיונות
 
-A community matchmaking and interview-management platform built on
-**Supabase (PostgreSQL)** + **React (Vite)**. Designed for a community
-coordinator with an admin and a team of matchmakers.
+מערכת לניהול שידוכים וראיונות עבור רכזת קהילה.
+האתר כולו בעברית, עם מנהלת וצוות שדכנים.
 
-## Features
+## מה המערכת יודעת לעשות
 
-- **Staff** — 1:1 with `auth.users`, role-based (`admin`, `matchmaker`).
-- **Candidates** — unique `access_token` public registration links, flexible profile.
-- **Questions** — dynamic, gender-specific, sortable, admin-controlled via the UI.
-- **Answers** — normalised, one row per `(candidate, question)`.
-- **Interviews** — slot-based (15 min), overlap-proof per matchmaker (unique + GiST exclusion constraint).
-- **Brainstorming notes** (private per matchmaker) and **admin summaries** (admin-written) in separate tables.
-- **Theme settings** — singleton table driving dynamic branding (logo, colors, fonts) loaded on page load.
-- **Strict RLS** — matchmakers see only their own interviews/notes; admins have full access; branding + registration are public.
+- **צוות** — כניסה עם הרשאות: מנהלת (גישה מלאה) או שדכן/ית.
+- **מועמדים** — לכל מועמד/ת קישור הרשמה אישי וייחודי.
+- **שאלות** — המנהלת בונה ומשנה את שאלות טופס ההרשמה דרך המסך, כולל שאלות
+  שמופיעות רק לנשים או רק לגברים, וקובעת את סדר הופעתן.
+- **תשובות** — נשמרות באופן מסודר לכל מועמד/ת.
+- **ראיונות** — קביעת ראיונות במשבצות של 15 דקות, עם מניעת חפיפה אוטומטית.
+- **הערות אישיות** (פרטיות לכל שדכן/ית) ו**סיכומי מנהלת** נשמרים בנפרד.
+- **עיצוב ומיתוג** — המנהלת קובעת לוגו, צבעים וגופן, וכל האתר משתנה בהתאם.
 
-## Project structure
+## איך רואים את האתר עכשיו (מצב הדגמה)
+
+האתר עובד מיד עם נתוני דוגמה בעברית, גם בלי חיבור למסד נתונים אמיתי.
+כדי לראות אותו על המחשב צריך פעם אחת להתקין את הכלים — ראות, **אל תדאגי
+מהשלבים הטכניים, אני אדריך אותך צעד-אחר-צעד**. ראי את הקובץ
+[`מדריך.md`](./מדריך.md).
+
+## מבנה הפרויקט (לידיעה בלבד)
 
 ```
 .
-├── supabase/
-│   ├── schema.sql          # tables, enums, triggers, storage buckets
-│   ├── rls_policies.sql    # RLS helper fns + policies + storage policies
-│   └── seed.sql            # optional starter questions + theme
-├── src/
-│   ├── main.jsx            # React entry (Router + AppProvider)
-│   ├── App.jsx             # routes & guards
-│   ├── index.css           # theme-variable-driven styles
-│   ├── shared/             # cross-cutting logic
-│   │   ├── supabase.js     # centralised Supabase client
-│   │   ├── api.js          # typed-by-convention data access layer
-│   │   ├── AppContext.jsx  # auth + global theme context
-│   │   └── theme.js        # theme -> CSS variables
-│   ├── components/
-│   │   ├── Header.jsx              # prominent, high-res logo area
-│   │   ├── Navigation.jsx
-│   │   ├── RegistrationForm.jsx    # dynamic form from questions table
-│   │   ├── Scheduler.jsx           # 15-min slot calendar grid
-│   │   ├── MatchmakerDashboard.jsx # interviews + candidate profile + notes
-│   │   └── AdminControlPanel.jsx   # CRUD for themes & questions
-│   └── pages/
-│       ├── LoginPage.jsx
-│       ├── RegisterPage.jsx        # /register/:token (public)
-│       ├── DashboardPage.jsx
-│       ├── SchedulePage.jsx
-│       └── AdminPage.jsx
-├── index.html
-├── vite.config.js
-└── package.json
+├── supabase/        ← קבצי מסד הנתונים (SQL)
+├── src/             ← קוד האתר
+│   ├── components/   ← רכיבי המסך (לוח, מתזמן, טפסים, ניהול)
+│   ├── pages/        ← הדפים (כניסה, הרשמה, לוח, קביעה, ניהול)
+│   └── shared/       ← לוגיקה משותפת (חיבור, נתונים, עיצוב)
+├── מדריך.md          ← מדריך פשוט בעברית
+└── README.md
 ```
 
-## Getting started
+## למפתחים (חלק טכני)
 
-### 1. Database
+מסד נתונים: Supabase (PostgreSQL). הריצו את קבצי ה-SQL לפי הסדר:
+`supabase/schema.sql` → `supabase/rls_policies.sql` → `supabase/seed.sql`.
 
-Run the SQL files against your Supabase project (SQL editor or `psql`),
-in order:
-
-```sql
-\i supabase/schema.sql
-\i supabase/rls_policies.sql
-\i supabase/seed.sql      -- optional
-```
-
-### 2. Make a user an admin
-
-Sign a staff member up through Supabase Auth (the `handle_new_user`
-trigger creates their `staff` row as a `matchmaker`), then promote:
-
-```sql
-update public.staff set role = 'admin' where email = 'coordinator@example.com';
-```
-
-### 3. Frontend
-
+צד לקוח: React + Vite.
 ```bash
-cp .env.example .env     # fill in VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+cp .env.example .env   # מילוי כתובת ומפתח Supabase
 npm install
 npm run dev
 ```
-
-## Security model
-
-| Table                 | matchmaker            | admin       | public/anon            |
-|-----------------------|-----------------------|-------------|------------------------|
-| staff                 | read self             | full        | —                      |
-| candidates            | read / update         | full        | via service-role only  |
-| questions             | read                  | full        | —                      |
-| answers               | read                  | full        | via service-role only  |
-| interviews            | **own only** r/w      | full        | —                      |
-| brainstorming_notes   | **own only** r/w      | full        | —                      |
-| admin_summaries       | read                  | full        | —                      |
-| theme_settings        | read                  | full        | **read** (branding)    |
-
-The browser only ever uses the **anon** key — RLS enforces every rule.
-Public candidate registration that needs to bypass RLS (creating
-candidates / writing answers without a login) should run server-side
-with the **service-role** key (e.g. a Supabase Edge Function); never ship
-that key to the client.
+כל הגישה למסד הנתונים מוגנת ב-RLS. הדפדפן משתמש רק במפתח הציבורי (anon).

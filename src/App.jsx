@@ -14,14 +14,14 @@ import AdminPage from './pages/AdminPage';
 // Guard for any authenticated staff route.
 function RequireStaff({ children }) {
   const { isAuthenticated, loading } = useApp();
-  if (loading) return <div className="page-loading">Loading…</div>;
+  if (loading) return <div className="page-loading">טוען…</div>;
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 // Guard for admin-only routes.
 function RequireAdmin({ children }) {
   const { isAdmin, loading } = useApp();
-  if (loading) return <div className="page-loading">Loading…</div>;
+  if (loading) return <div className="page-loading">טוען…</div>;
   return isAdmin ? children : <Navigate to="/dashboard" replace />;
 }
 

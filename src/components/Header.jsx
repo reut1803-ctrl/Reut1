@@ -22,12 +22,12 @@ export default function Header() {
           <img
             className="app-header__logo"
             src={logoSrc}
-            alt={theme?.brand_name || 'Brand logo'}
+            alt={theme?.brand_name || 'לוגו'}
           />
         ) : (
-          // Graceful fallback when no logo has been configured yet.
+          // טקסט חלופי כשעדיין לא הוגדר לוגו.
           <span className="app-header__brand-text">
-            {theme?.brand_name || 'Matchmaking Platform'}
+            {theme?.brand_name || 'פלטפורמת שידוכים'}
           </span>
         )}
       </div>

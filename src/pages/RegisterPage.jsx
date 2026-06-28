@@ -29,14 +29,14 @@ export default function RegisterPage() {
   }, [token]);
 
   if (status === 'loading') {
-    return <div className="page-loading">Loading your registration…</div>;
+    return <div className="page-loading">טוען את טופס ההרשמה שלך…</div>;
   }
 
   if (status === 'notfound') {
     return (
       <div className="card card--centered">
-        <h2>Link not found</h2>
-        <p>This registration link is invalid or has expired.</p>
+        <h2>הקישור לא נמצא</h2>
+        <p>קישור ההרשמה אינו תקין או שפג תוקפו.</p>
       </div>
     );
   }

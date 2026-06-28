@@ -33,7 +33,7 @@ function FieldInput({ question, value, onChange }) {
     case 'select':
       return (
         <select className="input" {...common}>
-          <option value="">— Select —</option>
+          <option value="">— בחר/י —</option>
           {(question.options || []).map((opt) => (
             <option key={opt} value={opt}>
               {opt}
@@ -133,19 +133,19 @@ export default function RegistrationForm({ candidate, onSubmitted }) {
   if (status === 'done') {
     return (
       <div className="card card--centered">
-        <h2>Thank you! 🎉</h2>
-        <p>Your registration has been received.</p>
+        <h2>תודה רבה! 🎉</h2>
+        <p>ההרשמה שלך התקבלה בהצלחה.</p>
       </div>
     );
   }
 
   return (
     <form className="card registration-form" onSubmit={handleSubmit}>
-      <h2 className="registration-form__title">Registration</h2>
+      <h2 className="registration-form__title">טופס הרשמה</h2>
 
       <div className="field">
         <label className="field__label" htmlFor="gender">
-          I am
+          אני
         </label>
         <select
           id="gender"
@@ -153,13 +153,13 @@ export default function RegistrationForm({ candidate, onSubmitted }) {
           value={gender}
           onChange={(e) => setGender(e.target.value)}
         >
-          <option value="female">Female</option>
-          <option value="male">Male</option>
-          <option value="any">Prefer not to say</option>
+          <option value="female">אישה</option>
+          <option value="male">גבר</option>
+          <option value="any">מעדיף/ה לא לציין</option>
         </select>
       </div>
 
-      {status === 'loading' && <p>Loading questions…</p>}
+      {status === 'loading' && <p>טוען שאלות…</p>}
 
       {questions.map((q) => (
         <div className="field" key={q.id}>
@@ -183,7 +183,7 @@ export default function RegistrationForm({ candidate, onSubmitted }) {
         className="btn btn--primary"
         disabled={status === 'saving'}
       >
-        {status === 'saving' ? 'Submitting…' : 'Submit registration'}
+        {status === 'saving' ? 'שולח…' : 'שליחת ההרשמה'}
       </button>
     </form>
   );

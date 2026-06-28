@@ -63,42 +63,42 @@ function BrandingPanel() {
 
   return (
     <div className="card">
-      <h3>Branding & theme</h3>
+      <h3>מיתוג ועיצוב</h3>
 
       <div className="field">
-        <label className="field__label">Brand name</label>
+        <label className="field__label">שם המותג</label>
         <input className="input" value={form.brand_name || ''} onChange={set('brand_name')} />
       </div>
 
       <div className="field">
-        <label className="field__label">Logo (high-resolution)</label>
+        <label className="field__label">לוגו (ברזולוציה גבוהה)</label>
         <input type="file" accept="image/*" onChange={uploadLogo} />
         <input
           className="input"
-          placeholder="storage path or absolute URL"
+          placeholder="נתיב קובץ או כתובת אינטרנט מלאה"
           value={form.logo_url || ''}
           onChange={set('logo_url')}
         />
       </div>
 
       <div className="grid-2">
-        <ColorField label="Primary" value={form.primary_color} onChange={set('primary_color')} />
-        <ColorField label="Secondary" value={form.secondary_color} onChange={set('secondary_color')} />
-        <ColorField label="Accent" value={form.accent_color} onChange={set('accent_color')} />
-        <ColorField label="Background" value={form.background_color} onChange={set('background_color')} />
-        <ColorField label="Text" value={form.text_color} onChange={set('text_color')} />
+        <ColorField label="צבע ראשי" value={form.primary_color} onChange={set('primary_color')} />
+        <ColorField label="צבע משני" value={form.secondary_color} onChange={set('secondary_color')} />
+        <ColorField label="צבע הדגשה" value={form.accent_color} onChange={set('accent_color')} />
+        <ColorField label="צבע רקע" value={form.background_color} onChange={set('background_color')} />
+        <ColorField label="צבע טקסט" value={form.text_color} onChange={set('text_color')} />
       </div>
 
       <div className="field">
-        <label className="field__label">Font family</label>
+        <label className="field__label">גופן</label>
         <input className="input" value={form.font_family || ''} onChange={set('font_family')} />
       </div>
 
       {error && <p className="form-error">{error}</p>}
       <button type="button" className="btn btn--primary" onClick={save} disabled={status === 'saving'}>
-        {status === 'saving' ? 'Saving…' : 'Save branding'}
+        {status === 'saving' ? 'שומר…' : 'שמירת המיתוג'}
       </button>
-      {status === 'saved' && <span className="form-ok"> Saved ✓</span>}
+      {status === 'saved' && <span className="form-ok"> נשמר ✓</span>}
     </div>
   );
 }
@@ -125,6 +125,18 @@ const EMPTY_Q = {
   is_active: true,
   sort_order: 0,
 };
+
+// תוויות בעברית לסוגי השדה ולמגדר (הערך הנשמר נשאר באנגלית עבור מסד הנתונים)
+const INPUT_TYPE_LABELS = {
+  text: 'טקסט קצר',
+  textarea: 'טקסט ארוך',
+  number: 'מספר',
+  select: 'בחירה אחת',
+  multiselect: 'בחירה מרובה',
+  boolean: 'כן / לא',
+  date: 'תאריך',
+};
+const GENDER_LABELS = { any: 'כולם', female: 'נשים', male: 'גברים' };
 
 function QuestionsPanel() {
   const [questions, setQuestions] = useState([]);
@@ -176,17 +188,17 @@ function QuestionsPanel() {
 
   return (
     <div className="card">
-      <h3>Questions</h3>
+      <h3>שאלות</h3>
       {error && <p className="form-error">{error}</p>}
 
       <table className="table">
         <thead>
           <tr>
-            <th>Order</th>
-            <th>Label</th>
-            <th>Type</th>
-            <th>Gender</th>
-            <th>Active</th>
+            <th>סדר</th>
+            <th>שאלה</th>
+            <th>סוג</th>
+            <th>מיועד ל</th>
+            <th>פעיל</th>
             <th />
           </tr>
         </thead>
@@ -199,21 +211,21 @@ function QuestionsPanel() {
                 <button className="btn btn--ghost btn--sm" onClick={() => move(q, 10)}>↓</button>
               </td>
               <td>{q.label}</td>
-              <td>{q.input_type}</td>
-              <td>{q.gender}</td>
+              <td>{INPUT_TYPE_LABELS[q.input_type] || q.input_type}</td>
+              <td>{GENDER_LABELS[q.gender] || q.gender}</td>
               <td>{q.is_active ? '✓' : '—'}</td>
               <td>
-                <button className="btn btn--ghost btn--sm" onClick={() => edit(q)}>Edit</button>
-                <button className="btn btn--ghost btn--sm" onClick={() => remove(q.id)}>Delete</button>
+                <button className="btn btn--ghost btn--sm" onClick={() => edit(q)}>עריכה</button>
+                <button className="btn btn--ghost btn--sm" onClick={() => remove(q.id)}>מחיקה</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <h4>{editing.id ? 'Edit question' : 'New question'}</h4>
+      <h4>{editing.id ? 'עריכת שאלה' : 'שאלה חדשה'}</h4>
       <div className="field">
-        <label className="field__label">Label</label>
+        <label className="field__label">נוסח השאלה</label>
         <input
           className="input"
           value={editing.label}
@@ -223,31 +235,31 @@ function QuestionsPanel() {
 
       <div className="grid-2">
         <div className="field">
-          <label className="field__label">Input type</label>
+          <label className="field__label">סוג השדה</label>
           <select
             className="input"
             value={editing.input_type}
             onChange={(e) => setEditing({ ...editing, input_type: e.target.value })}
           >
             {['text', 'textarea', 'number', 'select', 'multiselect', 'boolean', 'date'].map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>{INPUT_TYPE_LABELS[t]}</option>
             ))}
           </select>
         </div>
         <div className="field">
-          <label className="field__label">Gender</label>
+          <label className="field__label">מיועד ל</label>
           <select
             className="input"
             value={editing.gender}
             onChange={(e) => setEditing({ ...editing, gender: e.target.value })}
           >
             {['any', 'female', 'male'].map((g) => (
-              <option key={g} value={g}>{g}</option>
+              <option key={g} value={g}>{GENDER_LABELS[g]}</option>
             ))}
           </select>
         </div>
         <div className="field">
-          <label className="field__label">Sort order</label>
+          <label className="field__label">סדר הופעה</label>
           <input
             className="input"
             type="number"
@@ -262,7 +274,7 @@ function QuestionsPanel() {
               checked={editing.is_required}
               onChange={(e) => setEditing({ ...editing, is_required: e.target.checked })}
             />{' '}
-            Required
+            חובה
           </label>
           <label className="field__label">
             <input
@@ -270,14 +282,14 @@ function QuestionsPanel() {
               checked={editing.is_active}
               onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })}
             />{' '}
-            Active
+            פעיל
           </label>
         </div>
       </div>
 
       {['select', 'multiselect'].includes(editing.input_type) && (
         <div className="field">
-          <label className="field__label">Options (one per line)</label>
+          <label className="field__label">אפשרויות (אחת בכל שורה)</label>
           <textarea
             className="input"
             rows={4}
@@ -292,11 +304,11 @@ function QuestionsPanel() {
       )}
 
       <button type="button" className="btn btn--primary" onClick={save}>
-        {editing.id ? 'Update question' : 'Add question'}
+        {editing.id ? 'עדכון השאלה' : 'הוספת שאלה'}
       </button>
       {editing.id && (
         <button type="button" className="btn btn--ghost" onClick={() => setEditing(EMPTY_Q)}>
-          Cancel
+          ביטול
         </button>
       )}
     </div>
@@ -312,13 +324,13 @@ export default function AdminControlPanel() {
           className={'tab' + (tab === 'branding' ? ' tab--active' : '')}
           onClick={() => setTab('branding')}
         >
-          Branding
+          מיתוג ועיצוב
         </button>
         <button
           className={'tab' + (tab === 'questions' ? ' tab--active' : '')}
           onClick={() => setTab('questions')}
         >
-          Questions
+          שאלות
         </button>
       </div>
       {tab === 'branding' ? <BrandingPanel /> : <QuestionsPanel />}
