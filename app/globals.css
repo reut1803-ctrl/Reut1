@@ -1,0 +1,36 @@
+@import url("https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background-color: #fbf7f2;
+  color: #4a4039;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer components {
+  .field-label {
+    @apply block text-sm font-medium text-ink/80 mb-1.5;
+  }
+  .field-input {
+    @apply w-full rounded-2xl border border-sand bg-white px-4 py-3 text-ink shadow-sm outline-none transition focus:border-rose focus:ring-2 focus:ring-rose/20;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-rose px-6 py-3 font-semibold text-white shadow-soft transition active:scale-95 hover:bg-roseDark disabled:opacity-50;
+  }
+  .btn-soft {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-blush px-4 py-2 font-medium text-roseDark transition active:scale-95 hover:bg-rose/20;
+  }
+  .card {
+    @apply rounded-3xl bg-white p-5 shadow-soft border border-sand/60;
+  }
+}
