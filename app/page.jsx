@@ -8,7 +8,7 @@ export default function HomePage() {
       <div className="w-full max-w-md text-center">
         {/* לוגו גדול ובולט במרכז מסך הפתיחה */}
         <div className="mb-6 flex justify-center">
-          <Logo className="h-56 w-56 rounded-3xl object-contain" />
+          <Logo className="h-60 w-auto max-w-full" />
         </div>
 
         <h1 className="mb-10 text-lg font-medium leading-relaxed text-ink">

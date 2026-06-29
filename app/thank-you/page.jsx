@@ -6,7 +6,7 @@ export default function ThankYouPage() {
     <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
       <div className="w-full max-w-md">
         <div className="mb-6 flex justify-center">
-          <Logo className="h-28 w-28 rounded-3xl object-contain" />
+          <Logo className="h-28 w-auto" />
         </div>
         <div className="mb-4 text-5xl">☕</div>
         <p className="text-xl font-medium leading-relaxed text-ink">

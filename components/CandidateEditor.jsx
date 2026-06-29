@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PERSONAL_FIELDS, REFERENCES_QUESTION } from "../lib/questions";
+import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 
 // טופס להוספה/עריכה של מועמד על ידי נציג או מנהלת.
 export default function CandidateEditor({ initial, openQuestions, reps, onSave, onCancel }) {
@@ -60,7 +60,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
         </div>
         {PERSONAL_FIELDS.map((f) => (
           <div key={f.key}>
-            <label className="field-label">{f.label}</label>
+            <label className="field-label">{genderLabel(f, form.gender)}</label>
             <input
               className="field-input"
               type={f.type}
@@ -83,7 +83,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
         <h3 className="font-semibold text-ink">💬 שאלות</h3>
         {(openQuestions || []).map((q) => (
           <div key={q.key}>
-            <label className="field-label">{q.label}</label>
+            <label className="field-label">{genderLabel(q, form.gender)}</label>
             <textarea
               className="field-input min-h-[80px]"
               value={form.answers?.[q.key] || ""}

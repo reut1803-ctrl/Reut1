@@ -9,32 +9,50 @@ import MatchesPanel from "../../components/MatchesPanel";
 import TasksPanel from "../../components/TasksPanel";
 import QuestionsEditor from "../../components/QuestionsEditor";
 import RepsManager from "../../components/RepsManager";
+import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate } from "../../lib/store";
 
 function Login({ data }) {
-  const [repId, setRepId] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  function tryLogin(e) {
+    e.preventDefault();
+    const pw = password.trim();
+    if (!pw) return;
+    if (pw === data.adminPassword) {
+      setCurrentUser({ role: "admin" });
+      return;
+    }
+    const rep = data.reps.find((r) => r.password && r.password === pw);
+    if (rep) {
+      setCurrentUser({ role: "rep", repId: rep.id });
+      return;
+    }
+    setError("סיסמה שגויה, נסי שוב");
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-4 text-center">
-        <h1 className="text-2xl font-bold text-roseDark">כניסת צוות ניהול</h1>
-        <p className="text-sm text-ink/60">בחר/י כיצד להיכנס למערכת</p>
-        <button className="btn-primary w-full" onClick={() => setCurrentUser({ role: "admin" })}>
-          כניסה כמנהלת
-        </button>
-        <div className="card space-y-3">
-          <p className="font-medium text-ink">כניסה כנציג</p>
-          <select className="field-input" value={repId} onChange={(e) => setRepId(e.target.value)}>
-            <option value="">בחר/י נציג</option>
-            {data.reps.map((r) => (
-              <option key={r.id} value={r.id}>{r.name} ({r.institution})</option>
-            ))}
-          </select>
-          <button className="btn-soft w-full" disabled={!repId} onClick={() => setCurrentUser({ role: "rep", repId })}>
-            כניסה
-          </button>
+      <form onSubmit={tryLogin} className="w-full max-w-sm space-y-4 text-center">
+        <div className="mb-2 flex justify-center">
+          <Logo className="h-24 w-auto" />
         </div>
-      </div>
+        <h1 className="text-2xl font-bold text-roseDark">כניסת צוות ניהול</h1>
+        <p className="text-sm text-ink/60">הקלידי את הסיסמה שלך כדי להיכנס</p>
+        {error && (
+          <div className="rounded-2xl bg-rose/10 px-4 py-3 text-sm font-medium text-roseDark">{error}</div>
+        )}
+        <input
+          className="field-input text-center"
+          type="password"
+          placeholder="סיסמה"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); setError(""); }}
+        />
+        <button type="submit" className="btn-primary w-full">כניסה</button>
+      </form>
     </main>
   );
 }

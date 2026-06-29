@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "./Header";
-import { PERSONAL_FIELDS, REFERENCES_QUESTION } from "../lib/questions";
+import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 import { loadData, addCandidate } from "../lib/store";
 
 export default function Questionnaire({ gender }) {
   const router = useRouter();
-  const genderLabel = gender === "female" ? "בחורה" : "בחור";
+  const genderText = gender === "female" ? "בחורה" : "בחור";
 
   const [openQuestions, setOpenQuestions] = useState([]);
   const [form, setForm] = useState({});
@@ -42,7 +42,7 @@ export default function Questionnaire({ gender }) {
 
   function validate() {
     for (const f of PERSONAL_FIELDS) {
-      if (!form[f.key] || String(form[f.key]).trim() === "") return `נא למלא: ${f.label}`;
+      if (!form[f.key] || String(form[f.key]).trim() === "") return `נא למלא: ${genderLabel(f, gender)}`;
     }
     if (!photo) return "נא להוסיף תמונה";
     for (const q of openQuestions) {
@@ -91,7 +91,7 @@ export default function Questionnaire({ gender }) {
       <Header />
       <main className="mx-auto max-w-md px-4 py-6 pb-24">
         <h1 className="mb-1 text-2xl font-bold text-roseDark">שאלון היכרות</h1>
-        <p className="mb-6 text-sm text-ink/60">מסלול: {genderLabel} · כל השדות הם שדות חובה</p>
+        <p className="mb-6 text-sm text-ink/60">מסלול: {genderText} · כל השדות הם שדות חובה</p>
 
         {error && (
           <div className="mb-4 rounded-2xl bg-rose/10 px-4 py-3 text-sm font-medium text-roseDark">
@@ -105,7 +105,7 @@ export default function Questionnaire({ gender }) {
             <h2 className="text-lg font-semibold text-ink">👤 פרטים אישיים</h2>
             {PERSONAL_FIELDS.map((f) => (
               <div key={f.key}>
-                <label className="field-label">{f.label}</label>
+                <label className="field-label">{genderLabel(f, gender)}</label>
                 <input
                   className="field-input"
                   type={f.type}
@@ -129,7 +129,7 @@ export default function Questionnaire({ gender }) {
             <h2 className="text-lg font-semibold text-ink">💬 קצת עליך</h2>
             {openQuestions.map((q) => (
               <div key={q.key}>
-                <label className="field-label">{q.label}</label>
+                <label className="field-label">{genderLabel(q, gender)}</label>
                 <textarea
                   className="field-input min-h-[90px]"
                   value={form[q.key] || ""}

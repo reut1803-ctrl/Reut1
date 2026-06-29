@@ -6,7 +6,7 @@ export default function Header({ children }) {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between border-b border-sand/70 bg-cream/90 px-4 py-3 backdrop-blur">
       <Link href="/" className="flex items-center gap-2">
-        <Logo className="h-10 w-10 rounded-full object-cover" />
+        <Logo className="h-11 w-auto" />
       </Link>
       <div className="flex items-center gap-2">{children}</div>
     </header>

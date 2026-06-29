@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import CandidateEditor from "./CandidateEditor";
-import { PERSONAL_FIELDS } from "../lib/questions";
+import { PERSONAL_FIELDS, genderLabel } from "../lib/questions";
 import { copyClean, downloadPdf } from "../lib/export";
 
 // כרטיס מועמד: תצוגה מקוצרת + תצוגה מורחבת (טופס מלא).
@@ -60,7 +60,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
               )}
               <div className="space-y-1">
                 {PERSONAL_FIELDS.map((f) => (
-                  <p key={f.key} className="text-sm"><span className="font-semibold">{f.label}:</span> {candidate[f.key]}</p>
+                  <p key={f.key} className="text-sm"><span className="font-semibold">{genderLabel(f, candidate.gender)}:</span> {candidate[f.key]}</p>
                 ))}
                 <p className="text-sm"><span className="font-semibold">שיוך נציג:</span> {rep ? `${rep.name} (${rep.institution})` : "ללא שיוך"}</p>
               </div>
@@ -68,7 +68,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
               <div className="space-y-3 border-t border-sand pt-3">
                 {(openQuestions || []).map((q) => (
                   <div key={q.key}>
-                    <p className="text-sm font-semibold text-roseDark">{q.label}</p>
+                    <p className="text-sm font-semibold text-roseDark">{genderLabel(q, candidate.gender)}</p>
                     <p className="whitespace-pre-wrap text-sm text-ink/80">{candidate.answers?.[q.key]}</p>
                   </div>
                 ))}

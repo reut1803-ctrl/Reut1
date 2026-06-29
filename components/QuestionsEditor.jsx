@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { updateOpenQuestions } from "../lib/store";
 
-// עריכת השאלות הפתוחות - הרשאת מנהלת בלבד.
+// עריכת השאלות הפתוחות עם ניסוח נפרד לזכר ולנקבה - הרשאת מנהלת בלבד.
 export default function QuestionsEditor({ data }) {
   const [questions, setQuestions] = useState(data.openQuestions || []);
   const [saved, setSaved] = useState(false);
 
-  function setLabel(i, value) {
-    setQuestions((q) => q.map((item, idx) => (idx === i ? { ...item, label: value } : item)));
+  function setText(i, field, value) {
+    setQuestions((q) => q.map((item, idx) => (idx === i ? { ...item, [field]: value } : item)));
   }
 
   function save() {
@@ -19,12 +19,20 @@ export default function QuestionsEditor({ data }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <h2 className="text-lg font-bold text-roseDark">⚙️ עריכת שאלות השאלון</h2>
+      <p className="text-sm text-ink/60">לכל שאלה אפשר לכתוב ניסוח לבחור ולבחורה בנפרד.</p>
       {questions.map((q, i) => (
-        <div key={q.key}>
-          <label className="field-label">שאלה {i + 1}</label>
-          <textarea className="field-input min-h-[70px]" value={q.label} onChange={(e) => setLabel(i, e.target.value)} />
+        <div key={q.key} className="card space-y-3">
+          <p className="text-sm font-semibold text-ink">שאלה {i + 1}</p>
+          <div>
+            <label className="field-label">ניסוח לבחור 👤</label>
+            <textarea className="field-input min-h-[70px]" value={q.male || ""} onChange={(e) => setText(i, "male", e.target.value)} />
+          </div>
+          <div>
+            <label className="field-label">ניסוח לבחורה 👤</label>
+            <textarea className="field-input min-h-[70px]" value={q.female || ""} onChange={(e) => setText(i, "female", e.target.value)} />
+          </div>
         </div>
       ))}
       <button className="btn-primary" onClick={save}>{saved ? "נשמר!" : "שמירת שאלות"}</button>
