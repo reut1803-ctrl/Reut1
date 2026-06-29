@@ -58,27 +58,43 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={candidate.photo} alt={candidate.fullName} className="h-32 w-32 rounded-2xl object-cover" />
               )}
-              <div className="space-y-1">
-                {PERSONAL_FIELDS.map((f) => (
-                  <p key={f.key} className="text-sm"><span className="font-semibold">{genderLabel(f, candidate.gender)}:</span> {candidate[f.key]}</p>
+              <div className="space-y-2">
+                {PERSONAL_FIELDS.filter((f) => f.key !== "phone" || canSeeSensitive).map((f) => (
+                  <p key={f.key} className="text-lg"><span className="font-bold">{genderLabel(f, candidate.gender)}:</span> {candidate[f.key]}</p>
                 ))}
-                <p className="text-sm"><span className="font-semibold">שיוך נציג:</span> {rep ? `${rep.name} (${rep.institution})` : "ללא שיוך"}</p>
+                <p className="text-lg"><span className="font-bold">שיוך נציג:</span> {rep ? `${rep.name} (${rep.institution})` : "ללא שיוך"}</p>
               </div>
+
+              {/* הטלפון האישי של המועמד מוסתר משאר הנציגים. ליצירת קשר - דרך הנציג שלו. */}
+              {!canSeeSensitive && rep && (
+                <div className="rounded-2xl bg-blush/60 p-4">
+                  <p className="mb-2 text-base font-semibold text-roseDark">לפרטים ולבירורים — דרך הנציג: {rep.name}</p>
+                  {rep.phone ? (
+                    <div className="flex flex-wrap gap-2">
+                      <a className="btn-soft" href={`tel:${rep.phone}`}>📞 שיחה</a>
+                      <a className="btn-soft" href={`sms:${rep.phone}`}>💬 SMS</a>
+                      <a className="btn-soft" href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer">🟢 וואטסאפ</a>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-ink/60">לא הוגדר טלפון לנציג זה.</p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-3 border-t border-sand pt-3">
                 {(openQuestions || []).map((q) => (
                   <div key={q.key}>
-                    <p className="text-sm font-semibold text-roseDark">{genderLabel(q, candidate.gender)}</p>
-                    <p className="whitespace-pre-wrap text-sm text-ink/80">{candidate.answers?.[q.key]}</p>
+                    <p className="text-base font-bold text-roseDark">{genderLabel(q, candidate.gender)}</p>
+                    <p className="whitespace-pre-wrap text-lg text-ink/90">{candidate.answers?.[q.key]}</p>
                   </div>
                 ))}
               </div>
 
               {candidate.references?.length > 0 && (
                 <div className="border-t border-sand pt-3">
-                  <p className="mb-1 text-sm font-semibold text-roseDark">אנשי קשר</p>
+                  <p className="mb-1 text-base font-bold text-roseDark">אנשי קשר</p>
                   {candidate.references.map((r, i) => (
-                    <p key={i} className="text-sm text-ink/80">{i + 1}. {r.name} — {r.relation} {canSeeSensitive ? `(${r.phone})` : ""}</p>
+                    <p key={i} className="text-lg text-ink/90">{i + 1}. {r.name} — {r.relation} {canSeeSensitive ? `(${r.phone})` : ""}</p>
                   ))}
                 </div>
               )}

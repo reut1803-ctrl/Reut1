@@ -4,14 +4,14 @@ import { OPENING_TITLE } from "../lib/questions";
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-10">
-      <div className="w-full max-w-md text-center">
-        {/* לוגו גדול ובולט במרכז מסך הפתיחה */}
-        <div className="mb-6 flex justify-center">
-          <Logo className="h-60 w-auto max-w-full" />
-        </div>
+    <main className="flex min-h-screen flex-col items-center px-4 py-6">
+      {/* לוגו גדול ללא רקע - תופס את עיקר העמוד ומשתלב ברקע */}
+      <div className="flex w-full flex-1 items-center justify-center">
+        <Logo className="w-full max-w-2xl" />
+      </div>
 
-        <h1 className="mb-10 text-lg font-medium leading-relaxed text-ink">
+      <div className="w-full max-w-md text-center">
+        <h1 className="mb-8 text-lg font-medium leading-relaxed text-ink">
           {OPENING_TITLE}
         </h1>
 
@@ -33,7 +33,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-10">
+        <div className="mt-8">
           <Link
             href="/admin"
             className="text-sm text-ink/50 underline-offset-4 hover:underline"

@@ -40,23 +40,27 @@ export default function RepsManager({ data }) {
       </div>
 
       <h2 className="text-lg font-bold text-roseDark">👥 ניהול נציגים</h2>
+
+      {/* הוספת נציג - תמיד זמין למנהלת, בראש הרשימה */}
+      <div className="card space-y-2 border-2 border-rose/40">
+        <p className="text-base font-bold text-roseDark">➕ הוספת נציג חדש</p>
+        <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="שם הנציג" />
+        <input className="field-input" value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="שם המוסד" />
+        <input className="field-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="טלפון (לשיחה / SMS / וואטסאפ)" />
+        <input className="field-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="סיסמת הנציג" />
+        <button className="btn-primary w-full" onClick={add}>הוספת נציג</button>
+      </div>
+
+      <p className="pt-2 text-sm font-semibold text-ink/70">נציגים קיימים:</p>
       {data.reps.map((r) => (
         <div key={r.id} className="card space-y-2">
           <input className="field-input" value={r.name} onChange={(e) => updateRep(r.id, { name: e.target.value })} placeholder="שם הנציג" />
           <input className="field-input" value={r.institution || ""} onChange={(e) => updateRep(r.id, { institution: e.target.value })} placeholder="שם המוסד" />
-          <input className="field-input" value={r.phone || ""} onChange={(e) => updateRep(r.id, { phone: e.target.value })} placeholder="טלפון (לוואטסאפ)" />
+          <input className="field-input" value={r.phone || ""} onChange={(e) => updateRep(r.id, { phone: e.target.value })} placeholder="טלפון (לשיחה / SMS / וואטסאפ)" />
           <input className="field-input" value={r.password || ""} onChange={(e) => updateRep(r.id, { password: e.target.value })} placeholder="סיסמת הנציג" />
           <button className="btn-soft text-roseDark" onClick={() => { if (confirm("למחוק נציג?")) deleteRep(r.id); }}>🗑️ מחיקה</button>
         </div>
       ))}
-      <div className="card space-y-2">
-        <p className="font-semibold text-ink">הוספת נציג</p>
-        <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="שם הנציג" />
-        <input className="field-input" value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="שם המוסד" />
-        <input className="field-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="טלפון (לוואטסאפ)" />
-        <input className="field-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="סיסמת הנציג" />
-        <button className="btn-primary" onClick={add}>הוספה</button>
-      </div>
     </div>
   );
 }
