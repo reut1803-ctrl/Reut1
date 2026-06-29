@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import Logo from "../components/Logo";
 import { OPENING_TITLE } from "../lib/questions";
 
 export default function HomePage() {
@@ -8,14 +8,7 @@ export default function HomePage() {
       <div className="w-full max-w-md text-center">
         {/* לוגו גדול ובולט במרכז מסך הפתיחה */}
         <div className="mb-6 flex justify-center">
-          <Image
-            src="/logo.png"
-            alt="לוגו"
-            width={240}
-            height={240}
-            priority
-            className="h-56 w-56 rounded-3xl object-contain"
-          />
+          <Logo className="h-56 w-56 rounded-3xl object-contain" />
         </div>
 
         <h1 className="mb-10 text-lg font-medium leading-relaxed text-ink">

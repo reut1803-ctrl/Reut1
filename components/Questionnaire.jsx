@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Header from "../../../components/Header";
-import { PERSONAL_FIELDS, REFERENCES_QUESTION } from "../../../lib/questions";
-import { loadData, addCandidate } from "../../../lib/store";
+import Header from "./Header";
+import { PERSONAL_FIELDS, REFERENCES_QUESTION } from "../lib/questions";
+import { loadData, addCandidate } from "../lib/store";
 
-export default function FormPage({ params }) {
+export default function Questionnaire({ gender }) {
   const router = useRouter();
-  const gender = params.gender === "female" ? "female" : "male";
   const genderLabel = gender === "female" ? "בחורה" : "בחור";
 
   const [openQuestions, setOpenQuestions] = useState([]);
