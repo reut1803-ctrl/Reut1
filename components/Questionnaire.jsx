@@ -6,6 +6,7 @@ import Header from "./Header";
 import DateField from "./DateField";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 import { loadData, addCandidate } from "../lib/store";
+import { compressImage } from "../lib/image";
 
 export default function Questionnaire({ gender }) {
   const router = useRouter();
@@ -36,12 +37,14 @@ export default function Questionnaire({ gender }) {
     setRefs((r) => r.map((item, idx) => (idx === i ? { ...item, [key]: value } : item)));
   }
 
-  function onPhoto(e) {
+  async function onPhoto(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setPhoto(reader.result);
-    reader.readAsDataURL(file);
+    try {
+      setPhoto(await compressImage(file));
+    } catch (err) {
+      setError("בעיה בטעינת התמונה, נסו תמונה אחרת");
+    }
   }
 
   function validate() {
@@ -71,22 +74,28 @@ export default function Questionnaire({ gender }) {
     openQuestions.forEach((q) => {
       answers[q.key] = form[q.key];
     });
-    addCandidate({
-      gender,
-      fullName: form.fullName,
-      location: form.location,
-      age: form.age,
-      birthDate: form.birthDate,
-      height: form.height,
-      community: form.community,
-      work: form.work,
-      degree: form.degree,
-      parentsWork: form.parentsWork,
-      phone: form.phone,
-      photo,
-      answers,
-      references: refs,
-    });
+    try {
+      addCandidate({
+        gender,
+        fullName: form.fullName,
+        location: form.location,
+        age: form.age,
+        birthDate: form.birthDate,
+        height: form.height,
+        community: form.community,
+        work: form.work,
+        degree: form.degree,
+        parentsWork: form.parentsWork,
+        phone: form.phone,
+        photo,
+        answers,
+        references: refs,
+      });
+    } catch (err) {
+      setError("אירעה תקלה בשמירה. נסו תמונה קטנה יותר ושלחו שוב.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     router.push("/thank-you");
   }
 

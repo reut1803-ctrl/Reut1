@@ -69,8 +69,9 @@ export default function AdminPage() {
   const isAdmin = user.role === "admin";
   const myRep = data.reps.find((r) => r.id === user.repId);
 
-  // אילו נציגים מציגים: מנהלת רואה את כולם, נציג רואה את עצמו.
-  const repsToShow = isAdmin ? data.reps : data.reps.filter((r) => r.id === user.repId);
+  // כל הנציגים רואים את כל המועמדים (כדי לאפשר התאמות).
+  // מידע רגיש, בירורים וטלפון אישי מוסתרים ממי שאינו הנציג של המועמד או המנהלת.
+  const repsToShow = data.reps;
   const unassigned = data.candidates.filter((c) => !c.assignedRep);
 
   function handleAdd(form) {
@@ -132,8 +133,8 @@ export default function AdminPage() {
               );
             })}
 
-            {/* מועמדים ללא שיוך - מנהלת בלבד */}
-            {isAdmin && unassigned.length > 0 && (
+            {/* מועמדים ללא שיוך נציג */}
+            {unassigned.length > 0 && (
               <section className="space-y-3">
                 <div className="rounded-2xl bg-sand px-4 py-2">
                   <p className="font-bold text-ink">ללא שיוך נציג</p>
@@ -145,10 +146,10 @@ export default function AdminPage() {
                       candidate={c}
                       openQuestions={data.openQuestions}
                       reps={data.reps}
-                      canEdit={true}
-                      canSeeSensitive={true}
+                      canEdit={isAdmin}
+                      canSeeSensitive={isAdmin}
                       onUpdate={updateCandidate}
-                      onDelete={deleteCandidate}
+                      onDelete={isAdmin ? deleteCandidate : undefined}
                     />
                   ))}
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import DateField from "./DateField";
+import { compressImage } from "../lib/image";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 
 // טופס להוספה/עריכה של מועמד על ידי נציג או מנהלת.
@@ -41,12 +42,14 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       references: f.references.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)),
     }));
   }
-  function onPhoto(e) {
+  async function onPhoto(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => set("photo", reader.result);
-    reader.readAsDataURL(file);
+    try {
+      set("photo", await compressImage(file));
+    } catch (err) {
+      /* תמונה לא תקינה - מתעלמים */
+    }
   }
 
   return (
