@@ -39,7 +39,7 @@ export default function MatchesPanel({ data, user }) {
     setAdding(false);
   }
 
-  function whatsappLink(match) {
+  function contactInfo(match) {
     const man = candById(match.manId);
     const woman = candById(match.womanId);
     // הנציג של "שלי" הוא הנציג הנוכחי; הצד השני הוא הנציג של המועמד האחר.
@@ -54,9 +54,7 @@ export default function MatchesPanel({ data, user }) {
     const repName = otherRep ? otherRep.name : "נציג";
     const text = `היי ${repName}, ראיתי במערכת התאמה פוטנציאלית בין ${myCand?.fullName || ""} לבין ${otherCand?.fullName || ""}. נוכל לדבר על זה?`;
     const phone = (otherRep?.phone || "").replace(/[^0-9]/g, "");
-    return phone
-      ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    return { phone, repName, text, enc: encodeURIComponent(text) };
   }
 
   return (
@@ -88,10 +86,29 @@ export default function MatchesPanel({ data, user }) {
                 ))}
               </select>
             </div>
-            <div className="flex gap-2">
-              <a className="btn-soft" href={whatsappLink(m)} target="_blank" rel="noreferrer">💬 יצירת קשר</a>
-              <button className="btn-soft text-roseDark" onClick={() => { if (confirm("למחוק התאמה?")) deleteMatch(m.id); }}>🗑️</button>
-            </div>
+            {(() => {
+              const ci = contactInfo(m);
+              return (
+                <div className="space-y-2">
+                  <p className="text-sm text-ink/60">יצירת קשר עם הנציג: {ci.repName}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      className="btn-soft"
+                      href={ci.phone ? `https://wa.me/${ci.phone}?text=${ci.enc}` : `https://wa.me/?text=${ci.enc}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >🟢 וואטסאפ</a>
+                    {ci.phone && (
+                      <a className="btn-soft" href={`sms:${ci.phone}?body=${ci.enc}`}>💬 SMS</a>
+                    )}
+                    {ci.phone && (
+                      <a className="btn-soft" href={`tel:${ci.phone}`}>📞 שיחה</a>
+                    )}
+                    <button className="btn-soft text-roseDark" onClick={() => { if (confirm("למחוק התאמה?")) deleteMatch(m.id); }}>🗑️</button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })}

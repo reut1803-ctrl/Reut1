@@ -34,7 +34,7 @@ export default function HomePage() {
             href="/admin"
             className="text-sm text-ink/50 underline-offset-4 hover:underline"
           >
-            כניסת צוות ניהול
+            כניסת צוות
           </Link>
         </div>
       </div>

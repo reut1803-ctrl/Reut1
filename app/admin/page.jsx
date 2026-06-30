@@ -39,7 +39,7 @@ function Login({ data }) {
         <div className="mb-2 flex justify-center">
           <Logo className="h-24 w-auto" />
         </div>
-        <h1 className="text-2xl font-bold text-roseDark">כניסת צוות ניהול</h1>
+        <h1 className="text-2xl font-bold text-roseDark">כניסת צוות</h1>
         <p className="text-sm text-ink/60">הקלידי את הסיסמה שלך כדי להיכנס</p>
         {error && (
           <div className="rounded-2xl bg-rose/10 px-4 py-3 text-sm font-medium text-roseDark">{error}</div>
