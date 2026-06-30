@@ -50,7 +50,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
               initial={candidate}
               openQuestions={openQuestions}
               reps={reps}
-              onSave={(form) => { onUpdate(candidate.id, form); setEditing(false); }}
+              onSave={(form) => onUpdate(candidate.id, form).then(() => setEditing(false))}
               onCancel={() => setEditing(false)}
             />
           ) : (
@@ -123,7 +123,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
                 {onDelete && (
                   <button
                     className="btn-soft text-roseDark"
-                    onClick={() => { if (confirm("למחוק את המועמד?")) { onDelete(candidate.id); setOpen(false); } }}
+                    onClick={() => { if (confirm(`⚠️ למחוק לצמיתות את "${candidate.fullName}"?\nהפעולה אינה ניתנת לשחזור.`)) { onDelete(candidate.id); setOpen(false); } }}
                   >🗑️ מחיקה</button>
                 )}
               </div>

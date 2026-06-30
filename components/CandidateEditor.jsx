@@ -7,9 +7,9 @@ import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questi
 
 // טופס להוספה/עריכה של מועמד על ידי נציג או מנהלת.
 export default function CandidateEditor({ initial, openQuestions, reps, onSave, onCancel }) {
-  // טיוטה אוטומטית נשמרת רק עבור מועמד חדש (לא בעריכת מועמד קיים)
+  // טיוטה אוטומטית - גם למועמד חדש וגם בעריכת מועמד קיים (לכל מועמד מפתח נפרד)
   const isNew = !initial || !initial.id;
-  const DRAFT_KEY = "shidduch_draft_admin_new";
+  const DRAFT_KEY = isNew ? "shidduch_draft_admin_new" : `shidduch_draft_edit_${initial.id}`;
 
   const [form, setForm] = useState(() => {
     const base = {
@@ -34,7 +34,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       sensitiveInfo: "",
       ...initial,
     };
-    if (isNew && typeof window !== "undefined") {
+    if (typeof window !== "undefined") {
       try {
         const r = localStorage.getItem(DRAFT_KEY);
         if (r) return { ...base, ...JSON.parse(r) };
@@ -43,18 +43,35 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
     return base;
   });
 
-  // שמירת טיוטה אוטומטית בכל שינוי (מועמד חדש בלבד)
+  const [saving, setSaving] = useState(false);
+
+  // שמירת טיוטה אוטומטית בכל שינוי
   useEffect(() => {
-    if (!isNew) return;
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
     } catch (e) {}
-  }, [form, isNew]);
+  }, [form, DRAFT_KEY]);
 
   function clearDraft() {
     try {
       localStorage.removeItem(DRAFT_KEY);
     } catch (e) {}
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await onSave(form);
+      clearDraft(); // נמחק רק אחרי שמירה מוצלחת
+    } catch (e) {
+      alert("השמירה נכשלה. בדקי חיבור לאינטרנט ונסי שוב — המידע שהקלדת נשמר ולא אבד.");
+      setSaving(false);
+    }
+  }
+
+  function handleCancel() {
+    clearDraft();
+    onCancel();
   }
 
   function set(key, value) {
@@ -162,8 +179,8 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       </section>
 
       <div className="flex gap-3">
-        <button className="btn-primary flex-1" onClick={() => { clearDraft(); onSave(form); }}>שמירה</button>
-        <button className="btn-soft flex-1" onClick={() => { clearDraft(); onCancel(); }}>ביטול</button>
+        <button className="btn-primary flex-1" disabled={saving} onClick={handleSave}>{saving ? "שומר…" : "שמירה"}</button>
+        <button className="btn-soft flex-1" onClick={handleCancel}>ביטול</button>
       </div>
     </div>
   );

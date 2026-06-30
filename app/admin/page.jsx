@@ -83,11 +83,11 @@ export default function AdminPage() {
 
   const unassigned = data.candidates.filter((c) => !c.assignedRep && matchSearch(c));
 
-  function handleAdd(form) {
+  async function handleAdd(form) {
     // נציג שמוסיף מועמד - משויך אליו אוטומטית אם לא נבחר אחרת.
     const payload = { ...form };
     if (!isAdmin && !payload.assignedRep) payload.assignedRep = user.repId;
-    addCandidate(payload);
+    await addCandidate(payload); // נזרק שגיאה אם נכשל - העורך יציג הודעה והמידע יישמר
     setAddingCand(false);
   }
 
