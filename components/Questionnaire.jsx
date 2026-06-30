@@ -12,14 +12,29 @@ export default function Questionnaire({ gender }) {
   const router = useRouter();
   const genderText = gender === "female" ? "בחורה" : "בחור";
 
+  // שמירת טיוטה אוטומטית - כדי שלא יאבד מה שהוקלד אם הדף מתרענן
+  const DRAFT_KEY = `shidduch_draft_${gender}`;
+  function loadDraft() {
+    if (typeof window === "undefined") return null;
+    try {
+      const r = localStorage.getItem(DRAFT_KEY);
+      return r ? JSON.parse(r) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   const [openQuestions, setOpenQuestions] = useState([]);
   const [intro, setIntro] = useState("");
-  const [form, setForm] = useState({});
-  const [photo, setPhoto] = useState("");
-  const [refs, setRefs] = useState([
-    { name: "", relation: "", phone: "" },
-    { name: "", relation: "", phone: "" },
-  ]);
+  const [form, setForm] = useState(() => loadDraft()?.form || {});
+  const [photo, setPhoto] = useState(() => loadDraft()?.photo || "");
+  const [refs, setRefs] = useState(
+    () =>
+      loadDraft()?.refs || [
+        { name: "", relation: "", phone: "" },
+        { name: "", relation: "", phone: "" },
+      ]
+  );
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -28,6 +43,15 @@ export default function Questionnaire({ gender }) {
     const it = data.intro || {};
     setIntro(gender === "female" ? it.female : it.male);
   }, [gender]);
+
+  // שמירת טיוטה אוטומטית בכל שינוי
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, photo, refs }));
+    } catch (e) {
+      /* אחסון מלא - מתעלמים */
+    }
+  }, [form, photo, refs, DRAFT_KEY]);
 
   function setField(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -100,6 +124,9 @@ export default function Questionnaire({ gender }) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+    try {
+      localStorage.removeItem(DRAFT_KEY); // הטופס נשלח - מנקים את הטיוטה
+    } catch (e) {}
     router.push("/thank-you");
   }
 

@@ -1,34 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DateField from "./DateField";
 import { compressImage } from "../lib/image";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 
 // טופס להוספה/עריכה של מועמד על ידי נציג או מנהלת.
 export default function CandidateEditor({ initial, openQuestions, reps, onSave, onCancel }) {
-  const [form, setForm] = useState(() => ({
-    gender: "male",
-    fullName: "",
-    location: "",
-    age: "",
-    birthDate: "",
-    height: "",
-    community: "",
-    work: "",
-    degree: "",
-    parentsWork: "",
-    phone: "",
-    photo: "",
-    answers: {},
-    references: [
-      { name: "", relation: "", phone: "" },
-      { name: "", relation: "", phone: "" },
-    ],
-    assignedRep: "",
-    sensitiveInfo: "",
-    ...initial,
-  }));
+  // טיוטה אוטומטית נשמרת רק עבור מועמד חדש (לא בעריכת מועמד קיים)
+  const isNew = !initial || !initial.id;
+  const DRAFT_KEY = "shidduch_draft_admin_new";
+
+  const [form, setForm] = useState(() => {
+    const base = {
+      gender: "male",
+      fullName: "",
+      location: "",
+      age: "",
+      birthDate: "",
+      height: "",
+      community: "",
+      work: "",
+      degree: "",
+      parentsWork: "",
+      phone: "",
+      photo: "",
+      answers: {},
+      references: [
+        { name: "", relation: "", phone: "" },
+        { name: "", relation: "", phone: "" },
+      ],
+      assignedRep: "",
+      sensitiveInfo: "",
+      ...initial,
+    };
+    if (isNew && typeof window !== "undefined") {
+      try {
+        const r = localStorage.getItem(DRAFT_KEY);
+        if (r) return { ...base, ...JSON.parse(r) };
+      } catch (e) {}
+    }
+    return base;
+  });
+
+  // שמירת טיוטה אוטומטית בכל שינוי (מועמד חדש בלבד)
+  useEffect(() => {
+    if (!isNew) return;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    } catch (e) {}
+  }, [form, isNew]);
+
+  function clearDraft() {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch (e) {}
+  }
 
   function set(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -135,8 +162,8 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       </section>
 
       <div className="flex gap-3">
-        <button className="btn-primary flex-1" onClick={() => onSave(form)}>שמירה</button>
-        <button className="btn-soft flex-1" onClick={onCancel}>ביטול</button>
+        <button className="btn-primary flex-1" onClick={() => { clearDraft(); onSave(form); }}>שמירה</button>
+        <button className="btn-soft flex-1" onClick={() => { clearDraft(); onCancel(); }}>ביטול</button>
       </div>
     </div>
   );
