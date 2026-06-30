@@ -40,14 +40,14 @@ function Login({ data }) {
           <Logo className="h-24 w-auto" />
         </div>
         <h1 className="text-2xl font-bold text-roseDark">כניסת צוות</h1>
-        <p className="text-sm text-ink/60">הקלידי את הסיסמה שלך כדי להיכנס</p>
+        <p className="text-sm text-ink/60">הקלד/י את הסיסמה שלך</p>
         {error && (
           <div className="rounded-2xl bg-rose/10 px-4 py-3 text-sm font-medium text-roseDark">{error}</div>
         )}
         <input
           className="field-input text-center"
           type="password"
-          placeholder="סיסמה"
+          placeholder="הקלד/י את הסיסמה שלך"
           value={password}
           onChange={(e) => { setPassword(e.target.value); setError(""); }}
         />
@@ -62,6 +62,7 @@ export default function AdminPage() {
   const user = useUser();
   const [tab, setTab] = useState("candidates");
   const [addingCand, setAddingCand] = useState(false);
+  const [search, setSearch] = useState("");
 
   if (!data) return <main className="p-8 text-center text-ink/50">טוען…</main>;
   if (!user) return <Login data={data} />;
@@ -72,7 +73,15 @@ export default function AdminPage() {
   // כל הנציגים רואים את כל המועמדים (כדי לאפשר התאמות).
   // מידע רגיש, בירורים וטלפון אישי מוסתרים ממי שאינו הנציג של המועמד או המנהלת.
   const repsToShow = data.reps;
-  const unassigned = data.candidates.filter((c) => !c.assignedRep);
+
+  // חיפוש מועמדים לפי שם, מקום, עדה, עיסוק או טלפון.
+  const term = search.trim().toLowerCase();
+  const matchSearch = (c) =>
+    !term ||
+    [c.fullName, c.location, c.community, c.work, c.degree, c.phone]
+      .some((v) => (v || "").toString().toLowerCase().includes(term));
+
+  const unassigned = data.candidates.filter((c) => !c.assignedRep && matchSearch(c));
 
   function handleAdd(form) {
     // נציג שמוסיף מועמד - משויך אליו אוטומטית אם לא נבחר אחרת.
@@ -101,12 +110,20 @@ export default function AdminPage() {
       <main className="mx-auto max-w-3xl px-4 py-5 pb-28">
         {tab === "candidates" && (
           <div className="space-y-6">
-            <div className="flex justify-end">
-              <button className="btn-primary" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                className="field-input flex-1"
+                type="search"
+                placeholder="🔍 חיפוש מועמד (שם, מקום, עדה...)"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
             </div>
 
             {repsToShow.map((rep) => {
-              const cands = data.candidates.filter((c) => c.assignedRep === rep.id);
+              const cands = data.candidates.filter((c) => c.assignedRep === rep.id && matchSearch(c));
+              if (term && cands.length === 0) return null;
               return (
                 <section key={rep.id} className="space-y-3">
                   {/* בראש העמודה: שם הנציג ושם המוסד */}
