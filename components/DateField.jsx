@@ -2,16 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toHebrewDate } from "../lib/dates";
-import { hebrewToISO, isoToHebrew, civilMonths, lastDayOfHebrewMonth } from "../lib/hebrew";
-
-function hebrewYearLabel(y) {
-  try {
-    const d = new Date(hebrewToISO(y, 7, 1));
-    return new Intl.DateTimeFormat("he-u-ca-hebrew", { year: "numeric" }).format(d);
-  } catch (e) {
-    return String(y);
-  }
-}
+import { hebrewToISO, isoToHebrew, civilMonths, lastDayOfHebrewMonth, hebrewNumeral, hebrewYearNumeral } from "../lib/hebrew";
 
 // שדה תאריך עם בחירה בין עברי (ברירת מחדל) ללועזי. הערך נשמר כתאריך לועזי (ISO).
 export default function DateField({ value, onChange }) {
@@ -64,7 +55,7 @@ export default function DateField({ value, onChange }) {
           <select className="field-input" value={hd} onChange={(e) => updateHeb(hy, hm, e.target.value)}>
             <option value="">יום</option>
             {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
-              <option key={d} value={d}>{d}</option>
+              <option key={d} value={d}>{hebrewNumeral(d)}</option>
             ))}
           </select>
           <select className="field-input" value={hm} onChange={(e) => updateHeb(hy, e.target.value, hd)}>
@@ -75,7 +66,7 @@ export default function DateField({ value, onChange }) {
           </select>
           <select className="field-input" value={hy} onChange={(e) => updateHeb(e.target.value, hm, hd)}>
             {years.map((y) => (
-              <option key={y} value={y}>{hebrewYearLabel(y)}</option>
+              <option key={y} value={y}>{hebrewYearNumeral(y)}</option>
             ))}
           </select>
         </div>
