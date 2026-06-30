@@ -6,11 +6,11 @@ export default function Logo({ className = "" }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`${BASE}/logo.png`}
+      src={`${BASE}/logo-v2.png`}
       alt="לוגו"
       className={`object-contain ${className}`}
     />
   );
 }
 
-export const LOGO_SRC = `${BASE}/logo.png`;
+export const LOGO_SRC = `${BASE}/logo-v2.png`;

@@ -4,13 +4,13 @@ import { OPENING_TITLE } from "../lib/questions";
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center px-4 py-6">
-      {/* לוגו גדול ללא רקע - תופס את עיקר העמוד ומשתלב ברקע */}
-      <div className="flex w-full flex-1 items-center justify-center">
-        <Logo className="w-full max-w-2xl" />
-      </div>
-
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-md text-center">
+        {/* לוגו נקי וללא רקע, ממורכז בראש העמוד */}
+        <div className="mb-6 flex justify-center">
+          <Logo className="w-72 max-w-[85%]" />
+        </div>
+
         <h1 className="mb-8 text-lg font-medium leading-relaxed text-ink">
           {OPENING_TITLE}
         </h1>
