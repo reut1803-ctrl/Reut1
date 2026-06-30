@@ -62,7 +62,9 @@ export default function Questionnaire({ gender }) {
     return "";
   }
 
-  function onSubmit(e) {
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(e) {
     e.preventDefault();
     const err = validate();
     if (err) {
@@ -74,8 +76,9 @@ export default function Questionnaire({ gender }) {
     openQuestions.forEach((q) => {
       answers[q.key] = form[q.key];
     });
+    setSubmitting(true);
     try {
-      addCandidate({
+      await addCandidate({
         gender,
         fullName: form.fullName,
         location: form.location,
@@ -92,7 +95,8 @@ export default function Questionnaire({ gender }) {
         references: refs,
       });
     } catch (err) {
-      setError("אירעה תקלה בשמירה. נסו תמונה קטנה יותר ושלחו שוב.");
+      setSubmitting(false);
+      setError("אירעה תקלה בשמירה. בדקו חיבור לאינטרנט ונסו שוב.");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
@@ -193,8 +197,8 @@ export default function Questionnaire({ gender }) {
             ))}
           </section>
 
-          <button type="submit" className="btn-primary w-full text-lg">
-            שליחה
+          <button type="submit" disabled={submitting} className="btn-primary w-full text-lg">
+            {submitting ? "שולח…" : "שליחה"}
           </button>
           <p className="text-center text-xs text-ink/50">
             לאחר השליחה לא ניתן לערוך את הטופס.
