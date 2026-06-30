@@ -1,6 +1,5 @@
-// לוגו המערכת. מוטמע באתר ללא מסגרת/ריבוע:
-// mix-blend-multiply גורם לרקע הנייר הבהיר להיעלם אל תוך רקע האתר,
-// כך שנשאר רק הציור עצמו - חלק טבעי מהעמוד.
+// לוגו המערכת. קובץ PNG עם רקע שקוף - מוטמע באתר ללא מסגרת וללא רקע,
+// כך שנשאר רק הציור עצמו, חלק טבעי מהעמוד.
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 export default function Logo({ className = "" }) {
@@ -9,7 +8,7 @@ export default function Logo({ className = "" }) {
     <img
       src={`${BASE}/logo.png`}
       alt="לוגו"
-      className={`object-contain mix-blend-multiply ${className}`}
+      className={`object-contain ${className}`}
     />
   );
 }
