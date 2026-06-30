@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - claude/crm-matchmaking-system-epsjz0
   workflow_dispatch:
 
 permissions:
