@@ -82,11 +82,11 @@ export default function AdminPage() {
   }
 
   const tabs = [
-    { id: "candidates", label: "👤 מועמדים" },
-    { id: "matches", label: "💞 התאמות" },
-    { id: "tasks", label: "📝 משימות" },
+    { id: "candidates", icon: "👤", label: "מועמדים" },
+    { id: "matches", icon: "💞", label: "התאמות" },
+    { id: "tasks", icon: "📝", label: "משימות" },
   ];
-  if (isAdmin) tabs.push({ id: "manage", label: "⚙️ ניהול" });
+  if (isAdmin) tabs.push({ id: "manage", icon: "⚙️", label: "ניהול" });
 
   return (
     <div>
@@ -98,19 +98,6 @@ export default function AdminPage() {
       </Header>
 
       <main className="mx-auto max-w-3xl px-4 py-5 pb-28">
-        {/* טאבים */}
-        <div className="mb-5 flex flex-wrap gap-2">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`rounded-2xl px-4 py-2 text-sm font-medium transition ${tab === t.id ? "bg-rose text-white shadow-soft" : "bg-blush text-roseDark"}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
         {tab === "candidates" && (
           <div className="space-y-6">
             <div className="flex justify-end">
@@ -190,6 +177,22 @@ export default function AdminPage() {
           />
         </Modal>
       )}
+
+      {/* ניווט קבוע בתחתית העמוד - קטגוריות הפעולה */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-sand bg-cream/95 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl items-stretch justify-around">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition ${tab === t.id ? "text-rose" : "text-ink/50"}`}
+            >
+              <span className="text-2xl leading-none">{t.icon}</span>
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import DateField from "./DateField";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 
 // טופס להוספה/עריכה של מועמד על ידי נציג או מנהלת.
@@ -61,12 +62,16 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
         {PERSONAL_FIELDS.map((f) => (
           <div key={f.key}>
             <label className="field-label">{genderLabel(f, form.gender)}</label>
-            <input
-              className="field-input"
-              type={f.type}
-              value={form[f.key] || ""}
-              onChange={(e) => set(f.key, e.target.value)}
-            />
+            {f.type === "date" ? (
+              <DateField value={form[f.key]} onChange={(v) => set(f.key, v)} />
+            ) : (
+              <input
+                className="field-input"
+                type={f.type}
+                value={form[f.key] || ""}
+                onChange={(e) => set(f.key, e.target.value)}
+              />
+            )}
           </div>
         ))}
         <div>

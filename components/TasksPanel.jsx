@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Modal from "./Modal";
+import DateField from "./DateField";
+import { toHebrewDate } from "../lib/dates";
 import { addTask, updateTask, deleteTask } from "../lib/store";
 
 export default function TasksPanel({ data, user }) {
@@ -35,7 +37,7 @@ export default function TasksPanel({ data, user }) {
           <input type="checkbox" checked={t.done} onChange={(e) => updateTask(t.id, { done: e.target.checked })} className="h-5 w-5 accent-rose" />
           <div className="flex-1">
             <p className={`font-medium ${t.done ? "text-ink/40 line-through" : "text-ink"}`}>{t.title}</p>
-            {t.dueDate && <p className="text-xs text-ink/50">תאריך יעד: {t.dueDate}</p>}
+            {t.dueDate && <p className="text-xs text-ink/50">תאריך יעד: {t.dueDate} · {toHebrewDate(t.dueDate)}</p>}
           </div>
           <button className="text-roseDark" onClick={() => deleteTask(t.id)}>🗑️</button>
         </div>
@@ -50,7 +52,7 @@ export default function TasksPanel({ data, user }) {
             </div>
             <div>
               <label className="field-label">תאריך יעד</label>
-              <input className="field-input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <DateField value={dueDate} onChange={(v) => setDueDate(v)} />
             </div>
             <button className="btn-primary w-full" onClick={create}>הוספה</button>
           </div>

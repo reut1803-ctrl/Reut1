@@ -4,6 +4,7 @@ import { useState } from "react";
 import Modal from "./Modal";
 import CandidateEditor from "./CandidateEditor";
 import { PERSONAL_FIELDS, genderLabel } from "../lib/questions";
+import { toHebrewDate } from "../lib/dates";
 import { copyClean, downloadPdf } from "../lib/export";
 
 // כרטיס מועמד: תצוגה מקוצרת + תצוגה מורחבת (טופס מלא).
@@ -60,7 +61,12 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
               )}
               <div className="space-y-2">
                 {PERSONAL_FIELDS.filter((f) => f.key !== "phone" || canSeeSensitive).map((f) => (
-                  <p key={f.key} className="text-lg"><span className="font-bold">{genderLabel(f, candidate.gender)}:</span> {candidate[f.key]}</p>
+                  <p key={f.key} className="text-lg">
+                    <span className="font-bold">{genderLabel(f, candidate.gender)}:</span> {candidate[f.key]}
+                    {f.key === "birthDate" && candidate[f.key] && (
+                      <span className="text-roseDark"> · {toHebrewDate(candidate[f.key])}</span>
+                    )}
+                  </p>
                 ))}
                 <p className="text-lg"><span className="font-bold">שיוך נציג:</span> {rep ? `${rep.name} (${rep.institution})` : "ללא שיוך"}</p>
               </div>

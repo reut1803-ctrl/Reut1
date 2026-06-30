@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "./Header";
+import DateField from "./DateField";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 import { loadData, addCandidate } from "../lib/store";
 
@@ -11,6 +12,7 @@ export default function Questionnaire({ gender }) {
   const genderText = gender === "female" ? "בחורה" : "בחור";
 
   const [openQuestions, setOpenQuestions] = useState([]);
+  const [intro, setIntro] = useState("");
   const [form, setForm] = useState({});
   const [photo, setPhoto] = useState("");
   const [refs, setRefs] = useState([
@@ -22,7 +24,9 @@ export default function Questionnaire({ gender }) {
   useEffect(() => {
     const data = loadData();
     setOpenQuestions(data.openQuestions || []);
-  }, []);
+    const it = data.intro || {};
+    setIntro(gender === "female" ? it.female : it.male);
+  }, [gender]);
 
   function setField(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -91,7 +95,14 @@ export default function Questionnaire({ gender }) {
       <Header />
       <main className="mx-auto max-w-md px-4 py-6 pb-24">
         <h1 className="mb-1 text-2xl font-bold text-roseDark">שאלון היכרות</h1>
-        <p className="mb-6 text-sm text-ink/60">מסלול: {genderText} · כל השדות הם שדות חובה</p>
+        <p className="mb-4 text-sm text-ink/60">מסלול: {genderText} · כל השדות הם שדות חובה</p>
+
+        {/* הקדמה מנוסחת לפי המגדר שנבחר */}
+        {intro && (
+          <div className="mb-6 rounded-3xl bg-blush/60 px-5 py-4 text-center text-lg font-medium leading-relaxed text-ink">
+            {intro}
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 rounded-2xl bg-rose/10 px-4 py-3 text-sm font-medium text-roseDark">
@@ -106,12 +117,16 @@ export default function Questionnaire({ gender }) {
             {PERSONAL_FIELDS.map((f) => (
               <div key={f.key}>
                 <label className="field-label">{genderLabel(f, gender)}</label>
-                <input
-                  className="field-input"
-                  type={f.type}
-                  value={form[f.key] || ""}
-                  onChange={(e) => setField(f.key, e.target.value)}
-                />
+                {f.type === "date" ? (
+                  <DateField value={form[f.key]} onChange={(v) => setField(f.key, v)} />
+                ) : (
+                  <input
+                    className="field-input"
+                    type={f.type}
+                    value={form[f.key] || ""}
+                    onChange={(e) => setField(f.key, e.target.value)}
+                  />
+                )}
               </div>
             ))}
             <div>
