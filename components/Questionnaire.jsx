@@ -26,6 +26,7 @@ export default function Questionnaire({ gender }) {
 
   const [openQuestions, setOpenQuestions] = useState([]);
   const [intro, setIntro] = useState("");
+  const [inApp, setInApp] = useState(false);
   const [form, setForm] = useState(() => loadDraft()?.form || {});
   const [photo, setPhoto] = useState(() => loadDraft()?.photo || "");
   const [refs, setRefs] = useState(
@@ -43,6 +44,12 @@ export default function Questionnaire({ gender }) {
     const it = data.intro || {};
     setIntro(gender === "female" ? it.female : it.male);
   }, [gender]);
+
+  // זיהוי דפדפן פנימי (וואטסאפ/אינסטגרם/פייסבוק) שעלול לחסום שליחה בנייד
+  useEffect(() => {
+    const ua = navigator.userAgent || "";
+    setInApp(/FBAN|FBAV|Instagram|Line\/|Twitter|Snapchat|Pinterest|; wv\)/i.test(ua));
+  }, []);
 
   // שמירת טיוטה אוטומטית בכל שינוי
   useEffect(() => {
@@ -67,7 +74,8 @@ export default function Questionnaire({ gender }) {
     try {
       setPhoto(await compressImage(file));
     } catch (err) {
-      setError("בעיה בטעינת התמונה, נסו תמונה אחרת");
+      console.error("שגיאת תמונה:", err);
+      setError("בעיה בטעינת התמונה. נסו לצלם מחדש או לבחור תמונה אחרת (רצוי בפורמט JPG).");
     }
   }
 
@@ -119,8 +127,11 @@ export default function Questionnaire({ gender }) {
         references: refs,
       });
     } catch (err) {
+      console.error("שגיאת שליחה:", err);
       setSubmitting(false);
-      setError("אירעה תקלה בשמירה. בדקו חיבור לאינטרנט ונסו שוב.");
+      setError(
+        "אירעה תקלה בשליחה. ודאו חיבור לאינטרנט ונסו שוב. אם פתחתם מתוך וואטסאפ/אינסטגרם — כדאי לפתוח את הדף בדפדפן (Chrome/Safari). מה שמילאתם נשמר ולא אבד."
+      );
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
@@ -141,6 +152,12 @@ export default function Questionnaire({ gender }) {
         {intro && (
           <div className="mb-6 rounded-3xl bg-blush/60 px-5 py-4 text-center text-lg font-medium leading-relaxed text-ink">
             {intro}
+          </div>
+        )}
+
+        {inApp && (
+          <div className="mb-4 rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-800">
+            💡 פתחתם מתוך אפליקציה (וואטסאפ/אינסטגרם). כדי שהשליחה תעבוד חלק, מומלץ לפתוח את הדף בדפדפן: לחצו על ⋮ (או על כפתור השיתוף) ובחרו <b>"פתח בדפדפן"</b>.
           </div>
         )}
 
