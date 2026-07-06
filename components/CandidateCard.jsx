@@ -16,7 +16,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
   const rep = reps.find((r) => r.id === candidate.assignedRep);
 
   async function handleCopy() {
-    await copyClean(candidate, openQuestions);
+    await copyClean(candidate, openQuestions, canSeeSensitive);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
@@ -118,7 +118,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
               {/* ייצוא נתונים */}
               <div className="flex flex-wrap gap-2 border-t border-sand pt-3">
                 <button className="btn-soft" onClick={handleCopy}>📋 {copied ? "הועתק!" : "העתקה ללוח"}</button>
-                <button className="btn-soft" onClick={() => downloadPdf(candidate, openQuestions)}>📄 הורדת PDF</button>
+                <button className="btn-soft" onClick={() => downloadPdf(candidate, openQuestions, canSeeSensitive)}>📄 הורדת PDF</button>
                 {canEdit && <button className="btn-soft" onClick={() => setEditing(true)}>✏️ עריכה</button>}
                 {onDelete && (
                   <button
