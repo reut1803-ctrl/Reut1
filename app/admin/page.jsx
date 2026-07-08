@@ -86,7 +86,11 @@ export default function AdminPage() {
     [c.fullName, c.location, c.community, c.work, c.degree, c.phone]
       .some((v) => (v || "").toString().toLowerCase().includes(term));
 
-  const unassigned = data.candidates.filter((c) => !c.assignedRep && matchSearch(c));
+  // "ללא שיוך" כולל גם מועמדים ששויכו לנציג שנמחק (כדי שלא ייעלמו לעולם).
+  const repIds = new Set(data.reps.map((r) => r.id));
+  const unassigned = data.candidates.filter(
+    (c) => (!c.assignedRep || !repIds.has(c.assignedRep)) && matchSearch(c)
+  );
 
   async function handleAdd(form) {
     // נציג שמוסיף מועמד - משויך אליו אוטומטית אם לא נבחר אחרת.

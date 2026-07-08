@@ -76,7 +76,7 @@ export default function RepsManager({ data }) {
           <input className="field-input" value={r.institution || ""} onChange={(e) => updateRep(r.id, { institution: e.target.value })} placeholder="שם המוסד" />
           <input className="field-input" value={r.phone || ""} onChange={(e) => updateRep(r.id, { phone: e.target.value })} placeholder="טלפון (לשיחה / SMS / וואטסאפ)" />
           <input className="field-input" value={r.password || ""} onChange={(e) => updateRep(r.id, { password: e.target.value })} placeholder="סיסמת הנציג" />
-          <button className="btn-soft text-roseDark" onClick={() => { if (confirm("למחוק נציג?")) deleteRep(r.id); }}>🗑️ מחיקה</button>
+          <button className="btn-soft text-roseDark" onClick={() => { if (confirm(`למחוק את הנציג "${r.name}"?\nהמועמדים שלו לא יימחקו — הם יעברו ל"ללא שיוך נציג".`)) deleteRep(r.id); }}>🗑️ מחיקה</button>
         </div>
       ))}
     </div>
