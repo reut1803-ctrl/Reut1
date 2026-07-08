@@ -30,6 +30,10 @@ function Login({ data }) {
       setCurrentUser({ role: "rep", repId: rep.id });
       return;
     }
+    if (data.viewerPassword && pw === data.viewerPassword) {
+      setCurrentUser({ role: "viewer" });
+      return;
+    }
     setError("סיסמה שגויה, נסי שוב");
   }
 
@@ -68,6 +72,7 @@ export default function AdminPage() {
   if (!user) return <Login data={data} />;
 
   const isAdmin = user.role === "admin";
+  const isViewer = user.role === "viewer";
   const myRep = data.reps.find((r) => r.id === user.repId);
 
   // כל הנציגים רואים את כל המועמדים (כדי לאפשר התאמות).
@@ -91,18 +96,19 @@ export default function AdminPage() {
     setAddingCand(false);
   }
 
-  const tabs = [
-    { id: "candidates", icon: "👤", label: "מועמדים" },
-    { id: "matches", icon: "💞", label: "התאמות" },
-    { id: "tasks", icon: "📝", label: "משימות" },
-  ];
+  // צופה רואה רק את המועמדים (קריאה בלבד); שאר הלשוניות מוסתרות ממנו.
+  const tabs = [{ id: "candidates", icon: "👤", label: "מועמדים" }];
+  if (!isViewer) {
+    tabs.push({ id: "matches", icon: "💞", label: "התאמות" });
+    tabs.push({ id: "tasks", icon: "📝", label: "משימות" });
+  }
   if (isAdmin) tabs.push({ id: "manage", icon: "⚙️", label: "ניהול" });
 
   return (
     <div>
       <Header>
         <span className="text-sm text-ink/70">
-          {isAdmin ? "מנהלת" : `${myRep?.name} · ${myRep?.institution}`}
+          {isAdmin ? "מנהלת" : isViewer ? "👁️ צפייה בלבד" : `${myRep?.name} · ${myRep?.institution}`}
         </span>
         <button className="btn-soft !px-3 !py-1.5 text-sm" onClick={() => setCurrentUser(null)}>יציאה</button>
       </Header>
@@ -110,6 +116,11 @@ export default function AdminPage() {
       <main className="mx-auto max-w-3xl px-4 py-5 pb-28">
         {tab === "candidates" && (
           <div className="space-y-6">
+            {isViewer && (
+              <div className="rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
+                👁️ מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               <input
                 className="field-input flex-1"
@@ -118,7 +129,9 @@ export default function AdminPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <button className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
+              {!isViewer && (
+                <button className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
+              )}
             </div>
 
             {repsToShow.map((rep) => {

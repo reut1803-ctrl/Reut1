@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addRep, updateRep, deleteRep, updateAdminPassword } from "../lib/store";
+import { addRep, updateRep, deleteRep, updateAdminPassword, updateViewerPassword } from "../lib/store";
 
 // ניהול נציגים וסיסמאות - הרשאת מנהלת בלבד.
 export default function RepsManager({ data }) {
@@ -12,6 +12,9 @@ export default function RepsManager({ data }) {
 
   const [adminPw, setAdminPw] = useState(data.adminPassword || "");
   const [adminSaved, setAdminSaved] = useState(false);
+
+  const [viewerPw, setViewerPw] = useState(data.viewerPassword || "");
+  const [viewerSaved, setViewerSaved] = useState(false);
 
   function add() {
     if (!name.trim()) return;
@@ -29,6 +32,13 @@ export default function RepsManager({ data }) {
     setTimeout(() => setAdminSaved(false), 1500);
   }
 
+  function saveViewerPw() {
+    if (!viewerPw.trim()) return;
+    updateViewerPassword(viewerPw.trim());
+    setViewerSaved(true);
+    setTimeout(() => setViewerSaved(false), 1500);
+  }
+
   return (
     <div className="space-y-3">
       {/* סיסמת מנהלת */}
@@ -37,6 +47,14 @@ export default function RepsManager({ data }) {
         <p className="text-xs text-ink/60">זו הסיסמה שאיתה נכנסים כמנהלת. אפשר לשנות אותה כאן.</p>
         <input className="field-input" value={adminPw} onChange={(e) => setAdminPw(e.target.value)} placeholder="סיסמת מנהלת" />
         <button className="btn-primary" onClick={saveAdminPw}>{adminSaved ? "נשמר!" : "שמירת סיסמה"}</button>
+      </div>
+
+      {/* סיסמת צפייה בלבד */}
+      <div className="card space-y-2">
+        <h2 className="text-lg font-bold text-roseDark">👁️ סיסמת צפייה בלבד</h2>
+        <p className="text-xs text-ink/60">מי שנכנס עם סיסמה זו יוכל לצפות במועמדים בלבד — בלי לערוך, להוסיף או למחוק.</p>
+        <input className="field-input" value={viewerPw} onChange={(e) => setViewerPw(e.target.value)} placeholder="סיסמת צפייה" />
+        <button className="btn-primary" onClick={saveViewerPw}>{viewerSaved ? "נשמר!" : "שמירת סיסמה"}</button>
       </div>
 
       <h2 className="text-lg font-bold text-roseDark">👥 ניהול נציגים</h2>
