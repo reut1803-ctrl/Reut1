@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus } from "lucide-react";
+import { UserPlus, ImagePlus, X } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { REGIONS, RELIGIOUS_LEVELS, EDUCATION_OPTIONS, YESHIVA_LEVELS, SMOKING_OPTIONS, TRAITS } from "@/lib/crm/mockData";
 import Button from "@/components/crm/ui/Button";
@@ -27,6 +27,8 @@ export default function AddCandidatePage() {
   const addCandidate = useCrmStore((s) => s.addCandidate);
   const [form, setForm] = useState(EMPTY_FORM);
   const [traits, setTraits] = useState([]);
+  const [photo, setPhoto] = useState(null);
+  const [photoError, setPhotoError] = useState("");
 
   if (role === "viewer") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
@@ -35,7 +37,20 @@ export default function AddCandidatePage() {
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
 
-  const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim();
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("יש לבחור קובץ תמונה");
+      return;
+    }
+    setPhotoError("");
+    const reader = new FileReader();
+    reader.onload = () => setPhoto(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photo;
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -52,9 +67,11 @@ export default function AddCandidatePage() {
       phone: form.phone.trim(),
       bio: form.bio.trim(),
       traits,
+      photoUrl: photo,
     });
     setForm(EMPTY_FORM);
     setTraits([]);
+    setPhoto(null);
     router.push(`/crm?added=${candidate.id}`);
   };
 
@@ -86,6 +103,31 @@ export default function AddCandidatePage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">תמונה *</p>
+          {photo ? (
+            <div className="relative h-40 w-32 overflow-hidden rounded-2xl border border-[#EAE5E3]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt="תצוגה מקדימה" className="h-full w-full object-cover" />
+              <button
+                onClick={() => setPhoto(null)}
+                aria-label="הסרת תמונה"
+                className="absolute left-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <label className="flex h-40 w-32 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]">
+              <ImagePlus size={24} />
+              <span className="text-[11px] font-semibold">העלאת תמונה</span>
+              <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+            </label>
+          )}
+          {photoError && <p className="mt-1 text-[11px] text-red-500">{photoError}</p>}
+          <p className="mt-1 text-[11px] text-[#B5AEB0]">שדה חובה</p>
         </div>
 
         <Field label="שם מלא">

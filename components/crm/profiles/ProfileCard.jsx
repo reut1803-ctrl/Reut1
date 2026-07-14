@@ -46,11 +46,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
   return (
     <div className="overflow-hidden rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
-            {candidate.initials}
-          </span>
-        </div>
+        {candidate.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={candidate.photoUrl} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+              {candidate.initials}
+            </span>
+          </div>
+        )}
 
         {candidate.isNew && (
           <span className="absolute right-3 top-3 rounded-full bg-[#8C4A55] px-2.5 py-1 text-[11px] font-bold text-white shadow">
