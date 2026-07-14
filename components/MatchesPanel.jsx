@@ -69,11 +69,19 @@ export default function MatchesPanel({ data, user }) {
       {visibleMatches.map((m) => {
         const man = candById(m.manId);
         const woman = candById(m.womanId);
+        const creator =
+          m.createdByRep === "admin"
+            ? "מנהלת"
+            : repById(m.createdByRep)?.name || "לא ידוע";
         return (
           <div key={m.id} className="card space-y-3">
             <p className="font-semibold text-ink">
               {man?.fullName || "—"} 🤝 {woman?.fullName || "—"}
             </p>
+            {/* מי יצר את ההתאמה - גלוי למנהלת בלבד */}
+            {user.role === "admin" && (
+              <p className="text-xs text-ink/50">נוצרה על ידי: {creator}</p>
+            )}
             <div className="flex items-center gap-2 text-sm">
               <span className="text-ink/60">הצעד הבא:</span>
               <select
