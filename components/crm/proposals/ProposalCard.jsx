@@ -1,13 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Clock } from "lucide-react";
+import { ChevronDown, Clock, Copy, Check, Phone } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { MALE_CANDIDATES, FEMALE_CANDIDATES } from "@/lib/crm/mockData";
 import StageFunnel from "./StageFunnel";
 
 function findCandidate(id) {
   return [...MALE_CANDIDATES, ...FEMALE_CANDIDATES].find((c) => c.id === id);
+}
+
+function ContactCard({ candidate }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(`${candidate.name}\n${candidate.phone}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="rounded-2xl bg-[#F6F5F4] p-3">
+      <p className="text-[13px] font-bold text-[#3A3335]">{candidate.name}</p>
+      <p dir="ltr" className="mt-0.5 flex items-center gap-1 text-[12px] text-[#8A8285]">
+        <Phone size={12} /> {candidate.phone}
+      </p>
+      <button
+        onClick={handleCopy}
+        className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4]"
+      >
+        {copied ? <Check size={13} /> : <Copy size={13} />}
+        {copied ? "הועתק!" : "העתקת כרטיס"}
+      </button>
+    </div>
+  );
 }
 
 export default function ProposalCard({ proposal }) {
@@ -32,6 +58,11 @@ export default function ProposalCard({ proposal }) {
 
       <div className="relative mt-3">
         <StageFunnel status={proposal.status} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <ContactCard candidate={male} />
+        <ContactCard candidate={female} />
       </div>
 
       {open && (
