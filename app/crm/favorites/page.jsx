@@ -3,16 +3,17 @@
 import { useMemo } from "react";
 import { Heart } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { MALE_CANDIDATES, FEMALE_CANDIDATES } from "@/lib/crm/mockData";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 
 export default function FavoritesPage() {
   const favorites = useCrmStore((s) => s.favorites);
+  const allCandidates = useCrmStore((s) => s.allCandidates);
+  const customCandidates = useCrmStore((s) => s.customCandidates);
 
   const favCandidates = useMemo(() => {
-    const all = [...MALE_CANDIDATES, ...FEMALE_CANDIDATES];
+    const all = [...allCandidates("male"), ...allCandidates("female")];
     return all.filter((c) => favorites[c.id]);
-  }, [favorites]);
+  }, [favorites, customCandidates]);
 
   return (
     <div className="px-4 py-4">

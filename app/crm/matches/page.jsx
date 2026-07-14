@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { Sparkles, RotateCcw } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { getCandidates } from "@/lib/crm/mockData";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import MatchingWizard from "@/components/crm/quiz/MatchingWizard";
@@ -13,11 +12,13 @@ export default function MatchesPage() {
   const board = useCrmStore((s) => s.board);
   const quizCompleted = useCrmStore((s) => s.quizCompleted);
   const resetQuiz = useCrmStore((s) => s.resetQuiz);
+  const allCandidates = useCrmStore((s) => s.allCandidates);
+  const customCandidates = useCrmStore((s) => s.customCandidates);
   const [showWizard, setShowWizard] = useState(false);
 
   const matches = useMemo(
-    () => getCandidates(board).filter((c) => c.matchScore >= 70).sort((a, b) => b.matchScore - a.matchScore),
-    [board]
+    () => allCandidates(board).filter((c) => c.matchScore >= 70).sort((a, b) => b.matchScore - a.matchScore),
+    [board, customCandidates]
   );
 
   if (quizCompleted) {

@@ -1,21 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
+import { SlidersHorizontal, UserPlus } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { getCandidates } from "@/lib/crm/mockData";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
 
 export default function ProfilesFeedPage() {
   const board = useCrmStore((s) => s.board);
+  const role = useCrmStore((s) => s.role);
   const filters = useCrmStore((s) => s.filters);
+  const allCandidates = useCrmStore((s) => s.allCandidates);
+  const customCandidates = useCrmStore((s) => s.customCandidates);
   const [tab, setTab] = useState("new");
   const [showFilters, setShowFilters] = useState(false);
 
   const candidates = useMemo(() => {
-    const all = getCandidates(board);
+    const all = allCandidates(board);
     return all.filter((c) => {
       if (tab === "new" && !c.isNew) return false;
       if (tab === "previous" && !c.isPrevious) return false;
@@ -26,7 +29,7 @@ export default function ProfilesFeedPage() {
       if (filters.search && !c.name.includes(filters.search.trim())) return false;
       return true;
     });
-  }, [board, tab, filters]);
+  }, [board, tab, filters, customCandidates]);
 
   return (
     <div className="px-4 py-4">
@@ -58,6 +61,15 @@ export default function ProfilesFeedPage() {
         >
           <SlidersHorizontal size={18} />
         </button>
+        {role !== "viewer" && (
+          <Link
+            href="/crm/add-candidate"
+            aria-label="הוספת מועמד/ת"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#8C4A55] text-white shadow-sm transition active:scale-95"
+          >
+            <UserPlus size={18} />
+          </Link>
+        )}
       </div>
 
       {candidates.length === 0 ? (

@@ -3,18 +3,14 @@
 import { useState } from "react";
 import { ChevronDown, Clock, Copy, Check, Phone } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
-import { MALE_CANDIDATES, FEMALE_CANDIDATES } from "@/lib/crm/mockData";
+import { buildProfileShareText } from "@/lib/crm/shareText";
 import StageFunnel from "./StageFunnel";
-
-function findCandidate(id) {
-  return [...MALE_CANDIDATES, ...FEMALE_CANDIDATES].find((c) => c.id === id);
-}
 
 function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(`${candidate.name}\n${candidate.phone}`);
+    await navigator.clipboard.writeText(buildProfileShareText(candidate));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -38,11 +34,12 @@ function ContactCard({ candidate }) {
 
 export default function ProposalCard({ proposal }) {
   const updateProposalStatus = useCrmStore((s) => s.updateProposalStatus);
+  const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
 
-  const male = findCandidate(proposal.maleId);
-  const female = findCandidate(proposal.femaleId);
+  const male = findCandidateById(proposal.maleId);
+  const female = findCandidateById(proposal.femaleId);
   if (!male || !female) return null;
 
   return (

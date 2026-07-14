@@ -7,6 +7,7 @@ import { useCrmStore } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { viewerActionText } from "@/lib/crm/genderText";
+import { buildProfileShareText } from "@/lib/crm/shareText";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 
 export default function ProfileCard({ candidate, onReadMore }) {
@@ -24,7 +25,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const isExpanded = expandedId === candidate.id;
   const firstName = candidate.name.split(" ")[0];
 
-  const shareText = `הצעה מעניינת: ${candidate.name}, גיל ${candidate.age}, ${candidate.region}\n${candidate.bio}`;
+  const shareText = buildProfileShareText(candidate, { includePhone: canSeeFullProfile });
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(shareText);
