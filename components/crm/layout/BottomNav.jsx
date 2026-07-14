@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Sparkles, Users } from "lucide-react";
+import { Heart, Sparkles, Users, HeartHandshake, ListChecks } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 
 const TABS = [
@@ -11,14 +11,21 @@ const TABS = [
   { href: "/crm", label: "פרופילים", icon: Users, key: "profiles" },
 ];
 
+const STAFF_TABS = [
+  { href: "/crm/proposals", label: "שידוכים", icon: HeartHandshake, key: "proposals" },
+  { href: "/crm/tasks", label: "משימות", icon: ListChecks, key: "tasks" },
+];
+
 export default function BottomNav() {
   const pathname = usePathname();
   const favCount = useCrmStore((s) => s.favoritesCount());
+  const role = useCrmStore((s) => s.role);
+  const tabs = role === "viewer" ? TABS : [...TABS, ...STAFF_TABS];
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EAE5E3] bg-white/95 backdrop-blur safe-bottom">
       <div className="mx-auto flex max-w-md items-stretch justify-around">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const active = pathname === tab.href;
           const Icon = tab.icon;
           return (

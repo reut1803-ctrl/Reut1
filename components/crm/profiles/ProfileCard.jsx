@@ -1,27 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, Mic, PenLine, ChevronDown, Play, MapPin } from "lucide-react";
+import Link from "next/link";
+import { Heart, Mic, PenLine, ChevronDown, Play, MapPin, Copy, Download, HeartHandshake, Check } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
-
-const PIPELINE_STATUSES = ["בבירורים", "החלפת מספרים", "פגישה ראשונה", "פגישה שנייה", "מתקדם"];
+import { viewerActionText } from "@/lib/crm/genderText";
+import StageFunnel from "@/components/crm/proposals/StageFunnel";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
+  const board = useCrmStore((s) => s.board);
   const isFavorite = useCrmStore((s) => s.isFavorite(candidate.id));
   const toggleFavorite = useCrmStore((s) => s.toggleFavorite);
   const expandedId = useCrmStore((s) => s.expandedStaffAreaId);
   const toggleStaffArea = useCrmStore((s) => s.toggleStaffArea);
+  const proposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
   const [recording, setRecording] = useState(false);
-  const [pipelineStatus, setPipelineStatus] = useState(candidate.pipelineStatus);
+  const [copied, setCopied] = useState(false);
 
   const canSeeFullProfile = role === "staff" || role === "admin";
   const isExpanded = expandedId === candidate.id;
   const firstName = candidate.name.split(" ")[0];
 
-  const shareText = encodeURIComponent(`הצעה מעניינת: ${candidate.name}, גיל ${candidate.age}, ${candidate.region}`);
+  const shareText = `הצעה מעניינת: ${candidate.name}, גיל ${candidate.age}, ${candidate.region}\n${candidate.bio}`;
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(shareText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([shareText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${candidate.name}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="overflow-hidden rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
@@ -61,20 +80,48 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
         <div className="mt-4 flex flex-col gap-2">
           <Button variant="pink" className="w-full" onClick={() => onReadMore?.(candidate)}>
-            קראי עוד על {firstName}
+            {viewerActionText(board, { male: "קרא", female: "קראי" })} עוד על {firstName}
           </Button>
-          <Button variant="green" className="w-full">
-            שלחי הודעה לבירורים
-          </Button>
-          <a
-            href={`https://wa.me/?text=${shareText}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#20A66B] bg-white px-4 py-3 text-sm font-semibold text-[#178A57] transition active:scale-95 hover:bg-[#20A66B]/5"
-          >
-            שתפי בוואטסאפ
-          </a>
+
+          {canSeeFullProfile && (
+            <Link
+              href={`/crm/proposals?select=${candidate.id}`}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#20A66B] px-4 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(32,166,107,0.25)] transition active:scale-95 hover:bg-[#178A57]"
+            >
+              <HeartHandshake size={16} /> הצע/י התאמה עבור {firstName}
+            </Link>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleCopy}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#20A66B] bg-white px-3 py-3 text-sm font-semibold text-[#178A57] transition active:scale-95 hover:bg-[#20A66B]/5"
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? "הועתק!" : "העתקת טקסט"}
+            </button>
+            <button
+              onClick={handleDownload}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#20A66B] bg-white px-3 py-3 text-sm font-semibold text-[#178A57] transition active:scale-95 hover:bg-[#20A66B]/5"
+            >
+              <Download size={16} /> הורדה לקובץ
+            </button>
+          </div>
         </div>
+
+        {proposals.length > 0 && (
+          <div className="mt-4 rounded-2xl bg-[#F6F5F4] p-3">
+            <p className="mb-2 text-[12px] font-semibold text-[#3A3335]">התקדמות בהתאמות ({proposals.length})</p>
+            <div className="space-y-2.5">
+              {proposals.map((p) => (
+                <div key={p.id}>
+                  <p className="mb-1 text-[11px] font-semibold text-[#8C4A55]">{p.status}</p>
+                  <StageFunnel status={p.status} compact />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {canSeeFullProfile && (
           <div className="mt-4 border-t border-[#EAE5E3] pt-3">
@@ -131,21 +178,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
                         </span>
                       </div>
                       {candidate.adminNote || "אין הערה עדיין - לחצי לעריכה"}
-                    </div>
-
-                    <div className="rounded-2xl bg-[#F6F5F4] p-3">
-                      <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">סטטוס במשפך התאמות</p>
-                      <select
-                        value={pipelineStatus}
-                        onChange={(e) => setPipelineStatus(e.target.value)}
-                        className="w-full rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335]"
-                      >
-                        {PIPELINE_STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
                     </div>
                   </>
                 )}
