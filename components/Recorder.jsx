@@ -24,7 +24,7 @@ function fmt(sec) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export default function Recorder({ candidateId, repId }) {
+export default function Recorder({ candidateId, repId, canRecord = false }) {
   const data = useData();
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -149,7 +149,7 @@ export default function Recorder({ candidateId, repId }) {
                 🎧 הקלטה {i + 1} · {fmt(r.durationSec || 0)}
                 {r.createdAt ? ` · ${new Date(r.createdAt).toLocaleDateString("he-IL")}` : ""}
               </span>
-              <button className="text-roseDark" onClick={() => remove(r.id)}>🗑️</button>
+              {canRecord && <button className="text-roseDark" onClick={() => remove(r.id)}>🗑️</button>}
             </div>
             {urls[r.id] ? (
               // eslint-disable-next-line jsx-a11y/media-has-caption
@@ -163,19 +163,23 @@ export default function Recorder({ candidateId, repId }) {
         ))}
       </div>
 
-      {/* כפתור הקלטה */}
-      <div className="mt-3">
-        {recording ? (
-          <button className="btn-primary w-full" onClick={stop}>
-            ⏹️ עצור והקלט ({fmt(elapsed)})
-          </button>
-        ) : (
-          <button className="btn-soft w-full" disabled={saving} onClick={start}>
-            {saving ? "שומר…" : "➕ הקלטה חדשה"}
-          </button>
-        )}
-      </div>
-      <p className="mt-1 text-xs text-ink/50">עד 10 דקות להקלטה. אפשר להוסיף כמה הקלטות שרוצים.</p>
+      {/* כפתור הקלטה - רק לנציג של המועמד ולמנהלת */}
+      {canRecord && (
+        <>
+          <div className="mt-3">
+            {recording ? (
+              <button className="btn-primary w-full" onClick={stop}>
+                ⏹️ עצור והקלט ({fmt(elapsed)})
+              </button>
+            ) : (
+              <button className="btn-soft w-full" disabled={saving} onClick={start}>
+                {saving ? "שומר…" : "➕ הקלטה חדשה"}
+              </button>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-ink/50">עד 10 דקות להקלטה. אפשר להוסיף כמה הקלטות שרוצים.</p>
+        </>
+      )}
     </div>
   );
 }
