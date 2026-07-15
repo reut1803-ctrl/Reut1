@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import CandidateEditor from "./CandidateEditor";
+import Recorder from "./Recorder";
 import { PERSONAL_FIELDS, genderLabel } from "../lib/questions";
 import { toHebrewDate } from "../lib/dates";
 import { copyClean, downloadPdf } from "../lib/export";
 
 // כרטיס מועמד: תצוגה מקוצרת + תצוגה מורחבת (טופס מלא).
-export default function CandidateCard({ candidate, openQuestions, reps, canEdit, canSeeSensitive, onUpdate, onDelete }) {
+export default function CandidateCard({ candidate, openQuestions, reps, canEdit, canSeeSensitive, currentRepId, onUpdate, onDelete }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -113,6 +114,11 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
                   <p className="mb-1 text-sm font-semibold text-roseDark">🔒 מידע רגיש (לנציג ולמנהלת בלבד)</p>
                   <p className="whitespace-pre-wrap text-sm text-ink/80">{candidate.sensitiveInfo || "—"}</p>
                 </div>
+              )}
+
+              {/* הקלטות קוליות - לנציג של המועמד ולמנהלת בלבד */}
+              {canSeeSensitive && (
+                <Recorder candidateId={candidate.id} repId={currentRepId} />
               )}
 
               {/* ייצוא נתונים */}

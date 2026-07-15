@@ -9,6 +9,8 @@ import MatchesPanel from "../../components/MatchesPanel";
 import TasksPanel from "../../components/TasksPanel";
 import QuestionsEditor from "../../components/QuestionsEditor";
 import RepsManager from "../../components/RepsManager";
+import PopupEditor from "../../components/PopupEditor";
+import PopupNotice from "../../components/PopupNotice";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate } from "../../lib/store";
@@ -110,6 +112,7 @@ export default function AdminPage() {
 
   return (
     <div>
+      <PopupNotice popup={data.popup} role={user.role} />
       <Header>
         <span className="text-sm text-ink/70">
           {isAdmin ? "מנהלת" : isViewer ? "👁️ צפייה בלבד" : `${myRep?.name} · ${myRep?.institution}`}
@@ -158,6 +161,7 @@ export default function AdminPage() {
                         reps={data.reps}
                         canEdit={isAdmin || c.assignedRep === user.repId}
                         canSeeSensitive={isAdmin || c.assignedRep === user.repId}
+                        currentRepId={user.repId || "admin"}
                         onUpdate={updateCandidate}
                         onDelete={isAdmin ? deleteCandidate : undefined}
                       />
@@ -182,6 +186,7 @@ export default function AdminPage() {
                       reps={data.reps}
                       canEdit={isAdmin}
                       canSeeSensitive={isAdmin}
+                      currentRepId={user.repId || "admin"}
                       onUpdate={updateCandidate}
                       onDelete={isAdmin ? deleteCandidate : undefined}
                     />
@@ -197,6 +202,7 @@ export default function AdminPage() {
         {tab === "manage" && isAdmin && (
           <div className="space-y-8">
             <RepsManager data={data} />
+            <PopupEditor data={data} />
             <QuestionsEditor data={data} />
           </div>
         )}
