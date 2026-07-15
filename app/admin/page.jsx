@@ -81,6 +81,10 @@ export default function AdminPage() {
   // מידע רגיש, בירורים וטלפון אישי מוסתרים ממי שאינו הנציג של המועמד או המנהלת.
   const repsToShow = data.reps;
 
+  // כרטיס מוגבל - גלוי רק למנהלת ולנציג המשויך.
+  const canViewCandidate = (c) =>
+    !c.restricted || isAdmin || c.assignedRep === user.repId;
+
   // חיפוש מועמדים לפי שם, מקום, עדה, עיסוק או טלפון.
   const term = search.trim().toLowerCase();
   const matchSearch = (c) =>
@@ -91,7 +95,7 @@ export default function AdminPage() {
   // "ללא שיוך" כולל גם מועמדים ששויכו לנציג שנמחק (כדי שלא ייעלמו לעולם).
   const repIds = new Set(data.reps.map((r) => r.id));
   const unassigned = data.candidates.filter(
-    (c) => (!c.assignedRep || !repIds.has(c.assignedRep)) && matchSearch(c)
+    (c) => (!c.assignedRep || !repIds.has(c.assignedRep)) && matchSearch(c) && canViewCandidate(c)
   );
 
   async function handleAdd(form) {
@@ -142,7 +146,7 @@ export default function AdminPage() {
             </div>
 
             {repsToShow.map((rep) => {
-              const cands = data.candidates.filter((c) => c.assignedRep === rep.id && matchSearch(c));
+              const cands = data.candidates.filter((c) => c.assignedRep === rep.id && matchSearch(c) && canViewCandidate(c));
               if (term && cands.length === 0) return null;
               return (
                 <section key={rep.id} className="space-y-3">

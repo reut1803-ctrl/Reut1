@@ -18,8 +18,11 @@ export default function MatchesPanel({ data, user }) {
   const [manId, setManId] = useState("");
   const [womanId, setWomanId] = useState("");
 
-  const men = data.candidates.filter((c) => c.gender === "male");
-  const women = data.candidates.filter((c) => c.gender === "female");
+  // כרטיס מוגבל אינו נבחר להתאמה ע"י מי שאינו המנהלת/הנציג המשויך
+  const canView = (c) =>
+    !c.restricted || user.role === "admin" || c.assignedRep === user.repId;
+  const men = data.candidates.filter((c) => c.gender === "male" && canView(c));
+  const women = data.candidates.filter((c) => c.gender === "female" && canView(c));
   const repById = (id) => data.reps.find((r) => r.id === id);
   const candById = (id) => data.candidates.find((c) => c.id === id);
 

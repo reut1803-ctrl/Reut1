@@ -32,6 +32,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       ],
       assignedRep: "",
       sensitiveInfo: "",
+      restricted: false,
       ...initial,
     };
     if (typeof window !== "undefined") {
@@ -176,6 +177,10 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
             onChange={(e) => set("sensitiveInfo", e.target.value)}
           />
         </div>
+        <label className="flex items-center gap-3 rounded-2xl bg-blush/40 p-3">
+          <input type="checkbox" className="h-5 w-5 accent-rose" checked={!!form.restricted} onChange={(e) => set("restricted", e.target.checked)} />
+          <span className="text-sm font-medium text-ink">🔒 כרטיס מוגבל — גלוי רק למנהלת ולנציג המשויך (מוסתר משאר הנציגים)</span>
+        </label>
       </section>
 
       <div className="flex gap-3">
