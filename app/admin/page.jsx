@@ -81,9 +81,9 @@ export default function AdminPage() {
   // מידע רגיש, בירורים וטלפון אישי מוסתרים ממי שאינו הנציג של המועמד או המנהלת.
   const repsToShow = data.reps;
 
-  // כרטיס מוגבל - גלוי רק למנהלת ולנציג המשויך.
+  // כרטיס מוגבל - גלוי למנהלת, לצופה, ולנציג המשויך (מוסתר משאר הנציגים).
   const canViewCandidate = (c) =>
-    !c.restricted || isAdmin || c.assignedRep === user.repId;
+    !c.restricted || isAdmin || isViewer || c.assignedRep === user.repId;
 
   // חיפוש מועמדים לפי שם, מקום, עדה, עיסוק או טלפון.
   const term = search.trim().toLowerCase();
