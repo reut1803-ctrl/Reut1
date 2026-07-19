@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, ImagePlus, X } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
+import { UserPlus, ImagePlus, X, FileText, Music } from "lucide-react";
+import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, RELIGIOUS_LEVELS, EDUCATION_OPTIONS, YESHIVA_LEVELS, SMOKING_OPTIONS, TRAITS } from "@/lib/crm/mockData";
 import Button from "@/components/crm/ui/Button";
 
@@ -19,6 +19,8 @@ const EMPTY_FORM = {
   smoking: SMOKING_OPTIONS[0],
   phone: "",
   bio: "",
+  availabilityStatus: AVAILABILITY_STATUSES[0],
+  complexityNotes: "",
 };
 
 export default function AddCandidatePage() {
@@ -29,6 +31,8 @@ export default function AddCandidatePage() {
   const [traits, setTraits] = useState([]);
   const [photo, setPhoto] = useState(null);
   const [photoError, setPhotoError] = useState("");
+  const [pdfFile, setPdfFile] = useState(null);
+  const [audioFile, setAudioFile] = useState(null);
 
   if (role === "viewer") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
@@ -50,10 +54,19 @@ export default function AddCandidatePage() {
     reader.readAsDataURL(file);
   };
 
+  const readAsDataUrl = (file) =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+
   const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photo;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
+    const pdfUrl = pdfFile ? await readAsDataUrl(pdfFile) : null;
+    const introAudioUrl = audioFile ? await readAsDataUrl(audioFile) : null;
     const candidate = addCandidate({
       gender: form.gender,
       name: form.name.trim(),
@@ -68,10 +81,16 @@ export default function AddCandidatePage() {
       bio: form.bio.trim(),
       traits,
       photoUrl: photo,
+      availabilityStatus: form.availabilityStatus,
+      complexityNotes: form.complexityNotes.trim(),
+      pdfUrl,
+      introAudioUrl,
     });
     setForm(EMPTY_FORM);
     setTraits([]);
     setPhoto(null);
+    setPdfFile(null);
+    setAudioFile(null);
     router.push(`/crm?added=${candidate.id}`);
   };
 
@@ -238,6 +257,43 @@ export default function AddCandidatePage() {
             className="input-crm resize-none"
           />
         </Field>
+
+        <Field label="סטטוס פניות">
+          <select value={form.availabilityStatus} onChange={(e) => set({ availabilityStatus: e.target.value })} className="input-crm">
+            {AVAILABILITY_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="מורכבויות וייחודיות (פנימי)">
+          <textarea
+            value={form.complexityNotes}
+            onChange={(e) => set({ complexityNotes: e.target.value })}
+            rows={3}
+            placeholder="מה מיוחד או מורכב אצל המועמד/ת - לשימוש פנימי בלבד..."
+            className="input-crm resize-none"
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="כרטיס יבש (PDF)">
+            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
+              <FileText size={15} />
+              {pdfFile ? pdfFile.name : "העלאת PDF"}
+              <input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} className="hidden" />
+            </label>
+          </Field>
+          <Field label="הקלטת היכרות">
+            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
+              <Music size={15} />
+              {audioFile ? audioFile.name : "העלאת אודיו"}
+              <input type="file" accept="audio/*" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} className="hidden" />
+            </label>
+          </Field>
+        </div>
 
         <Button variant="primary" className="w-full" disabled={!canSubmit} onClick={handleSubmit}>
           <UserPlus size={16} /> הוספה למאגר

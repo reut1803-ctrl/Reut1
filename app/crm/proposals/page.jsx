@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Heart } from "lucide-react";
 import Button from "@/components/crm/ui/Button";
@@ -32,6 +32,7 @@ export default function ProposalsPage() {
   const customCandidates = useCrmStore((s) => s.customCandidates);
   const maleCandidates = useMemo(() => allCandidates("male"), [allCandidates, customCandidates]);
   const femaleCandidates = useMemo(() => allCandidates("female"), [allCandidates, customCandidates]);
+  const [rationale, setRationale] = useState("");
 
   if (role === "viewer") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
@@ -82,11 +83,25 @@ export default function ProposalsPage() {
         </div>
       </div>
 
+      <div className="mt-3">
+        <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">הרציונל (הניצוץ) - למה זה מתאים?</p>
+        <textarea
+          value={rationale}
+          onChange={(e) => setRationale(e.target.value)}
+          rows={2}
+          placeholder="מה משלים בין הצדדים, למה נוצר החיבור..."
+          className="w-full resize-none rounded-2xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
+        />
+      </div>
+
       <Button
         variant="primary"
-        className="mt-4 w-full"
+        className="mt-3 w-full"
         disabled={!canCreate}
-        onClick={() => createProposal(selection.male, selection.female)}
+        onClick={() => {
+          createProposal(selection.male, selection.female, rationale.trim());
+          setRationale("");
+        }}
       >
         <Heart size={16} /> הצע התאמה
       </Button>

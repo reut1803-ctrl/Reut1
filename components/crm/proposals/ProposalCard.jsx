@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Clock, Copy, Check, Phone } from "lucide-react";
+import { ChevronDown, Clock, Copy, Check, Phone, Sparkles, UserCheck, X } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import StageFunnel from "./StageFunnel";
@@ -34,9 +34,13 @@ function ContactCard({ candidate }) {
 
 export default function ProposalCard({ proposal }) {
   const updateProposalStatus = useCrmStore((s) => s.updateProposalStatus);
+  const updateProposalRationale = useCrmStore((s) => s.updateProposalRationale);
+  const assignProposal = useCrmStore((s) => s.assignProposal);
+  const assignProposalToSelf = useCrmStore((s) => s.assignProposalToSelf);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
+  const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
 
   const male = findCandidateById(proposal.maleId);
   const female = findCandidateById(proposal.femaleId);
@@ -53,8 +57,47 @@ export default function ProposalCard({ proposal }) {
         </button>
       </div>
 
+      <div className="mt-2 flex items-center justify-between">
+        {proposal.assignee ? (
+          <span className="flex items-center gap-1.5 rounded-full bg-[#F6E4E6] px-2.5 py-1 text-[11px] font-bold text-[#6E3540]">
+            <UserCheck size={12} /> מטופל/ת ע״י {proposal.assignee}
+          </span>
+        ) : (
+          <span className="text-[11px] font-semibold text-[#B5AEB0]">טרם שויך לאיש צוות</span>
+        )}
+        {proposal.assignee ? (
+          <button
+            onClick={() => assignProposal(proposal.id, null)}
+            className="flex items-center gap-1 text-[11px] font-semibold text-[#B5AEB0] hover:text-[#8C4A55]"
+          >
+            <X size={12} /> שחרור שיוך
+          </button>
+        ) : (
+          <button
+            onClick={() => assignProposalToSelf(proposal.id)}
+            className="rounded-full bg-[#8C4A55] px-3 py-1 text-[11px] font-bold text-white transition active:scale-95"
+          >
+            לקחתי על עצמי
+          </button>
+        )}
+      </div>
+
       <div className="relative mt-3">
         <StageFunnel status={proposal.status} />
+      </div>
+
+      <div className="mt-4 rounded-2xl bg-[#FFF8E7] p-3">
+        <p className="mb-1 flex items-center gap-1 text-[11px] font-bold text-[#946200]">
+          <Sparkles size={12} /> הרציונל (הניצוץ)
+        </p>
+        <textarea
+          value={rationaleDraft}
+          onChange={(e) => setRationaleDraft(e.target.value)}
+          onBlur={() => updateProposalRationale(proposal.id, rationaleDraft)}
+          rows={2}
+          placeholder="מה משלים בין הצדדים, למה נוצר החיבור..."
+          className="w-full resize-none rounded-xl border-none bg-transparent text-[12px] text-[#3A3335] outline-none placeholder:text-[#B5AEB0]"
+        />
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">

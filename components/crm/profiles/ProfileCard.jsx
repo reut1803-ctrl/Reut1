@@ -2,12 +2,27 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, Mic, PenLine, ChevronDown, Play, MapPin, Copy, Download, HeartHandshake, Check } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
+import {
+  Heart,
+  Mic,
+  PenLine,
+  ChevronDown,
+  Play,
+  MapPin,
+  Copy,
+  Download,
+  HeartHandshake,
+  Check,
+  FileText,
+  Music,
+  Link2,
+} from "lucide-react";
+import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { viewerActionText } from "@/lib/crm/genderText";
 import { buildProfileShareText } from "@/lib/crm/shareText";
+import { getAvailabilityColors } from "@/lib/crm/availability";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 
 export default function ProfileCard({ candidate, onReadMore }) {
@@ -18,8 +33,28 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const expandedId = useCrmStore((s) => s.expandedStaffAreaId);
   const toggleStaffArea = useCrmStore((s) => s.toggleStaffArea);
   const proposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
+  const updateCandidateOverride = useCrmStore((s) => s.updateCandidateOverride);
   const [recording, setRecording] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
+
+  const availability = getAvailabilityColors(candidate.availabilityStatus);
+  const personalLink = typeof window !== "undefined" ? `${window.location.origin}/status?id=${candidate.id}` : "";
+
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(personalLink);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleFileUpload = (field) => (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => updateCandidateOverride(candidate.id, { [field]: reader.result });
+    reader.readAsDataURL(file);
+  };
 
   const canSeeFullProfile = role === "staff" || role === "admin";
   const isExpanded = expandedId === candidate.id;
@@ -57,11 +92,14 @@ export default function ProfileCard({ candidate, onReadMore }) {
           </div>
         )}
 
-        {candidate.isNew && (
-          <span className="absolute right-3 top-3 rounded-full bg-[#8C4A55] px-2.5 py-1 text-[11px] font-bold text-white shadow">
-            חדש
+        <div className="absolute right-3 top-3 flex flex-col items-start gap-1.5">
+          {candidate.isNew && (
+            <span className="rounded-full bg-[#8C4A55] px-2.5 py-1 text-[11px] font-bold text-white shadow">חדש</span>
+          )}
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold shadow ${availability.bg} ${availability.text}`}>
+            {candidate.availabilityStatus}
           </span>
-        )}
+        </div>
 
         <button
           onClick={() => toggleFavorite(candidate.id)}
@@ -173,6 +211,88 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       ))}
                     </ul>
                   )}
+                </div>
+
+                <div className="rounded-2xl bg-[#F6F5F4] p-3">
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">סטטוס פניות</p>
+                  <select
+                    value={candidate.availabilityStatus}
+                    onChange={(e) => updateCandidateOverride(candidate.id, { availabilityStatus: e.target.value })}
+                    className="w-full rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335]"
+                  >
+                    {AVAILABILITY_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="rounded-2xl bg-[#F6F5F4] p-3">
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">מורכבויות וייחודיות</p>
+                  <textarea
+                    value={complexityDraft}
+                    onChange={(e) => setComplexityDraft(e.target.value)}
+                    onBlur={() => updateCandidateOverride(candidate.id, { complexityNotes: complexityDraft })}
+                    rows={3}
+                    placeholder="מה מיוחד או מורכב אצל המועמד/ת - לשימוש פנימי בלבד..."
+                    className="w-full resize-none rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335] outline-none focus:border-[#8C4A55]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-2xl bg-[#F6F5F4] p-3">
+                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3A3335]">
+                      <FileText size={13} /> כרטיס יבש (PDF)
+                    </p>
+                    {candidate.pdfUrl ? (
+                      <a
+                        href={candidate.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#8C4A55] shadow-sm"
+                      >
+                        צפייה בקובץ
+                      </a>
+                    ) : (
+                      <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלה קובץ</p>
+                    )}
+                    <label className="mt-1.5 block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
+                      העלאת PDF
+                      <input type="file" accept="application/pdf" onChange={handleFileUpload("pdfUrl")} className="hidden" />
+                    </label>
+                  </div>
+
+                  <div className="rounded-2xl bg-[#F6F5F4] p-3">
+                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3A3335]">
+                      <Music size={13} /> הקלטת היכרות
+                    </p>
+                    {candidate.introAudioUrl ? (
+                      <audio controls src={candidate.introAudioUrl} className="mb-1.5 h-8 w-full" />
+                    ) : (
+                      <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלתה הקלטה</p>
+                    )}
+                    <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
+                      העלאת אודיו
+                      <input type="file" accept="audio/*" onChange={handleFileUpload("introAudioUrl")} className="hidden" />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-[#F6F5F4] p-3">
+                  <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3A3335]">
+                    <Link2 size={13} /> קישור אישי לעדכון סטטוס
+                  </p>
+                  <p dir="ltr" className="truncate text-[11px] text-[#8A8285]">
+                    {personalLink}
+                  </p>
+                  <button
+                    onClick={handleCopyLink}
+                    className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95"
+                  >
+                    {linkCopied ? <Check size={13} /> : <Copy size={13} />}
+                    {linkCopied ? "הועתק!" : "העתקת קישור"}
+                  </button>
                 </div>
 
                 {role === "admin" && (
