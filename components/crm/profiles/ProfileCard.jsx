@@ -34,6 +34,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const toggleStaffArea = useCrmStore((s) => s.toggleStaffArea);
   const proposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
   const updateCandidateOverride = useCrmStore((s) => s.updateCandidateOverride);
+  const trackProfileView = useCrmStore((s) => s.trackProfileView);
+  const trackAudioPlay = useCrmStore((s) => s.trackAudioPlay);
   const [recording, setRecording] = useState(false);
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -123,7 +125,14 @@ export default function ProfileCard({ candidate, onReadMore }) {
         <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8A8285]">{candidate.bio}</p>
 
         <div className="mt-4 flex flex-col gap-2">
-          <Button variant="pink" className="w-full" onClick={() => onReadMore?.(candidate)}>
+          <Button
+            variant="pink"
+            className="w-full"
+            onClick={() => {
+              trackProfileView();
+              onReadMore?.(candidate);
+            }}
+          >
             {viewerActionText(board, { male: "קרא", female: "קראי" })} עוד על {firstName}
           </Button>
 
@@ -268,7 +277,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <Music size={13} /> הקלטת היכרות
                     </p>
                     {candidate.introAudioUrl ? (
-                      <audio controls src={candidate.introAudioUrl} className="mb-1.5 h-8 w-full" />
+                      <audio controls src={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
                     ) : (
                       <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלתה הקלטה</p>
                     )}

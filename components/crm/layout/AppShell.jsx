@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import TopBar from "./TopBar";
 import BottomNav from "./BottomNav";
 import FabButtons from "./FabButtons";
+import TermsGate from "./TermsGate";
 import { useScrollRestoration } from "@/lib/crm/useScrollRestoration";
 import { useCrmStore } from "@/lib/crm/store";
 
@@ -23,6 +24,7 @@ export default function AppShell({ children }) {
       </main>
       <FabButtons />
       <BottomNav />
+      <TermsGate />
     </div>
   );
 }

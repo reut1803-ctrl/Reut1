@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { SlidersHorizontal, UserPlus } from "lucide-react";
+import { SlidersHorizontal, UserPlus, Lightbulb } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
@@ -11,6 +11,7 @@ import FilterSheet from "@/components/crm/profiles/FilterSheet";
 export default function ProfilesFeedPage() {
   const board = useCrmStore((s) => s.board);
   const role = useCrmStore((s) => s.role);
+  const dailyTip = useCrmStore((s) => s.dailyTip);
   const filters = useCrmStore((s) => s.filters);
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const customCandidates = useCrmStore((s) => s.customCandidates);
@@ -34,6 +35,16 @@ export default function ProfilesFeedPage() {
 
   return (
     <div className="px-4 py-4">
+      {role !== "viewer" && (
+        <div className="mb-4 flex gap-2.5 rounded-2xl border border-[#F0DFA0] bg-[#FFF8E7] p-3.5">
+          <Lightbulb size={18} className="mt-0.5 shrink-0 text-[#946200]" />
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[#946200]">טיפ בשידוכים</p>
+            <p className="mt-0.5 text-[13px] leading-relaxed text-[#3A3335]">{dailyTip}</p>
+          </div>
+        </div>
+      )}
+
       <GenderToggle />
 
       <div className="mt-4 flex items-center gap-2">

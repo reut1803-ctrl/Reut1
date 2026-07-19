@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { Bell, Settings, RefreshCw, LogOut } from "lucide-react";
-import { useCrmStore, DEMO_USERS_BY_ROLE } from "@/lib/crm/store";
+import { useCrmStore } from "@/lib/crm/store";
 import NotificationsPanel from "@/components/crm/notifications/NotificationsPanel";
 import SettingsSheet from "@/components/crm/notifications/SettingsSheet";
 
 export default function TopBar() {
+  const currentStaffId = useCrmStore((s) => s.currentStaffId);
   const role = useCrmStore((s) => s.role);
+  const currentUser = useCrmStore((s) => s.currentUser);
   const unreadCount = useCrmStore((s) => s.unreadCount());
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const user = DEMO_USERS_BY_ROLE[role];
+  const user = currentUser();
 
   return (
     <>

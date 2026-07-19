@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Sparkles, Users, HeartHandshake, ListChecks } from "lucide-react";
+import { Heart, Sparkles, Users, HeartHandshake, ListChecks, BarChart3 } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 
 const TABS = [
@@ -16,11 +16,19 @@ const STAFF_TABS = [
   { href: "/crm/tasks", label: "משימות", icon: ListChecks, key: "tasks" },
 ];
 
+const ADMIN_TABS = [{ href: "/crm/dashboard", label: "לוח בקרה", icon: BarChart3, key: "dashboard" }];
+
 export default function BottomNav() {
   const pathname = usePathname();
   const favCount = useCrmStore((s) => s.favoritesCount());
   const role = useCrmStore((s) => s.role);
-  const tabs = role === "viewer" ? TABS : [...TABS, ...STAFF_TABS];
+  const currentStaffId = useCrmStore((s) => s.currentStaffId);
+  const pendingTasksCount = useCrmStore((s) => s.pendingPushedTasksCount(currentStaffId));
+  let tabs = TABS;
+  if (role === "staff") tabs = [...TABS, ...STAFF_TABS];
+  if (role === "admin") tabs = [...TABS, ...STAFF_TABS, ...ADMIN_TABS];
+
+  const badgeCount = { favorites: favCount, tasks: role === "staff" ? pendingTasksCount : 0 };
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EAE5E3] bg-white/95 backdrop-blur safe-bottom">
@@ -28,6 +36,7 @@ export default function BottomNav() {
         {tabs.map((tab) => {
           const active = pathname === tab.href;
           const Icon = tab.icon;
+          const count = badgeCount[tab.key] || 0;
           return (
             <Link
               key={tab.key}
@@ -36,9 +45,9 @@ export default function BottomNav() {
             >
               <span className="relative">
                 <Icon size={22} className={active ? "text-[#8C4A55]" : "text-[#B5AEB0]"} strokeWidth={active ? 2.5 : 2} />
-                {tab.key === "favorites" && favCount > 0 && (
+                {count > 0 && (
                   <span className="absolute -top-1.5 -left-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#20A66B] px-1 text-[10px] font-bold text-white">
-                    {favCount}
+                    {count}
                   </span>
                 )}
               </span>
