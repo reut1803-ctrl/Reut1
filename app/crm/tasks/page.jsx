@@ -23,7 +23,7 @@ export default function TasksPage() {
     if (role === "staff") markTasksSeenByStaff(currentStaffId);
   }, [role, currentStaffId, markTasksSeenByStaff]);
 
-  if (role === "viewer") {
+  if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
   }
 

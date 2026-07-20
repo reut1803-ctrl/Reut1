@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, User, Mail, Phone, Calendar, Trash2, ShieldCheck, Users } from "lucide-react";
+import { X, User, Mail, Phone, Calendar, Trash2, ShieldCheck, Users, LogOut, AlertTriangle } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { STAFF_USERS } from "@/lib/crm/mockData";
+import GoogleSignInButton from "@/components/crm/auth/GoogleSignInButton";
 
 const ROLE_LABELS = {
   admin: "מנהלת מערכת (הרשאת-על)",
@@ -17,6 +18,9 @@ export default function SettingsSheet({ onClose }) {
   const currentStaffId = useCrmStore((s) => s.currentStaffId);
   const setCurrentStaffId = useCrmStore((s) => s.setCurrentStaffId);
   const currentUser = useCrmStore((s) => s.currentUser);
+  const googleAuthEnabled = useCrmStore((s) => s.googleAuthEnabled);
+  const googleUser = useCrmStore((s) => s.googleUser);
+  const signOutGoogle = useCrmStore((s) => s.signOutGoogle);
   const notificationsEnabled = useCrmStore((s) => s.notificationsEnabled);
   const toggleNotificationsEnabled = useCrmStore((s) => s.toggleNotificationsEnabled);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -61,55 +65,108 @@ export default function SettingsSheet({ onClose }) {
             </button>
           </div>
 
-          <div className="rounded-2xl border border-[#EAE5E3] p-4">
-            <div className="mb-2 flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-[#8C4A55]" />
-              <p className="text-sm font-semibold text-[#3A3335]">מצב תצוגה להדגמה</p>
-            </div>
-            <p className="mb-3 text-[12px] text-[#8A8285]">
-              במערכת האמיתית ההרשאה נקבעת לפי המשתמש המחובר. כאן, לצורך הדגמה, אפשר לעבור בין הרמות ולראות איך המסך משתנה.
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {Object.keys(ROLE_LABELS).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRole(r)}
-                  className={`rounded-xl border px-2 py-2 text-[12px] font-semibold transition ${
-                    role === r
-                      ? "border-[#8C4A55] bg-[#8C4A55] text-white"
-                      : "border-[#EAE5E3] bg-white text-[#3A3335] hover:bg-[#F6F5F4]"
-                  }`}
-                >
-                  {r === "admin" ? "מנהלת" : r === "staff" ? "צוות" : "צופה"}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-[11px] text-[#B5AEB0]">{ROLE_LABELS[role]}</p>
-
-            {role === "staff" && (
-              <div className="mt-3 border-t border-[#EAE5E3] pt-3">
-                <div className="mb-2 flex items-center gap-1.5">
-                  <Users size={14} className="text-[#8C4A55]" />
-                  <p className="text-[12px] font-semibold text-[#3A3335]">איזו איש/אשת צוות?</p>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {STAFF_USERS.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setCurrentStaffId(s.id)}
-                      className={`rounded-xl border px-2 py-2 text-[12px] font-semibold transition ${
-                        currentStaffId === s.id
-                          ? "border-[#8C4A55] bg-[#8C4A55] text-white"
-                          : "border-[#EAE5E3] bg-white text-[#3A3335] hover:bg-[#F6F5F4]"
-                      }`}
-                    >
-                      {s.name}
-                    </button>
-                  ))}
-                </div>
+          {googleAuthEnabled ? (
+            <div className="rounded-2xl border border-[#EAE5E3] p-4">
+              <div className="mb-2 flex items-center gap-1.5">
+                <ShieldCheck size={16} className="text-[#8C4A55]" />
+                <p className="text-sm font-semibold text-[#3A3335]">כניסה אישית</p>
               </div>
-            )}
-          </div>
+
+              {!googleUser && (
+                <>
+                  <p className="mb-3 text-[12px] text-[#8A8285]">
+                    התחברות עם חשבון Google - הגישה לצוות ולמנהלת ניתנת רק לכתובות מייל שאושרו מראש.
+                  </p>
+                  <GoogleSignInButton />
+                </>
+              )}
+
+              {googleUser && role === "unauthorized" && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                  <p className="flex items-center gap-1.5 text-[13px] font-semibold text-amber-800">
+                    <AlertTriangle size={15} /> אין לך הרשאת גישה
+                  </p>
+                  <p className="mt-1 text-[12px] text-amber-700">
+                    מחוברת כ-{googleUser.email}. הכתובת הזו לא ברשימת ההרשאות. פני למנהלת כדי להצטרף.
+                  </p>
+                  <button
+                    onClick={signOutGoogle}
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#EAE5E3] bg-white py-2 text-[12px] font-semibold text-[#3A3335]"
+                  >
+                    <LogOut size={13} /> התנתקות
+                  </button>
+                </div>
+              )}
+
+              {googleUser && (role === "admin" || role === "staff") && (
+                <div className="flex items-center justify-between rounded-2xl bg-[#F6F5F4] p-3">
+                  <div className="flex items-center gap-2.5">
+                    {googleUser.picture && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={googleUser.picture} alt="" className="h-9 w-9 rounded-full" referrerPolicy="no-referrer" />
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-[#3A3335]">{googleUser.name}</p>
+                      <p className="text-[11px] text-[#8A8285]">{ROLE_LABELS[role]}</p>
+                    </div>
+                  </div>
+                  <button onClick={signOutGoogle} aria-label="התנתקות" className="rounded-full p-2 hover:bg-white">
+                    <LogOut size={16} className="text-[#8A8285]" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-[#EAE5E3] p-4">
+              <div className="mb-2 flex items-center gap-1.5">
+                <ShieldCheck size={16} className="text-[#8C4A55]" />
+                <p className="text-sm font-semibold text-[#3A3335]">מצב תצוגה להדגמה</p>
+              </div>
+              <p className="mb-3 text-[12px] text-[#8A8285]">
+                כניסה אישית עם Google טרם הוגדרה. כאן, לצורך הדגמה, אפשר לעבור בין הרמות ולראות איך המסך משתנה.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {Object.keys(ROLE_LABELS).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRole(r)}
+                    className={`rounded-xl border px-2 py-2 text-[12px] font-semibold transition ${
+                      role === r
+                        ? "border-[#8C4A55] bg-[#8C4A55] text-white"
+                        : "border-[#EAE5E3] bg-white text-[#3A3335] hover:bg-[#F6F5F4]"
+                    }`}
+                  >
+                    {r === "admin" ? "מנהלת" : r === "staff" ? "צוות" : "צופה"}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-[#B5AEB0]">{ROLE_LABELS[role]}</p>
+
+              {role === "staff" && (
+                <div className="mt-3 border-t border-[#EAE5E3] pt-3">
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <Users size={14} className="text-[#8C4A55]" />
+                    <p className="text-[12px] font-semibold text-[#3A3335]">איזו איש/אשת צוות?</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {STAFF_USERS.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => setCurrentStaffId(s.id)}
+                        className={`rounded-xl border px-2 py-2 text-[12px] font-semibold transition ${
+                          currentStaffId === s.id
+                            ? "border-[#8C4A55] bg-[#8C4A55] text-white"
+                            : "border-[#EAE5E3] bg-white text-[#3A3335] hover:bg-[#F6F5F4]"
+                        }`}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="rounded-2xl border border-red-200 bg-red-50/60 p-4">
             <p className="mb-1 text-sm font-semibold text-red-700">מחיקת חשבון</p>

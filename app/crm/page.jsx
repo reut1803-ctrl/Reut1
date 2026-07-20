@@ -35,7 +35,7 @@ export default function ProfilesFeedPage() {
 
   return (
     <div className="px-4 py-4">
-      {role !== "viewer" && (
+      {(role === "staff" || role === "admin") && (
         <div className="mb-4 flex gap-2.5 rounded-2xl border border-[#F0DFA0] bg-[#FFF8E7] p-3.5">
           <Lightbulb size={18} className="mt-0.5 shrink-0 text-[#946200]" />
           <div>
@@ -73,7 +73,7 @@ export default function ProfilesFeedPage() {
         >
           <SlidersHorizontal size={18} />
         </button>
-        {role !== "viewer" && (
+        {(role === "staff" || role === "admin") && (
           <Link
             href="/crm/add-candidate"
             aria-label="הוספת מועמד/ת"
