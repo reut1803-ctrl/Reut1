@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Check, Megaphone } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { STAFF_USERS } from "@/lib/crm/mockData";
@@ -14,10 +14,17 @@ export default function TasksPage() {
   const addTask = useCrmStore((s) => s.addTask);
   const pushTaskToStaff = useCrmStore((s) => s.pushTaskToStaff);
   const markTasksSeenByStaff = useCrmStore((s) => s.markTasksSeenByStaff);
+  const allCandidates = useCrmStore((s) => s.allCandidates);
+  const customCandidates = useCrmStore((s) => s.customCandidates);
+  const candidates = useMemo(
+    () => [...allCandidates("male"), ...allCandidates("female")],
+    [allCandidates, customCandidates]
+  );
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [owner, setOwner] = useState("");
   const [assigneeId, setAssigneeId] = useState(STAFF_USERS[0].id);
+  const [candidateId, setCandidateId] = useState("");
 
   useEffect(() => {
     if (role === "staff") markTasksSeenByStaff(currentStaffId);
@@ -35,13 +42,14 @@ export default function TasksPage() {
   const handleAdd = () => {
     if (!title.trim()) return;
     if (role === "admin") {
-      pushTaskToStaff(title.trim(), dueDate || null, assigneeId);
+      pushTaskToStaff(title.trim(), dueDate || null, assigneeId, candidateId || null);
     } else {
       addTask({ title: title.trim(), dueDate: dueDate || null, owner: owner.trim() || "לא משויך" });
     }
     setTitle("");
     setDueDate("");
     setOwner("");
+    setCandidateId("");
   };
 
   return (
@@ -88,6 +96,20 @@ export default function TasksPage() {
               />
             )}
           </div>
+          {role === "admin" && (
+            <select
+              value={candidateId}
+              onChange={(e) => setCandidateId(e.target.value)}
+              className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
+            >
+              <option value="">ללא מועמד/ת מקושר/ת</option>
+              {candidates.map((c) => (
+                <option key={c.id} value={c.id}>
+                  בנוגע ל: {c.name}
+                </option>
+              ))}
+            </select>
+          )}
           <Button variant="primary" className="w-full" onClick={handleAdd}>
             {role === "admin" ? <Megaphone size={16} /> : <Plus size={16} />}
             {role === "admin" ? "שיוך משימה לנציגה" : "הוספת משימה"}
@@ -158,7 +180,7 @@ function TaskRow({ task, onToggle, highlighted }) {
       <div className="flex-1">
         <p className="text-sm font-semibold text-[#3A3335]">{task.title}</p>
         <p className="text-[11px] text-[#8A8285]">
-          {task.owner} {task.dueDate && `· ${task.dueDate}`}
+          {task.owner} {task.dueDate && `· ${task.dueDate}`} {task.candidateName && `· בנוגע ל${task.candidateName}`}
         </p>
       </div>
     </div>
