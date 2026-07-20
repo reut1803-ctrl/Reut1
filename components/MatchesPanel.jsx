@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Modal from "./Modal";
-import { addMatch, updateMatch, deleteMatch, displayRep } from "../lib/store";
+import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep } from "../lib/store";
 import { copyClean, downloadPdf, shareClean } from "../lib/export";
 
 const STATUS_OPTIONS = [
@@ -21,6 +21,23 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
   const [rationale, setRationale] = useState("");
   const [formError, setFormError] = useState("");
   const [notice, setNotice] = useState("");
+  const [updateText, setUpdateText] = useState({});
+
+  function submitUpdate(mId) {
+    const text = (updateText[mId] || "").trim();
+    if (!text) return;
+    addMatchUpdate(mId, text);
+    setUpdateText((s) => ({ ...s, [mId]: "" }));
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleString("he-IL", {
+        day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
+      });
+    } catch (e) { return iso; }
+  }
 
   function flash(msg) {
     setNotice(msg);
@@ -154,14 +171,6 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
               {man?.fullName || "—"} 🤝 {woman?.fullName || "—"}
             </p>
 
-            {/* נימוק ההתאמה - גלוי לכל הנציגים המעורבים */}
-            {m.rationale && (
-              <div className="rounded-2xl bg-blush/50 p-3">
-                <p className="mb-1 text-xs font-bold text-roseDark">💭 נימוק ההתאמה</p>
-                <p className="whitespace-pre-wrap text-sm text-ink/90">{m.rationale}</p>
-              </div>
-            )}
-
             <div className="flex items-center gap-2 text-sm">
               <span className="text-ink/60">הצעד הבא:</span>
               <select
@@ -176,23 +185,72 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
               </select>
             </div>
 
-            {/* פרטי הקשר של כל הנציגים המעורבים - במקביל, ללא כפיית סדר */}
-            <div className="space-y-2 border-t border-sand pt-3">
-              <p className="text-sm font-bold text-roseDark">אנשי קשר להתאמה</p>
-              {entries.map((e) => (
-                <div key={e.rep.id} className="rounded-2xl bg-sand/40 p-2.5">
-                  <p className="text-sm font-semibold text-ink">{e.rep.name}</p>
-                  <p className="mb-1 text-xs text-ink/50">{e.roles.join(" · ")}{e.rep.institution ? ` · ${e.rep.institution}` : ""}</p>
-                  {contactButtons(e.rep, man, woman)}
-                </div>
-              ))}
+            {/* נימוק ההתאמה - מתחת לסטטוס, גלוי לכל הנציגים המעורבים */}
+            <div className="rounded-2xl bg-blush/50 p-3">
+              <p className="mb-1 text-xs font-bold text-roseDark">💭 נימוק ההתאמה</p>
+              {m.rationale ? (
+                <p className="whitespace-pre-wrap text-sm text-ink/90">{m.rationale}</p>
+              ) : (
+                <p className="text-sm text-ink/40">לא הוזן נימוק (התאמה שנוצרה לפני עדכון זה).</p>
+              )}
             </div>
+
+            {/* פרטי הקשר - כל נציג/ה רואה את פרטי הקשר של האחרים בלבד (לא של עצמו/ה) */}
+            {(() => {
+              const others = entries.filter((e) => user.role === "admin" || e.rep.id !== user.repId);
+              return (
+                <div className="space-y-2 border-t border-sand pt-3">
+                  <p className="text-sm font-bold text-roseDark">אנשי קשר להתאמה</p>
+                  {others.length === 0 && (
+                    <p className="text-xs text-ink/40">אין נציגים נוספים ליצירת קשר בהתאמה זו.</p>
+                  )}
+                  {others.map((e) => (
+                    <div key={e.rep.id} className="rounded-2xl bg-sand/40 p-2.5">
+                      <p className="text-sm font-semibold text-ink">{e.rep.name}</p>
+                      <p className="mb-1 text-xs text-ink/50">{e.roles.join(" · ")}{e.rep.institution ? ` · ${e.rep.institution}` : ""}</p>
+                      {contactButtons(e.rep, man, woman)}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* פעולות מהירות על כרטיסי המועמדים - כרטיס מיוצא מלא */}
             <div className="space-y-1.5 border-t border-sand pt-3">
               <p className="text-sm font-bold text-roseDark">פעולות על הכרטיסים</p>
               {quickActions(man)}
               {quickActions(woman)}
+            </div>
+
+            {/* יומן מעקב - עדכונים והערות לאורך הטיפול, עם שם הכותב/ת והתאריך */}
+            <div className="space-y-2 border-t border-sand pt-3">
+              <p className="text-sm font-bold text-roseDark">📌 עדכונים והערות</p>
+              {(m.updates && m.updates.length > 0) ? (
+                <div className="space-y-1.5">
+                  {[...m.updates]
+                    .sort((a, b) => (b.at || "").localeCompare(a.at || ""))
+                    .map((u, i) => (
+                      <div key={i} className="rounded-xl bg-cream px-3 py-2">
+                        <p className="whitespace-pre-wrap text-sm text-ink/90">{u.text}</p>
+                        <p className="mt-0.5 text-xs text-ink/50">{u.by} · {fmtDate(u.at)}</p>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-xs text-ink/40">אין עדכונים עדיין.</p>
+              )}
+              {!readOnly && (
+                <div className="flex gap-2">
+                  <input
+                    className="field-input flex-1 !py-2 text-sm"
+                    placeholder="הוספת עדכון (לדוגמה: דיברתי עם ראובן…)"
+                    value={updateText[m.id] || ""}
+                    onChange={(e) => setUpdateText((s) => ({ ...s, [m.id]: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter") submitUpdate(m.id); }}
+                  />
+                  <button className="btn-primary !px-3 !py-2 text-sm" onClick={() => submitUpdate(m.id)}>הוספה</button>
+                </div>
+              )}
             </div>
 
             {!readOnly && (
