@@ -1,43 +1,69 @@
+"use client";
+
 import Link from "next/link";
-import Logo from "../components/Logo";
-import PersonIcon from "../components/PersonIcon";
+import { ShieldCheck, Sparkles, ChevronLeft } from "lucide-react";
+import SuccessCarousel from "@/components/landing/SuccessCarousel";
 
-export default function HomePage() {
+export default function LandingPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md text-center">
-        {/* לוגו נקי וללא רקע, ממורכז בראש העמוד */}
-        <div className="mb-10 flex justify-center">
-          <Logo className="w-72 max-w-[85%]" />
+    <div className="mx-auto flex min-h-screen max-w-md flex-col px-6 pb-10 pt-12">
+      <div className="mb-8 flex flex-col items-center text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-bordeaux-500 text-xl font-extrabold text-white shadow-soft">
+          מש
         </div>
-
-        {/* בחירת מסלול: בחור | בחורה - באייקון בצבע הלוגו */}
-        <div className="grid grid-cols-2 gap-4">
-          <Link
-            href="/form/male"
-            className="card flex flex-col items-center gap-2 py-8 transition hover:border-rose hover:shadow-lg"
-          >
-            <PersonIcon className="h-12 w-12 text-rose" />
-            <span className="text-xl font-semibold text-roseDark">בחור</span>
-          </Link>
-          <Link
-            href="/form/female"
-            className="card flex flex-col items-center gap-2 py-8 transition hover:border-rose hover:shadow-lg"
-          >
-            <PersonIcon className="h-12 w-12 text-rose" />
-            <span className="text-xl font-semibold text-roseDark">בחורה</span>
-          </Link>
-        </div>
-
-        <div className="mt-8">
-          <Link
-            href="/admin"
-            className="text-sm text-ink/50 underline-offset-4 hover:underline"
-          >
-            כניסת צוות
-          </Link>
-        </div>
+        <h1 className="text-xl font-extrabold leading-snug text-ink">
+          מאגר כרטיסיות בחורים
+          <br />
+          לנשים בלבד
+        </h1>
+        <p className="mt-2 text-sm text-muted">מרחב מכובד, פרטי ומלווה אישית לכל אורך הדרך</p>
       </div>
-    </main>
+
+      <div className="mb-8 flex flex-col gap-3">
+        <Link href="/profiles" className="btn-pink w-full py-3.5 text-base">
+          הרשמה לאתר
+        </Link>
+        <Link href="/profiles" className="btn-outline w-full py-3.5 text-base">
+          כבר יש לי חשבון
+        </Link>
+        <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white py-3.5 text-sm font-semibold text-ink transition active:scale-95">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-blue-500 shadow">
+            G
+          </span>
+          כניסה עם גוגל
+        </button>
+      </div>
+
+      <div className="mb-8 grid grid-cols-2 gap-3">
+        <InfoBox icon={ShieldCheck} title="פרסום מסודר" text="כל כרטיסייה נבדקת ומאושרת לפני עלייה למאגר" />
+        <InfoBox icon={Sparkles} title="בהזמנה בלבד" text="גישה מלאה לאחר אימות ואישור הצטרפות" />
+      </div>
+
+      <div className="mb-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-ink">סיפורי הצלחה</h2>
+          <span className="text-xs text-muted">מדברים מהלב</span>
+        </div>
+        <SuccessCarousel />
+      </div>
+
+      <Link
+        href="/profiles"
+        className="mt-auto flex items-center justify-center gap-1.5 pt-4 text-xs font-medium text-muted"
+      >
+        כניסת צוות ניהול
+        <ChevronLeft size={14} />
+      </Link>
+    </div>
+  );
+}
+
+function InfoBox({ icon: Icon, title, text }) {
+  return (
+    <div className="card p-4">
+      <Icon size={20} className="mb-2 text-bordeaux-500" />
+      <p className="mb-1 text-sm font-bold text-ink">{title}</p>
+      <p className="text-xs leading-relaxed text-muted">{text}</p>
+    </div>
   );
 }
