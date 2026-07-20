@@ -6,7 +6,7 @@ import DateField from "./DateField";
 import { toHebrewDate } from "../lib/dates";
 import { addTask, updateTask, deleteTask } from "../lib/store";
 
-export default function TasksPanel({ data, user }) {
+export default function TasksPanel({ data, user, readOnly = false }) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -27,19 +27,19 @@ export default function TasksPanel({ data, user }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-roseDark">📝 משימות</h2>
-        <button className="btn-soft" onClick={() => setAdding(true)}>+ משימה חדשה</button>
+        {!readOnly && <button className="btn-soft" onClick={() => setAdding(true)}>+ משימה חדשה</button>}
       </div>
 
       {visibleTasks.length === 0 && <p className="text-sm text-ink/50">אין משימות עדיין.</p>}
 
       {visibleTasks.map((t) => (
         <div key={t.id} className="card flex items-center gap-3">
-          <input type="checkbox" checked={t.done} onChange={(e) => updateTask(t.id, { done: e.target.checked })} className="h-5 w-5 accent-rose" />
+          <input type="checkbox" checked={t.done} disabled={readOnly} onChange={(e) => updateTask(t.id, { done: e.target.checked })} className="h-5 w-5 accent-rose" />
           <div className="flex-1">
             <p className={`font-medium ${t.done ? "text-ink/40 line-through" : "text-ink"}`}>{t.title}</p>
             {t.dueDate && <p className="text-xs text-ink/50">תאריך יעד: {t.dueDate} · {toHebrewDate(t.dueDate)}</p>}
           </div>
-          <button className="text-roseDark" onClick={() => deleteTask(t.id)}>🗑️</button>
+          {!readOnly && <button className="text-roseDark" onClick={() => deleteTask(t.id)}>🗑️</button>}
         </div>
       ))}
 

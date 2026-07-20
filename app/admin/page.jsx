@@ -9,6 +9,7 @@ import MatchesPanel from "../../components/MatchesPanel";
 import TasksPanel from "../../components/TasksPanel";
 import QuestionsEditor from "../../components/QuestionsEditor";
 import RepsManager from "../../components/RepsManager";
+import LogViewer from "../../components/LogViewer";
 import PopupEditor from "../../components/PopupEditor";
 import PopupNotice from "../../components/PopupNotice";
 import Logo from "../../components/Logo";
@@ -76,14 +77,26 @@ export default function AdminPage() {
   const isAdmin = user.role === "admin";
   const isViewer = user.role === "viewer";
   const myRep = data.reps.find((r) => r.id === user.repId);
+  // נציג בחופשה / קריאה בלבד - יכול לצפות אך לא לבצע פעולות
+  const myReadOnly = !!myRep?.readOnly;
 
-  // כל הנציגים רואים את כל המועמדים (כדי לאפשר התאמות).
-  // מידע רגיש, בירורים וטלפון אישי מוסתרים ממי שאינו הנציג של המועמד או המנהלת.
   const repsToShow = data.reps;
 
-  // כרטיס מוגבל - גלוי למנהלת, לצופה, ולנציג המשויך (מוסתר משאר הנציגים).
+  // מועמד "מנוהל על ידי" - הנציג המשויך, או נציג/ה שמכסה את הנציג המשויך (Co-Management).
+  const managedByMe = (c) => {
+    if (!user.repId) return false;
+    if (c.assignedRep === user.repId) return true;
+    const owner = data.reps.find((r) => r.id === c.assignedRep);
+    return !!(owner && (owner.coveredBy || []).includes(user.repId));
+  };
+  // צפייה במידע רגיש/הקלטות: מנהלת, צופה, או מי שמנהל את המועמד (כולל מחליף/ה)
+  const canSeeSensitiveOf = (c) => isAdmin || isViewer || managedByMe(c);
+  // עריכה/כתיבה: מנהלת, או מי שמנהל את המועמד ואינו במצב קריאה בלבד
+  const canEditOf = (c) => isAdmin || (managedByMe(c) && !myReadOnly);
+
+  // כרטיס מוגבל - גלוי למנהלת, לצופה, ולנציג המנהל (כולל מחליף/ה).
   const canViewCandidate = (c) =>
-    !c.restricted || isAdmin || isViewer || c.assignedRep === user.repId;
+    !c.restricted || isAdmin || isViewer || managedByMe(c);
 
   // חיפוש מועמדים לפי שם, מקום, עדה, עיסוק או טלפון.
   const term = search.trim().toLowerCase();
@@ -132,6 +145,11 @@ export default function AdminPage() {
                 👁️ מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
               </div>
             )}
+            {myReadOnly && (
+              <div className="rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
+                🔒 את/ה במצב חופשה / קריאה בלבד — אפשר לצפות אך לא לבצע פעולות.
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               <input
                 className="field-input flex-1"
@@ -140,7 +158,7 @@ export default function AdminPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              {!isViewer && (
+              {!isViewer && !myReadOnly && (
                 <button className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
               )}
             </div>
@@ -163,8 +181,8 @@ export default function AdminPage() {
                         candidate={c}
                         openQuestions={data.openQuestions}
                         reps={data.reps}
-                        canEdit={isAdmin || c.assignedRep === user.repId}
-                        canSeeSensitive={isAdmin || c.assignedRep === user.repId}
+                        canEdit={canEditOf(c)}
+                        canSeeSensitive={canSeeSensitiveOf(c)}
                         currentRepId={user.repId || "admin"}
                         onUpdate={updateCandidate}
                         onDelete={isAdmin ? deleteCandidate : undefined}
@@ -201,11 +219,12 @@ export default function AdminPage() {
           </div>
         )}
 
-        {tab === "matches" && <MatchesPanel data={data} user={user} />}
-        {tab === "tasks" && <TasksPanel data={data} user={user} />}
+        {tab === "matches" && <MatchesPanel data={data} user={user} readOnly={myReadOnly} />}
+        {tab === "tasks" && <TasksPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "manage" && isAdmin && (
           <div className="space-y-8">
             <RepsManager data={data} />
+            <LogViewer data={data} />
             <PopupEditor data={data} />
             <QuestionsEditor data={data} />
           </div>

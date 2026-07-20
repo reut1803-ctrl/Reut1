@@ -117,7 +117,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
               )}
 
               {/* הקלטות קוליות - כל הצוות מאזין; רק הנציג של המועמד והמנהלת מקליטים/מוחקים */}
-              <Recorder candidateId={candidate.id} repId={currentRepId} canRecord={canSeeSensitive} />
+              <Recorder candidateId={candidate.id} repId={currentRepId} canRecord={canEdit} />
 
               {/* ייצוא נתונים */}
               <div className="flex flex-wrap gap-2 border-t border-sand pt-3">

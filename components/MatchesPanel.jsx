@@ -13,14 +13,21 @@ const STATUS_OPTIONS = [
   "נסגר",
 ];
 
-export default function MatchesPanel({ data, user }) {
+export default function MatchesPanel({ data, user, readOnly = false }) {
   const [adding, setAdding] = useState(false);
   const [manId, setManId] = useState("");
   const [womanId, setWomanId] = useState("");
 
-  // כרטיס מוגבל אינו נבחר להתאמה ע"י מי שאינו המנהלת/הנציג המשויך
+  // האם הנציג הנוכחי מנהל את המועמד (משויך ישירות או מכסה את הנציג המשויך)
+  const managedByMe = (c) => {
+    if (!user.repId) return false;
+    if (c.assignedRep === user.repId) return true;
+    const owner = data.reps.find((r) => r.id === c.assignedRep);
+    return !!(owner && (owner.coveredBy || []).includes(user.repId));
+  };
+  // כרטיס מוגבל אינו נבחר להתאמה ע"י מי שאינו המנהלת/הנציג המנהל
   const canView = (c) =>
-    !c.restricted || user.role === "admin" || c.assignedRep === user.repId;
+    !c.restricted || user.role === "admin" || managedByMe(c);
   const men = data.candidates.filter((c) => c.gender === "male" && canView(c));
   const women = data.candidates.filter((c) => c.gender === "female" && canView(c));
   const repById = (id) => data.reps.find((r) => r.id === id);
@@ -31,7 +38,7 @@ export default function MatchesPanel({ data, user }) {
     if (user.role === "admin") return true;
     const man = candById(m.manId);
     const woman = candById(m.womanId);
-    return man?.assignedRep === user.repId || woman?.assignedRep === user.repId;
+    return (man && managedByMe(man)) || (woman && managedByMe(woman));
   });
 
   function create() {
@@ -64,7 +71,7 @@ export default function MatchesPanel({ data, user }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-roseDark">💞 התאמות</h2>
-        <button className="btn-soft" onClick={() => setAdding(true)}>+ התאמה חדשה</button>
+        {!readOnly && <button className="btn-soft" onClick={() => setAdding(true)}>+ התאמה חדשה</button>}
       </div>
 
       {visibleMatches.length === 0 && <p className="text-sm text-ink/50">אין התאמות עדיין.</p>}
@@ -90,6 +97,7 @@ export default function MatchesPanel({ data, user }) {
               <select
                 className="field-input !py-1.5"
                 value={m.status}
+                disabled={readOnly}
                 onChange={(e) => updateMatch(m.id, { status: e.target.value })}
               >
                 {STATUS_OPTIONS.map((s) => (
@@ -115,7 +123,7 @@ export default function MatchesPanel({ data, user }) {
                     {ci.phone && (
                       <a className="btn-soft" href={`tel:${ci.phone}`}>📞 שיחה</a>
                     )}
-                    <button className="btn-soft text-roseDark" onClick={() => { if (confirm("למחוק התאמה?")) deleteMatch(m.id); }}>🗑️</button>
+                    {!readOnly && <button className="btn-soft text-roseDark" onClick={() => { if (confirm("למחוק התאמה?")) deleteMatch(m.id); }}>🗑️</button>}
                   </div>
                 </div>
               );
