@@ -16,6 +16,10 @@ export default function RepsManager({ data }) {
   const [viewerPw, setViewerPw] = useState(data.viewerPassword || "");
   const [viewerSaved, setViewerSaved] = useState(false);
 
+  // הנציג/ה שפתוח/ה כרגע לעריכה (הרשימה מכווצת כברירת מחדל כדי לא להעמיס)
+  const [openRepId, setOpenRepId] = useState(null);
+  const [showReps, setShowReps] = useState(false);
+
   function add() {
     if (!name.trim()) return;
     addRep({ name, institution, phone, password: password || "1234" });
@@ -69,9 +73,18 @@ export default function RepsManager({ data }) {
         <button className="btn-primary w-full" onClick={add}>הוספת נציג</button>
       </div>
 
-      <p className="pt-2 text-sm font-semibold text-ink/70">נציגים קיימים:</p>
-      {data.reps.map((r) => {
+      {/* רשימת הנציגים - מכווצת כברירת מחדל, נפתחת בלחיצה */}
+      <button
+        className="flex w-full items-center justify-between rounded-2xl bg-blush/60 px-4 py-3 text-right"
+        onClick={() => setShowReps((v) => !v)}
+      >
+        <span className="text-base font-bold text-roseDark">נציגים קיימים ({data.reps.length})</span>
+        <span className="text-sm text-ink/50">{showReps ? "▲ הסתרה" : "▼ הצגה"}</span>
+      </button>
+
+      {showReps && data.reps.map((r) => {
         const coveredBy = r.coveredBy || [];
+        const isOpen = openRepId === r.id;
         function toggleCover(otherId, checked) {
           const next = checked
             ? [...coveredBy, otherId]
@@ -80,6 +93,23 @@ export default function RepsManager({ data }) {
         }
         return (
           <div key={r.id} className="card space-y-2">
+            {/* שורת כותרת מכווצת - לחיצה פותחת/סוגרת את פרטי הנציג/ה */}
+            <button
+              className="flex w-full items-center justify-between text-right"
+              onClick={() => setOpenRepId(isOpen ? null : r.id)}
+            >
+              <span className="min-w-0">
+                <span className="block truncate font-bold text-ink">
+                  {r.name}
+                  {r.readOnly && <span className="mr-1 text-xs font-normal text-amber-700"> · 🔒 בחופשה</span>}
+                </span>
+                <span className="block truncate text-xs text-ink/50">{r.institution}</span>
+              </span>
+              <span className="shrink-0 text-sm text-ink/40">{isOpen ? "▲" : "▼"}</span>
+            </button>
+
+            {isOpen && (
+            <div className="space-y-2 border-t border-sand pt-2">
             <input className="field-input" value={r.name} onChange={(e) => updateRep(r.id, { name: e.target.value })} placeholder="שם הנציג" />
             <input className="field-input" value={r.institution || ""} onChange={(e) => updateRep(r.id, { institution: e.target.value })} placeholder="שם המוסד" />
             <input className="field-input" value={r.phone || ""} onChange={(e) => updateRep(r.id, { phone: e.target.value })} placeholder="טלפון (לשיחה / SMS / וואטסאפ)" />
@@ -114,6 +144,8 @@ export default function RepsManager({ data }) {
             </div>
 
             <button className="btn-soft text-roseDark" onClick={() => { if (confirm(`למחוק את הנציג "${r.name}"?\nהמועמדים שלו לא יימחקו — הם יעברו ל"ללא שיוך נציג".`)) deleteRep(r.id); }}>🗑️ מחיקה</button>
+            </div>
+            )}
           </div>
         );
       })}
