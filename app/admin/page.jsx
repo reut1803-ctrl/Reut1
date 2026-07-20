@@ -14,7 +14,7 @@ import PopupEditor from "../../components/PopupEditor";
 import PopupNotice from "../../components/PopupNotice";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
-import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate } from "../../lib/store";
+import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep } from "../../lib/store";
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -80,7 +80,9 @@ export default function AdminPage() {
   // נציג בחופשה / קריאה בלבד - יכול לצפות אך לא לבצע פעולות
   const myReadOnly = !!myRep?.readOnly;
 
-  const repsToShow = data.reps;
+  // נציגים בחופשה (readOnly) "נקברים" - לא מוצגים כמדור נפרד, והמועמדים שלהם עוברים למחליף/ה.
+  const visibleReps = data.reps.filter((r) => !r.readOnly);
+  const visibleRepIds = new Set(visibleReps.map((r) => r.id));
 
   // מועמד "מנוהל על ידי" - הנציג המשויך, או נציג/ה שמכסה את הנציג המשויך (Co-Management).
   const managedByMe = (c) => {
@@ -105,11 +107,11 @@ export default function AdminPage() {
     [c.fullName, c.location, c.community, c.work, c.degree, c.phone]
       .some((v) => (v || "").toString().toLowerCase().includes(term));
 
-  // "ללא שיוך" כולל גם מועמדים ששויכו לנציג שנמחק (כדי שלא ייעלמו לעולם).
-  const repIds = new Set(data.reps.map((r) => r.id));
-  const unassigned = data.candidates.filter(
-    (c) => (!c.assignedRep || !repIds.has(c.assignedRep)) && matchSearch(c) && canViewCandidate(c)
-  );
+  // "ללא שיוך" כולל מועמדים ללא נציג, נציג שנמחק, או נציג בחופשה ללא מחליף/ה (כדי שלא ייעלמו לעולם).
+  const unassigned = data.candidates.filter((c) => {
+    const dr = displayRep(c, data.reps);
+    return (!dr || !visibleRepIds.has(dr.id)) && matchSearch(c) && canViewCandidate(c);
+  });
 
   async function handleAdd(form) {
     // נציג שמוסיף מועמד - משויך אליו אוטומטית אם לא נבחר אחרת.
@@ -163,8 +165,8 @@ export default function AdminPage() {
               )}
             </div>
 
-            {repsToShow.map((rep) => {
-              const cands = data.candidates.filter((c) => c.assignedRep === rep.id && matchSearch(c) && canViewCandidate(c));
+            {visibleReps.map((rep) => {
+              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && matchSearch(c) && canViewCandidate(c));
               if (term && cands.length === 0) return null;
               return (
                 <section key={rep.id} className="space-y-3">

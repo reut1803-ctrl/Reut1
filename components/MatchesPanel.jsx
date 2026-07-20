@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Modal from "./Modal";
-import { addMatch, updateMatch, deleteMatch } from "../lib/store";
+import { addMatch, updateMatch, deleteMatch, displayRep } from "../lib/store";
 
 const STATUS_OPTIONS = [
   "נוצרה התאמה",
@@ -53,14 +53,15 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
     const man = candById(match.manId);
     const woman = candById(match.womanId);
     // הנציג של "שלי" הוא הנציג הנוכחי; הצד השני הוא הנציג של המועמד האחר.
-    let myCand, otherCand, otherRepId;
+    let myCand, otherCand;
     if (user.role === "rep") {
-      if (man?.assignedRep === user.repId) { myCand = man; otherCand = woman; otherRepId = woman?.assignedRep; }
-      else { myCand = woman; otherCand = man; otherRepId = man?.assignedRep; }
+      if (managedByMe(man)) { myCand = man; otherCand = woman; }
+      else { myCand = woman; otherCand = man; }
     } else {
-      myCand = man; otherCand = woman; otherRepId = woman?.assignedRep;
+      myCand = man; otherCand = woman;
     }
-    const otherRep = repById(otherRepId);
+    // הנציג/ה של הצד השני - כולל ניתוב למחליף/ה אם המשויך/ת בחופשה.
+    const otherRep = displayRep(otherCand, data.reps);
     const repName = otherRep ? otherRep.name : "נציג";
     const text = `היי ${repName}, ראיתי במערכת התאמה פוטנציאלית בין ${myCand?.fullName || ""} לבין ${otherCand?.fullName || ""}. נוכל לדבר על זה?`;
     const phone = (otherRep?.phone || "").replace(/[^0-9]/g, "");

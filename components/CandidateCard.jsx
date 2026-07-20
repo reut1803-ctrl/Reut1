@@ -7,6 +7,7 @@ import Recorder from "./Recorder";
 import { PERSONAL_FIELDS, genderLabel } from "../lib/questions";
 import { toHebrewDate } from "../lib/dates";
 import { copyClean, downloadPdf } from "../lib/export";
+import { displayRep } from "../lib/store";
 
 // כרטיס מועמד: תצוגה מקוצרת + תצוגה מורחבת (טופס מלא).
 export default function CandidateCard({ candidate, openQuestions, reps, canEdit, canSeeSensitive, currentRepId, onUpdate, onDelete }) {
@@ -14,7 +15,8 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const rep = reps.find((r) => r.id === candidate.assignedRep);
+  // הנציג/ה המוצג/ת ליצירת קשר: מחליף/ה אם המשויך/ת בחופשה, אחרת המשויך/ת.
+  const rep = displayRep(candidate, reps);
 
   async function handleCopy() {
     await copyClean(candidate, openQuestions, canSeeSensitive);
