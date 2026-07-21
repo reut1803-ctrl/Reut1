@@ -1,12 +1,8 @@
 "use client";
 
 import { Heart, MessageCircle, Share2 } from "lucide-react";
-import { useAppStore } from "@/lib/store";
 
-export default function ProfileCard({ candidate, onReadMore, matchScore }) {
-  const isFavorite = useAppStore((s) => s.favorites.includes(candidate.id));
-  const toggleFavorite = useAppStore((s) => s.toggleFavorite);
-
+export default function ProfileCard({ candidate, onReadMore, matchScore, isFavorite, onToggleFavorite }) {
   const shareText = encodeURIComponent(
     `שווה להסתכל על ההצעה של ${candidate.name} במאגר`
   );
@@ -32,7 +28,7 @@ export default function ProfileCard({ candidate, onReadMore, matchScore }) {
             )}
           </div>
           <button
-            onClick={() => toggleFavorite(candidate.id)}
+            onClick={() => onToggleFavorite(candidate.id)}
             aria-label="הוספה למועדפים"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-soft transition active:scale-90"
           >

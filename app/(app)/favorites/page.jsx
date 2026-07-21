@@ -1,23 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Heart } from "lucide-react";
 import { useAppStore } from "@/lib/store";
-import { getCandidates } from "@/lib/data";
+import { useAuth } from "@/lib/supabase/AuthProvider";
+import { fetchCandidates } from "@/lib/queries";
+import { useFavorites } from "@/lib/useFavorites";
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import ProfileCard from "@/components/profiles/ProfileCard";
 import ProfileDetailSheet from "@/components/profiles/ProfileDetailSheet";
 
 export default function FavoritesPage() {
+  const { supabase } = useAuth();
   const gender = useAppStore((s) => s.gender);
-  const favorites = useAppStore((s) => s.favorites);
   const [selected, setSelected] = useState(null);
+  const [allCandidates, setAllCandidates] = useState([]);
+  const { favoriteIds, toggleFavorite } = useFavorites();
 
   useScrollRestoration(`favorites-${gender}`);
 
+  useEffect(() => {
+    fetchCandidates(supabase, gender).then(setAllCandidates);
+  }, [supabase, gender]);
+
   const favoriteCandidates = useMemo(
-    () => getCandidates(gender).filter((c) => favorites.includes(c.id)),
-    [gender, favorites]
+    () => allCandidates.filter((c) => favoriteIds.includes(c.id)),
+    [allCandidates, favoriteIds]
   );
 
   return (
@@ -32,7 +40,13 @@ export default function FavoritesPage() {
         </div>
       ) : (
         favoriteCandidates.map((candidate) => (
-          <ProfileCard key={candidate.id} candidate={candidate} onReadMore={setSelected} />
+          <ProfileCard
+            key={candidate.id}
+            candidate={candidate}
+            onReadMore={setSelected}
+            isFavorite={favoriteIds.includes(candidate.id)}
+            onToggleFavorite={toggleFavorite}
+          />
         ))
       )}
 

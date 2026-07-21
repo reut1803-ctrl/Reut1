@@ -1,12 +1,30 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import Sheet from "@/components/ui/Sheet";
-import { useAppStore } from "@/lib/store";
+import { useAuth } from "@/lib/supabase/AuthProvider";
+import { fetchNotifications, markAllNotificationsRead } from "@/lib/queries";
 
-export default function NotificationsSheet({ open, onClose }) {
-  const notifications = useAppStore((s) => s.notifications);
-  const markAllRead = useAppStore((s) => s.markAllNotificationsRead);
+export default function NotificationsSheet({ open, onClose, onUnreadChange }) {
+  const { supabase, user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    const data = await fetchNotifications(supabase, user.id);
+    setNotifications(data);
+    onUnreadChange?.(data.filter((n) => !n.read).length);
+  }, [supabase, user, onUnreadChange]);
+
+  useEffect(() => {
+    if (open) load();
+  }, [open, load]);
+
+  const markAllRead = async () => {
+    await markAllNotificationsRead(supabase, user.id);
+    load();
+  };
 
   return (
     <Sheet open={open} onClose={onClose} title="מרכז ההתראות">
@@ -39,7 +57,7 @@ export default function NotificationsSheet({ open, onClose }) {
               />
               <div>
                 <p className="text-sm font-medium text-ink">{n.text}</p>
-                <p className="mt-0.5 text-xs text-muted">{n.time}</p>
+                <p className="mt-0.5 text-xs text-muted">{new Date(n.created_at).toLocaleString("he-IL")}</p>
               </div>
             </li>
           ))}

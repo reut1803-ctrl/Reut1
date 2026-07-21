@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { Heart, Sparkles, LayoutGrid } from "lucide-react";
-import { useAppStore } from "@/lib/store";
+import { useFavorites } from "@/lib/useFavorites";
 
 const TABS = [
   { href: "/favorites", label: "מועדפים", icon: Heart },
@@ -14,7 +14,8 @@ const TABS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const favoritesCount = useAppStore((s) => s.favorites.length);
+  const { favoriteIds } = useFavorites();
+  const favoritesCount = favoriteIds.length;
 
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-black/5 bg-surface/95 backdrop-blur">

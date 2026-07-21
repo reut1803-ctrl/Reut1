@@ -1,10 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
-import { ShieldCheck, Sparkles, ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ShieldCheck, Sparkles } from "lucide-react";
 import SuccessCarousel from "@/components/landing/SuccessCarousel";
+import { useAuth } from "@/lib/supabase/AuthProvider";
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) router.replace("/profiles");
+  }, [loading, user, router]);
+
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col px-6 pb-10 pt-12">
       <div className="mb-8 flex flex-col items-center text-center">
@@ -20,18 +30,12 @@ export default function LandingPage() {
       </div>
 
       <div className="mb-8 flex flex-col gap-3">
-        <Link href="/profiles" className="btn-pink w-full py-3.5 text-base">
+        <Link href="/signup" className="btn-pink w-full py-3.5 text-base">
           הרשמה לאתר
         </Link>
-        <Link href="/profiles" className="btn-outline w-full py-3.5 text-base">
+        <Link href="/login" className="btn-outline w-full py-3.5 text-base">
           כבר יש לי חשבון
         </Link>
-        <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white py-3.5 text-sm font-semibold text-ink transition active:scale-95">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-blue-500 shadow">
-            G
-          </span>
-          כניסה עם גוגל
-        </button>
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-3">
@@ -46,14 +50,6 @@ export default function LandingPage() {
         </div>
         <SuccessCarousel />
       </div>
-
-      <Link
-        href="/profiles"
-        className="mt-auto flex items-center justify-center gap-1.5 pt-4 text-xs font-medium text-muted"
-      >
-        כניסת צוות ניהול
-        <ChevronLeft size={14} />
-      </Link>
     </div>
   );
 }

@@ -1,18 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mic, Square, Play, PenLine, MessageCircle, Share2 } from "lucide-react";
 import Sheet from "@/components/ui/Sheet";
-import { useAppStore } from "@/lib/store";
+import { useAuth } from "@/lib/supabase/AuthProvider";
+import { fetchInternalNote, fetchPipelineStatus, setPipelineStatus } from "@/lib/queries";
 import { PIPELINE_STATUSES } from "@/lib/data";
 
 export default function ProfileDetailSheet({ candidate, onClose }) {
-  const role = useAppStore((s) => s.role);
+  const { supabase, user, profile } = useAuth();
   const [recording, setRecording] = useState(false);
   const [status, setStatus] = useState(PIPELINE_STATUSES[0]);
+  const [internalNote, setInternalNote] = useState(null);
+
+  const role = profile?.role;
+  const canSeeInternal = role === "staff" || role === "admin";
+
+  useEffect(() => {
+    if (!candidate || !canSeeInternal) return;
+    fetchInternalNote(supabase, candidate.id).then(setInternalNote);
+    fetchPipelineStatus(supabase, candidate.id).then(setStatus);
+  }, [supabase, candidate, canSeeInternal]);
 
   if (!candidate) return null;
-  const canSeeInternal = role === "staff" || role === "admin";
+
+  const updateStatus = async (s) => {
+    setStatus(s);
+    await setPipelineStatus(supabase, candidate.id, s, user.id);
+  };
 
   return (
     <Sheet open={!!candidate} onClose={onClose} title={candidate.name} maxHeight="90vh">
@@ -77,7 +92,7 @@ export default function ProfileDetailSheet({ candidate, onClose }) {
                   <p className="text-xs font-medium text-ink">
                     {recording ? "מקליטה כעת..." : "לחצי כדי להתחיל הקלטה"}
                   </p>
-                  <p className="text-[11px] text-muted">2 הקלטות שמורות בתיק</p>
+                  <p className="text-[11px] text-muted">שמירת הקלטות בענן תתווסף בשלב הבא</p>
                 </div>
                 <button className="text-muted">
                   <Play size={16} />
@@ -87,20 +102,20 @@ export default function ProfileDetailSheet({ candidate, onClose }) {
 
             <div className="mb-4">
               <p className="mb-2 text-xs font-semibold text-muted">הערת נציג/ה</p>
-              <p className="rounded-2xl bg-white p-3 text-sm text-ink">{candidate.staffNote}</p>
+              <p className="rounded-2xl bg-white p-3 text-sm text-ink">{internalNote?.staff_note || "אין הערה עדיין"}</p>
             </div>
 
             {role === "admin" && (
               <div>
                 <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-muted">
                   <PenLine size={13} />
-                  פתק אישי של רעות
+                  פתק אישי
                 </p>
                 <div
                   className="rounded-2xl border border-dashed border-bordeaux-200 bg-[#FFFDF6] p-3 text-sm text-bordeaux-500"
                   style={{ fontFamily: "cursive" }}
                 >
-                  {candidate.adminNote || "אין הערה עדיין - הקלידי כדי להוסיף פתק אישי."}
+                  {internalNote?.admin_note || "אין הערה עדיין - הקלידי כדי להוסיף פתק אישי."}
                 </div>
               </div>
             )}
@@ -112,7 +127,7 @@ export default function ProfileDetailSheet({ candidate, onClose }) {
                   {PIPELINE_STATUSES.map((s) => (
                     <button
                       key={s}
-                      onClick={() => setStatus(s)}
+                      onClick={() => updateStatus(s)}
                       className={`pill border transition ${
                         status === s
                           ? "border-mint-500 bg-mint-500 text-white"

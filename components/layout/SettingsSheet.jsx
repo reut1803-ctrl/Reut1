@@ -3,15 +3,35 @@
 import { useState } from "react";
 import { Bell, Trash2, ShieldCheck, Eye, Users } from "lucide-react";
 import Sheet from "@/components/ui/Sheet";
-import { useAppStore } from "@/lib/store";
-import { ADMIN } from "@/lib/data";
+import { useAuth } from "@/lib/supabase/AuthProvider";
+
+const ROLE_META = {
+  admin: { label: "מנהלת המערכת", icon: ShieldCheck },
+  staff: { label: "צוות", icon: Users },
+  viewer: { label: "צופה", icon: Eye },
+};
 
 export default function SettingsSheet({ open, onClose }) {
-  const notificationsEnabled = useAppStore((s) => s.notificationsEnabled);
-  const setNotificationsEnabled = useAppStore((s) => s.setNotificationsEnabled);
-  const role = useAppStore((s) => s.role);
-  const setRole = useAppStore((s) => s.setRole);
+  const { supabase, user, profile, signOut, refreshProfile } = useAuth();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteRequested, setDeleteRequested] = useState(false);
+
+  const notificationsEnabled = profile?.notifications_enabled ?? true;
+  const roleMeta = ROLE_META[profile?.role] ?? ROLE_META.viewer;
+  const RoleIcon = roleMeta.icon;
+
+  const toggleNotifications = async () => {
+    await supabase.from("profiles").update({ notifications_enabled: !notificationsEnabled }).eq("id", user.id);
+    refreshProfile();
+  };
+
+  const requestDeletion = async () => {
+    setDeleteRequested(true);
+    setTimeout(async () => {
+      await signOut();
+      onClose();
+    }, 2000);
+  };
 
   return (
     <Sheet open={open} onClose={onClose} title="הגדרות וחשבון">
@@ -19,10 +39,21 @@ export default function SettingsSheet({ open, onClose }) {
         <section>
           <h3 className="mb-3 text-sm font-semibold text-muted">המידע שלי</h3>
           <div className="card divide-y divide-black/5 p-0">
-            <InfoRow label="שם מלא" value={ADMIN.fullName} />
-            <InfoRow label="אימייל" value={ADMIN.email} />
-            <InfoRow label="טלפון" value={ADMIN.phone} />
-            <InfoRow label="תאריך הצטרפות" value={ADMIN.joinedAt} />
+            <InfoRow label="שם מלא" value={profile?.full_name || "-"} />
+            <InfoRow label="אימייל" value={user?.email} />
+            <InfoRow label="טלפון" value={profile?.phone || "-"} />
+            <InfoRow
+              label="תאריך הצטרפות"
+              value={user?.created_at ? new Date(user.created_at).toLocaleDateString("he-IL") : "-"}
+            />
+          </div>
+        </section>
+
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-muted">רמת הרשאה</h3>
+          <div className="card flex items-center gap-2 p-4">
+            <RoleIcon size={18} className="text-bordeaux-500" />
+            <span className="text-sm font-semibold text-ink">{roleMeta.label}</span>
           </div>
         </section>
 
@@ -34,7 +65,7 @@ export default function SettingsSheet({ open, onClose }) {
               קבלת התראות פעילה
             </div>
             <button
-              onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+              onClick={toggleNotifications}
               className={`h-7 w-12 rounded-full transition ${notificationsEnabled ? "bg-mint-500" : "bg-black/10"}`}
             >
               <span
@@ -47,22 +78,12 @@ export default function SettingsSheet({ open, onClose }) {
         </section>
 
         <section>
-          <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted">
-            מצב תצוגה להדגמה
-          </h3>
-          <p className="mb-2 text-xs text-muted">
-            לצורך ההדגמה בלבד — בעתיד ההרשאה תיקבע אוטומטית לפי ההתחברות שלך.
-          </p>
-          <div className="flex gap-2">
-            <RoleButton icon={Eye} label="צופה" active={role === "viewer"} onClick={() => setRole("viewer")} />
-            <RoleButton icon={Users} label="צוות" active={role === "staff"} onClick={() => setRole("staff")} />
-            <RoleButton icon={ShieldCheck} label="מנהלת" active={role === "admin"} onClick={() => setRole("admin")} />
-          </div>
-        </section>
-
-        <section>
           <h3 className="mb-3 text-sm font-semibold text-red-500">מחיקת חשבון</h3>
-          {!confirmDelete ? (
+          {deleteRequested ? (
+            <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              הבקשה נקלטה - מתנתקת כעת. מנהלת המערכת תשלים את מחיקת החשבון.
+            </div>
+          ) : !confirmDelete ? (
             <button
               onClick={() => setConfirmDelete(true)}
               className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition active:scale-95"
@@ -72,7 +93,7 @@ export default function SettingsSheet({ open, onClose }) {
             </button>
           ) : (
             <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              <p className="mb-3 font-medium">פעולה זו תמחק את החשבון לצמיתות. להמשיך?</p>
+              <p className="mb-3 font-medium">בקשת המחיקה תישלח למנהלת המערכת ותנותקי מהחשבון. להמשיך?</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirmDelete(false)}
@@ -80,7 +101,7 @@ export default function SettingsSheet({ open, onClose }) {
                 >
                   ביטול
                 </button>
-                <button className="flex-1 rounded-xl bg-red-600 py-2 font-semibold text-white">
+                <button onClick={requestDeletion} className="flex-1 rounded-xl bg-red-600 py-2 font-semibold text-white">
                   אישור מחיקה
                 </button>
               </div>
@@ -98,19 +119,5 @@ function InfoRow({ label, value }) {
       <span className="text-xs text-muted">{label}</span>
       <span className="text-sm font-medium text-ink">{value}</span>
     </div>
-  );
-}
-
-function RoleButton({ icon: Icon, label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex flex-1 flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 text-xs font-semibold transition ${
-        active ? "border-bordeaux-500 bg-bordeaux-50 text-bordeaux-500" : "border-black/10 text-muted"
-      }`}
-    >
-      <Icon size={18} />
-      {label}
-    </button>
   );
 }

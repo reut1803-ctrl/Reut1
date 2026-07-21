@@ -1,4 +1,5 @@
 import "./globals.css";
+import { AuthProvider } from "@/lib/supabase/AuthProvider";
 
 export const metadata = {
   title: "מאגר שידוכים",
@@ -17,7 +18,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="he" dir="rtl">
       <body className="min-h-screen bg-bg font-sans text-ink antialiased">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

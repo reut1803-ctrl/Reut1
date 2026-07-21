@@ -1,23 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Bell, Settings, RefreshCw, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/lib/store";
-import { ADMIN } from "@/lib/data";
+import { useAuth } from "@/lib/supabase/AuthProvider";
+import { fetchNotifications } from "@/lib/queries";
 import GenderSwitch from "./GenderSwitch";
 import NotificationsSheet from "./NotificationsSheet";
 import SettingsSheet from "./SettingsSheet";
 
+const ROLE_LABEL = { admin: "מנהלת המערכת", staff: "צוות", viewer: "צופה" };
+
 export default function TopNavbar() {
   const router = useRouter();
+  const { supabase, user, profile, signOut } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const unread = useAppStore((s) => s.notifications.filter((n) => !n.read).length);
-  const role = useAppStore((s) => s.role);
+  const [unread, setUnread] = useState(0);
 
-  const roleLabel = { admin: "מנהלת המערכת", staff: "צוות", viewer: "צופה" }[role];
-  const displayName = role === "admin" ? ADMIN.name : role === "staff" ? "רוני" : "אורחת";
+  const loadUnread = useCallback(async () => {
+    if (!user) return;
+    const data = await fetchNotifications(supabase, user.id);
+    setUnread(data.filter((n) => !n.read).length);
+  }, [supabase, user]);
+
+  useEffect(() => {
+    loadUnread();
+  }, [loadUnread]);
+
+  const logout = async () => {
+    await signOut();
+    router.push("/");
+  };
+
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "";
+  const roleLabel = ROLE_LABEL[profile?.role] ?? "";
 
   return (
     <>
@@ -52,7 +69,7 @@ export default function TopNavbar() {
             <IconButton onClick={() => setSettingsOpen(true)} label="הגדרות">
               <Settings size={18} />
             </IconButton>
-            <IconButton onClick={() => router.push("/")} label="התנתקות">
+            <IconButton onClick={logout} label="התנתקות">
               <LogOut size={18} />
             </IconButton>
           </div>
@@ -63,7 +80,14 @@ export default function TopNavbar() {
         </div>
       </header>
 
-      <NotificationsSheet open={notifOpen} onClose={() => setNotifOpen(false)} />
+      <NotificationsSheet
+        open={notifOpen}
+        onClose={() => {
+          setNotifOpen(false);
+          loadUnread();
+        }}
+        onUnreadChange={setUnread}
+      />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );

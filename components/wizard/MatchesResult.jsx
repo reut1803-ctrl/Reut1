@@ -1,20 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RefreshCcw, Sparkles } from "lucide-react";
 import { useAppStore } from "@/lib/store";
-import { getCandidates } from "@/lib/data";
+import { useAuth } from "@/lib/supabase/AuthProvider";
+import { fetchCandidates } from "@/lib/queries";
+import { useFavorites } from "@/lib/useFavorites";
 import { getMatches } from "@/lib/matchEngine";
 import ProfileCard from "@/components/profiles/ProfileCard";
 import ProfileDetailSheet from "@/components/profiles/ProfileDetailSheet";
 
-export default function MatchesResult() {
+export default function MatchesResult({ answers, onRestart }) {
+  const { supabase } = useAuth();
   const gender = useAppStore((s) => s.gender);
-  const answers = useAppStore((s) => s.wizardAnswers);
-  const restartWizard = useAppStore((s) => s.restartWizard);
   const [selected, setSelected] = useState(null);
+  const [allCandidates, setAllCandidates] = useState([]);
+  const { favoriteIds, toggleFavorite } = useFavorites();
 
-  const matches = useMemo(() => getMatches(getCandidates(gender), answers, 70), [gender, answers]);
+  useEffect(() => {
+    fetchCandidates(supabase, gender).then(setAllCandidates);
+  }, [supabase, gender]);
+
+  const matches = useMemo(() => getMatches(allCandidates, answers, 70), [allCandidates, answers]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -30,7 +37,7 @@ export default function MatchesResult() {
         </div>
       </div>
 
-      <button onClick={restartWizard} className="btn-outline w-full">
+      <button onClick={onRestart} className="btn-outline w-full">
         <RefreshCcw size={15} />
         עדכון העדפות
       </button>
@@ -47,6 +54,8 @@ export default function MatchesResult() {
             candidate={candidate}
             matchScore={candidate.matchScore}
             onReadMore={setSelected}
+            isFavorite={favoriteIds.includes(candidate.id)}
+            onToggleFavorite={toggleFavorite}
           />
         ))
       )}

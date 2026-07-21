@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { WIZARD_STEPS } from "@/lib/wizardOptions";
@@ -24,12 +25,10 @@ const STEP_COMPONENTS = [
   StepTraits,
 ];
 
-export default function Wizard() {
+export default function Wizard({ initialAnswers, onFinish }) {
   const wizardStep = useAppStore((s) => s.wizardStep);
   const setWizardStep = useAppStore((s) => s.setWizardStep);
-  const answers = useAppStore((s) => s.wizardAnswers);
-  const updateAnswer = useAppStore((s) => s.updateWizardAnswer);
-  const completeWizard = useAppStore((s) => s.completeWizard);
+  const [answers, setAnswers] = useState(initialAnswers);
 
   const stepMeta = WIZARD_STEPS[wizardStep];
   const StepComponent = STEP_COMPONENTS[wizardStep];
@@ -37,8 +36,10 @@ export default function Wizard() {
 
   const isLast = wizardStep === WIZARD_STEPS.length - 1;
 
+  const updateAnswer = (value) => setAnswers((a) => ({ ...a, [key]: value }));
+
   const next = () => {
-    if (isLast) completeWizard();
+    if (isLast) onFinish(answers);
     else setWizardStep(wizardStep + 1);
   };
   const prev = () => {
@@ -52,7 +53,7 @@ export default function Wizard() {
       <div>
         <h2 className="mb-1 text-lg font-bold text-ink">{stepMeta.title}</h2>
         <p className="mb-4 text-sm text-muted">{stepMeta.subtitle}</p>
-        <StepComponent value={answers[key]} onChange={(v) => updateAnswer(key, v)} />
+        <StepComponent value={answers[key]} onChange={updateAnswer} />
       </div>
 
       <div className="flex gap-2 pt-2">

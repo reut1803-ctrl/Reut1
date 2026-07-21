@@ -1,0 +1,146 @@
+-- מאגר שידוכים - סכמת מסד נתונים והרשאות (RLS)
+-- מריצים את כל הקובץ הזה פעם אחת ב-Supabase: SQL Editor -> New query -> להדביק -> Run
+
+-- ---------- פרופילי משתמשים ----------
+create table if not exists profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  full_name text,
+  phone text,
+  role text not null default 'viewer' check (role in ('admin', 'staff', 'viewer')),
+  notifications_enabled boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+alter table profiles enable row level security;
+
+-- פונקציית עזר שבודקת אם המשתמש הנוכחי הוא מנהלת/צוות, בלי לגרום לרקורסיה ב-RLS
+create or replace function auth_role() returns text
+language sql security definer stable
+set search_path = public
+as $$
+  select role from profiles where id = auth.uid()
+$$;
+
+create policy "profiles_select_own_or_staff" on profiles
+  for select using (id = auth.uid() or auth_role() in ('staff', 'admin'));
+
+create policy "profiles_update_own" on profiles
+  for update using (id = auth.uid());
+
+-- יצירת פרופיל אוטומטית בהרשמה חדשה (ברירת מחדל: צופה)
+create or replace function handle_new_user() returns trigger
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, full_name, role)
+  values (new.id, new.raw_user_meta_data ->> 'full_name', 'viewer');
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure handle_new_user();
+
+-- ---------- מועמדים/כרטיסיות ----------
+create table if not exists candidates (
+  id uuid primary key default gen_random_uuid(),
+  gender text not null check (gender in ('male', 'female')),
+  name text not null,
+  age int not null,
+  height int not null,
+  region text not null,
+  religious_level text not null,
+  study text,
+  smoking text,
+  traits text[] not null default '{}',
+  about text,
+  image_url text,
+  is_new boolean not null default false,
+  is_previous boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table candidates enable row level security;
+
+create policy "candidates_select_authenticated" on candidates
+  for select using (auth.uid() is not null);
+
+create policy "candidates_write_admin" on candidates
+  for all using (auth_role() = 'admin') with check (auth_role() = 'admin');
+
+-- מידע רגיש (הערות פנימיות) - גלוי רק לצוות ולמנהלת, לא לצופות
+create table if not exists candidate_internal_notes (
+  candidate_id uuid primary key references candidates (id) on delete cascade,
+  staff_note text,
+  admin_note text,
+  updated_at timestamptz not null default now()
+);
+
+alter table candidate_internal_notes enable row level security;
+
+create policy "internal_notes_staff_admin" on candidate_internal_notes
+  for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));
+
+-- ---------- מועדפים ----------
+create table if not exists favorites (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  candidate_id uuid not null references candidates (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, candidate_id)
+);
+
+alter table favorites enable row level security;
+
+create policy "favorites_own" on favorites
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ---------- התראות ----------
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  text text not null,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table notifications enable row level security;
+
+create policy "notifications_own" on notifications
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ---------- שאלון ההתאמות ----------
+create table if not exists wizard_answers (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  age_min int not null default 21,
+  age_max int not null default 30,
+  height_min int not null default 160,
+  height_max int not null default 185,
+  torah_level text not null default 'לא משנה',
+  regions text[] not null default '{}',
+  education text not null default 'לא משנה',
+  smoking text not null default 'לא משנה',
+  traits text[] not null default '{}',
+  completed boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+alter table wizard_answers enable row level security;
+
+create policy "wizard_answers_own" on wizard_answers
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ---------- משפך התאמות (Pipeline) - לצוות ולמנהלת בלבד ----------
+create table if not exists pipeline_status (
+  candidate_id uuid primary key references candidates (id) on delete cascade,
+  status text not null default 'בבירורים',
+  updated_by uuid references auth.users (id),
+  updated_at timestamptz not null default now()
+);
+
+alter table pipeline_status enable row level security;
+
+create policy "pipeline_status_staff_admin" on pipeline_status
+  for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));

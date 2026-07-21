@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { useAppStore } from "@/lib/store";
-import { getCandidates } from "@/lib/data";
+import { useAuth } from "@/lib/supabase/AuthProvider";
+import { fetchCandidates } from "@/lib/queries";
+import { useFavorites } from "@/lib/useFavorites";
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import FeedTabs from "@/components/profiles/FeedTabs";
 import FilterSheet from "@/components/profiles/FilterSheet";
@@ -11,17 +13,27 @@ import ProfileCard from "@/components/profiles/ProfileCard";
 import ProfileDetailSheet from "@/components/profiles/ProfileDetailSheet";
 
 export default function ProfilesPage() {
+  const { supabase } = useAuth();
   const gender = useAppStore((s) => s.gender);
   const feedTab = useAppStore((s) => s.feedTab);
   const filters = useAppStore((s) => s.filters);
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [allCandidates, setAllCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { favoriteIds, toggleFavorite } = useFavorites();
 
   useScrollRestoration(`profiles-${gender}-${feedTab}`);
 
+  useEffect(() => {
+    setLoading(true);
+    fetchCandidates(supabase, gender)
+      .then(setAllCandidates)
+      .finally(() => setLoading(false));
+  }, [supabase, gender]);
+
   const candidates = useMemo(() => {
-    const all = getCandidates(gender);
-    const byTab = all.filter((c) => (feedTab === "new" ? c.isNew || !c.isPrevious : c.isPrevious));
+    const byTab = allCandidates.filter((c) => (feedTab === "new" ? c.isNew || !c.isPrevious : c.isPrevious));
     return byTab.filter((c) => {
       if (filters.search && !c.name.includes(filters.search)) return false;
       if (c.age < filters.ageRange[0] || c.age > filters.ageRange[1]) return false;
@@ -30,7 +42,7 @@ export default function ProfilesPage() {
       if (filters.regions.length > 0 && !filters.regions.includes(c.region)) return false;
       return true;
     });
-  }, [gender, feedTab, filters]);
+  }, [allCandidates, feedTab, filters]);
 
   const activeFilterCount =
     (filters.search ? 1 : 0) +
@@ -57,7 +69,9 @@ export default function ProfilesPage() {
         </button>
       </div>
 
-      {candidates.length === 0 ? (
+      {loading ? (
+        <div className="card py-14 text-center text-sm text-muted">טוען מועמדים...</div>
+      ) : candidates.length === 0 ? (
         <div className="card flex flex-col items-center gap-2 py-14 text-center">
           <p className="text-sm font-medium text-ink">לא נמצאו תוצאות</p>
           <p className="text-xs text-muted">נסי לשנות את הסינון או לחפש שם אחר</p>
@@ -65,7 +79,13 @@ export default function ProfilesPage() {
       ) : (
         <div className="flex flex-col gap-4">
           {candidates.map((candidate) => (
-            <ProfileCard key={candidate.id} candidate={candidate} onReadMore={setSelected} />
+            <ProfileCard
+              key={candidate.id}
+              candidate={candidate}
+              onReadMore={setSelected}
+              isFavorite={favoriteIds.includes(candidate.id)}
+              onToggleFavorite={toggleFavorite}
+            />
           ))}
         </div>
       )}
