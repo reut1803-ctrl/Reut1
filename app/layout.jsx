@@ -6,6 +6,10 @@ export const metadata = {
   description: "מערכת CRM לניהול מאגר שידוכים",
 };
 
+// האפליקציה מותאמת אישית לכל משתמשת ותלויה בהתחברות בזמן אמת,
+// לכן אין טעם לנסות "לקפוא" אותה כדפי HTML סטטיים מראש.
+export const dynamic = "force-dynamic";
+
 export const viewport = {
   width: "device-width",
   initialScale: 1,

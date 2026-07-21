@@ -5,7 +5,28 @@ import { createClient } from "./client";
 
 const AuthContext = createContext(null);
 
+const isSupabaseConfigured = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 export function AuthProvider({ children }) {
+  if (!isSupabaseConfigured) return <SupabaseNotConfigured />;
+  return <AuthProviderInner>{children}</AuthProviderInner>;
+}
+
+function SupabaseNotConfigured() {
+  return (
+    <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-3 px-6 text-center">
+      <p className="text-lg font-bold text-ink">חסר חיבור למסד הנתונים</p>
+      <p className="text-sm leading-relaxed text-muted">
+        צריך להגדיר את משתני הסביבה NEXT_PUBLIC_SUPABASE_URL ו-NEXT_PUBLIC_SUPABASE_ANON_KEY
+        (בקובץ .env.local בפיתוח, ובהגדרות הפרויקט ב-Vercel בייצור).
+      </p>
+    </div>
+  );
+}
+
+function AuthProviderInner({ children }) {
   const [supabase] = useState(() => createClient());
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
