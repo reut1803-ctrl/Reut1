@@ -21,9 +21,11 @@ as $$
   select role from profiles where id = auth.uid()
 $$;
 
+drop policy if exists "profiles_select_own_or_staff" on profiles;
 create policy "profiles_select_own_or_staff" on profiles
   for select using (id = auth.uid() or auth_role() in ('staff', 'admin'));
 
+drop policy if exists "profiles_update_own" on profiles;
 create policy "profiles_update_own" on profiles
   for update using (id = auth.uid());
 
@@ -65,9 +67,11 @@ create table if not exists candidates (
 
 alter table candidates enable row level security;
 
+drop policy if exists "candidates_select_authenticated" on candidates;
 create policy "candidates_select_authenticated" on candidates
   for select using (auth.uid() is not null);
 
+drop policy if exists "candidates_write_admin" on candidates;
 create policy "candidates_write_admin" on candidates
   for all using (auth_role() = 'admin') with check (auth_role() = 'admin');
 
@@ -81,6 +85,7 @@ create table if not exists candidate_internal_notes (
 
 alter table candidate_internal_notes enable row level security;
 
+drop policy if exists "internal_notes_staff_admin" on candidate_internal_notes;
 create policy "internal_notes_staff_admin" on candidate_internal_notes
   for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));
 
@@ -94,6 +99,7 @@ create table if not exists favorites (
 
 alter table favorites enable row level security;
 
+drop policy if exists "favorites_own" on favorites;
 create policy "favorites_own" on favorites
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
@@ -108,6 +114,7 @@ create table if not exists notifications (
 
 alter table notifications enable row level security;
 
+drop policy if exists "notifications_own" on notifications;
 create policy "notifications_own" on notifications
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
@@ -129,6 +136,7 @@ create table if not exists wizard_answers (
 
 alter table wizard_answers enable row level security;
 
+drop policy if exists "wizard_answers_own" on wizard_answers;
 create policy "wizard_answers_own" on wizard_answers
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
@@ -142,5 +150,6 @@ create table if not exists pipeline_status (
 
 alter table pipeline_status enable row level security;
 
+drop policy if exists "pipeline_status_staff_admin" on pipeline_status;
 create policy "pipeline_status_staff_admin" on pipeline_status
   for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));
