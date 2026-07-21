@@ -26,7 +26,10 @@ export default function AuthForm({ mode }) {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: fullName } },
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
       setLoading(false);
       if (error) return setError(error.message);

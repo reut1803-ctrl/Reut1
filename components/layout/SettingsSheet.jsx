@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Trash2, ShieldCheck, Eye, Users } from "lucide-react";
+import { Bell, Trash2, ShieldCheck, Eye, Users, UsersRound } from "lucide-react";
 import Sheet from "@/components/ui/Sheet";
 import { useAuth } from "@/lib/supabase/AuthProvider";
+import TeamManagementSheet from "./TeamManagementSheet";
 
 const ROLE_META = {
   admin: { label: "מנהלת המערכת", icon: ShieldCheck },
@@ -15,6 +16,7 @@ export default function SettingsSheet({ open, onClose }) {
   const { supabase, user, profile, signOut, refreshProfile } = useAuth();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteRequested, setDeleteRequested] = useState(false);
+  const [teamOpen, setTeamOpen] = useState(false);
 
   const notificationsEnabled = profile?.notifications_enabled ?? true;
   const roleMeta = ROLE_META[profile?.role] ?? ROLE_META.viewer;
@@ -77,6 +79,19 @@ export default function SettingsSheet({ open, onClose }) {
           </div>
         </section>
 
+        {profile?.role === "admin" && (
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-muted">ניהול</h3>
+            <button
+              onClick={() => setTeamOpen(true)}
+              className="flex w-full items-center gap-2 rounded-2xl bg-bordeaux-50 px-4 py-3 text-sm font-semibold text-bordeaux-500 transition active:scale-95"
+            >
+              <UsersRound size={18} />
+              ניהול צוות והרשאות
+            </button>
+          </section>
+        )}
+
         <section>
           <h3 className="mb-3 text-sm font-semibold text-red-500">מחיקת חשבון</h3>
           {deleteRequested ? (
@@ -109,6 +124,8 @@ export default function SettingsSheet({ open, onClose }) {
           )}
         </section>
       </div>
+
+      <TeamManagementSheet open={teamOpen} onClose={() => setTeamOpen(false)} />
     </Sheet>
   );
 }

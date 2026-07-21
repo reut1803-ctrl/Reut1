@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { SlidersHorizontal, Plus } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { useAuth } from "@/lib/supabase/AuthProvider";
 import { fetchCandidates } from "@/lib/queries";
@@ -11,13 +11,15 @@ import FeedTabs from "@/components/profiles/FeedTabs";
 import FilterSheet from "@/components/profiles/FilterSheet";
 import ProfileCard from "@/components/profiles/ProfileCard";
 import ProfileDetailSheet from "@/components/profiles/ProfileDetailSheet";
+import AddCandidateSheet from "@/components/profiles/AddCandidateSheet";
 
 export default function ProfilesPage() {
-  const { supabase } = useAuth();
+  const { supabase, profile } = useAuth();
   const gender = useAppStore((s) => s.gender);
   const feedTab = useAppStore((s) => s.feedTab);
   const filters = useAppStore((s) => s.filters);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [allCandidates, setAllCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,12 +27,16 @@ export default function ProfilesPage() {
 
   useScrollRestoration(`profiles-${gender}-${feedTab}`);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     fetchCandidates(supabase, gender)
       .then(setAllCandidates)
       .finally(() => setLoading(false));
   }, [supabase, gender]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const candidates = useMemo(() => {
     const byTab = allCandidates.filter((c) => (feedTab === "new" ? c.isNew || !c.isPrevious : c.isPrevious));
@@ -90,8 +96,19 @@ export default function ProfilesPage() {
         </div>
       )}
 
+      {profile?.role === "admin" && (
+        <button
+          onClick={() => setAddOpen(true)}
+          aria-label="הוספת מועמד/ת"
+          className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-pink-500 text-white shadow-float transition active:scale-90"
+        >
+          <Plus size={26} />
+        </button>
+      )}
+
       <FilterSheet open={filterOpen} onClose={() => setFilterOpen(false)} />
       <ProfileDetailSheet candidate={selected} onClose={() => setSelected(null)} />
+      <AddCandidateSheet open={addOpen} onClose={() => setAddOpen(false)} gender={gender} onCreated={load} />
     </div>
   );
 }

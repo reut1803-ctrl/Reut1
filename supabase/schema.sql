@@ -4,12 +4,15 @@
 -- ---------- פרופילי משתמשים ----------
 create table if not exists profiles (
   id uuid primary key references auth.users (id) on delete cascade,
+  email text,
   full_name text,
   phone text,
   role text not null default 'viewer' check (role in ('admin', 'staff', 'viewer')),
   notifications_enabled boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table profiles add column if not exists email text;
 
 alter table profiles enable row level security;
 
@@ -29,17 +32,27 @@ drop policy if exists "profiles_update_own" on profiles;
 create policy "profiles_update_own" on profiles
   for update using (id = auth.uid());
 
+-- מנהלת יכולה לעדכן את הפרופיל וההרשאה של כל אחת (מסך "ניהול צוות")
+drop policy if exists "profiles_update_admin" on profiles;
+create policy "profiles_update_admin" on profiles
+  for update using (auth_role() = 'admin') with check (auth_role() = 'admin');
+
 -- יצירת פרופיל אוטומטית בהרשמה חדשה (ברירת מחדל: צופה)
 create or replace function handle_new_user() returns trigger
 language plpgsql security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name, role)
-  values (new.id, new.raw_user_meta_data ->> 'full_name', 'viewer');
+  insert into public.profiles (id, email, full_name, role)
+  values (new.id, new.email, new.raw_user_meta_data ->> 'full_name', 'viewer');
   return new;
 end;
 $$;
+
+-- למשתמשות שכבר נרשמו לפני העדכון הזה - למלא את האימייל שלהן
+update profiles set email = auth.users.email
+from auth.users
+where profiles.id = auth.users.id and profiles.email is null;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -153,3 +166,16 @@ alter table pipeline_status enable row level security;
 drop policy if exists "pipeline_status_staff_admin" on pipeline_status;
 create policy "pipeline_status_staff_admin" on pipeline_status
   for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));
+
+-- ---------- תמונות מועמדים (Storage) ----------
+insert into storage.buckets (id, name, public)
+values ('candidate-photos', 'candidate-photos', true)
+on conflict (id) do nothing;
+
+drop policy if exists "candidate_photos_public_read" on storage.objects;
+create policy "candidate_photos_public_read" on storage.objects
+  for select using (bucket_id = 'candidate-photos');
+
+drop policy if exists "candidate_photos_admin_write" on storage.objects;
+create policy "candidate_photos_admin_write" on storage.objects
+  for insert with check (bucket_id = 'candidate-photos' and auth_role() = 'admin');
