@@ -12,6 +12,7 @@ import FilterSheet from "@/components/profiles/FilterSheet";
 import ProfileCard from "@/components/profiles/ProfileCard";
 import ProfileDetailSheet from "@/components/profiles/ProfileDetailSheet";
 import AddCandidateSheet from "@/components/profiles/AddCandidateSheet";
+import DailyTipWidget from "@/components/layout/DailyTipWidget";
 
 export default function ProfilesPage() {
   const { supabase, profile } = useAuth();
@@ -59,6 +60,8 @@ export default function ProfilesPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <DailyTipWidget />
+
       <div className="flex items-center gap-2">
         <FeedTabs />
         <button

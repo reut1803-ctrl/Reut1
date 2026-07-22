@@ -9,10 +9,12 @@ create table if not exists profiles (
   phone text,
   role text not null default 'viewer' check (role in ('admin', 'staff', 'viewer')),
   notifications_enabled boolean not null default true,
+  terms_accepted boolean not null default false,
   created_at timestamptz not null default now()
 );
 
 alter table profiles add column if not exists email text;
+alter table profiles add column if not exists terms_accepted boolean not null default false;
 
 alter table profiles enable row level security;
 
@@ -204,6 +206,34 @@ alter table tasks enable row level security;
 drop policy if exists "tasks_staff_admin" on tasks;
 create policy "tasks_staff_admin" on tasks
   for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));
+
+-- ---------- הגדרות כלליות (תקנון + טיפ יומי) - שורה יחידה ----------
+create table if not exists app_settings (
+  id int primary key default 1,
+  terms_text text not null default 'נהלי עבודה וסודיות - צוות השידוכים
+
+1. כל מידע אישי על מועמדים ומועמדות (שמות, טלפונים, תמונות, הקלטות) חסוי ואסור בשיתוף מחוץ לצוות.
+2. אין להעביר פרטי קשר של מועמד/ת לצד שלישי ללא אישור מפורש מהמנהלת.
+3. יש לעדכן סטטוס ותיעוד בכרטיס המועמד/ת באופן שוטף ומיידי לאחר כל שיחה או פגישה.
+4. פנייה למועמדים תיעשה בשפה מכבדת ורגישה בכל שלב בתהליך.
+
+באישור התיבה למטה, הנך מאשר/ת שקראת את הנהלים ומתחייב/ת לפעול לפיהם.',
+  daily_tip text not null default 'טיפ השבוע: בשיחה ראשונה עם מועמד/ת חדש/ה, התחילו בשאלות פתוחות על התחביבים והיומיום שלהם לפני שעוברים לשאלות על ציפיות מבן/בת הזוג - זה בונה אמון ומוציא תשובות אמיתיות יותר.',
+  updated_at timestamptz not null default now(),
+  check (id = 1)
+);
+
+insert into app_settings (id) values (1) on conflict (id) do nothing;
+
+alter table app_settings enable row level security;
+
+drop policy if exists "app_settings_select_staff_admin" on app_settings;
+create policy "app_settings_select_staff_admin" on app_settings
+  for select using (auth_role() in ('staff', 'admin'));
+
+drop policy if exists "app_settings_update_admin" on app_settings;
+create policy "app_settings_update_admin" on app_settings
+  for update using (auth_role() = 'admin') with check (auth_role() = 'admin');
 
 -- ---------- תמונות מועמדים (Storage) ----------
 insert into storage.buckets (id, name, public)

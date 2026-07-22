@@ -4,6 +4,19 @@ import { AuthProvider } from "@/lib/supabase/AuthProvider";
 export const metadata = {
   title: "מאגר שידוכים",
   description: "מערכת CRM לניהול מאגר שידוכים",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "מאגר שידוכים",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 // האפליקציה מותאמת אישית לכל משתמשת ותלויה בהתחברות בזמן אמת,
