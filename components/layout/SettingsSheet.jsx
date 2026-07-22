@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Trash2, ShieldCheck, Eye, Users, UsersRound } from "lucide-react";
+import Link from "next/link";
+import { Bell, Trash2, ShieldCheck, Eye, Users, UsersRound, Heart, ListTodo, BarChart3 } from "lucide-react";
 import Sheet from "@/components/ui/Sheet";
 import { useAuth } from "@/lib/supabase/AuthProvider";
 import TeamManagementSheet from "./TeamManagementSheet";
@@ -79,16 +80,46 @@ export default function SettingsSheet({ open, onClose }) {
           </div>
         </section>
 
-        {profile?.role === "admin" && (
+        {(profile?.role === "staff" || profile?.role === "admin") && (
           <section>
             <h3 className="mb-3 text-sm font-semibold text-muted">ניהול</h3>
-            <button
-              onClick={() => setTeamOpen(true)}
-              className="flex w-full items-center gap-2 rounded-2xl bg-bordeaux-50 px-4 py-3 text-sm font-semibold text-bordeaux-500 transition active:scale-95"
-            >
-              <UsersRound size={18} />
-              ניהול צוות והרשאות
-            </button>
+            <div className="flex flex-col gap-2">
+              {profile?.role === "admin" && (
+                <Link
+                  href="/dashboard"
+                  onClick={onClose}
+                  className="flex w-full items-center gap-2 rounded-2xl bg-bordeaux-50 px-4 py-3 text-sm font-semibold text-bordeaux-500 transition active:scale-95"
+                >
+                  <BarChart3 size={18} />
+                  דאשבורד נתונים
+                </Link>
+              )}
+              <Link
+                href="/proposals"
+                onClick={onClose}
+                className="flex w-full items-center gap-2 rounded-2xl bg-bordeaux-50 px-4 py-3 text-sm font-semibold text-bordeaux-500 transition active:scale-95"
+              >
+                <Heart size={18} />
+                הצעות שידוך
+              </Link>
+              <Link
+                href="/tasks"
+                onClick={onClose}
+                className="flex w-full items-center gap-2 rounded-2xl bg-bordeaux-50 px-4 py-3 text-sm font-semibold text-bordeaux-500 transition active:scale-95"
+              >
+                <ListTodo size={18} />
+                משימות
+              </Link>
+              {profile?.role === "admin" && (
+                <button
+                  onClick={() => setTeamOpen(true)}
+                  className="flex w-full items-center gap-2 rounded-2xl bg-bordeaux-50 px-4 py-3 text-sm font-semibold text-bordeaux-500 transition active:scale-95"
+                >
+                  <UsersRound size={18} />
+                  ניהול צוות והרשאות
+                </button>
+              )}
+            </div>
           </section>
         )}
 

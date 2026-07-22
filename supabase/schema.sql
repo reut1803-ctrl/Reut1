@@ -167,6 +167,44 @@ drop policy if exists "pipeline_status_staff_admin" on pipeline_status;
 create policy "pipeline_status_staff_admin" on pipeline_status
   for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));
 
+-- ---------- הצעות שידוך (התאמה בין שני מועמדים) - לצוות ולמנהלת בלבד ----------
+create table if not exists proposals (
+  id uuid primary key default gen_random_uuid(),
+  male_candidate_id uuid not null references candidates (id) on delete cascade,
+  female_candidate_id uuid not null references candidates (id) on delete cascade,
+  rationale text,
+  stage text not null default 'בבירורים',
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table proposals enable row level security;
+
+drop policy if exists "proposals_staff_admin" on proposals;
+create policy "proposals_staff_admin" on proposals
+  for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));
+
+-- ---------- משימות צוות - לצוות ולמנהלת בלבד ----------
+create table if not exists tasks (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  due_date date,
+  done boolean not null default false,
+  assignee_id uuid references auth.users (id),
+  candidate_id uuid references candidates (id) on delete set null,
+  created_by uuid references auth.users (id),
+  pushed_by_admin boolean not null default false,
+  seen_by_assignee boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table tasks enable row level security;
+
+drop policy if exists "tasks_staff_admin" on tasks;
+create policy "tasks_staff_admin" on tasks
+  for all using (auth_role() in ('staff', 'admin')) with check (auth_role() in ('staff', 'admin'));
+
 -- ---------- תמונות מועמדים (Storage) ----------
 insert into storage.buckets (id, name, public)
 values ('candidate-photos', 'candidate-photos', true)
