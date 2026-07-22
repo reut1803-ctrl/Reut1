@@ -70,6 +70,8 @@ export default function AdminPage() {
   const [tab, setTab] = useState("candidates");
   const [addingCand, setAddingCand] = useState(false);
   const [search, setSearch] = useState("");
+  // לשונית משנה במסך המועמדים: "new" = 5 החדשים; "previous" = השאר. ברירת מחדל - חדשים.
+  const [candView, setCandView] = useState("new");
 
   if (!data) return <main className="p-8 text-center text-ink/50">טוען…</main>;
   if (!user) return <Login data={data} />;
@@ -96,9 +98,12 @@ export default function AdminPage() {
   // עריכה/כתיבה: מנהלת, או מי שמנהל את המועמד ואינו במצב קריאה בלבד
   const canEditOf = (c) => isAdmin || (managedByMe(c) && !myReadOnly);
 
-  // כרטיס מוגבל - גלוי למנהלת, לצופה, ולנציג המנהל (כולל מחליף/ה).
+  // הסתרה נקודתית - כרטיס שהמנהלת הסתירה מנציג/ה מסוים/ת (חל על נציגים בלבד).
+  const hiddenFromMe = (c) =>
+    !isAdmin && !isViewer && !!user.repId && (c.hiddenFrom || []).includes(user.repId);
+  // כרטיס מוגבל - גלוי למנהלת, לצופה, ולנציג המנהל (כולל מחליף/ה). כרטיס מוסתר נקודתית - לא נראה לאותו/ה נציג/ה.
   const canViewCandidate = (c) =>
-    !c.restricted || isAdmin || isViewer || managedByMe(c);
+    !hiddenFromMe(c) && (!c.restricted || isAdmin || isViewer || managedByMe(c));
 
   // חיפוש מועמדים לפי שם, מקום, עדה, עיסוק או טלפון.
   const term = search.trim().toLowerCase();
@@ -107,10 +112,18 @@ export default function AdminPage() {
     [c.fullName, c.location, c.community, c.work, c.degree, c.phone]
       .some((v) => (v || "").toString().toLowerCase().includes(term));
 
+  // 5 המועמדים האחרונים שהצטרפו (מבין אלה שהמשתמש/ת רשאי/ת לראות) - לפי מועד ההוספה.
+  const viewableSorted = data.candidates
+    .filter((c) => canViewCandidate(c))
+    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  const newIds = new Set(viewableSorted.slice(0, 5).map((c) => c.id));
+  const newCands = viewableSorted.filter((c) => newIds.has(c.id) && matchSearch(c));
+
   // "ללא שיוך" כולל מועמדים ללא נציג, נציג שנמחק, או נציג בחופשה ללא מחליף/ה (כדי שלא ייעלמו לעולם).
+  // בתצוגת "קודמים" מחריגים את 5 החדשים (הם מופיעים בלשונית "חדשים").
   const unassigned = data.candidates.filter((c) => {
     const dr = displayRep(c, data.reps);
-    return (!dr || !visibleRepIds.has(dr.id)) && matchSearch(c) && canViewCandidate(c);
+    return (!dr || !visibleRepIds.has(dr.id)) && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c);
   });
 
   async function handleAdd(form) {
@@ -165,8 +178,47 @@ export default function AdminPage() {
               )}
             </div>
 
-            {visibleReps.map((rep) => {
-              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && matchSearch(c) && canViewCandidate(c));
+            {/* לשוניות משנה: מועמדים חדשים / מועמדים קודמים */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCandView("new")}
+                className={`flex-1 rounded-2xl px-4 py-2.5 text-sm font-bold transition ${candView === "new" ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
+              >✨ מועמדים חדשים</button>
+              <button
+                onClick={() => setCandView("previous")}
+                className={`flex-1 rounded-2xl px-4 py-2.5 text-sm font-bold transition ${candView === "previous" ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
+              >מועמדים קודמים</button>
+            </div>
+
+            {/* מועמדים חדשים - 5 האחרונים שהצטרפו (בחיפוש מציגים את כל התוצאות) */}
+            {candView === "new" && !term && (
+              <section className="space-y-3">
+                <div className="rounded-2xl bg-blush px-4 py-2">
+                  <p className="font-bold text-roseDark">✨ המצטרפים החדשים</p>
+                  <p className="text-xs text-ink/60">חמשת המועמדים האחרונים שהצטרפו למאגר.</p>
+                </div>
+                {newCands.length === 0 && <p className="text-sm text-ink/40">אין מועמדים חדשים.</p>}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {newCands.map((c) => (
+                    <CandidateCard
+                      key={c.id}
+                      candidate={c}
+                      openQuestions={data.openQuestions}
+                      reps={data.reps}
+                      canEdit={canEditOf(c)}
+                      canSeeSensitive={canSeeSensitiveOf(c)}
+                      currentRepId={user.repId || "admin"}
+                      isAdmin={isAdmin}
+                      onUpdate={updateCandidate}
+                      onDelete={isAdmin ? deleteCandidate : undefined}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {(candView === "previous" || term) && visibleReps.map((rep) => {
+              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c));
               if (term && cands.length === 0) return null;
               return (
                 <section key={rep.id} className="space-y-3">
@@ -186,6 +238,7 @@ export default function AdminPage() {
                         canEdit={canEditOf(c)}
                         canSeeSensitive={canSeeSensitiveOf(c)}
                         currentRepId={user.repId || "admin"}
+                        isAdmin={isAdmin}
                         onUpdate={updateCandidate}
                         onDelete={isAdmin ? deleteCandidate : undefined}
                       />
@@ -195,8 +248,8 @@ export default function AdminPage() {
               );
             })}
 
-            {/* מועמדים ללא שיוך נציג */}
-            {unassigned.length > 0 && (
+            {/* מועמדים ללא שיוך נציג (בתצוגת קודמים או בחיפוש) */}
+            {(candView === "previous" || term) && unassigned.length > 0 && (
               <section className="space-y-3">
                 <div className="rounded-2xl bg-sand px-4 py-2">
                   <p className="font-bold text-ink">ללא שיוך נציג</p>
@@ -211,6 +264,7 @@ export default function AdminPage() {
                       canEdit={isAdmin}
                       canSeeSensitive={isAdmin}
                       currentRepId={user.repId || "admin"}
+                      isAdmin={isAdmin}
                       onUpdate={updateCandidate}
                       onDelete={isAdmin ? deleteCandidate : undefined}
                     />
@@ -238,6 +292,7 @@ export default function AdminPage() {
           <CandidateEditor
             openQuestions={data.openQuestions}
             reps={data.reps}
+            isAdmin={isAdmin}
             onSave={handleAdd}
             onCancel={() => setAddingCand(false)}
           />

@@ -10,7 +10,7 @@ import { copyClean, downloadPdf } from "../lib/export";
 import { displayRep } from "../lib/store";
 
 // כרטיס מועמד: תצוגה מקוצרת + תצוגה מורחבת (טופס מלא).
-export default function CandidateCard({ candidate, openQuestions, reps, canEdit, canSeeSensitive, currentRepId, onUpdate, onDelete }) {
+export default function CandidateCard({ candidate, openQuestions, reps, canEdit, canSeeSensitive, currentRepId, isAdmin = false, onUpdate, onDelete }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -53,6 +53,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
               initial={candidate}
               openQuestions={openQuestions}
               reps={reps}
+              isAdmin={isAdmin}
               onSave={(form) => onUpdate(candidate.id, form).then(() => setEditing(false))}
               onCancel={() => setEditing(false)}
             />

@@ -6,7 +6,7 @@ import { compressImage } from "../lib/image";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 
 // טופס להוספה/עריכה של מועמד על ידי נציג או מנהלת.
-export default function CandidateEditor({ initial, openQuestions, reps, onSave, onCancel }) {
+export default function CandidateEditor({ initial, openQuestions, reps, onSave, onCancel, isAdmin = false }) {
   // טיוטה אוטומטית - גם למועמד חדש וגם בעריכת מועמד קיים (לכל מועמד מפתח נפרד)
   const isNew = !initial || !initial.id;
   const DRAFT_KEY = isNew ? "shidduch_draft_admin_new" : `shidduch_draft_edit_${initial.id}`;
@@ -33,6 +33,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       assignedRep: "",
       sensitiveInfo: "",
       restricted: false,
+      hiddenFrom: [],
       ...initial,
     };
     if (typeof window !== "undefined") {
@@ -181,6 +182,34 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
           <input type="checkbox" className="h-5 w-5 accent-rose" checked={!!form.restricted} onChange={(e) => set("restricted", e.target.checked)} />
           <span className="text-sm font-medium text-ink">🔒 כרטיס מוגבל — גלוי רק למנהלת ולנציג המשויך (מוסתר משאר הנציגים)</span>
         </label>
+
+        {/* הסתרה נקודתית מנציגים מסוימים - למנהלת בלבד */}
+        {isAdmin && (
+          <div className="rounded-2xl bg-amber-50 p-3">
+            <p className="mb-1 text-sm font-semibold text-amber-800">🙈 הסתרה מנציגים מסוימים (למנהלת בלבד)</p>
+            <p className="mb-2 text-xs text-ink/60">סמני נציגים שמהם כרטיס זה יוסתר (למשל מטעמי רגישות או קרבת משפחה). שאר הנציגים ימשיכו לראות כרגיל.</p>
+            <div className="space-y-1">
+              {(reps || []).map((r) => {
+                const hidden = (form.hiddenFrom || []).includes(r.id);
+                return (
+                  <label key={r.id} className="flex items-center gap-2 text-sm text-ink/80">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-rose"
+                      checked={hidden}
+                      onChange={(e) => {
+                        const cur = form.hiddenFrom || [];
+                        set("hiddenFrom", e.target.checked ? [...cur, r.id] : cur.filter((id) => id !== r.id));
+                      }}
+                    />
+                    {r.name}
+                  </label>
+                );
+              })}
+              {(reps || []).length === 0 && <p className="text-xs text-ink/40">אין נציגים.</p>}
+            </div>
+          </div>
+        )}
       </section>
 
       <div className="flex gap-3">
