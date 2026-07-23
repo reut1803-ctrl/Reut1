@@ -14,30 +14,51 @@ import PopupEditor from "../../components/PopupEditor";
 import PopupNotice from "../../components/PopupNotice";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
-import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep } from "../../lib/store";
+import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // ניקוי ערכים לפני השוואה - הסרת רווחים נסתרים בהתחלה/בסוף (טעות נפוצה במקלדת נייד).
+  const norm = (s) => (s || "").toString().trim();
+
+  // חיווי מצב חיבור/אחסון - מוצג עוד לפני ניסיון ההתחברות אם יש בעיה.
+  const storageOk = storageAvailable();
+  const conn = getConnectionError();
+
   function tryLogin(e) {
     e.preventDefault();
-    const pw = password.trim();
+    const pw = norm(password);
     if (!pw) return;
-    if (pw === data.adminPassword) {
+    if (pw === norm(data.adminPassword)) {
       setCurrentUser({ role: "admin" });
       return;
     }
-    const rep = data.reps.find((r) => r.password && r.password === pw);
+    const rep = data.reps.find((r) => r.password && norm(r.password) === pw);
     if (rep) {
       setCurrentUser({ role: "rep", repId: rep.id });
       return;
     }
-    if (data.viewerPassword && pw === data.viewerPassword) {
+    if (data.viewerPassword && pw === norm(data.viewerPassword)) {
       setCurrentUser({ role: "viewer" });
       return;
     }
-    setError("סיסמה שגויה, נסי שוב");
+
+    // ההתחברות נכשלה - נבדוק אם מדובר בבעיה טכנית (אחסון/חיבור/טעינה) ולא בסיסמה שגויה.
+    const ready = isDataReady();
+    const noData = !ready || data.reps.length === 0;
+    if (!storageOk || conn || noData) {
+      const lines = ["לא הצלחנו לאמת את הסיסמה במכשיר הזה 😟", ""];
+      if (!storageOk) lines.push("• הדפדפן במכשיר חוסם עוגיות/אחסון — קורה כשפותחים את האתר מתוך אפליקציה (וואטסאפ/פייסבוק/אינסטגרם) או בגלישה פרטית.");
+      if (noData) lines.push("• נתוני המערכת לא נטענו במכשיר הזה (ייתכן שאין חיבור לשרת).");
+      if (conn) lines.push("• פרטי שגיאה: " + conn);
+      lines.push("");
+      lines.push("✅ פתרון: פתחי את הקישור ישירות בדפדפן Chrome או Safari (לא מתוך אפליקציה), ונסי שוב.");
+      setError(lines.join("\n"));
+    } else {
+      setError("סיסמה שגויה, נסי שוב.");
+    }
   }
 
   return (
@@ -48,12 +69,26 @@ function Login({ data }) {
         </div>
         <h1 className="text-2xl font-bold text-roseDark">כניסת צוות</h1>
         <p className="text-sm text-ink/60">הקלד/י את הסיסמה שלך</p>
-        {error && (
-          <div className="rounded-2xl bg-rose/10 px-4 py-3 text-sm font-medium text-roseDark">{error}</div>
+
+        {/* אזהרה מוקדמת אם יש בעיית אחסון/חיבור במכשיר */}
+        {(!storageOk || conn) && (
+          <div className="whitespace-pre-line rounded-2xl bg-amber-100 px-4 py-3 text-right text-sm font-medium text-amber-800">
+            ⚠️ נראה שהמכשיר הזה חוסם אחסון או חיבור לשרת.{"\n"}כדאי לפתוח את האתר בדפדפן Chrome/Safari ולא מתוך אפליקציה.
+          </div>
         )}
+
+        {error && (
+          <div className="whitespace-pre-line rounded-2xl bg-rose/10 px-4 py-3 text-right text-sm font-medium text-roseDark">{error}</div>
+        )}
+
         <input
           className="field-input text-center"
           type="password"
+          inputMode="text"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          autoComplete="current-password"
           placeholder="הקלד/י את הסיסמה שלך"
           value={password}
           onChange={(e) => { setPassword(e.target.value); setError(""); }}
