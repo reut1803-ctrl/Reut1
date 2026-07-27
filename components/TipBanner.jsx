@@ -2,7 +2,8 @@
 
 // קופסת טיפ קבועה בראש עמוד המועמדים - מציגה את "טיפ היום" מתוך הטיפים שהמנהלת מגדירה בניהול.
 export default function TipBanner({ popup }) {
-  if (!popup || !popup.enabled) return null;
+  // הקופסה מופיעה בכל פעם שיש טיפ - ללא תלות בחלונית הקופצת (enabled).
+  if (!popup) return null;
   const tips = (popup.tips || []).filter((t) => t && t.trim());
   if (!tips.length) return null;
   // טיפ יומי מתחלף - אותו טיפ שמופיע גם בחלונית ההודעה.
