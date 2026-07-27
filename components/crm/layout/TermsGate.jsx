@@ -7,13 +7,13 @@ import Button from "@/components/crm/ui/Button";
 
 export default function TermsGate() {
   const role = useCrmStore((s) => s.role);
-  const currentStaffId = useCrmStore((s) => s.currentStaffId);
+  const currentStaffEmail = useCrmStore((s) => s.currentStaffEmail);
   const termsAccepted = useCrmStore((s) => s.termsAccepted);
   const termsText = useCrmStore((s) => s.termsText);
   const acceptTerms = useCrmStore((s) => s.acceptTerms);
   const [checked, setChecked] = useState(false);
 
-  if (role !== "staff" || termsAccepted[currentStaffId]) return null;
+  if (role !== "staff" || termsAccepted[currentStaffEmail]) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" dir="rtl">
@@ -41,7 +41,7 @@ export default function TermsGate() {
             variant="primary"
             className="mt-3 w-full"
             disabled={!checked}
-            onClick={() => acceptTerms(currentStaffId)}
+            onClick={() => acceptTerms(currentStaffEmail)}
           >
             המשך למערכת
           </Button>

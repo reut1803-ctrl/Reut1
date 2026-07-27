@@ -7,8 +7,8 @@ import NotificationsPanel from "@/components/crm/notifications/NotificationsPane
 import SettingsSheet from "@/components/crm/notifications/SettingsSheet";
 
 export default function TopBar() {
-  const currentStaffId = useCrmStore((s) => s.currentStaffId);
-  const role = useCrmStore((s) => s.role);
+  const googleUser = useCrmStore((s) => s.googleUser);
+  const signOutGoogle = useCrmStore((s) => s.signOutGoogle);
   const currentUser = useCrmStore((s) => s.currentUser);
   const unreadCount = useCrmStore((s) => s.unreadCount());
   const [showNotifications, setShowNotifications] = useState(false);
@@ -55,9 +55,15 @@ export default function TopBar() {
           >
             <Settings size={20} />
           </button>
-          <button aria-label="התנתקות" className="rounded-full p-2 text-[#8A8285] transition hover:bg-[#F6F5F4] active:scale-90">
-            <LogOut size={20} />
-          </button>
+          {googleUser && (
+            <button
+              onClick={signOutGoogle}
+              aria-label="התנתקות"
+              className="rounded-full p-2 text-[#8A8285] transition hover:bg-[#F6F5F4] active:scale-90"
+            >
+              <LogOut size={20} />
+            </button>
+          )}
         </div>
       </header>
 

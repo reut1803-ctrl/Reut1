@@ -22,8 +22,8 @@ export default function BottomNav() {
   const pathname = usePathname();
   const favCount = useCrmStore((s) => s.favoritesCount());
   const role = useCrmStore((s) => s.role);
-  const currentStaffId = useCrmStore((s) => s.currentStaffId);
-  const pendingTasksCount = useCrmStore((s) => s.pendingPushedTasksCount(currentStaffId));
+  const currentStaffEmail = useCrmStore((s) => s.currentStaffEmail);
+  const pendingTasksCount = useCrmStore((s) => s.pendingPushedTasksCount(currentStaffEmail));
   let tabs = TABS;
   if (role === "staff") tabs = [...TABS, ...STAFF_TABS];
   if (role === "admin") tabs = [...TABS, ...STAFF_TABS, ...ADMIN_TABS];

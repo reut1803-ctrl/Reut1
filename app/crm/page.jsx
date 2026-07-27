@@ -14,8 +14,7 @@ export default function ProfilesFeedPage() {
   const dailyTip = useCrmStore((s) => s.dailyTip);
   const filters = useCrmStore((s) => s.filters);
   const allCandidates = useCrmStore((s) => s.allCandidates);
-  const customCandidates = useCrmStore((s) => s.customCandidates);
-  const candidateOverrides = useCrmStore((s) => s.candidateOverrides);
+  const candidates_ = useCrmStore((s) => s.candidates);
   const [tab, setTab] = useState("new");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -31,7 +30,7 @@ export default function ProfilesFeedPage() {
       if (filters.search && !c.name.includes(filters.search.trim())) return false;
       return true;
     });
-  }, [board, tab, filters, customCandidates, candidateOverrides]);
+  }, [board, tab, filters, candidates_]);
 
   return (
     <div className="px-4 py-4">

@@ -8,13 +8,12 @@ import ProfileCard from "@/components/crm/profiles/ProfileCard";
 export default function FavoritesPage() {
   const favorites = useCrmStore((s) => s.favorites);
   const allCandidates = useCrmStore((s) => s.allCandidates);
-  const customCandidates = useCrmStore((s) => s.customCandidates);
-  const candidateOverrides = useCrmStore((s) => s.candidateOverrides);
+  const candidates_ = useCrmStore((s) => s.candidates);
 
   const favCandidates = useMemo(() => {
     const all = [...allCandidates("male"), ...allCandidates("female")];
     return all.filter((c) => favorites[c.id]);
-  }, [favorites, customCandidates, candidateOverrides]);
+  }, [favorites, candidates_]);
 
   return (
     <div className="px-4 py-4">

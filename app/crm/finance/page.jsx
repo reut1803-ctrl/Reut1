@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Wallet, Plus, Trash2, Receipt, Image as ImageIcon, Check } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { STAFF_USERS, PAYMENT_STATUSES } from "@/lib/crm/mockData";
+import { PAYMENT_STATUSES } from "@/lib/crm/mockData";
 import Button from "@/components/crm/ui/Button";
 
 function ProofUpload({ url, onUpload, label }) {
@@ -40,12 +40,12 @@ export default function FinancePage() {
   const updateChargeCandidatePayment = useCrmStore((s) => s.updateChargeCandidatePayment);
   const updateChargeStaffPayout = useCrmStore((s) => s.updateChargeStaffPayout);
   const allCandidates = useCrmStore((s) => s.allCandidates);
-  const customCandidates = useCrmStore((s) => s.customCandidates);
-  const candidateOverrides = useCrmStore((s) => s.candidateOverrides);
+  const candidates_ = useCrmStore((s) => s.candidates);
+  const staffList = useCrmStore((s) => s.staffList());
 
   const candidates = useMemo(
     () => [...allCandidates("male"), ...allCandidates("female")],
-    [allCandidates, customCandidates, candidateOverrides]
+    [allCandidates, candidates_]
   );
 
   const [svcName, setSvcName] = useState("");
@@ -54,7 +54,7 @@ export default function FinancePage() {
 
   const [chargeCandidateId, setChargeCandidateId] = useState("");
   const [chargeServiceId, setChargeServiceId] = useState(serviceTypes[0]?.id || "");
-  const [chargeStaffId, setChargeStaffId] = useState(STAFF_USERS[0].id);
+  const [chargeStaffId, setChargeStaffId] = useState(staffList[0]?.email || "");
 
   const [filter, setFilter] = useState("all");
 
@@ -77,7 +77,7 @@ export default function FinancePage() {
   };
 
   const candidateName = (id) => candidates.find((c) => c.id === id)?.name || id;
-  const staffName = (id) => STAFF_USERS.find((s) => s.id === id)?.name || id;
+  const staffName = (email) => staffList.find((s) => s.email === email)?.name || email;
 
   const filteredCharges = charges.filter((c) => {
     if (filter === "debt") return c.candidatePaymentStatus !== "שולם";
@@ -172,8 +172,8 @@ export default function FinancePage() {
             onChange={(e) => setChargeStaffId(e.target.value)}
             className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-sm outline-none focus:border-[#8C4A55]"
           >
-            {STAFF_USERS.map((s) => (
-              <option key={s.id} value={s.id}>
+            {staffList.map((s) => (
+              <option key={s.email} value={s.email}>
                 נציג/ה: {s.name}
               </option>
             ))}

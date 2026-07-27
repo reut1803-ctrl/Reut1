@@ -3,32 +3,32 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Check, Megaphone } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { STAFF_USERS } from "@/lib/crm/mockData";
 import Button from "@/components/crm/ui/Button";
 
 export default function TasksPage() {
   const role = useCrmStore((s) => s.role);
-  const currentStaffId = useCrmStore((s) => s.currentStaffId);
+  const currentStaffEmail = useCrmStore((s) => s.currentStaffEmail);
   const tasks = useCrmStore((s) => s.tasks);
   const toggleTaskDone = useCrmStore((s) => s.toggleTaskDone);
   const addTask = useCrmStore((s) => s.addTask);
   const pushTaskToStaff = useCrmStore((s) => s.pushTaskToStaff);
   const markTasksSeenByStaff = useCrmStore((s) => s.markTasksSeenByStaff);
   const allCandidates = useCrmStore((s) => s.allCandidates);
-  const customCandidates = useCrmStore((s) => s.customCandidates);
+  const candidates_ = useCrmStore((s) => s.candidates);
+  const staffList = useCrmStore((s) => s.staffList());
   const candidates = useMemo(
     () => [...allCandidates("male"), ...allCandidates("female")],
-    [allCandidates, customCandidates]
+    [allCandidates, candidates_]
   );
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [owner, setOwner] = useState("");
-  const [assigneeId, setAssigneeId] = useState(STAFF_USERS[0].id);
+  const [assigneeId, setAssigneeId] = useState(staffList[0]?.email || "");
   const [candidateId, setCandidateId] = useState("");
 
   useEffect(() => {
-    if (role === "staff") markTasksSeenByStaff(currentStaffId);
-  }, [role, currentStaffId, markTasksSeenByStaff]);
+    if (role === "staff") markTasksSeenByStaff(currentStaffEmail);
+  }, [role, currentStaffEmail, markTasksSeenByStaff]);
 
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
@@ -36,8 +36,8 @@ export default function TasksPage() {
 
   const open = tasks.filter((t) => !t.done);
   const done = tasks.filter((t) => t.done);
-  const pushedToMe = role === "staff" ? open.filter((t) => t.pushedByAdmin && t.assigneeId === currentStaffId) : [];
-  const otherOpen = role === "staff" ? open.filter((t) => !(t.pushedByAdmin && t.assigneeId === currentStaffId)) : open;
+  const pushedToMe = role === "staff" ? open.filter((t) => t.pushedByAdmin && t.assigneeId === currentStaffEmail) : [];
+  const otherOpen = role === "staff" ? open.filter((t) => !(t.pushedByAdmin && t.assigneeId === currentStaffEmail)) : open;
 
   const handleAdd = () => {
     if (!title.trim()) return;
@@ -80,8 +80,8 @@ export default function TasksPage() {
                 onChange={(e) => setAssigneeId(e.target.value)}
                 className="flex-1 rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
               >
-                {STAFF_USERS.map((s) => (
-                  <option key={s.id} value={s.id}>
+                {staffList.map((s) => (
+                  <option key={s.email} value={s.email}>
                     {s.name}
                   </option>
                 ))}

@@ -13,7 +13,7 @@ export default function AppShell({ children }) {
   useScrollRestoration(scrollRef);
 
   useEffect(() => {
-    useCrmStore.persist.rehydrate();
+    useCrmStore.getState().initCrmFirebase();
   }, []);
 
   return (

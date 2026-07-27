@@ -33,7 +33,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const expandedId = useCrmStore((s) => s.expandedStaffAreaId);
   const toggleStaffArea = useCrmStore((s) => s.toggleStaffArea);
   const proposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
-  const updateCandidateOverride = useCrmStore((s) => s.updateCandidateOverride);
+  const updateCandidate = useCrmStore((s) => s.updateCandidate);
+  const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const trackProfileView = useCrmStore((s) => s.trackProfileView);
   const trackAudioPlay = useCrmStore((s) => s.trackAudioPlay);
   const [recording, setRecording] = useState(false);
@@ -54,7 +55,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => updateCandidateOverride(candidate.id, { [field]: reader.result });
+    reader.onload = () => updateCandidate(candidate.id, { [field]: reader.result });
     reader.readAsDataURL(file);
   };
 
@@ -226,7 +227,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">סטטוס פניות</p>
                   <select
                     value={candidate.availabilityStatus}
-                    onChange={(e) => updateCandidateOverride(candidate.id, { availabilityStatus: e.target.value })}
+                    onChange={(e) => setCandidateAvailability(candidate.id, e.target.value)}
                     className="w-full rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335]"
                   >
                     {AVAILABILITY_STATUSES.map((s) => (
@@ -242,7 +243,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   <textarea
                     value={complexityDraft}
                     onChange={(e) => setComplexityDraft(e.target.value)}
-                    onBlur={() => updateCandidateOverride(candidate.id, { complexityNotes: complexityDraft })}
+                    onBlur={() => updateCandidate(candidate.id, { complexityNotes: complexityDraft })}
                     rows={3}
                     placeholder="מה מיוחד או מורכב אצל המועמד/ת - לשימוש פנימי בלבד..."
                     className="w-full resize-none rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335] outline-none focus:border-[#8C4A55]"

@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+    function isStaff() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/staffAllowlist/$(myEmail()));
+    }
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/staffAllowlist/$(myEmail())).data.role == "admin";
+    }
+    function notBlockedFromMe() {
+      return isAdmin()
+        || !(myEmail() in resource.data.get('blockedStaffEmails', []));
+    }
+
+    match /staffAllowlist/{email} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    match /candidates/{candidateId} {
+      allow get: if isStaff() && notBlockedFromMe();
+      allow list: if isStaff();
+      allow create: if isStaff();
+      allow update: if isStaff() && notBlockedFromMe();
+      allow delete: if isAdmin();
+    }
+
+    // אוסף ציבורי וצר: מכיל רק שם וסטטוס פניות, כדי שהקישור האישי של מועמד/ת
+    // (ללא התחברות) לעולם לא ייתן גישה לשאר פרטי הכרטיס החסויים.
+    match /candidateStatus/{candidateId} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create: if isStaff();
+      allow update: if isStaff()
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availabilityStatus']);
+    }
+
+    match /proposals/{id} {
+      allow read, create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /tasks/{id} {
+      allow read, create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /telemetry/{staffEmail} {
+      allow read: if isStaff();
+      allow write: if isStaff() && myEmail() == staffEmail;
+    }
+
+    match /termsAcceptances/{staffEmail} {
+      allow read: if isStaff();
+      allow write: if isStaff() && myEmail() == staffEmail;
+    }
+
+    match /settings/{id} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    match /emailLog/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /serviceTypes/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /charges/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /userPrefs/{email} {
+      allow read, write: if request.auth != null && myEmail() == email;
+    }
+  }
+}

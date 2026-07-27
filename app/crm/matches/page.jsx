@@ -13,13 +13,12 @@ export default function MatchesPage() {
   const quizCompleted = useCrmStore((s) => s.quizCompleted);
   const resetQuiz = useCrmStore((s) => s.resetQuiz);
   const allCandidates = useCrmStore((s) => s.allCandidates);
-  const customCandidates = useCrmStore((s) => s.customCandidates);
-  const candidateOverrides = useCrmStore((s) => s.candidateOverrides);
+  const candidates_ = useCrmStore((s) => s.candidates);
   const [showWizard, setShowWizard] = useState(false);
 
   const matches = useMemo(
     () => allCandidates(board).filter((c) => c.matchScore >= 70).sort((a, b) => b.matchScore - a.matchScore),
-    [board, customCandidates, candidateOverrides]
+    [board, candidates_]
   );
 
   if (quizCompleted) {

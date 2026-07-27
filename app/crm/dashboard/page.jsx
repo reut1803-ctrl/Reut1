@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { STAFF_USERS } from "@/lib/crm/mockData";
 import Button from "@/components/crm/ui/Button";
 
 function metricColor(ratio) {
@@ -40,10 +39,10 @@ export default function DashboardPage() {
   const dailyTip = useCrmStore((s) => s.dailyTip);
   const setDailyTip = useCrmStore((s) => s.setDailyTip);
   const emailLog = useCrmStore((s) => s.emailLog);
-  const googleAuthEnabled = useCrmStore((s) => s.googleAuthEnabled);
   const authAllowlist = useCrmStore((s) => s.authAllowlist);
   const addAllowlistEntry = useCrmStore((s) => s.addAllowlistEntry);
   const removeAllowlistEntry = useCrmStore((s) => s.removeAllowlistEntry);
+  const staffList = useCrmStore((s) => s.staffList());
   const weeklyGoals = useCrmStore((s) => s.weeklyGoals);
   const setWeeklyGoals = useCrmStore((s) => s.setWeeklyGoals);
   const openCandidateDebt = useCrmStore((s) => s.openCandidateDebt());
@@ -56,7 +55,6 @@ export default function DashboardPage() {
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("staff");
-  const [newStaffId, setNewStaffId] = useState(STAFF_USERS[0].id);
   const [goalViewsDraft, setGoalViewsDraft] = useState(weeklyGoals.profileViews);
   const [goalPlaysDraft, setGoalPlaysDraft] = useState(weeklyGoals.audioPlays);
 
@@ -70,7 +68,6 @@ export default function DashboardPage() {
       email: newEmail.trim().toLowerCase(),
       name: newName.trim() || newEmail.trim(),
       role: newRole,
-      staffId: newRole === "staff" ? newStaffId : null,
     });
     setNewEmail("");
     setNewName("");
@@ -98,74 +95,55 @@ export default function DashboardPage() {
       </h1>
       <p className="mt-1 text-[13px] text-[#8A8285]">מעורבות צוות, נהלים, טיפים ומעקב מיילים</p>
 
-      {googleAuthEnabled && (
-        <>
-          <h2 className="mt-6 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
-            <KeyRound size={17} /> הרשאות כניסה (Google)
-          </h2>
-          <div className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-            <div className="space-y-2">
-              {authAllowlist.map((entry) => (
-                <div key={entry.email} className="flex items-center justify-between rounded-xl bg-[#F6F5F4] px-3 py-2">
-                  <div>
-                    <p className="text-[13px] font-semibold text-[#3A3335]">{entry.name}</p>
-                    <p dir="ltr" className="text-left text-[11px] text-[#8A8285]">
-                      {entry.email} · {entry.role === "admin" ? "מנהלת" : "צוות"}
-                    </p>
-                  </div>
-                  <button onClick={() => removeAllowlistEntry(entry.email)} aria-label="הסרה" className="rounded-full p-1.5 hover:bg-white">
-                    <Trash2 size={14} className="text-[#C24545]" />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 space-y-2 border-t border-[#EAE5E3] pt-3">
-              <input
-                type="email"
-                dir="ltr"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="name@gmail.com"
-                className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-left text-sm outline-none focus:border-[#8C4A55]"
-              />
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="שם תצוגה"
-                className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-sm outline-none focus:border-[#8C4A55]"
-              />
-              <div className="flex gap-2">
-                <select
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value)}
-                  className="flex-1 rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-sm outline-none focus:border-[#8C4A55]"
-                >
-                  <option value="staff">צוות</option>
-                  <option value="admin">מנהלת</option>
-                </select>
-                {newRole === "staff" && (
-                  <select
-                    value={newStaffId}
-                    onChange={(e) => setNewStaffId(e.target.value)}
-                    className="flex-1 rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-sm outline-none focus:border-[#8C4A55]"
-                  >
-                    {STAFF_USERS.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+      <h2 className="mt-6 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
+        <KeyRound size={17} /> הרשאות כניסה (Google)
+      </h2>
+      <div className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+        <div className="space-y-2">
+          {authAllowlist.map((entry) => (
+            <div key={entry.email} className="flex items-center justify-between rounded-xl bg-[#F6F5F4] px-3 py-2">
+              <div>
+                <p className="text-[13px] font-semibold text-[#3A3335]">{entry.name}</p>
+                <p dir="ltr" className="text-left text-[11px] text-[#8A8285]">
+                  {entry.email} · {entry.role === "admin" ? "מנהלת" : "צוות"}
+                </p>
               </div>
-              <Button variant="primary" className="w-full" onClick={handleAddAllowlist}>
-                <UserPlus size={16} /> הוספת הרשאה
-              </Button>
+              <button onClick={() => removeAllowlistEntry(entry.email)} aria-label="הסרה" className="rounded-full p-1.5 hover:bg-white">
+                <Trash2 size={14} className="text-[#C24545]" />
+              </button>
             </div>
-          </div>
-        </>
-      )}
+          ))}
+        </div>
+
+        <div className="mt-3 space-y-2 border-t border-[#EAE5E3] pt-3">
+          <input
+            type="email"
+            dir="ltr"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="name@gmail.com"
+            className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-left text-sm outline-none focus:border-[#8C4A55]"
+          />
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="שם תצוגה"
+            className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-sm outline-none focus:border-[#8C4A55]"
+          />
+          <select
+            value={newRole}
+            onChange={(e) => setNewRole(e.target.value)}
+            className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-sm outline-none focus:border-[#8C4A55]"
+          >
+            <option value="staff">צוות</option>
+            <option value="admin">מנהלת</option>
+          </select>
+          <Button variant="primary" className="w-full" onClick={handleAddAllowlist}>
+            <UserPlus size={16} /> הוספת הרשאה
+          </Button>
+        </div>
+      </div>
 
       <h2 className="mt-6 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
         <Wallet size={17} /> כספים
@@ -218,10 +196,10 @@ export default function DashboardPage() {
 
       <h2 className="mt-6 mb-3 text-[15px] font-bold text-[#3A3335]">מעורבות צוות (השבוע)</h2>
       <div className="space-y-3">
-        {STAFF_USERS.map((s) => {
-          const t = telemetry[s.id] || {};
+        {staffList.map((s) => {
+          const t = telemetry[s.email] || {};
           return (
-            <div key={s.id} className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+            <div key={s.email} className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
               <p className="mb-3 text-sm font-bold text-[#3A3335]">{s.name}</p>
               <div className="space-y-2.5">
                 <MetricBar label="צפיות בכרטיסי מועמדים" value={t.profileViews || 0} goal={weeklyGoals.profileViews} />
@@ -247,14 +225,14 @@ export default function DashboardPage() {
           {savedTerms ? "נשמר!" : "שמירת תקנון"}
         </Button>
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {STAFF_USERS.map((s) => (
+          {staffList.map((s) => (
             <span
-              key={s.id}
+              key={s.email}
               className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                termsAccepted[s.id] ? "bg-[#E7F5EC] text-[#178A57]" : "bg-[#F6F5F4] text-[#B5AEB0]"
+                termsAccepted[s.email] ? "bg-[#E7F5EC] text-[#178A57]" : "bg-[#F6F5F4] text-[#B5AEB0]"
               }`}
             >
-              {s.name} {termsAccepted[s.id] ? "✓ אישרה" : "טרם אישרה"}
+              {s.name} {termsAccepted[s.email] ? "✓ אישרה" : "טרם אישרה"}
             </span>
           ))}
         </div>

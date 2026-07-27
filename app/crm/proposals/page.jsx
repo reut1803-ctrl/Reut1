@@ -29,9 +29,9 @@ export default function ProposalsPage() {
   const createProposal = useCrmStore((s) => s.createProposal);
   const proposals = useCrmStore((s) => s.proposals);
   const allCandidates = useCrmStore((s) => s.allCandidates);
-  const customCandidates = useCrmStore((s) => s.customCandidates);
-  const maleCandidates = useMemo(() => allCandidates("male"), [allCandidates, customCandidates]);
-  const femaleCandidates = useMemo(() => allCandidates("female"), [allCandidates, customCandidates]);
+  const candidates_ = useCrmStore((s) => s.candidates);
+  const maleCandidates = useMemo(() => allCandidates("male"), [allCandidates, candidates_]);
+  const femaleCandidates = useMemo(() => allCandidates("female"), [allCandidates, candidates_]);
   const [rationale, setRationale] = useState("");
 
   if (role !== "staff" && role !== "admin") {

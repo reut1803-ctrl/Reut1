@@ -9,26 +9,27 @@ import { getAvailabilityColors } from "@/lib/crm/availability";
 function StatusForm() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
-  const findCandidateById = useCrmStore((s) => s.findCandidateById);
-  const updateCandidateOverride = useCrmStore((s) => s.updateCandidateOverride);
-  const [mounted, setMounted] = useState(false);
+  const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
+  const [candidate, setCandidate] = useState(undefined);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    useCrmStore.persist.rehydrate();
-    setMounted(true);
-  }, []);
+    if (!id) {
+      setCandidate(null);
+      return;
+    }
+    const unsubscribe = useCrmStore.getState().subscribeCandidateStatus(id, setCandidate);
+    return unsubscribe;
+  }, [id]);
 
-  if (!mounted) return null;
-
-  const candidate = id ? findCandidateById(id) : null;
+  if (candidate === undefined) return null;
 
   if (!candidate) {
     return <p className="text-sm text-[#8A8285]">הקישור לא נמצא. נא לוודא שהועתק במלואו.</p>;
   }
 
   const handleSelect = (status) => {
-    updateCandidateOverride(id, { availabilityStatus: status });
+    setCandidateAvailability(id, status);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
