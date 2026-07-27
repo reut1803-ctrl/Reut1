@@ -12,6 +12,7 @@ import RepsManager from "../../components/RepsManager";
 import LogViewer from "../../components/LogViewer";
 import PopupEditor from "../../components/PopupEditor";
 import PopupNotice from "../../components/PopupNotice";
+import TipBanner from "../../components/TipBanner";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
@@ -190,6 +191,8 @@ export default function AdminPage() {
       <main className="mx-auto max-w-3xl px-4 py-5 pb-28">
         {tab === "candidates" && (
           <div className="space-y-6">
+            {/* טיפ בשידוכים - קבוע בראש עמוד המועמדים */}
+            <TipBanner popup={data.popup} />
             {isViewer && (
               <div className="rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
                 👁️ מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
