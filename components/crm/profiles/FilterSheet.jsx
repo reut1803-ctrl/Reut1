@@ -3,13 +3,15 @@
 import { X, Search } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
-import { REGIONS, RELIGIOUS_LEVELS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor } from "@/lib/crm/mockData";
 import Button from "@/components/crm/ui/Button";
 
 export default function FilterSheet({ onClose }) {
   const filters = useCrmStore((s) => s.filters);
   const setFilters = useCrmStore((s) => s.setFilters);
   const resetFilters = useCrmStore((s) => s.resetFilters);
+  const board = useCrmStore((s) => s.board);
+  const religiousLevels = religiousLevelsFor(board);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -61,7 +63,7 @@ export default function FilterSheet({ onClose }) {
           <div>
             <p className="mb-2 text-[13px] font-semibold text-[#3A3335]">רמת תורניות</p>
             <div className="flex flex-wrap gap-2">
-              {["הכל", ...RELIGIOUS_LEVELS.filter((l) => l !== "הכל")].map((level) => (
+              {["הכל", ...religiousLevels.filter((l) => l !== "הכל")].map((level) => (
                 <button
                   key={level}
                   onClick={() => setFilters({ religiousLevel: level })}

@@ -24,6 +24,7 @@ import { viewerActionText } from "@/lib/crm/genderText";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { getAvailabilityColors } from "@/lib/crm/availability";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
+import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -35,12 +36,14 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const proposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
+  const showToast = useCrmStore((s) => s.showToast);
   const trackProfileView = useCrmStore((s) => s.trackProfileView);
   const trackAudioPlay = useCrmStore((s) => s.trackAudioPlay);
   const [recording, setRecording] = useState(false);
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
+  const [showDetail, setShowDetail] = useState(false);
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
   const personalLink = typeof window !== "undefined" ? `${window.location.origin}/status?id=${candidate.id}` : "";
@@ -55,7 +58,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => updateCandidate(candidate.id, { [field]: reader.result });
+    reader.onload = () => {
+      updateCandidate(candidate.id, { [field]: reader.result });
+      showToast("הקובץ נשמר בהצלחה");
+    };
     reader.readAsDataURL(file);
   };
 
@@ -131,6 +137,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
             className="w-full"
             onClick={() => {
               trackProfileView();
+              setShowDetail(true);
               onReadMore?.(candidate);
             }}
           >
@@ -227,7 +234,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">סטטוס פניות</p>
                   <select
                     value={candidate.availabilityStatus}
-                    onChange={(e) => setCandidateAvailability(candidate.id, e.target.value)}
+                    onChange={(e) => {
+                      setCandidateAvailability(candidate.id, e.target.value);
+                      showToast("הסטטוס נשמר בהצלחה");
+                    }}
                     className="w-full rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335]"
                   >
                     {AVAILABILITY_STATUSES.map((s) => (
@@ -243,7 +253,12 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   <textarea
                     value={complexityDraft}
                     onChange={(e) => setComplexityDraft(e.target.value)}
-                    onBlur={() => updateCandidate(candidate.id, { complexityNotes: complexityDraft })}
+                    onBlur={() => {
+                      if (complexityDraft !== (candidate.complexityNotes || "")) {
+                        updateCandidate(candidate.id, { complexityNotes: complexityDraft });
+                        showToast("ההערה נשמרה בהצלחה");
+                      }
+                    }}
                     rows={3}
                     placeholder="מה מיוחד או מורכב אצל המועמד/ת - לשימוש פנימי בלבד..."
                     className="w-full resize-none rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335] outline-none focus:border-[#8C4A55]"
@@ -345,6 +360,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
           color: #78350f;
         }
       `}</style>
+
+      {showDetail && <ProfileDetailModal candidate={candidate} onClose={() => setShowDetail(false)} />}
     </div>
   );
 }

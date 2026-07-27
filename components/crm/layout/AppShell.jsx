@@ -5,6 +5,7 @@ import TopBar from "./TopBar";
 import BottomNav from "./BottomNav";
 import FabButtons from "./FabButtons";
 import TermsGate from "./TermsGate";
+import Toast from "./Toast";
 import { useScrollRestoration } from "@/lib/crm/useScrollRestoration";
 import { useCrmStore } from "@/lib/crm/store";
 
@@ -25,6 +26,7 @@ export default function AppShell({ children }) {
       <FabButtons />
       <BottomNav />
       <TermsGate />
+      <Toast />
     </div>
   );
 }

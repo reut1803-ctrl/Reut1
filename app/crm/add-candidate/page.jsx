@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, RELIGIOUS_LEVELS, EDUCATION_OPTIONS, YESHIVA_LEVELS, SMOKING_OPTIONS, TRAITS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
 import { isValidIsraeliId } from "@/lib/crm/idNumber";
 import Button from "@/components/crm/ui/Button";
+
+const DRAFT_KEY = "crm_add_candidate_draft";
 
 const EMPTY_FORM = {
   gender: "male",
@@ -15,26 +17,57 @@ const EMPTY_FORM = {
   age: "",
   height: "",
   region: REGIONS[0],
-  religiousLevel: RELIGIOUS_LEVELS[0],
+  religiousLevel: religiousLevelsFor("male")[0],
   education: EDUCATION_OPTIONS[0],
   yeshivaLevel: YESHIVA_LEVELS[0],
-  smoking: SMOKING_OPTIONS[0],
+  smoking: smokingOptionsFor("male")[0],
   phone: "",
   bio: "",
   availabilityStatus: AVAILABILITY_STATUSES[0],
   complexityNotes: "",
 };
 
+function loadDraft() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function AddCandidatePage() {
   const router = useRouter();
   const role = useCrmStore((s) => s.role);
   const addCandidate = useCrmStore((s) => s.addCandidate);
+  const showToast = useCrmStore((s) => s.showToast);
   const [form, setForm] = useState(EMPTY_FORM);
   const [traits, setTraits] = useState([]);
   const [photo, setPhoto] = useState(null);
   const [photoError, setPhotoError] = useState("");
   const [pdfFile, setPdfFile] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  useEffect(() => {
+    const draft = loadDraft();
+    if (draft?.form) {
+      setForm(draft.form);
+      setTraits(draft.traits || []);
+      setDraftRestored(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isEmpty = !form.name.trim() && !form.phone.trim() && traits.length === 0;
+    if (isEmpty) {
+      window.localStorage.removeItem(DRAFT_KEY);
+      return;
+    }
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, traits }));
+  }, [form, traits]);
 
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
@@ -42,6 +75,11 @@ export default function AddCandidatePage() {
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+  const setGender = (gender) =>
+    setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
+  const clearDraft = () => {
+    if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
+  };
 
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
@@ -63,7 +101,7 @@ export default function AddCandidatePage() {
       reader.readAsDataURL(file);
     });
 
-  const idNumberValid = isValidIsraeliId(form.idNumber);
+  const idNumberValid = !form.idNumber.trim() || isValidIsraeliId(form.idNumber);
   const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photo && idNumberValid;
 
   const handleSubmit = async () => {
@@ -90,11 +128,13 @@ export default function AddCandidatePage() {
       pdfUrl,
       introAudioUrl,
     });
+    clearDraft();
     setForm(EMPTY_FORM);
     setTraits([]);
     setPhoto(null);
     setPdfFile(null);
     setAudioFile(null);
+    showToast("הפרטים נשמרו בהצלחה");
     router.push(`/crm?added=${candidate.id}`);
   };
 
@@ -104,6 +144,11 @@ export default function AddCandidatePage() {
         <UserPlus size={22} /> העלאת מועמד/ת חדש/ה
       </h1>
       <p className="mt-1 text-[13px] text-[#8A8285]">כל חברי הצוות יכולים להוסיף מועמדים למאגר</p>
+      {draftRestored && (
+        <p className="mt-2 rounded-xl bg-[#FFF8E7] px-3 py-2 text-[12px] font-semibold text-[#946200]">
+          שחזרנו טיוטה שלא נשמרה - אפשר להמשיך מאיפה שהפסקת
+        </p>
+      )}
 
       <div className="mt-4 space-y-4">
         <div>
@@ -115,7 +160,7 @@ export default function AddCandidatePage() {
             ].map((g) => (
               <button
                 key={g.key}
-                onClick={() => set({ gender: g.key })}
+                onClick={() => setGender(g.key)}
                 className={`flex-1 rounded-2xl border px-3.5 py-2.5 text-sm font-semibold transition ${
                   form.gender === g.key
                     ? "border-[#8C4A55] bg-[#8C4A55] text-white"
@@ -174,7 +219,7 @@ export default function AddCandidatePage() {
             className="input-crm text-left"
           />
           {form.idNumber && !idNumberValid && <p className="mt-1 text-[11px] text-red-500">מספר תעודת הזהות לא תקין</p>}
-          <p className="mt-1 text-[11px] text-[#B5AEB0]">שדה חובה - המידע חסוי ונגיש לצוות בלבד</p>
+          <p className="mt-1 text-[11px] text-[#B5AEB0]">רשות - המידע חסוי ונגיש לצוות בלבד</p>
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
@@ -209,7 +254,7 @@ export default function AddCandidatePage() {
 
         <Field label="רמת תורניות">
           <select value={form.religiousLevel} onChange={(e) => set({ religiousLevel: e.target.value })} className="input-crm">
-            {RELIGIOUS_LEVELS.map((r) => (
+            {religiousLevelsFor(form.gender).map((r) => (
               <option key={r} value={r}>
                 {r}
               </option>
@@ -241,7 +286,7 @@ export default function AddCandidatePage() {
 
         <Field label="עישון">
           <select value={form.smoking} onChange={(e) => set({ smoking: e.target.value })} className="input-crm">
-            {SMOKING_OPTIONS.map((s) => (
+            {smokingOptionsFor(form.gender).map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>

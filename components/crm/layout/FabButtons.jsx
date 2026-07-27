@@ -7,7 +7,7 @@ export default function FabButtons() {
   const [accessibilityOpen, setAccessibilityOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-20 left-4 z-30 flex flex-col items-center gap-3">
+    <div className="safe-bottom fixed bottom-28 left-4 z-20 flex flex-col items-center gap-3">
       <button
         aria-label="פתיחת תפריט נגישות"
         onClick={() => setAccessibilityOpen((v) => !v)}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { REGIONS, YESHIVA_LEVELS, EDUCATION_OPTIONS, SMOKING_OPTIONS, TRAITS } from "@/lib/crm/mockData";
+import { REGIONS, YESHIVA_LEVELS, EDUCATION_OPTIONS, religiousLevelsFor, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import Button from "@/components/crm/ui/Button";
 
@@ -19,9 +19,12 @@ const STEP_TITLES = [
 
 export default function MatchingWizard() {
   const [step, setStep] = useState(0);
+  const board = useCrmStore((s) => s.board);
   const answers = useCrmStore((s) => s.quizAnswers);
   const setAnswers = useCrmStore((s) => s.setQuizAnswers);
   const completeQuiz = useCrmStore((s) => s.completeQuiz);
+  const religiousLevels = religiousLevelsFor(board);
+  const smokingOptions = smokingOptionsFor(board);
 
   const isLast = step === STEP_TITLES.length - 1;
 
@@ -76,9 +79,9 @@ export default function MatchingWizard() {
 
         {step === 2 && (
           <ChoiceList
-            options={YESHIVA_LEVELS}
-            selected={[answers.yeshivaLevel]}
-            onSelect={(v) => setAnswers({ yeshivaLevel: v })}
+            options={religiousLevels}
+            selected={[answers.religiousLevel]}
+            onSelect={(v) => setAnswers({ religiousLevel: v })}
           />
         )}
 
@@ -94,7 +97,7 @@ export default function MatchingWizard() {
 
         {step === 4 && (
           <ChoiceList
-            options={EDUCATION_OPTIONS}
+            options={board === "male" ? YESHIVA_LEVELS : EDUCATION_OPTIONS}
             selected={[answers.education]}
             onSelect={(v) => setAnswers({ education: v })}
           />
@@ -102,7 +105,7 @@ export default function MatchingWizard() {
 
         {step === 5 && (
           <ChoiceList
-            options={SMOKING_OPTIONS}
+            options={smokingOptions}
             selected={[answers.smoking]}
             onSelect={(v) => setAnswers({ smoking: v })}
           />
