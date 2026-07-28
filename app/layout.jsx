@@ -1,8 +1,9 @@
 import "./globals.css";
+import { APP_NAME, APP_SUBTITLE, APP_DESCRIPTION } from "../lib/appConfig";
 
 export const metadata = {
-  title: "מערכת שידוכים",
-  description: "שאלון היכרות ומערכת ניהול מועמדים",
+  title: `${APP_NAME} - ${APP_SUBTITLE}`,
+  description: APP_DESCRIPTION,
   manifest: "/manifest.json",
   icons: {
     icon: "/icons/icon-192.png",

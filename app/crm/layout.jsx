@@ -1,8 +1,9 @@
 import AppShell from "@/components/crm/layout/AppShell";
+import { APP_NAME, APP_SUBTITLE, APP_DESCRIPTION } from "@/lib/appConfig";
 
 export const metadata = {
-  title: "מאגר כרטיסיות - CRM שידוכים",
-  description: "מערכת ניהול מאגר שידוכים לצוות שדכניות",
+  title: `${APP_NAME} - ${APP_SUBTITLE}`,
+  description: APP_DESCRIPTION,
 };
 
 export default function CrmLayout({ children }) {

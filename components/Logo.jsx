@@ -1,16 +1,8 @@
-// לוגו המערכת. קובץ PNG עם רקע שקוף - מוטמע באתר ללא מסגרת וללא רקע,
-// כך שנשאר רק הציור עצמו, חלק טבעי מהעמוד.
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+// הלוגו של המערכת. כרגע מוצג ככיתוב השם ("אדמה" וכותרת המשנה) ולא כתמונה,
+// כדי שלא ייכנס לכאן מיתוג של מערכת אחרת. כשיתקבל קובץ לוגו מצויר,
+// מחליפים כאן את התצוגה בתמונה - ושאר המסכים ממשיכים לעבוד כרגיל.
+import Wordmark from "./Wordmark";
 
 export default function Logo({ className = "" }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={`${BASE}/logo-v2.png`}
-      alt="לוגו"
-      className={`object-contain ${className}`}
-    />
-  );
+  return <Wordmark size="lg" className={className} />;
 }
-
-export const LOGO_SRC = `${BASE}/logo-v2.png`;

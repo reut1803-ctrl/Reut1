@@ -2,16 +2,30 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // המנהלת הראשונה. היא מזוהה כמנהלת-על גם כשרשימת הצוות ריקה לגמרי,
+    // אחרת אי אפשר היה להיכנס למערכת חדשה כדי להוסיף אליה את אנשי הצוות.
+    function bootstrapAdminEmail() {
+      return "reut1803@gmail.com";
+    }
     function myEmail() {
       return request.auth.token.email.lower();
     }
+    function hasEmail() {
+      return request.auth != null && "email" in request.auth.token;
+    }
+    function isBootstrapAdmin() {
+      return hasEmail() && myEmail() == bootstrapAdminEmail();
+    }
     function isStaff() {
-      return request.auth != null
-        && exists(/databases/$(database)/documents/staffAllowlist/$(myEmail()));
+      return isBootstrapAdmin()
+        || (hasEmail()
+            && exists(/databases/$(database)/documents/staffAllowlist/$(myEmail())));
     }
     function isAdmin() {
-      return request.auth != null
-        && get(/databases/$(database)/documents/staffAllowlist/$(myEmail())).data.role == "admin";
+      return isBootstrapAdmin()
+        || (hasEmail()
+            && exists(/databases/$(database)/documents/staffAllowlist/$(myEmail()))
+            && get(/databases/$(database)/documents/staffAllowlist/$(myEmail())).data.role == "admin");
     }
     function notBlockedFromMe() {
       return isAdmin()
@@ -80,6 +94,38 @@ service cloud.firestore {
 
     match /userPrefs/{email} {
       allow read, write: if request.auth != null && myEmail() == email;
+    }
+
+    // ---------------------------------------------------------------
+    //  צד השאלון ומסך הניהול הישן (אוספים עם הקידומת "form_").
+    // ---------------------------------------------------------------
+    //  מועמד/ת שממלא/ת את השאלון אינו/ה מחובר/ת עם גוגל אלא בהתחברות
+    //  אנונימית, ולכן חייבת להיות כאן הרשאת כתיבה למשתמש אנונימי.
+    //  מחיקה נשמרת לצוות מזוהה בלבד.
+
+    match /form_candidates/{id} {
+      allow read, create, update: if request.auth != null;
+      allow delete: if isStaff();
+    }
+
+    match /form_reps/{id} {
+      allow read, create, update: if request.auth != null;
+      allow delete: if isStaff();
+    }
+
+    match /form_tasks/{id} {
+      allow read, create, update: if request.auth != null;
+      allow delete: if isStaff();
+    }
+
+    match /form_matches/{id} {
+      allow read, create, update: if request.auth != null;
+      allow delete: if isStaff();
+    }
+
+    match /form_meta/{id} {
+      allow read, create, update: if request.auth != null;
+      allow delete: if isStaff();
     }
   }
 }

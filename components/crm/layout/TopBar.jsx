@@ -5,6 +5,7 @@ import { Bell, Settings, RefreshCw, LogOut } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import NotificationsPanel from "@/components/crm/notifications/NotificationsPanel";
 import SettingsSheet from "@/components/crm/notifications/SettingsSheet";
+import { APP_NAME } from "@/lib/appConfig";
 
 export default function TopBar() {
   const googleUser = useCrmStore((s) => s.googleUser);
@@ -20,7 +21,7 @@ export default function TopBar() {
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#EAE5E3] bg-white/90 px-4 py-3 backdrop-blur safe-top">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#8C4A55] text-sm font-bold text-white">
-            מ
+            {APP_NAME.charAt(0)}
           </div>
           <div>
             <p className="text-[13px] leading-none text-[#8A8285]">שלום,</p>
