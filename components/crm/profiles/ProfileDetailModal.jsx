@@ -5,21 +5,36 @@ import { getGradientClass } from "@/components/crm/ui/gradients";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   const educationLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
+  const photos = candidate.photoUrls?.length > 0 ? candidate.photoUrls : candidate.photoUrl ? [candidate.photoUrl] : [];
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
         <div className={`relative aspect-[4/3] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
-          {candidate.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={candidate.photoUrl} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
+          {photos.length > 0 ? (
+            <div className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [&::-webkit-scrollbar]:hidden">
+              {photos.map((url, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={i}
+                  src={url}
+                  alt={candidate.name}
+                  className="h-full w-full shrink-0 snap-center object-cover"
+                />
+              ))}
+            </div>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
                 {candidate.initials}
               </span>
             </div>
+          )}
+          {photos.length > 1 && (
+            <span className="absolute bottom-2.5 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-semibold text-white">
+              החליקו לצדדים · {photos.length} תמונות
+            </span>
           )}
           <button
             onClick={onClose}
