@@ -146,7 +146,7 @@ export default function StaffTour() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
-  if (role !== "staff") return null;
+  if (role !== "staff" && role !== "admin") return null;
 
   const handleCallback = (data) => {
     if (data.status === "finished" || data.status === "skipped") {
@@ -156,13 +156,23 @@ export default function StaffTour() {
 
   return (
     <>
-      <button
-        onClick={startTour}
-        aria-label="הפעלת סיור הדרכה"
-        className="fixed bottom-28 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-[#8C4A55] text-white shadow-lg transition active:scale-90"
-      >
-        <HelpCircle size={22} />
-      </button>
+      {role === "staff" ? (
+        <button
+          onClick={startTour}
+          aria-label="הפעלת סיור הדרכה"
+          className="fixed bottom-28 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-[#8C4A55] text-white shadow-lg transition active:scale-90"
+        >
+          <HelpCircle size={22} />
+        </button>
+      ) : (
+        <button
+          onClick={startTour}
+          aria-label="הפעלת סיור הדרכה - תצוגת צוות"
+          className="fixed bottom-28 right-4 z-20 flex items-center gap-1.5 rounded-full bg-[#8C4A55] px-4 py-3 text-[13px] font-bold text-white shadow-lg transition active:scale-95"
+        >
+          <HelpCircle size={17} /> הפעלת סיור הדרכה (תצוגת צוות)
+        </button>
+      )}
 
       <Joyride
         run={run}
