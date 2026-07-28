@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   Heart,
   Mic,
   PenLine,
   ChevronDown,
-  Play,
   MapPin,
   Copy,
   Download,
@@ -42,11 +41,17 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const showToast = useCrmStore((s) => s.showToast);
   const trackProfileView = useCrmStore((s) => s.trackProfileView);
   const trackAudioPlay = useCrmStore((s) => s.trackAudioPlay);
+  const currentUser = useCrmStore((s) => s.currentUser);
   const [recording, setRecording] = useState(false);
+  const [recordError, setRecordError] = useState("");
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const recordTimeoutRef = useRef(null);
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
   const [edaDraft, setEdaDraft] = useState(candidate.eda || "");
+  const [adminNoteDraft, setAdminNoteDraft] = useState(candidate.adminNote || "");
   const [showDetail, setShowDetail] = useState(false);
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
@@ -57,6 +62,53 @@ export default function ProfileCard({ candidate, onReadMore }) {
     await navigator.clipboard.writeText(personalLink);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const MAX_RECORD_MS = 30000;
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    clearTimeout(recordTimeoutRef.current);
+    setRecording(false);
+  };
+
+  const startRecording = async () => {
+    setRecordError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        if (blob.size > MAX_FILE_SIZE) {
+          setRecordError(`ההקלטה גדולה מדי (מקסימום ${Math.round(MAX_FILE_SIZE / 1024)}KB) - נסי הקלטה קצרה יותר`);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const newNote = {
+            id: `${Date.now()}`,
+            author: currentUser().name,
+            date: new Date().toLocaleDateString("he-IL"),
+            audioUrl: reader.result,
+          };
+          updateCandidate(candidate.id, { voiceNotes: [...(candidate.voiceNotes || []), newNote] });
+          showToast("ההקלטה נשמרה בהצלחה");
+        };
+        reader.readAsDataURL(blob);
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+      recordTimeoutRef.current = setTimeout(stopRecording, MAX_RECORD_MS);
+    } catch (e) {
+      setRecordError("אין גישה למיקרופון - יש לאשר הרשאה בדפדפן ולנסות שוב");
+    }
   };
 
   const handleFileUpload = (field) => (e) => {
@@ -88,7 +140,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   };
 
   const handleDownload = () => {
-    const blob = new Blob([shareText], { type: "text/plain;charset=utf-8" });
+    // תוסף ﻿ (BOM) כדי שאפליקציות טקסט בטלפון יזהו את הקידוד כ-UTF-8 ולא יציגו ג'יבריש בעברית
+    const blob = new Blob(["﻿" + shareText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -139,6 +192,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
         <div className="absolute bottom-3 right-3 flex flex-wrap gap-1.5">
           <span className="tag-chip-crm">{candidate.age}</span>
           <span className="tag-chip-crm">{candidate.height} ס״מ</span>
+          {candidate.eda && <span className="tag-chip-crm">{candidate.eda}</span>}
           <span className="tag-chip-crm flex items-center gap-1">
             <MapPin size={11} /> {candidate.region}
           </span>
@@ -220,7 +274,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <Mic size={14} /> הקלטות שמע
                     </p>
                     <button
-                      onClick={() => setRecording((v) => !v)}
+                      onClick={recording ? stopRecording : startRecording}
                       className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${
                         recording ? "bg-red-500 text-white" : "bg-[#8C4A55] text-white"
                       }`}
@@ -228,20 +282,19 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       {recording ? "עצירת הקלטה" : "הקלטה חדשה"}
                     </button>
                   </div>
-                  {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת...</p>}
-                  {candidate.voiceNotes.length === 0 ? (
+                  {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת... (נעצרת אוטומטית אחרי 30 שניות)</p>}
+                  {recordError && <p className="mb-2 text-[11px] text-red-500">{recordError}</p>}
+                  {!candidate.voiceNotes || candidate.voiceNotes.length === 0 ? (
                     <p className="text-[12px] text-[#B5AEB0]">אין הקלטות עדיין</p>
                   ) : (
                     <ul className="space-y-1.5">
                       {candidate.voiceNotes.map((vn) => (
-                        <li
-                          key={vn.id}
-                          className="flex items-center gap-2 rounded-xl bg-white px-2.5 py-2 text-[12px] shadow-sm"
-                        >
-                          <Play size={13} className="text-[#20A66B]" />
-                          <span className="font-medium text-[#3A3335]">{vn.author}</span>
-                          <span className="text-[#B5AEB0]">{vn.duration}</span>
-                          <span className="mr-auto text-[#B5AEB0]">{vn.date}</span>
+                        <li key={vn.id} className="rounded-xl bg-white px-2.5 py-2 text-[12px] shadow-sm">
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="font-medium text-[#3A3335]">{vn.author}</span>
+                            <span className="mr-auto text-[#B5AEB0]">{vn.date}</span>
+                          </div>
+                          <audio controls src={vn.audioUrl} className="h-8 w-full" />
                         </li>
                       ))}
                     </ul>
@@ -357,13 +410,25 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       />
                     </div>
 
-                    <div className="handwritten-note-crm">
+                    <div>
                       <div className="mb-1 flex items-center justify-between">
                         <span className="flex items-center gap-1 text-[11px] font-bold not-italic text-amber-800">
                           <PenLine size={12} /> הערת מנהלת
                         </span>
                       </div>
-                      {candidate.adminNote || "אין הערה עדיין - לחצי לעריכה"}
+                      <textarea
+                        value={adminNoteDraft}
+                        onChange={(e) => setAdminNoteDraft(e.target.value)}
+                        onBlur={() => {
+                          if (adminNoteDraft !== (candidate.adminNote || "")) {
+                            updateCandidate(candidate.id, { adminNote: adminNoteDraft });
+                            showToast("ההערה נשמרה בהצלחה");
+                          }
+                        }}
+                        rows={3}
+                        placeholder="אין הערה עדיין - לחצי לעריכה"
+                        className="handwritten-note-crm w-full resize-none border-0 outline-none"
+                      />
                     </div>
                   </>
                 )}
