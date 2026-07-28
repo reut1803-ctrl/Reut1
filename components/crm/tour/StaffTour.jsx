@@ -55,6 +55,12 @@ function buildSteps({ hasCards, hasReferenceContacts }) {
         content: "על גבי כל תמונה מוצגים בבירור הגיל, הגובה, העדה ומקום המגורים הספציפי של המועמד/ת.",
       },
       {
+        target: '[data-tour="tour-favorite-heart"]',
+        disableBeacon: true,
+        title: "מועדפים",
+        content: "לחיצה על הלב שומרת את המועמד/ת באזור ה\"מועדפים\", לגישה מהירה בכל רגע דרך התפריט התחתון.",
+      },
+      {
         target: '[data-tour="tour-read-more"]',
         disableBeacon: true,
         title: "צפייה בפרופיל המלא",
@@ -93,6 +99,30 @@ function buildSteps({ hasCards, hasReferenceContacts }) {
       });
     }
   }
+
+  steps.push(
+    {
+      target: '[data-tour="tour-nav-matches"]',
+      disableBeacon: true,
+      title: "מבחן התאמות",
+      content:
+        "כאן נמצא מבחן ההתאמות - שאלון קצר בן 7 שאלות. ממלאים אותו עבור מועמד/ת מסוימת, והמערכת מציגה מולו/ה את ההצעות הכי מתאימות מהמאגר לפי ההעדפות שהוזנו, כדי לעזור לייצר שידוך פוטנציאלי.",
+    },
+    {
+      target: '[data-tour="tour-nav-proposals"]',
+      disableBeacon: true,
+      title: "מסך התאמות (שידוכים)",
+      content:
+        "אחרי שנוצרה הצעת התאמה בין שני מועמדים, כאן עוקבים אחריה: מעדכנים סטטוס (הוצע, נפגשו, מתקדמים ועוד), משייכים אישית לצוות, ורואים יומן התקדמות מלא לכל הצעה.",
+    },
+    {
+      target: '[data-tour="tour-nav-tasks"]',
+      disableBeacon: true,
+      title: "משימות",
+      content:
+        "כאן מנהלים את המשימות השוטפות שלך מול המועמדים - כמו שיחות בירור לתאם. אפשר לסמן משימה כהושלמה, ולראות משימות שהמנהלת שייכה במיוחד אלייך.",
+    }
+  );
 
   steps.push({
     target: "body",
@@ -156,23 +186,13 @@ export default function StaffTour() {
 
   return (
     <>
-      {role === "staff" ? (
-        <button
-          onClick={startTour}
-          aria-label="הפעלת סיור הדרכה"
-          className="fixed bottom-28 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-[#8C4A55] text-white shadow-lg transition active:scale-90"
-        >
-          <HelpCircle size={22} />
-        </button>
-      ) : (
-        <button
-          onClick={startTour}
-          aria-label="הפעלת סיור הדרכה - תצוגת צוות"
-          className="fixed bottom-28 right-4 z-20 flex items-center gap-1.5 rounded-full bg-[#8C4A55] px-4 py-3 text-[13px] font-bold text-white shadow-lg transition active:scale-95"
-        >
-          <HelpCircle size={17} /> הפעלת סיור הדרכה (תצוגת צוות)
-        </button>
-      )}
+      <button
+        onClick={startTour}
+        aria-label={role === "admin" ? "הפעלת סיור הדרכה - תצוגת צוות" : "הפעלת סיור הדרכה"}
+        className="safe-bottom fixed bottom-28 left-20 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#8C4A55] text-white shadow-lg transition active:scale-90"
+      >
+        <HelpCircle size={20} />
+      </button>
 
       <Joyride
         run={run}

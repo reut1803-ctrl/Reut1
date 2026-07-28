@@ -41,6 +41,7 @@ export default function BottomNav() {
             <Link
               key={tab.key}
               href={tab.href}
+              data-tour={`tour-nav-${tab.key}`}
               className="relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-semibold transition"
             >
               <span className="relative">

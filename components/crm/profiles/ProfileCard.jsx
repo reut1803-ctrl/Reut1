@@ -204,6 +204,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
         </div>
 
         <button
+          data-tour="tour-favorite-heart"
           onClick={() => toggleFavorite(candidate.id)}
           aria-label="הוספה למועדפים"
           className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow transition active:scale-90"
