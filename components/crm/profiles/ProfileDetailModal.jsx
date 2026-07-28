@@ -50,9 +50,11 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span className="tag-chip-detail">{candidate.age}</span>
             <span className="tag-chip-detail">{candidate.height} ס״מ</span>
-            <span className="tag-chip-detail flex items-center gap-1">
-              <MapPin size={11} /> {candidate.region}
-            </span>
+            {candidate.city && (
+              <span className="tag-chip-detail flex items-center gap-1">
+                <MapPin size={11} /> {candidate.city}
+              </span>
+            )}
           </div>
 
           <div className="mt-4 space-y-2.5">

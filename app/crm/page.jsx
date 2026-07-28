@@ -1,23 +1,40 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { SlidersHorizontal, UserPlus } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
 import TipsCarousel from "@/components/crm/profiles/TipsCarousel";
 import TagsSidebar from "@/components/crm/profiles/TagsSidebar";
+import StaffTour from "@/components/crm/tour/StaffTour";
 
-export default function ProfilesFeedPage() {
+function ProfilesFeed() {
+  const searchParams = useSearchParams();
   const board = useCrmStore((s) => s.board);
+  const setBoard = useCrmStore((s) => s.setBoard);
   const role = useCrmStore((s) => s.role);
   const filters = useCrmStore((s) => s.filters);
+  const setFilters = useCrmStore((s) => s.setFilters);
   const allCandidates = useCrmStore((s) => s.allCandidates);
+  const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
   const [tab, setTab] = useState("new");
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    const openId = searchParams.get("openCandidate");
+    if (!openId) return;
+    const c = findCandidateById(openId);
+    if (!c) return;
+    setBoard(c.gender);
+    setTab(c.isNew ? "new" : "previous");
+    setFilters({ search: c.name });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const candidates = useMemo(() => {
     const all = allCandidates(board);
@@ -40,8 +57,19 @@ export default function ProfilesFeedPage() {
 
       <GenderToggle />
 
+      <div data-tour="tour-search" className="relative mt-4">
+        <Search size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#B5AEB0]" />
+        <input
+          type="text"
+          value={filters.search}
+          onChange={(e) => setFilters({ search: e.target.value })}
+          placeholder="חיפוש מועמד (שם, משפחה)..."
+          className="w-full rounded-2xl bg-white py-3 pr-10 pl-4 text-[14px] text-[#3A3335] shadow-sm outline-none placeholder:text-[#B5AEB0] focus:ring-2 focus:ring-[#8C4A55]/30"
+        />
+      </div>
+
       <div className="mt-4 flex items-center gap-2">
-        <div className="flex flex-1 rounded-2xl bg-white p-1 shadow-sm">
+        <div data-tour="tour-tabs" className="flex flex-1 rounded-2xl bg-white p-1 shadow-sm">
           <button
             onClick={() => setTab("new")}
             className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition ${
@@ -60,6 +88,7 @@ export default function ProfilesFeedPage() {
           </button>
         </div>
         <button
+          data-tour="tour-filter"
           onClick={() => setShowFilters(true)}
           aria-label="סינון"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#8C4A55] shadow-sm transition active:scale-95"
@@ -89,6 +118,15 @@ export default function ProfilesFeedPage() {
 
       {showFilters && <FilterSheet onClose={() => setShowFilters(false)} />}
       <TagsSidebar />
+      <StaffTour />
     </div>
+  );
+}
+
+export default function ProfilesFeedPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilesFeed />
+    </Suspense>
   );
 }

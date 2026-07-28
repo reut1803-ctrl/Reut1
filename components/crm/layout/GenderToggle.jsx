@@ -7,7 +7,7 @@ export default function GenderToggle() {
   const setBoard = useCrmStore((s) => s.setBoard);
 
   return (
-    <div className="mx-auto flex w-full max-w-xs rounded-2xl bg-[#F6F5F4] p-1">
+    <div data-tour="tour-gender" className="mx-auto flex w-full max-w-xs rounded-2xl bg-[#F6F5F4] p-1">
       <button
         onClick={() => setBoard("female")}
         className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Clock, Copy, Check, Phone, Sparkles, UserCheck, X } from "lucide-react";
+import { ChevronDown, Clock, Copy, Check, Phone, Sparkles, Trash2, UserCheck, X } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { buildProfileShareText } from "@/lib/crm/shareText";
+import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
 
 function ContactCard({ candidate }) {
@@ -54,18 +55,28 @@ function ContactCard({ candidate }) {
 }
 
 export default function ProposalCard({ proposal }) {
+  const role = useCrmStore((s) => s.role);
   const updateProposalStatus = useCrmStore((s) => s.updateProposalStatus);
   const updateProposalRationale = useCrmStore((s) => s.updateProposalRationale);
   const assignProposal = useCrmStore((s) => s.assignProposal);
   const assignProposalToSelf = useCrmStore((s) => s.assignProposalToSelf);
+  const deleteProposal = useCrmStore((s) => s.deleteProposal);
+  const showToast = useCrmStore((s) => s.showToast);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const male = findCandidateById(proposal.maleId);
   const female = findCandidateById(proposal.femaleId);
   if (!male || !female) return null;
+
+  const handleDelete = async () => {
+    await deleteProposal(proposal.id);
+    showToast("ההתאמה נמחקה");
+    setConfirmingDelete(false);
+  };
 
   return (
     <div className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
@@ -73,9 +84,20 @@ export default function ProposalCard({ proposal }) {
         <h3 className="text-[15px] font-bold text-[#3A3335]">
           {male.name} ⚭ {female.name}
         </h3>
-        <button onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:bg-[#F6F5F4]" aria-label="פתיחת יומן">
-          <ChevronDown size={18} className={`transition ${open ? "rotate-180" : ""}`} />
-        </button>
+        <div className="flex items-center gap-1">
+          {role === "admin" && (
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              className="rounded-full p-1.5 hover:bg-red-50"
+              aria-label="מחיקת התאמה"
+            >
+              <Trash2 size={16} className="text-[#C24545]" />
+            </button>
+          )}
+          <button onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:bg-[#F6F5F4]" aria-label="פתיחת יומן">
+            <ChevronDown size={18} className={`transition ${open ? "rotate-180" : ""}`} />
+          </button>
+        </div>
       </div>
 
       <div className="mt-2 flex items-center justify-between">
@@ -175,6 +197,14 @@ export default function ProposalCard({ proposal }) {
             </ul>
           </div>
         </div>
+      )}
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          message="האם את בטוחה שברצונך למחוק התאמה זו לצמיתות?"
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
       )}
     </div>
   );

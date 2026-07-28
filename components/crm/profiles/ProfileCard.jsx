@@ -7,7 +7,6 @@ import {
   Mic,
   PenLine,
   ChevronDown,
-  MapPin,
   Copy,
   Download,
   HeartHandshake,
@@ -56,7 +55,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const exportRef = useRef(null);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
-  const [edaDraft, setEdaDraft] = useState(candidate.eda || "");
   const [adminNoteDraft, setAdminNoteDraft] = useState(candidate.adminNote || "");
   const [showDetail, setShowDetail] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
@@ -206,6 +204,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
         </div>
 
         <button
+          data-tour="tour-favorite-heart"
           onClick={() => toggleFavorite(candidate.id)}
           aria-label="הוספה למועדפים"
           className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow transition active:scale-90"
@@ -213,14 +212,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <Heart size={18} className={isFavorite ? "fill-[#8C4A55] text-[#8C4A55]" : "text-[#8A8285]"} />
         </button>
 
-        <div className="absolute bottom-3 right-3 flex flex-wrap gap-1.5">
+        <div data-tour="tour-card-info" className="absolute bottom-3 right-3 flex flex-wrap gap-1.5">
           <span className="tag-chip-crm">{candidate.age}</span>
           <span className="tag-chip-crm">{candidate.height} ס״מ</span>
           {candidate.eda && <span className="tag-chip-crm">{candidate.eda}</span>}
           {candidate.city && <span className="tag-chip-crm">{candidate.city}</span>}
-          <span className="tag-chip-crm flex items-center gap-1">
-            <MapPin size={11} /> {candidate.region}
-          </span>
         </div>
       </div>
 
@@ -230,6 +226,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
         <div className="mt-4 flex flex-col gap-2">
           <Button
+            data-tour="tour-read-more"
             variant="pink"
             className="w-full"
             onClick={() => {
@@ -285,6 +282,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
         {canSeeFullProfile && (
           <div className="mt-4 border-t border-[#EAE5E3] pt-3">
             <button
+              data-tour="tour-staff-toggle"
               onClick={() => toggleStaffArea(candidate.id)}
               className="flex w-full items-center justify-between text-[13px] font-semibold text-[#8C4A55]"
             >
@@ -304,7 +302,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                 )}
 
                 {candidate.referenceContacts && (
-                  <div className="rounded-2xl border-2 border-[#8C4A55] bg-[#F6E4E6] p-3">
+                  <div data-tour="tour-reference-contacts" className="rounded-2xl border-2 border-[#8C4A55] bg-[#F6E4E6] p-3">
                     <p className="mb-1.5 text-[12px] font-bold text-[#8C4A55]">מספרים לבירורים</p>
                     <p className="mb-2 whitespace-pre-wrap text-[13px] text-[#3A3335]">{candidate.referenceContacts}</p>
                     <button
@@ -317,7 +315,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   </div>
                 )}
 
-                <div className="rounded-2xl bg-[#F6F5F4] p-3">
+                <div data-tour="tour-voice-notes" className="rounded-2xl bg-[#F6F5F4] p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#3A3335]">
                       <Mic size={14} /> הקלטות שמע
@@ -454,23 +452,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
                 {role === "admin" && (
                   <>
-                    <div className="rounded-2xl bg-[#F6F5F4] p-3">
-                      <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">עדה</p>
-                      <input
-                        type="text"
-                        value={edaDraft}
-                        onChange={(e) => setEdaDraft(e.target.value)}
-                        onBlur={() => {
-                          if (edaDraft !== (candidate.eda || "")) {
-                            updateCandidate(candidate.id, { eda: edaDraft });
-                            showToast("העדה נשמרה בהצלחה");
-                          }
-                        }}
-                        placeholder="תימני, אשכנזי..."
-                        className="w-full rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335] outline-none focus:border-[#8C4A55]"
-                      />
-                    </div>
-
                     <div>
                       <div className="mb-1 flex items-center justify-between">
                         <span className="flex items-center gap-1 text-[11px] font-bold not-italic text-amber-800">
