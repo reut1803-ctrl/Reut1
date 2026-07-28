@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { SlidersHorizontal, UserPlus } from "lucide-react";
+import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
@@ -14,6 +14,7 @@ export default function ProfilesFeedPage() {
   const board = useCrmStore((s) => s.board);
   const role = useCrmStore((s) => s.role);
   const filters = useCrmStore((s) => s.filters);
+  const setFilters = useCrmStore((s) => s.setFilters);
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const candidates_ = useCrmStore((s) => s.candidates);
   const [tab, setTab] = useState("new");
@@ -39,6 +40,17 @@ export default function ProfilesFeedPage() {
       {(role === "staff" || role === "admin") && <TipsCarousel />}
 
       <GenderToggle />
+
+      <div className="relative mt-4">
+        <Search size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#B5AEB0]" />
+        <input
+          type="text"
+          value={filters.search}
+          onChange={(e) => setFilters({ search: e.target.value })}
+          placeholder="חיפוש מועמד (שם, משפחה)..."
+          className="w-full rounded-2xl bg-white py-3 pr-10 pl-4 text-[14px] text-[#3A3335] shadow-sm outline-none placeholder:text-[#B5AEB0] focus:ring-2 focus:ring-[#8C4A55]/30"
+        />
+      </div>
 
       <div className="mt-4 flex items-center gap-2">
         <div className="flex flex-1 rounded-2xl bg-white p-1 shadow-sm">

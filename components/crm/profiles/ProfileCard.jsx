@@ -55,7 +55,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const exportRef = useRef(null);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
-  const [edaDraft, setEdaDraft] = useState(candidate.eda || "");
   const [adminNoteDraft, setAdminNoteDraft] = useState(candidate.adminNote || "");
   const [showDetail, setShowDetail] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
@@ -450,23 +449,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
                 {role === "admin" && (
                   <>
-                    <div className="rounded-2xl bg-[#F6F5F4] p-3">
-                      <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">עדה</p>
-                      <input
-                        type="text"
-                        value={edaDraft}
-                        onChange={(e) => setEdaDraft(e.target.value)}
-                        onBlur={() => {
-                          if (edaDraft !== (candidate.eda || "")) {
-                            updateCandidate(candidate.id, { eda: edaDraft });
-                            showToast("העדה נשמרה בהצלחה");
-                          }
-                        }}
-                        placeholder="תימני, אשכנזי..."
-                        className="w-full rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335] outline-none focus:border-[#8C4A55]"
-                      />
-                    </div>
-
                     <div>
                       <div className="mb-1 flex items-center justify-between">
                         <span className="flex items-center gap-1 text-[11px] font-bold not-italic text-amber-800">
