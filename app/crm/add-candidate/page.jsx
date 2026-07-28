@@ -6,10 +6,13 @@ import { UserPlus, ImagePlus, X, FileText, Music } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { compressImage } from "@/lib/crm/compressImage";
-import { uploadDataUrl, uploadRawFile } from "@/lib/crm/uploadFile";
 import Button from "@/components/crm/ui/Button";
 
 const DRAFT_KEY = "crm_add_candidate_draft";
+const MAX_PHOTOS = 4;
+const MAX_PDF_SIZE = 350 * 1024; // בייטים - קובץ PDF
+const MAX_AUDIO_SIZE = 400 * 1024; // בייטים - הקלטת היכרות
+const MAX_TOTAL_SIZE = 900 * 1024; // תקרת ביטחון כוללת לכרטיס (מגבלת Firestore היא 1MB)
 
 const EMPTY_FORM = {
   gender: "male",
@@ -52,6 +55,7 @@ export default function AddCandidatePage() {
   const [draftRestored, setDraftRestored] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [mediaError, setMediaError] = useState("");
 
   useEffect(() => {
     const draft = loadDraft();
@@ -92,6 +96,10 @@ export default function AddCandidatePage() {
       setPhotoError("יש לבחור קובצי תמונה בלבד");
       return;
     }
+    if (photos.length + files.length > MAX_PHOTOS) {
+      setPhotoError(`אפשר להעלות עד ${MAX_PHOTOS} תמונות לכרטיס`);
+      return;
+    }
     setPhotoError("");
     e.target.value = "";
     for (const file of files) {
@@ -106,16 +114,53 @@ export default function AddCandidatePage() {
 
   const removePhoto = (index) => setPhotos((cur) => cur.filter((_, i) => i !== index));
 
+  const handlePdfChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > MAX_PDF_SIZE) {
+      setMediaError(`קובץ ה-PDF גדול מדי (מקסימום ${Math.round(MAX_PDF_SIZE / 1024)}KB) - נסי לייצא אותו בקובץ קטן יותר`);
+      return;
+    }
+    setMediaError("");
+    setPdfFile(file);
+  };
+
+  const handleAudioChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > MAX_AUDIO_SIZE) {
+      setMediaError(`הקלטת ההיכרות גדולה מדי (מקסימום ${Math.round(MAX_AUDIO_SIZE / 1024)}KB) - נסי הקלטה קצרה יותר`);
+      return;
+    }
+    setMediaError("");
+    setAudioFile(file);
+  };
+
+  const readAsDataUrl = (file) =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+
   const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photos.length > 0 && !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitError("");
+
+    const estimatedSize = photos.join("").length + (pdfFile?.size || 0) + (audioFile?.size || 0);
+    if (estimatedSize > MAX_TOTAL_SIZE) {
+      setSubmitError("הכרטיס גדול מדי לשמירה בסך הכל - נסי להוריד את כמות/גודל התמונות, ה-PDF או ההקלטה");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const photoUrls = await Promise.all(photos.map((p) => uploadDataUrl(p, "candidates/photos")));
-      const pdfUrl = pdfFile ? await uploadRawFile(pdfFile, "candidates/pdfs") : null;
-      const introAudioUrl = audioFile ? await uploadRawFile(audioFile, "candidates/audio") : null;
+      const pdfUrl = pdfFile ? await readAsDataUrl(pdfFile) : null;
+      const introAudioUrl = audioFile ? await readAsDataUrl(audioFile) : null;
       const candidate = await addCandidate({
         gender: form.gender,
         name: form.name.trim(),
@@ -130,8 +175,8 @@ export default function AddCandidatePage() {
         phone: form.phone.trim(),
         bio: form.bio.trim(),
         traits,
-        photoUrl: photoUrls[0],
-        photoUrls,
+        photoUrl: photos[0],
+        photoUrls: photos,
         availabilityStatus: form.availabilityStatus,
         complexityNotes: form.complexityNotes.trim(),
         pdfUrl,
@@ -143,10 +188,16 @@ export default function AddCandidatePage() {
       setPhotos([]);
       setPdfFile(null);
       setAudioFile(null);
+      setMediaError("");
       showToast("הפרטים נשמרו בהצלחה");
       router.push(`/crm?added=${candidate.id}`);
     } catch (err) {
-      setSubmitError("השמירה נכשלה. בדקי את החיבור לאינטרנט ונסי שוב");
+      const tooBig = String(err?.message || "").includes("maximum") || String(err?.code || "").includes("invalid-argument");
+      setSubmitError(
+        tooBig
+          ? "הכרטיס גדול מדי לשמירה - נסי להוריד את כמות התמונות, או להקליט הקלטת היכרות קצרה יותר, ולנסות שוב"
+          : "השמירה נכשלה. בדקי את החיבור לאינטרנט ונסי שוב"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -188,7 +239,7 @@ export default function AddCandidatePage() {
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">תמונות * (אפשר להוסיף כמה)</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">תמונות * (עד {MAX_PHOTOS})</p>
           <div className="flex flex-wrap gap-2.5">
             {photos.map((p, i) => (
               <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#EAE5E3]">
@@ -208,11 +259,13 @@ export default function AddCandidatePage() {
                 </button>
               </div>
             ))}
-            <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]">
-              <ImagePlus size={22} />
-              <span className="text-[11px] font-semibold">הוספת תמונה</span>
-              <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
-            </label>
+            {photos.length < MAX_PHOTOS && (
+              <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]">
+                <ImagePlus size={22} />
+                <span className="text-[11px] font-semibold">הוספת תמונה</span>
+                <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+              </label>
+            )}
           </div>
           {photoError && <p className="mt-1 text-[11px] text-red-500">{photoError}</p>}
           <p className="mt-1 text-[11px] text-[#B5AEB0]">שדה חובה - התמונה הראשונה תוצג ככרטיס הראשי</p>
@@ -363,17 +416,18 @@ export default function AddCandidatePage() {
             <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
               <FileText size={15} />
               {pdfFile ? pdfFile.name : "העלאת PDF"}
-              <input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] || null)} className="hidden" />
+              <input type="file" accept="application/pdf" onChange={handlePdfChange} className="hidden" />
             </label>
           </Field>
           <Field label="הקלטת היכרות">
             <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
               <Music size={15} />
               {audioFile ? audioFile.name : "העלאת אודיו"}
-              <input type="file" accept="audio/*" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} className="hidden" />
+              <input type="file" accept="audio/*" onChange={handleAudioChange} className="hidden" />
             </label>
           </Field>
         </div>
+        {mediaError && <p className="text-[11px] text-red-500">{mediaError}</p>}
 
         {submitError && (
           <p className="rounded-xl bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">{submitError}</p>
