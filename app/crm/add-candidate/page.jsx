@@ -12,7 +12,6 @@ const DRAFT_KEY = "crm_add_candidate_draft";
 const MAX_PHOTOS = 4;
 const MAX_PDF_SIZE = 350 * 1024; // בייטים - קובץ PDF
 const MAX_AUDIO_SIZE = 400 * 1024; // בייטים - הקלטת היכרות
-const MAX_TOTAL_SIZE = 900 * 1024; // תקרת ביטחון כוללת לכרטיס (מגבלת Firestore היא 1MB)
 
 const EMPTY_FORM = {
   gender: "male",
@@ -150,13 +149,6 @@ export default function AddCandidatePage() {
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitError("");
-
-    const estimatedSize = photos.join("").length + (pdfFile?.size || 0) + (audioFile?.size || 0);
-    if (estimatedSize > MAX_TOTAL_SIZE) {
-      setSubmitError("הכרטיס גדול מדי לשמירה בסך הכל - נסי להוריד את כמות/גודל התמונות, ה-PDF או ההקלטה");
-      return;
-    }
-
     setSubmitting(true);
     try {
       const pdfUrl = pdfFile ? await readAsDataUrl(pdfFile) : null;
