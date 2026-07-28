@@ -15,6 +15,7 @@ import {
   FileText,
   Music,
   Link2,
+  Trash2,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -24,6 +25,8 @@ import { buildProfileShareText } from "@/lib/crm/shareText";
 import { getAvailabilityColors } from "@/lib/crm/availability";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
+import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
+import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 
 const MAX_FILE_SIZE = 400 * 1024; // בייטים - PDF/הקלטה בכרטיס קיים
@@ -49,6 +52,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const recordTimeoutRef = useRef(null);
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const exportRef = useRef(null);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
   const [edaDraft, setEdaDraft] = useState(candidate.eda || "");
   const [adminNoteDraft, setAdminNoteDraft] = useState(candidate.adminNote || "");
@@ -64,7 +69,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  const MAX_RECORD_MS = 30000;
+  const MAX_RECORD_MS = 10 * 60 * 1000;
 
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
@@ -139,15 +144,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    // תוסף ﻿ (BOM) כדי שאפליקציות טקסט בטלפון יזהו את הקידוד כ-UTF-8 ולא יציגו ג'יבריש בעברית
-    const blob = new Blob(["﻿" + shareText], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${candidate.name}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      await generateCandidatePdf(exportRef.current, `${candidate.name}.pdf`);
+    } catch {
+      showToast("יצירת ה-PDF נכשלה, נסי שוב");
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   return (
@@ -235,9 +241,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
             </button>
             <button
               onClick={handleDownload}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#20A66B] bg-white px-3 py-3 text-sm font-semibold text-[#178A57] transition active:scale-95 hover:bg-[#20A66B]/5"
+              disabled={generatingPdf}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#20A66B] bg-white px-3 py-3 text-sm font-semibold text-[#178A57] transition active:scale-95 hover:bg-[#20A66B]/5 disabled:opacity-60"
             >
-              <Download size={16} /> הורדה לקובץ
+              <Download size={16} /> {generatingPdf ? "מכינה PDF..." : "הורדת PDF"}
             </button>
           </div>
         </div>
@@ -268,6 +275,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
             {isExpanded && (
               <div className="mt-3 space-y-3">
+                <Link
+                  href={`/crm/edit-candidate?id=${candidate.id}`}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#8C4A55] bg-white px-4 py-2.5 text-sm font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6E4E6]"
+                >
+                  <PenLine size={15} /> עריכת פרטי הכרטיס
+                </Link>
+
                 <div className="rounded-2xl bg-[#F6F5F4] p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#3A3335]">
@@ -279,10 +293,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
                         recording ? "bg-red-500 text-white" : "bg-[#8C4A55] text-white"
                       }`}
                     >
-                      {recording ? "עצירת הקלטה" : "הקלטה חדשה"}
+                      {recording ? "עצירת הקלטה" : candidate.voiceNotes?.length > 0 ? "הקלטה נוספת" : "הקלטה חדשה"}
                     </button>
                   </div>
-                  {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת... (נעצרת אוטומטית אחרי 30 שניות)</p>}
+                  {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת... (נעצרת אוטומטית אחרי 10 דקות)</p>}
                   {recordError && <p className="mb-2 text-[11px] text-red-500">{recordError}</p>}
                   {!candidate.voiceNotes || candidate.voiceNotes.length === 0 ? (
                     <p className="text-[12px] text-[#B5AEB0]">אין הקלטות עדיין</p>
@@ -293,6 +307,18 @@ export default function ProfileCard({ candidate, onReadMore }) {
                           <div className="mb-1 flex items-center gap-2">
                             <span className="font-medium text-[#3A3335]">{vn.author}</span>
                             <span className="mr-auto text-[#B5AEB0]">{vn.date}</span>
+                            <button
+                              onClick={() => {
+                                updateCandidate(candidate.id, {
+                                  voiceNotes: candidate.voiceNotes.filter((n) => n.id !== vn.id),
+                                });
+                                showToast("ההקלטה נמחקה");
+                              }}
+                              aria-label="מחיקת הקלטה"
+                              className="rounded-full p-1 hover:bg-[#F6F5F4]"
+                            >
+                              <Trash2 size={13} className="text-[#C24545]" />
+                            </button>
                           </div>
                           <audio controls src={vn.audioUrl} className="h-8 w-full" />
                         </li>
@@ -462,6 +488,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
       `}</style>
 
       {showDetail && <ProfileDetailModal candidate={candidate} onClose={() => setShowDetail(false)} />}
+      <CandidateExportTemplate candidate={candidate} forwardedRef={exportRef} />
     </div>
   );
 }
