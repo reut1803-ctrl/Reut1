@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { compressImage } from "@/lib/crm/compressImage";
 import Button from "@/components/crm/ui/Button";
 
 const DRAFT_KEY = "crm_add_candidate_draft";
@@ -48,6 +49,8 @@ export default function AddCandidatePage() {
   const [pdfFile, setPdfFile] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const draft = loadDraft();
@@ -80,7 +83,7 @@ export default function AddCandidatePage() {
     if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
   };
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoChange = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     const invalid = files.some((f) => !f.type.startsWith("image/"));
@@ -89,12 +92,15 @@ export default function AddCandidatePage() {
       return;
     }
     setPhotoError("");
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => setPhotos((cur) => [...cur, reader.result]);
-      reader.readAsDataURL(file);
-    });
     e.target.value = "";
+    for (const file of files) {
+      try {
+        const compressed = await compressImage(file);
+        setPhotos((cur) => [...cur, compressed]);
+      } catch {
+        setPhotoError("העלאת אחת התמונות נכשלה, נסי שוב");
+      }
+    }
   };
 
   const removePhoto = (index) => setPhotos((cur) => cur.filter((_, i) => i !== index));
@@ -106,41 +112,54 @@ export default function AddCandidatePage() {
       reader.readAsDataURL(file);
     });
 
-  const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photos.length > 0;
+  const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photos.length > 0 && !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
-    const pdfUrl = pdfFile ? await readAsDataUrl(pdfFile) : null;
-    const introAudioUrl = audioFile ? await readAsDataUrl(audioFile) : null;
-    const candidate = await addCandidate({
-      gender: form.gender,
-      name: form.name.trim(),
-      age: Number(form.age),
-      height: Number(form.height),
-      region: form.region,
-      religiousLevel: form.religiousLevel,
-      education: form.education,
-      yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : undefined,
-      smoking: form.smoking,
-      tag: form.tag || null,
-      phone: form.phone.trim(),
-      bio: form.bio.trim(),
-      traits,
-      photoUrl: photos[0],
-      photoUrls: photos,
-      availabilityStatus: form.availabilityStatus,
-      complexityNotes: form.complexityNotes.trim(),
-      pdfUrl,
-      introAudioUrl,
-    });
-    clearDraft();
-    setForm(EMPTY_FORM);
-    setTraits([]);
-    setPhotos([]);
-    setPdfFile(null);
-    setAudioFile(null);
-    showToast("הפרטים נשמרו בהצלחה");
-    router.push(`/crm?added=${candidate.id}`);
+    setSubmitError("");
+    setSubmitting(true);
+    try {
+      const pdfUrl = pdfFile ? await readAsDataUrl(pdfFile) : null;
+      const introAudioUrl = audioFile ? await readAsDataUrl(audioFile) : null;
+      const candidate = await addCandidate({
+        gender: form.gender,
+        name: form.name.trim(),
+        age: Number(form.age),
+        height: Number(form.height),
+        region: form.region,
+        religiousLevel: form.religiousLevel,
+        education: form.education,
+        yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : undefined,
+        smoking: form.smoking,
+        tag: form.tag || null,
+        phone: form.phone.trim(),
+        bio: form.bio.trim(),
+        traits,
+        photoUrl: photos[0],
+        photoUrls: photos,
+        availabilityStatus: form.availabilityStatus,
+        complexityNotes: form.complexityNotes.trim(),
+        pdfUrl,
+        introAudioUrl,
+      });
+      clearDraft();
+      setForm(EMPTY_FORM);
+      setTraits([]);
+      setPhotos([]);
+      setPdfFile(null);
+      setAudioFile(null);
+      showToast("הפרטים נשמרו בהצלחה");
+      router.push(`/crm?added=${candidate.id}`);
+    } catch (err) {
+      const tooBig = String(err?.message || "").includes("maximum") || String(err?.code || "").includes("invalid-argument");
+      setSubmitError(
+        tooBig
+          ? "הכרטיס גדול מדי לשמירה - נסי להוריד את כמות התמונות, או להקליט הקלטת היכרות קצרה יותר, ולנסות שוב"
+          : "השמירה נכשלה. בדקי את החיבור לאינטרנט ונסי שוב"
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -366,8 +385,11 @@ export default function AddCandidatePage() {
           </Field>
         </div>
 
+        {submitError && (
+          <p className="rounded-xl bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">{submitError}</p>
+        )}
         <Button variant="primary" className="w-full" disabled={!canSubmit} onClick={handleSubmit}>
-          <UserPlus size={16} /> הוספה למאגר
+          <UserPlus size={16} /> {submitting ? "שומרת..." : "הוספה למאגר"}
         </Button>
       </div>
 
