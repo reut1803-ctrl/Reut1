@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
@@ -10,15 +11,29 @@ import FilterSheet from "@/components/crm/profiles/FilterSheet";
 import TipsCarousel from "@/components/crm/profiles/TipsCarousel";
 import TagsSidebar from "@/components/crm/profiles/TagsSidebar";
 
-export default function ProfilesFeedPage() {
+function ProfilesFeed() {
+  const searchParams = useSearchParams();
   const board = useCrmStore((s) => s.board);
+  const setBoard = useCrmStore((s) => s.setBoard);
   const role = useCrmStore((s) => s.role);
   const filters = useCrmStore((s) => s.filters);
   const setFilters = useCrmStore((s) => s.setFilters);
   const allCandidates = useCrmStore((s) => s.allCandidates);
+  const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
   const [tab, setTab] = useState("new");
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    const openId = searchParams.get("openCandidate");
+    if (!openId) return;
+    const c = findCandidateById(openId);
+    if (!c) return;
+    setBoard(c.gender);
+    setTab(c.isNew ? "new" : "previous");
+    setFilters({ search: c.name });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const candidates = useMemo(() => {
     const all = allCandidates(board);
@@ -102,5 +117,13 @@ export default function ProfilesFeedPage() {
       {showFilters && <FilterSheet onClose={() => setShowFilters(false)} />}
       <TagsSidebar />
     </div>
+  );
+}
+
+export default function ProfilesFeedPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilesFeed />
+    </Suspense>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Check, Megaphone } from "lucide-react";
+import Link from "next/link";
+import { Plus, Check, Megaphone, Phone, ChevronLeft } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 
@@ -166,23 +167,43 @@ export default function TasksPage() {
 }
 
 function TaskRow({ task, onToggle, highlighted }) {
+  const findCandidateById = useCrmStore((s) => s.findCandidateById);
+  const candidate = task.candidateId ? findCandidateById(task.candidateId) : null;
+
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl border p-3 ${
-        highlighted ? "border-[#8C4A55] bg-[#F6E4E6]" : "border-[#EAE5E3] bg-white"
-      }`}
+      className={`rounded-2xl border p-3 ${highlighted ? "border-[#8C4A55] bg-[#F6E4E6]" : "border-[#EAE5E3] bg-white"}`}
     >
-      <button
-        onClick={onToggle}
-        aria-label="סימון כהושלם"
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#8C4A55]"
-      />
-      <div className="flex-1">
-        <p className="text-sm font-semibold text-[#3A3335]">{task.title}</p>
-        <p className="text-[11px] text-[#8A8285]">
-          {task.owner} {task.dueDate && `· ${task.dueDate}`} {task.candidateName && `· בנוגע ל${task.candidateName}`}
-        </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onToggle}
+          aria-label="סימון כהושלם"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#8C4A55]"
+        />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-[#3A3335]">{task.title}</p>
+          <p className="text-[11px] text-[#8A8285]">
+            {task.owner} {task.dueDate && `· ${task.dueDate}`} {task.candidateName && `· בנוגע ל${task.candidateName}`}
+          </p>
+        </div>
       </div>
+
+      {candidate && (
+        <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-[12px] shadow-sm">
+          <Link href={`/crm?openCandidate=${candidate.id}`} className="flex items-center gap-1.5 font-semibold text-[#8C4A55]">
+            צפייה בכרטיס {candidate.name} <ChevronLeft size={13} />
+          </Link>
+          {candidate.phone && (
+            <a
+              href={`tel:${candidate.phone}`}
+              dir="ltr"
+              className="flex items-center gap-1 rounded-lg bg-[#F6F5F4] px-2 py-1 font-semibold text-[#3A3335]"
+            >
+              <Phone size={12} /> {candidate.phone}
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 }
