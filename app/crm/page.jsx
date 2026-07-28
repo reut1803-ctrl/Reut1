@@ -8,6 +8,7 @@ import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
 import TipsCarousel from "@/components/crm/profiles/TipsCarousel";
+import TagsSidebar from "@/components/crm/profiles/TagsSidebar";
 
 export default function ProfilesFeedPage() {
   const board = useCrmStore((s) => s.board);
@@ -28,6 +29,7 @@ export default function ProfilesFeedPage() {
       if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
       if (filters.region !== "הכל" && c.region !== filters.region) return false;
       if (filters.search && !c.name.includes(filters.search.trim())) return false;
+      if (filters.tag && c.tag !== filters.tag) return false;
       return true;
     });
   }, [board, tab, filters, candidates_]);
@@ -86,6 +88,7 @@ export default function ProfilesFeedPage() {
       )}
 
       {showFilters && <FilterSheet onClose={() => setShowFilters(false)} />}
+      <TagsSidebar />
     </div>
   );
 }
