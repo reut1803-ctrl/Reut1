@@ -161,7 +161,7 @@ export default function AddCandidatePage() {
         region: form.region,
         religiousLevel: form.religiousLevel,
         education: form.education,
-        yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : undefined,
+        yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
         smoking: form.smoking,
         tag: form.tag || null,
         phone: form.phone.trim(),
