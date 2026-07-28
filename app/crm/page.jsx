@@ -10,6 +10,7 @@ import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
 import TipsCarousel from "@/components/crm/profiles/TipsCarousel";
 import TagsSidebar from "@/components/crm/profiles/TagsSidebar";
+import StaffTour from "@/components/crm/tour/StaffTour";
 
 function ProfilesFeed() {
   const searchParams = useSearchParams();
@@ -56,7 +57,7 @@ function ProfilesFeed() {
 
       <GenderToggle />
 
-      <div className="relative mt-4">
+      <div data-tour="tour-search" className="relative mt-4">
         <Search size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#B5AEB0]" />
         <input
           type="text"
@@ -68,7 +69,7 @@ function ProfilesFeed() {
       </div>
 
       <div className="mt-4 flex items-center gap-2">
-        <div className="flex flex-1 rounded-2xl bg-white p-1 shadow-sm">
+        <div data-tour="tour-tabs" className="flex flex-1 rounded-2xl bg-white p-1 shadow-sm">
           <button
             onClick={() => setTab("new")}
             className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition ${
@@ -87,6 +88,7 @@ function ProfilesFeed() {
           </button>
         </div>
         <button
+          data-tour="tour-filter"
           onClick={() => setShowFilters(true)}
           aria-label="סינון"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#8C4A55] shadow-sm transition active:scale-95"
@@ -116,6 +118,7 @@ function ProfilesFeed() {
 
       {showFilters && <FilterSheet onClose={() => setShowFilters(false)} />}
       <TagsSidebar />
+      <StaffTour />
     </div>
   );
 }
