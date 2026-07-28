@@ -28,6 +28,7 @@ import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 
 const MAX_FILE_SIZE = 400 * 1024; // בייטים - PDF/הקלטה בכרטיס קיים
 
@@ -58,6 +59,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [edaDraft, setEdaDraft] = useState(candidate.eda || "");
   const [adminNoteDraft, setAdminNoteDraft] = useState(candidate.adminNote || "");
   const [showDetail, setShowDetail] = useState(false);
+  const [referenceCopied, setReferenceCopied] = useState(false);
+  const [pendingDeleteVoiceNoteId, setPendingDeleteVoiceNoteId] = useState(null);
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
   const candidateTag = CANDIDATE_TAGS.find((t) => t.name === candidate.tag);
@@ -99,6 +102,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           const newNote = {
             id: `${Date.now()}`,
             author: currentUser().name,
+            authorEmail: currentUser().email,
             date: new Date().toLocaleDateString("he-IL"),
             audioUrl: reader.result,
           };
@@ -142,6 +146,20 @@ export default function ProfileCard({ candidate, onReadMore }) {
     await navigator.clipboard.writeText(shareText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyReferenceContacts = async () => {
+    await navigator.clipboard.writeText(candidate.referenceContacts || "");
+    setReferenceCopied(true);
+    setTimeout(() => setReferenceCopied(false), 2000);
+  };
+
+  const handleDeleteVoiceNote = (voiceNoteId) => {
+    updateCandidate(candidate.id, {
+      voiceNotes: candidate.voiceNotes.filter((n) => n.id !== voiceNoteId),
+    });
+    showToast("ההקלטה נמחקה");
+    setPendingDeleteVoiceNoteId(null);
   };
 
   const handleDownload = async () => {
@@ -199,6 +217,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <span className="tag-chip-crm">{candidate.age}</span>
           <span className="tag-chip-crm">{candidate.height} ס״מ</span>
           {candidate.eda && <span className="tag-chip-crm">{candidate.eda}</span>}
+          {candidate.city && <span className="tag-chip-crm">{candidate.city}</span>}
           <span className="tag-chip-crm flex items-center gap-1">
             <MapPin size={11} /> {candidate.region}
           </span>
@@ -275,12 +294,28 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
             {isExpanded && (
               <div className="mt-3 space-y-3">
-                <Link
-                  href={`/crm/edit-candidate?id=${candidate.id}`}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#8C4A55] bg-white px-4 py-2.5 text-sm font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6E4E6]"
-                >
-                  <PenLine size={15} /> עריכת פרטי הכרטיס
-                </Link>
+                {role === "admin" && (
+                  <Link
+                    href={`/crm/edit-candidate?id=${candidate.id}`}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#8C4A55] bg-white px-4 py-2.5 text-sm font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6E4E6]"
+                  >
+                    <PenLine size={15} /> עריכת פרטי הכרטיס
+                  </Link>
+                )}
+
+                {candidate.referenceContacts && (
+                  <div className="rounded-2xl border-2 border-[#8C4A55] bg-[#F6E4E6] p-3">
+                    <p className="mb-1.5 text-[12px] font-bold text-[#8C4A55]">מספרים לבירורים</p>
+                    <p className="mb-2 whitespace-pre-wrap text-[13px] text-[#3A3335]">{candidate.referenceContacts}</p>
+                    <button
+                      onClick={handleCopyReferenceContacts}
+                      className="flex w-full items-center justify-center gap-1 rounded-xl bg-[#8C4A55] py-1.5 text-[12px] font-semibold text-white transition active:scale-95"
+                    >
+                      {referenceCopied ? <Check size={13} /> : <Copy size={13} />}
+                      {referenceCopied ? "הועתק!" : "העתקה"}
+                    </button>
+                  </div>
+                )}
 
                 <div className="rounded-2xl bg-[#F6F5F4] p-3">
                   <div className="mb-2 flex items-center justify-between">
@@ -302,27 +337,27 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     <p className="text-[12px] text-[#B5AEB0]">אין הקלטות עדיין</p>
                   ) : (
                     <ul className="space-y-1.5">
-                      {candidate.voiceNotes.map((vn) => (
-                        <li key={vn.id} className="rounded-xl bg-white px-2.5 py-2 text-[12px] shadow-sm">
-                          <div className="mb-1 flex items-center gap-2">
-                            <span className="font-medium text-[#3A3335]">{vn.author}</span>
-                            <span className="mr-auto text-[#B5AEB0]">{vn.date}</span>
-                            <button
-                              onClick={() => {
-                                updateCandidate(candidate.id, {
-                                  voiceNotes: candidate.voiceNotes.filter((n) => n.id !== vn.id),
-                                });
-                                showToast("ההקלטה נמחקה");
-                              }}
-                              aria-label="מחיקת הקלטה"
-                              className="rounded-full p-1 hover:bg-[#F6F5F4]"
-                            >
-                              <Trash2 size={13} className="text-[#C24545]" />
-                            </button>
-                          </div>
-                          <audio controls src={vn.audioUrl} className="h-8 w-full" />
-                        </li>
-                      ))}
+                      {candidate.voiceNotes.map((vn) => {
+                        const canDelete = role === "admin" || vn.authorEmail === currentUser().email;
+                        return (
+                          <li key={vn.id} className="rounded-xl bg-white px-2.5 py-2 text-[12px] shadow-sm">
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="font-medium text-[#3A3335]">{vn.author}</span>
+                              <span className="mr-auto text-[#B5AEB0]">{vn.date}</span>
+                              {canDelete && (
+                                <button
+                                  onClick={() => setPendingDeleteVoiceNoteId(vn.id)}
+                                  aria-label="מחיקת הקלטה"
+                                  className="rounded-full p-1 hover:bg-[#F6F5F4]"
+                                >
+                                  <Trash2 size={13} className="text-[#C24545]" />
+                                </button>
+                              )}
+                            </div>
+                            <audio controls src={vn.audioUrl} className="h-8 w-full" />
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
@@ -488,6 +523,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
       `}</style>
 
       {showDetail && <ProfileDetailModal candidate={candidate} onClose={() => setShowDetail(false)} />}
+      {pendingDeleteVoiceNoteId && (
+        <ConfirmDialog
+          message="האם את בטוחה שברצונך למחוק הקלטה זו?"
+          onConfirm={() => handleDeleteVoiceNote(pendingDeleteVoiceNoteId)}
+          onCancel={() => setPendingDeleteVoiceNoteId(null)}
+        />
+      )}
       <CandidateExportTemplate candidate={candidate} forwardedRef={exportRef} />
     </div>
   );

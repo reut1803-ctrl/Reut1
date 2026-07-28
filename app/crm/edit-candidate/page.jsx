@@ -46,6 +46,7 @@ function EditCandidateForm() {
       height: String(c.height ?? ""),
       eda: c.eda || "",
       region: c.region,
+      city: c.city || "",
       religiousLevel: c.religiousLevel,
       education: c.education,
       yeshivaLevel: c.yeshivaLevel || YESHIVA_LEVELS[0],
@@ -55,6 +56,7 @@ function EditCandidateForm() {
       bio: c.bio || "",
       availabilityStatus: c.availabilityStatus || AVAILABILITY_STATUSES[0],
       complexityNotes: c.complexityNotes || "",
+      referenceContacts: c.referenceContacts || "",
     });
     setTraits(c.traits || []);
     setPhotos(c.photoUrls?.length > 0 ? c.photoUrls : c.photoUrl ? [c.photoUrl] : []);
@@ -153,6 +155,7 @@ function EditCandidateForm() {
         height: Number(form.height),
         eda: form.eda.trim(),
         region: form.region,
+        city: form.city.trim(),
         religiousLevel: form.religiousLevel,
         education: form.education,
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
@@ -164,6 +167,7 @@ function EditCandidateForm() {
         photoUrl: photos[0],
         photoUrls: photos,
         complexityNotes: form.complexityNotes.trim(),
+        referenceContacts: form.referenceContacts.trim(),
         pdfUrl,
         introAudioUrl,
       });
@@ -276,6 +280,16 @@ function EditCandidateForm() {
           </select>
         </Field>
 
+        <Field label="מקום מגורים (עיר/יישוב)">
+          <input
+            type="text"
+            value={form.city}
+            onChange={(e) => set({ city: e.target.value })}
+            placeholder="לדוגמה: בית שמש"
+            className="input-crm"
+          />
+        </Field>
+
         <Field label="רמת תורניות">
           <select value={form.religiousLevel} onChange={(e) => set({ religiousLevel: e.target.value })} className="input-crm">
             {religiousLevelsFor(form.gender).map((r) => (
@@ -370,6 +384,16 @@ function EditCandidateForm() {
             value={form.complexityNotes}
             onChange={(e) => set({ complexityNotes: e.target.value })}
             rows={3}
+            className="input-crm resize-none"
+          />
+        </Field>
+
+        <Field label="מספרים לבירורים">
+          <textarea
+            value={form.referenceContacts}
+            onChange={(e) => set({ referenceContacts: e.target.value })}
+            rows={3}
+            placeholder="שמות ומספרי טלפון של אנשי קשר לבירור..."
             className="input-crm resize-none"
           />
         </Field>

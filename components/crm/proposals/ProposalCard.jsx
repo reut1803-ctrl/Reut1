@@ -8,11 +8,18 @@ import StageFunnel from "./StageFunnel";
 
 function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
+  const [referenceCopied, setReferenceCopied] = useState(false);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildProfileShareText(candidate));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyReferenceContacts = async () => {
+    await navigator.clipboard.writeText(candidate.referenceContacts || "");
+    setReferenceCopied(true);
+    setTimeout(() => setReferenceCopied(false), 2000);
   };
 
   return (
@@ -28,6 +35,20 @@ function ContactCard({ candidate }) {
         {copied ? <Check size={13} /> : <Copy size={13} />}
         {copied ? "הועתק!" : "העתקת כרטיס"}
       </button>
+
+      {candidate.referenceContacts && (
+        <div className="mt-2 rounded-xl border-2 border-[#8C4A55] bg-white p-2">
+          <p className="mb-1 text-[10px] font-bold text-[#8C4A55]">מספרים לבירורים</p>
+          <p className="mb-1.5 whitespace-pre-wrap text-[11px] text-[#3A3335]">{candidate.referenceContacts}</p>
+          <button
+            onClick={handleCopyReferenceContacts}
+            className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#8C4A55] py-1.5 text-[11px] font-semibold text-white transition active:scale-95"
+          >
+            {referenceCopied ? <Check size={12} /> : <Copy size={12} />}
+            {referenceCopied ? "הועתק!" : "העתקה"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

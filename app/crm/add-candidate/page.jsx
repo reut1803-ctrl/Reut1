@@ -20,6 +20,7 @@ const EMPTY_FORM = {
   height: "",
   eda: "",
   region: REGIONS[0],
+  city: "",
   religiousLevel: religiousLevelsFor("male")[0],
   education: EDUCATION_OPTIONS[0],
   yeshivaLevel: YESHIVA_LEVELS[0],
@@ -29,6 +30,7 @@ const EMPTY_FORM = {
   tag: "",
   availabilityStatus: AVAILABILITY_STATUSES[0],
   complexityNotes: "",
+  referenceContacts: "",
 };
 
 function loadDraft() {
@@ -161,6 +163,7 @@ export default function AddCandidatePage() {
         height: Number(form.height),
         eda: form.eda.trim(),
         region: form.region,
+        city: form.city.trim(),
         religiousLevel: form.religiousLevel,
         education: form.education,
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
@@ -173,6 +176,7 @@ export default function AddCandidatePage() {
         photoUrls: photos,
         availabilityStatus: form.availabilityStatus,
         complexityNotes: form.complexityNotes.trim(),
+        referenceContacts: form.referenceContacts.trim(),
         pdfUrl,
         introAudioUrl,
       });
@@ -310,6 +314,16 @@ export default function AddCandidatePage() {
           </select>
         </Field>
 
+        <Field label="מקום מגורים (עיר/יישוב)">
+          <input
+            type="text"
+            value={form.city}
+            onChange={(e) => set({ city: e.target.value })}
+            placeholder="לדוגמה: בית שמש"
+            className="input-crm"
+          />
+        </Field>
+
         <Field label="רמת תורניות">
           <select value={form.religiousLevel} onChange={(e) => set({ religiousLevel: e.target.value })} className="input-crm">
             {religiousLevelsFor(form.gender).map((r) => (
@@ -406,6 +420,16 @@ export default function AddCandidatePage() {
             onChange={(e) => set({ complexityNotes: e.target.value })}
             rows={3}
             placeholder="מה מיוחד או מורכב אצל המועמד/ת - לשימוש פנימי בלבד..."
+            className="input-crm resize-none"
+          />
+        </Field>
+
+        <Field label="מספרים לבירורים">
+          <textarea
+            value={form.referenceContacts}
+            onChange={(e) => set({ referenceContacts: e.target.value })}
+            rows={3}
+            placeholder="שמות ומספרי טלפון של אנשי קשר לבירור..."
             className="input-crm resize-none"
           />
         </Field>
