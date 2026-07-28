@@ -1,10 +1,20 @@
 "use client";
 
-import { Accessibility, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { Accessibility, MessageCircle, Check } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function FabButtons() {
   const [accessibilityOpen, setAccessibilityOpen] = useState(false);
+  const [largeText, setLargeText] = useState(false);
+  const [highContrast, setHighContrast] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("a11y-large-text", largeText);
+  }, [largeText]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("a11y-high-contrast", highContrast);
+  }, [highContrast]);
 
   return (
     <div className="safe-bottom fixed bottom-28 left-4 z-20 flex flex-col items-center gap-3">
@@ -16,7 +26,7 @@ export default function FabButtons() {
         <Accessibility size={22} />
       </button>
       <a
-        href="https://wa.me/972500000000"
+        href="https://wa.me/972543085242"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="פתיחת וואטסאפ"
@@ -26,19 +36,21 @@ export default function FabButtons() {
       </a>
 
       {accessibilityOpen && (
-        <div className="absolute bottom-0 right-16 w-56 rounded-2xl border border-[#EAE5E3] bg-white p-3 text-sm shadow-xl">
+        <div className="absolute bottom-0 left-16 w-56 rounded-2xl border border-[#EAE5E3] bg-white p-3 text-sm shadow-xl">
           <p className="mb-2 font-semibold text-[#3A3335]">הגדרות נגישות</p>
           <button
-            onClick={() => document.documentElement.classList.toggle("text-lg")}
-            className="mb-1.5 w-full rounded-xl bg-[#F6F5F4] px-3 py-2 text-right text-[13px] hover:bg-[#EAE5E3]"
+            onClick={() => setLargeText((v) => !v)}
+            className="mb-1.5 flex w-full items-center justify-between rounded-xl bg-[#F6F5F4] px-3 py-2 text-right text-[13px] hover:bg-[#EAE5E3]"
           >
             הגדלת טקסט
+            {largeText && <Check size={14} className="text-[#20A66B]" />}
           </button>
           <button
-            onClick={() => document.documentElement.classList.toggle("contrast-125")}
-            className="w-full rounded-xl bg-[#F6F5F4] px-3 py-2 text-right text-[13px] hover:bg-[#EAE5E3]"
+            onClick={() => setHighContrast((v) => !v)}
+            className="flex w-full items-center justify-between rounded-xl bg-[#F6F5F4] px-3 py-2 text-right text-[13px] hover:bg-[#EAE5E3]"
           >
             ניגודיות גבוהה
+            {highContrast && <Check size={14} className="text-[#20A66B]" />}
           </button>
         </div>
       )}
