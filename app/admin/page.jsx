@@ -13,6 +13,7 @@ import LogViewer from "../../components/LogViewer";
 import PopupEditor from "../../components/PopupEditor";
 import PopupNotice from "../../components/PopupNotice";
 import TipBanner from "../../components/TipBanner";
+import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
@@ -205,6 +206,7 @@ export default function AdminPage() {
             )}
             <div className="flex flex-wrap items-center gap-2">
               <input
+                data-tour="search"
                 className="field-input flex-1"
                 type="search"
                 placeholder="🔍 חיפוש מועמד (שם, מקום, עדה...)"
@@ -212,12 +214,12 @@ export default function AdminPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
               {!isViewer && !myReadOnly && (
-                <button className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
+                <button data-tour="add" className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
               )}
             </div>
 
             {/* לשוניות משנה: מועמדים חדשים / מועמדים קודמים */}
-            <div className="flex gap-2">
+            <div data-tour="candviews" className="flex gap-2">
               <button
                 onClick={() => setCandView("new")}
                 className={`flex-1 rounded-2xl px-4 py-2.5 text-sm font-bold transition ${candView === "new" ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
@@ -337,12 +339,16 @@ export default function AdminPage() {
         </Modal>
       )}
 
+      {/* סיור מודרך - כפתור עזרה צף; קופץ אוטומטית לנציגים בכניסה הראשונה בלבד (לא למנהלת/צופה) */}
+      {!isViewer && <GuidedTour role={user.role} onBeforeStart={() => setTab("candidates")} />}
+
       {/* ניווט קבוע בתחתית העמוד - קטגוריות הפעולה */}
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-sand bg-cream/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-stretch justify-around">
           {tabs.map((t) => (
             <button
               key={t.id}
+              data-tour={`nav-${t.id}`}
               onClick={() => setTab(t.id)}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition ${tab === t.id ? "text-rose" : "text-ink/50"}`}
             >

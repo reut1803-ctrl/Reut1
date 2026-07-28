@@ -10,7 +10,7 @@ export default function TipBanner({ popup }) {
   const tip = tips[Math.floor(Date.now() / 86400000) % tips.length];
 
   return (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+    <div data-tour="tip" className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
       <div className="mb-1.5 flex items-center justify-end gap-2">
         <span className="text-sm font-bold text-amber-700">טיפ בשידוכים</span>
         <span className="text-lg">💡</span>

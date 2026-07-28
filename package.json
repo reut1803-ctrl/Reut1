@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "driver.js": "^1.8.0",
     "firebase": "^10.14.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
