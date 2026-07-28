@@ -184,12 +184,8 @@ export default function AddCandidatePage() {
       showToast("הפרטים נשמרו בהצלחה");
       router.push(`/crm?added=${candidate.id}`);
     } catch (err) {
-      const tooBig = String(err?.message || "").includes("maximum") || String(err?.code || "").includes("invalid-argument");
-      setSubmitError(
-        tooBig
-          ? "הכרטיס גדול מדי לשמירה - נסי להוריד את כמות התמונות, או להקליט הקלטת היכרות קצרה יותר, ולנסות שוב"
-          : "השמירה נכשלה. בדקי את החיבור לאינטרנט ונסי שוב"
-      );
+      console.error("שגיאת שמירת מועמד/ת:", err);
+      setSubmitError(`השמירה נכשלה. שגיאה טכנית (לשליחה אליי): ${err?.code || ""} ${err?.message || String(err)}`);
     } finally {
       setSubmitting(false);
     }
