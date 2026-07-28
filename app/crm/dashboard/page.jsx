@@ -36,8 +36,9 @@ export default function DashboardPage() {
   const termsText = useCrmStore((s) => s.termsText);
   const setTermsText = useCrmStore((s) => s.setTermsText);
   const termsAccepted = useCrmStore((s) => s.termsAccepted);
-  const dailyTip = useCrmStore((s) => s.dailyTip);
-  const setDailyTip = useCrmStore((s) => s.setDailyTip);
+  const tips = useCrmStore((s) => s.tips);
+  const addTip = useCrmStore((s) => s.addTip);
+  const removeTip = useCrmStore((s) => s.removeTip);
   const emailLog = useCrmStore((s) => s.emailLog);
   const authAllowlist = useCrmStore((s) => s.authAllowlist);
   const addAllowlistEntry = useCrmStore((s) => s.addAllowlistEntry);
@@ -49,9 +50,8 @@ export default function DashboardPage() {
   const pendingStaffCommission = useCrmStore((s) => s.pendingStaffCommission());
 
   const [termsDraft, setTermsDraft] = useState(termsText);
-  const [tipDraft, setTipDraft] = useState(dailyTip);
+  const [newTip, setNewTip] = useState("");
   const [savedTerms, setSavedTerms] = useState(false);
-  const [savedTip, setSavedTip] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("staff");
@@ -82,10 +82,10 @@ export default function DashboardPage() {
     setSavedTerms(true);
     setTimeout(() => setSavedTerms(false), 2000);
   };
-  const handleSaveTip = () => {
-    setDailyTip(tipDraft);
-    setSavedTip(true);
-    setTimeout(() => setSavedTip(false), 2000);
+  const handleAddTip = () => {
+    if (!newTip.trim()) return;
+    addTip(newTip);
+    setNewTip("");
   };
 
   return (
@@ -239,19 +239,33 @@ export default function DashboardPage() {
       </div>
 
       <h2 className="mt-8 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
-        <Lightbulb size={17} /> טיפ שידוכים לצוות
+        <Lightbulb size={17} /> טיפים לצוות ({tips.length})
       </h2>
       <div className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-        <textarea
-          value={tipDraft}
-          onChange={(e) => setTipDraft(e.target.value)}
-          rows={3}
-          className="w-full resize-none rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-[13px] leading-relaxed outline-none focus:border-[#8C4A55]"
-        />
-        <Button variant="primary" className="mt-2 w-full" onClick={handleSaveTip}>
-          {savedTip ? <Check size={16} /> : null}
-          {savedTip ? "נשמר!" : "שמירת טיפ"}
-        </Button>
+        <div className="space-y-2">
+          {tips.map((tip, i) => (
+            <div key={i} className="flex items-start justify-between gap-2 rounded-xl bg-[#F6F5F4] px-3 py-2">
+              <p className="text-[13px] leading-relaxed text-[#3A3335]">{tip}</p>
+              <button onClick={() => removeTip(i)} aria-label="הסרת טיפ" className="shrink-0 rounded-full p-1 hover:bg-white">
+                <Trash2 size={14} className="text-[#C24545]" />
+              </button>
+            </div>
+          ))}
+          {tips.length === 0 && <p className="text-center text-[12px] text-[#B5AEB0]">אין עדיין טיפים</p>}
+        </div>
+        <div className="mt-3 flex gap-2 border-t border-[#EAE5E3] pt-3">
+          <input
+            type="text"
+            value={newTip}
+            onChange={(e) => setNewTip(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAddTip()}
+            placeholder="טיפ חדש..."
+            className="flex-1 rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-sm outline-none focus:border-[#8C4A55]"
+          />
+          <Button variant="primary" onClick={handleAddTip}>
+            הוספה
+          </Button>
+        </div>
       </div>
 
       <h2 className="mt-8 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
