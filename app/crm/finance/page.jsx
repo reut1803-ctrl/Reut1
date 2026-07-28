@@ -4,15 +4,16 @@ import { useMemo, useState } from "react";
 import { Wallet, Plus, Trash2, Receipt, Image as ImageIcon, Check } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { PAYMENT_STATUSES } from "@/lib/crm/mockData";
+import { uploadRawFile } from "@/lib/crm/uploadFile";
 import Button from "@/components/crm/ui/Button";
 
 function ProofUpload({ url, onUpload, label }) {
-  const handleFile = (e) => {
+  const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => onUpload(reader.result);
-    reader.readAsDataURL(file);
+    e.target.value = "";
+    const uploadedUrl = await uploadRawFile(file, "charges/proofs");
+    onUpload(uploadedUrl);
   };
 
   if (url) {

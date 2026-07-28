@@ -6,6 +6,7 @@ import { UserPlus, ImagePlus, X, FileText, Music } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { compressImage } from "@/lib/crm/compressImage";
+import { uploadDataUrl, uploadRawFile } from "@/lib/crm/uploadFile";
 import Button from "@/components/crm/ui/Button";
 
 const DRAFT_KEY = "crm_add_candidate_draft";
@@ -105,13 +106,6 @@ export default function AddCandidatePage() {
 
   const removePhoto = (index) => setPhotos((cur) => cur.filter((_, i) => i !== index));
 
-  const readAsDataUrl = (file) =>
-    new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(file);
-    });
-
   const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photos.length > 0 && !submitting;
 
   const handleSubmit = async () => {
@@ -119,8 +113,9 @@ export default function AddCandidatePage() {
     setSubmitError("");
     setSubmitting(true);
     try {
-      const pdfUrl = pdfFile ? await readAsDataUrl(pdfFile) : null;
-      const introAudioUrl = audioFile ? await readAsDataUrl(audioFile) : null;
+      const photoUrls = await Promise.all(photos.map((p) => uploadDataUrl(p, "candidates/photos")));
+      const pdfUrl = pdfFile ? await uploadRawFile(pdfFile, "candidates/pdfs") : null;
+      const introAudioUrl = audioFile ? await uploadRawFile(audioFile, "candidates/audio") : null;
       const candidate = await addCandidate({
         gender: form.gender,
         name: form.name.trim(),
@@ -135,8 +130,8 @@ export default function AddCandidatePage() {
         phone: form.phone.trim(),
         bio: form.bio.trim(),
         traits,
-        photoUrl: photos[0],
-        photoUrls: photos,
+        photoUrl: photoUrls[0],
+        photoUrls,
         availabilityStatus: form.availabilityStatus,
         complexityNotes: form.complexityNotes.trim(),
         pdfUrl,
@@ -151,12 +146,7 @@ export default function AddCandidatePage() {
       showToast("הפרטים נשמרו בהצלחה");
       router.push(`/crm?added=${candidate.id}`);
     } catch (err) {
-      const tooBig = String(err?.message || "").includes("maximum") || String(err?.code || "").includes("invalid-argument");
-      setSubmitError(
-        tooBig
-          ? "הכרטיס גדול מדי לשמירה - נסי להוריד את כמות התמונות, או להקליט הקלטת היכרות קצרה יותר, ולנסות שוב"
-          : "השמירה נכשלה. בדקי את החיבור לאינטרנט ונסי שוב"
-      );
+      setSubmitError("השמירה נכשלה. בדקי את החיבור לאינטרנט ונסי שוב");
     } finally {
       setSubmitting(false);
     }

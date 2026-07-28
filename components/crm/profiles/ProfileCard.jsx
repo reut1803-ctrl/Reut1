@@ -26,6 +26,7 @@ import { getAvailabilityColors } from "@/lib/crm/availability";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { uploadRawFile } from "@/lib/crm/uploadFile";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -56,15 +57,17 @@ export default function ProfileCard({ candidate, onReadMore }) {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  const handleFileUpload = (field) => (e) => {
+  const handleFileUpload = (field, folder) => async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateCandidate(candidate.id, { [field]: reader.result });
+    e.target.value = "";
+    try {
+      const url = await uploadRawFile(file, folder);
+      updateCandidate(candidate.id, { [field]: url });
       showToast("הקובץ נשמר בהצלחה");
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      showToast("העלאת הקובץ נכשלה, נסי שוב");
+    }
   };
 
   const canSeeFullProfile = role === "staff" || role === "admin";
@@ -294,7 +297,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     )}
                     <label className="mt-1.5 block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
                       העלאת PDF
-                      <input type="file" accept="application/pdf" onChange={handleFileUpload("pdfUrl")} className="hidden" />
+                      <input type="file" accept="application/pdf" onChange={handleFileUpload("pdfUrl", "candidates/pdfs")} className="hidden" />
                     </label>
                   </div>
 
@@ -309,7 +312,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     )}
                     <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
                       העלאת אודיו
-                      <input type="file" accept="audio/*" onChange={handleFileUpload("introAudioUrl")} className="hidden" />
+                      <input type="file" accept="audio/*" onChange={handleFileUpload("introAudioUrl", "candidates/audio")} className="hidden" />
                     </label>
                   </div>
                 </div>
