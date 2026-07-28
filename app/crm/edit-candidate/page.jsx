@@ -57,6 +57,7 @@ function EditCandidateForm() {
       availabilityStatus: c.availabilityStatus || AVAILABILITY_STATUSES[0],
       complexityNotes: c.complexityNotes || "",
       referenceContacts: c.referenceContacts || "",
+      confidential: c.confidential || false,
     });
     setTraits(c.traits || []);
     setPhotos(c.photoUrls?.length > 0 ? c.photoUrls : c.photoUrl ? [c.photoUrl] : []);
@@ -65,8 +66,8 @@ function EditCandidateForm() {
     setLoaded(true);
   }, [id, loaded, findCandidateById]);
 
-  if (role !== "staff" && role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
+  if (role !== "admin") {
+    return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין למנהלת בלבד</p>;
   }
 
   if (!id) {
@@ -168,6 +169,7 @@ function EditCandidateForm() {
         photoUrls: photos,
         complexityNotes: form.complexityNotes.trim(),
         referenceContacts: form.referenceContacts.trim(),
+        confidential: form.confidential,
         pdfUrl,
         introAudioUrl,
       });
@@ -397,6 +399,16 @@ function EditCandidateForm() {
             className="input-crm resize-none"
           />
         </Field>
+
+        <label className="flex items-center gap-2.5 rounded-2xl border-2 border-[#C24545] bg-red-50 px-4 py-3">
+          <input
+            type="checkbox"
+            checked={form.confidential}
+            onChange={(e) => set({ confidential: e.target.checked })}
+            className="h-5 w-5 shrink-0 accent-[#C24545]"
+          />
+          <span className="text-[13px] font-bold text-[#C24545]">כרטיס חסוי (גלוי למנהלת בלבד)</span>
+        </label>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="כרטיס יבש (PDF)">

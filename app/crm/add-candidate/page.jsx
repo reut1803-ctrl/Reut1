@@ -31,6 +31,7 @@ const EMPTY_FORM = {
   availabilityStatus: AVAILABILITY_STATUSES[0],
   complexityNotes: "",
   referenceContacts: "",
+  confidential: false,
 };
 
 function loadDraft() {
@@ -177,6 +178,7 @@ export default function AddCandidatePage() {
         availabilityStatus: form.availabilityStatus,
         complexityNotes: form.complexityNotes.trim(),
         referenceContacts: form.referenceContacts.trim(),
+        confidential: role === "admin" ? form.confidential : false,
         pdfUrl,
         introAudioUrl,
       });
@@ -433,6 +435,18 @@ export default function AddCandidatePage() {
             className="input-crm resize-none"
           />
         </Field>
+
+        {role === "admin" && (
+          <label className="flex items-center gap-2.5 rounded-2xl border-2 border-[#C24545] bg-red-50 px-4 py-3">
+            <input
+              type="checkbox"
+              checked={form.confidential}
+              onChange={(e) => set({ confidential: e.target.checked })}
+              className="h-5 w-5 shrink-0 accent-[#C24545]"
+            />
+            <span className="text-[13px] font-bold text-[#C24545]">כרטיס חסוי (גלוי למנהלת בלבד)</span>
+          </label>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="כרטיס יבש (PDF)">

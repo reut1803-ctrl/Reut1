@@ -183,7 +183,7 @@ function TaskRow({ task, onToggle, highlighted }) {
         <div className="flex-1">
           <p className="text-sm font-semibold text-[#3A3335]">{task.title}</p>
           <p className="text-[11px] text-[#8A8285]">
-            {task.owner} {task.dueDate && `· ${task.dueDate}`} {task.candidateName && `· בנוגע ל${task.candidateName}`}
+            {task.owner} {task.dueDate && `· ${task.dueDate}`} {candidate && `· בנוגע ל${candidate.name}`}
           </p>
         </div>
       </div>
