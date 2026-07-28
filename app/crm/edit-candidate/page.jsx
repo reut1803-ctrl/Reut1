@@ -169,7 +169,7 @@ function EditCandidateForm() {
         photoUrls: photos,
         complexityNotes: form.complexityNotes.trim(),
         referenceContacts: form.referenceContacts.trim(),
-        confidential: form.confidential,
+        confidential: !!form.confidential,
         pdfUrl,
         introAudioUrl,
       });

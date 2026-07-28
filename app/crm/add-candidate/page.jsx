@@ -63,7 +63,9 @@ export default function AddCandidatePage() {
   useEffect(() => {
     const draft = loadDraft();
     if (draft?.form) {
-      setForm(draft.form);
+      // ממזגים על גבי ברירות המחדל העדכניות - כדי שטיוטה ישנה ששמורה מלפני הוספת שדה חדש
+      // (כמו "כרטיס חסוי") לא תשלח ל-Firestore ערך undefined לשדה שחסר בה ותפיל את השמירה.
+      setForm({ ...EMPTY_FORM, ...draft.form });
       setTraits(draft.traits || []);
       setDraftRestored(true);
     }
@@ -178,7 +180,7 @@ export default function AddCandidatePage() {
         availabilityStatus: form.availabilityStatus,
         complexityNotes: form.complexityNotes.trim(),
         referenceContacts: form.referenceContacts.trim(),
-        confidential: role === "admin" ? form.confidential : false,
+        confidential: role === "admin" ? !!form.confidential : false,
         pdfUrl,
         introAudioUrl,
       });
