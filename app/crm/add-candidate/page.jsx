@@ -18,6 +18,7 @@ const EMPTY_FORM = {
   name: "",
   age: "",
   height: "",
+  eda: "",
   region: REGIONS[0],
   religiousLevel: religiousLevelsFor("male")[0],
   education: EDUCATION_OPTIONS[0],
@@ -158,6 +159,7 @@ export default function AddCandidatePage() {
         name: form.name.trim(),
         age: Number(form.age),
         height: Number(form.height),
+        eda: form.eda.trim(),
         region: form.region,
         religiousLevel: form.religiousLevel,
         education: form.education,
@@ -269,12 +271,21 @@ export default function AddCandidatePage() {
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Field label="גיל">
             <input type="number" value={form.age} onChange={(e) => set({ age: e.target.value })} className="input-crm" />
           </Field>
           <Field label="גובה (ס״מ)">
             <input type="number" value={form.height} onChange={(e) => set({ height: e.target.value })} className="input-crm" />
+          </Field>
+          <Field label="עדה">
+            <input
+              type="text"
+              value={form.eda}
+              onChange={(e) => set({ eda: e.target.value })}
+              placeholder="תימני, אשכנזי..."
+              className="input-crm"
+            />
           </Field>
         </div>
 
