@@ -221,7 +221,7 @@ export default function AddCandidatePage() {
             <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]">
               <ImagePlus size={22} />
               <span className="text-[11px] font-semibold">הוספת תמונה</span>
-              <input type="file" accept="image/*" multiple onChange={handlePhotoChange} className="hidden" />
+              <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
             </label>
           </div>
           {photoError && <p className="mt-1 text-[11px] text-red-500">{photoError}</p>}
