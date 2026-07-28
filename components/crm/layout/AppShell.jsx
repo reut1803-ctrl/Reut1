@@ -6,16 +6,22 @@ import BottomNav from "./BottomNav";
 import FabButtons from "./FabButtons";
 import TermsGate from "./TermsGate";
 import Toast from "./Toast";
+import SignInGate from "./SignInGate";
 import { useScrollRestoration } from "@/lib/crm/useScrollRestoration";
 import { useCrmStore } from "@/lib/crm/store";
 
 export default function AppShell({ children }) {
   const scrollRef = useRef(null);
+  const googleUser = useCrmStore((s) => s.googleUser);
+  const authLoading = useCrmStore((s) => s.authLoading);
   useScrollRestoration(scrollRef);
 
   useEffect(() => {
     useCrmStore.getState().initCrmFirebase();
   }, []);
+
+  if (authLoading) return <div className="h-dvh bg-[#F6F5F4]" />;
+  if (!googleUser) return <SignInGate />;
 
   return (
     <div className="flex h-dvh flex-col bg-[#F6F5F4] text-[#3A3335]" dir="rtl">
