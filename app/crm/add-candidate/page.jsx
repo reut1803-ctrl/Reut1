@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
-import { isValidIsraeliId } from "@/lib/crm/idNumber";
 import Button from "@/components/crm/ui/Button";
 
 const DRAFT_KEY = "crm_add_candidate_draft";
@@ -13,7 +12,6 @@ const DRAFT_KEY = "crm_add_candidate_draft";
 const EMPTY_FORM = {
   gender: "male",
   name: "",
-  idNumber: "",
   age: "",
   height: "",
   region: REGIONS[0],
@@ -102,8 +100,7 @@ export default function AddCandidatePage() {
       reader.readAsDataURL(file);
     });
 
-  const idNumberValid = !form.idNumber.trim() || isValidIsraeliId(form.idNumber);
-  const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photo && idNumberValid;
+  const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photo;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -112,7 +109,6 @@ export default function AddCandidatePage() {
     const candidate = await addCandidate({
       gender: form.gender,
       name: form.name.trim(),
-      idNumber: form.idNumber.trim(),
       age: Number(form.age),
       height: Number(form.height),
       region: form.region,
@@ -208,20 +204,6 @@ export default function AddCandidatePage() {
             placeholder="לדוגמה: דוד ישראלי"
             className="input-crm"
           />
-        </Field>
-
-        <Field label="תעודת זהות">
-          <input
-            type="text"
-            dir="ltr"
-            inputMode="numeric"
-            value={form.idNumber}
-            onChange={(e) => set({ idNumber: e.target.value })}
-            placeholder="9 ספרות"
-            className="input-crm text-left"
-          />
-          {form.idNumber && !idNumberValid && <p className="mt-1 text-[11px] text-red-500">מספר תעודת הזהות לא תקין</p>}
-          <p className="mt-1 text-[11px] text-[#B5AEB0]">רשות - המידע חסוי ונגיש לצוות בלבד</p>
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
