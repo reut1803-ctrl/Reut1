@@ -7,7 +7,6 @@ import {
   Mic,
   PenLine,
   ChevronDown,
-  MapPin,
   Copy,
   Download,
   HeartHandshake,
@@ -218,9 +217,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <span className="tag-chip-crm">{candidate.height} ס״מ</span>
           {candidate.eda && <span className="tag-chip-crm">{candidate.eda}</span>}
           {candidate.city && <span className="tag-chip-crm">{candidate.city}</span>}
-          <span className="tag-chip-crm flex items-center gap-1">
-            <MapPin size={11} /> {candidate.region}
-          </span>
         </div>
       </div>
 
