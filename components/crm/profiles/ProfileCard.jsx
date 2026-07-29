@@ -28,8 +28,9 @@ import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTe
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
+import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 
-const MAX_FILE_SIZE = 400 * 1024; // בייטים - PDF/הקלטה בכרטיס קיים
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // בייטים - תקרת סבירות בלבד, לא מגבלת Firestore יותר
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -59,6 +60,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [showDetail, setShowDetail] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
   const [pendingDeleteVoiceNoteId, setPendingDeleteVoiceNoteId] = useState(null);
+  const [uploadingRecording, setUploadingRecording] = useState(false);
+  const [uploadingField, setUploadingField] = useState(null);
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
   const candidateTag = CANDIDATE_TAGS.find((t) => t.name === candidate.tag);
@@ -88,26 +91,30 @@ export default function ProfileCard({ candidate, onReadMore }) {
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
         if (blob.size > MAX_FILE_SIZE) {
-          setRecordError(`ההקלטה גדולה מדי (מקסימום ${Math.round(MAX_FILE_SIZE / 1024)}KB) - נסי הקלטה קצרה יותר`);
+          setRecordError(`ההקלטה גדולה מדי (מקסימום ${Math.round(MAX_FILE_SIZE / 1024 / 1024)}MB) - נסי הקלטה קצרה יותר`);
           return;
         }
-        const reader = new FileReader();
-        reader.onload = () => {
+        setUploadingRecording(true);
+        try {
+          const audioUrl = await uploadToCloudinary(blob);
           const newNote = {
             id: `${Date.now()}`,
             author: currentUser().name,
             authorEmail: currentUser().email,
             date: new Date().toLocaleDateString("he-IL"),
-            audioUrl: reader.result,
+            audioUrl,
           };
-          updateCandidate(candidate.id, { voiceNotes: [...(candidate.voiceNotes || []), newNote] });
+          await updateCandidate(candidate.id, { voiceNotes: [...(candidate.voiceNotes || []), newNote] });
           showToast("ההקלטה נשמרה בהצלחה");
-        };
-        reader.readAsDataURL(blob);
+        } catch {
+          setRecordError("שמירת ההקלטה נכשלה, נסי שוב");
+        } finally {
+          setUploadingRecording(false);
+        }
       };
       recorder.start();
       mediaRecorderRef.current = recorder;
@@ -118,20 +125,29 @@ export default function ProfileCard({ candidate, onReadMore }) {
     }
   };
 
-  const handleFileUpload = (field) => (e) => {
+  const handleFileUpload = (field) => async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
     if (file.size > MAX_FILE_SIZE) {
-      showToast(`הקובץ גדול מדי (מקסימום ${Math.round(MAX_FILE_SIZE / 1024)}KB)`);
+      showToast(`הקובץ גדול מדי (מקסימום ${Math.round(MAX_FILE_SIZE / 1024 / 1024)}MB)`);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateCandidate(candidate.id, { [field]: reader.result });
+    setUploadingField(field);
+    try {
+      const url = await uploadToCloudinary(file);
+      await updateCandidate(candidate.id, { [field]: url });
       showToast("הקובץ נשמר בהצלחה");
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      showToast("העלאת הקובץ נכשלה, נסי שוב");
+    } finally {
+      setUploadingField(null);
+    }
+  };
+
+  const handleRemoveFile = (field) => async () => {
+    await updateCandidate(candidate.id, { [field]: null });
+    showToast("הקובץ נמחק");
   };
 
   const canSeeFullProfile = role === "staff" || role === "admin";
@@ -322,11 +338,18 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     </p>
                     <button
                       onClick={recording ? stopRecording : startRecording}
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${
+                      disabled={uploadingRecording}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-60 ${
                         recording ? "bg-red-500 text-white" : "bg-[#8C4A55] text-white"
                       }`}
                     >
-                      {recording ? "עצירת הקלטה" : candidate.voiceNotes?.length > 0 ? "הקלטה נוספת" : "הקלטה חדשה"}
+                      {uploadingRecording
+                        ? "שומרת..."
+                        : recording
+                        ? "עצירת הקלטה"
+                        : candidate.voiceNotes?.length > 0
+                        ? "הקלטה נוספת"
+                        : "הקלטה חדשה"}
                     </button>
                   </div>
                   {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת... (נעצרת אוטומטית אחרי 10 דקות)</p>}
@@ -401,21 +424,50 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <FileText size={13} /> כרטיס יבש (PDF)
                     </p>
                     {candidate.pdfUrl ? (
-                      <a
-                        href={candidate.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#8C4A55] shadow-sm"
-                      >
-                        צפייה בקובץ
-                      </a>
+                      <>
+                        <a
+                          href={candidate.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mb-1.5 block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#8C4A55] shadow-sm"
+                        >
+                          צפייה בקובץ
+                        </a>
+                        <div className="flex gap-1.5">
+                          <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
+                            {uploadingField === "pdfUrl" ? "מעלה..." : "החלפה"}
+                            <input
+                              type="file"
+                              accept="application/pdf"
+                              onChange={handleFileUpload("pdfUrl")}
+                              disabled={uploadingField === "pdfUrl"}
+                              className="hidden"
+                            />
+                          </label>
+                          <button
+                            onClick={handleRemoveFile("pdfUrl")}
+                            aria-label="מחיקת קובץ"
+                            className="flex h-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-2.5 text-[#C24545]"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </>
                     ) : (
-                      <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלה קובץ</p>
+                      <>
+                        <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלה קובץ</p>
+                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
+                          {uploadingField === "pdfUrl" ? "מעלה..." : "העלאת PDF"}
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            onChange={handleFileUpload("pdfUrl")}
+                            disabled={uploadingField === "pdfUrl"}
+                            className="hidden"
+                          />
+                        </label>
+                      </>
                     )}
-                    <label className="mt-1.5 block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
-                      העלאת PDF
-                      <input type="file" accept="application/pdf" onChange={handleFileUpload("pdfUrl")} className="hidden" />
-                    </label>
                   </div>
 
                   <div className="rounded-2xl bg-[#F6F5F4] p-3">
@@ -423,14 +475,43 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <Music size={13} /> הקלטת היכרות
                     </p>
                     {candidate.introAudioUrl ? (
-                      <audio controls src={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
+                      <>
+                        <audio controls src={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
+                        <div className="flex gap-1.5">
+                          <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
+                            {uploadingField === "introAudioUrl" ? "מעלה..." : "החלפה"}
+                            <input
+                              type="file"
+                              accept="audio/*"
+                              onChange={handleFileUpload("introAudioUrl")}
+                              disabled={uploadingField === "introAudioUrl"}
+                              className="hidden"
+                            />
+                          </label>
+                          <button
+                            onClick={handleRemoveFile("introAudioUrl")}
+                            aria-label="מחיקת הקלטה"
+                            className="flex h-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-2.5 text-[#C24545]"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </>
                     ) : (
-                      <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלתה הקלטה</p>
+                      <>
+                        <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלתה הקלטה</p>
+                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
+                          {uploadingField === "introAudioUrl" ? "מעלה..." : "העלאת אודיו"}
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={handleFileUpload("introAudioUrl")}
+                            disabled={uploadingField === "introAudioUrl"}
+                            className="hidden"
+                          />
+                        </label>
+                      </>
                     )}
-                    <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
-                      העלאת אודיו
-                      <input type="file" accept="audio/*" onChange={handleFileUpload("introAudioUrl")} className="hidden" />
-                    </label>
                   </div>
                 </div>
 
