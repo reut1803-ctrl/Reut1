@@ -79,7 +79,7 @@ export default function SettingsSheet({ onClose }) {
                   <AlertTriangle size={15} /> אין לך הרשאת גישה
                 </p>
                 <p className="mt-1 text-[12px] text-amber-700">
-                  מחוברת כ-{googleUser.email}. הכתובת הזו לא ברשימת ההרשאות. פני למנהלת כדי להצטרף.
+                  מחוברת כ-<span dir="ltr">{googleUser.email}</span>. הכתובת הזו לא ברשימת ההרשאות. פני למנהלת כדי להצטרף.
                 </p>
                 <button
                   onClick={signOutGoogle}
