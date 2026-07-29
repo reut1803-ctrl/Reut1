@@ -119,8 +119,8 @@ export default function AddCandidatePage() {
       try {
         const url = await uploadToCloudinary(file);
         setPhotos((cur) => [...cur, url]);
-      } catch {
-        setPhotoError("העלאת אחת התמונות נכשלה, נסי שוב");
+      } catch (err) {
+        setPhotoError(`העלאת אחת התמונות נכשלה: ${err?.message || String(err)}`);
       }
     }
     setPhotoUploading(false);
@@ -141,8 +141,8 @@ export default function AddCandidatePage() {
     try {
       const url = await uploadToCloudinary(file);
       setPdfUrl(url);
-    } catch {
-      setMediaError("העלאת קובץ ה-PDF נכשלה, נסי שוב");
+    } catch (err) {
+      setMediaError(`העלאת קובץ ה-PDF נכשלה: ${err?.message || String(err)}`);
     } finally {
       setPdfUploading(false);
     }
@@ -161,8 +161,8 @@ export default function AddCandidatePage() {
     try {
       const url = await uploadToCloudinary(file);
       setIntroAudioUrl(url);
-    } catch {
-      setMediaError("העלאת הקלטת ההיכרות נכשלה, נסי שוב");
+    } catch (err) {
+      setMediaError(`העלאת הקלטת ההיכרות נכשלה: ${err?.message || String(err)}`);
     } finally {
       setAudioUploading(false);
     }

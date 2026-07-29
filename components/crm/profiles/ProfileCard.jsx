@@ -110,8 +110,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
           };
           await updateCandidate(candidate.id, { voiceNotes: [...(candidate.voiceNotes || []), newNote] });
           showToast("ההקלטה נשמרה בהצלחה");
-        } catch {
-          setRecordError("שמירת ההקלטה נכשלה, נסי שוב");
+        } catch (err) {
+          setRecordError(`שמירת ההקלטה נכשלה: ${err?.message || String(err)}`);
         } finally {
           setUploadingRecording(false);
         }
@@ -138,8 +138,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
       const url = await uploadToCloudinary(file);
       await updateCandidate(candidate.id, { [field]: url });
       showToast("הקובץ נשמר בהצלחה");
-    } catch {
-      showToast("העלאת הקובץ נכשלה, נסי שוב");
+    } catch (err) {
+      showToast(`העלאת הקובץ נכשלה: ${err?.message || String(err)}`);
     } finally {
       setUploadingField(null);
     }
