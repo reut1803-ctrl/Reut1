@@ -46,21 +46,21 @@ export default function MatchingWizard() {
   };
 
   return (
-    <div className="rounded-3xl border border-[#EAE5E3] bg-white p-5 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-      <div className="mb-1 flex items-center justify-between text-[12px] font-semibold text-[#8A8285]">
+    <div className="rounded-3xl border border-[#E7DECD] bg-white p-5 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+      <div className="mb-1 flex items-center justify-between text-[12px] font-semibold text-[#8B8175]">
         <span>
           שלב {step + 1} מתוך {STEP_TITLES.length}
         </span>
         <span>{Math.round(((step + 1) / STEP_TITLES.length) * 100)}%</span>
       </div>
-      <div className="mb-5 h-2 w-full overflow-hidden rounded-full bg-[#F6E4E6]">
+      <div className="mb-5 h-2 w-full overflow-hidden rounded-full bg-[#F3E7D5]">
         <div
-          className="h-full rounded-full bg-[#8C4A55] transition-all duration-300"
+          className="h-full rounded-full bg-[#6F4A2E] transition-all duration-300"
           style={{ width: `${((step + 1) / STEP_TITLES.length) * 100}%` }}
         />
       </div>
 
-      <h3 className="mb-4 text-center text-lg font-bold text-[#3A3335]">{STEP_TITLES[step]}</h3>
+      <h3 className="mb-4 text-center text-lg font-bold text-[#3B332A]">{STEP_TITLES[step]}</h3>
 
       <div className="min-h-[180px]">
         {step === 0 && (
@@ -113,7 +113,7 @@ export default function MatchingWizard() {
 
         {step === 6 && (
           <div>
-            <p className="mb-3 text-center text-[12px] text-[#8A8285]">נבחרו {answers.traits.length} מתוך 3</p>
+            <p className="mb-3 text-center text-[12px] text-[#8B8175]">נבחרו {answers.traits.length} מתוך 3</p>
             <div className="flex flex-wrap justify-center gap-2">
               {TRAITS.map((trait) => (
                 <Chip key={trait} active={answers.traits.includes(trait)} onClick={() => toggleTrait(trait)}>
@@ -129,7 +129,7 @@ export default function MatchingWizard() {
         <button
           onClick={prev}
           disabled={step === 0}
-          className="flex items-center justify-center gap-1 rounded-2xl border border-[#EAE5E3] px-4 py-3 text-sm font-semibold text-[#3A3335] transition disabled:opacity-30"
+          className="flex items-center justify-center gap-1 rounded-2xl border border-[#E7DECD] px-4 py-3 text-sm font-semibold text-[#3B332A] transition disabled:opacity-30"
         >
           <ChevronRight size={16} /> הקודם
         </button>
@@ -158,8 +158,8 @@ function ChoiceList({ options, selected, onSelect }) {
           onClick={() => onSelect(opt)}
           className={`w-full rounded-2xl border px-4 py-3 text-right text-sm font-medium transition ${
             selected.includes(opt)
-              ? "border-[#8C4A55] bg-[#F6E4E6] text-[#6E3540]"
-              : "border-[#EAE5E3] bg-white text-[#3A3335] hover:bg-[#F6F5F4]"
+              ? "border-[#6F4A2E] bg-[#F3E7D5] text-[#4E3220]"
+              : "border-[#E7DECD] bg-white text-[#3B332A] hover:bg-[#FAF6EE]"
           }`}
         >
           {opt}
@@ -174,7 +174,7 @@ function Chip({ active, onClick, children }) {
     <button
       onClick={onClick}
       className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition ${
-        active ? "border-[#8C4A55] bg-[#8C4A55] text-white" : "border-[#EAE5E3] bg-white text-[#3A3335] hover:bg-[#F6F5F4]"
+        active ? "border-[#6F4A2E] bg-[#6F4A2E] text-white" : "border-[#E7DECD] bg-white text-[#3B332A] hover:bg-[#FAF6EE]"
       }`}
     >
       {children}

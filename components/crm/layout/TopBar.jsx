@@ -18,28 +18,28 @@ export default function TopBar() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#EAE5E3] bg-white/90 px-4 py-3 backdrop-blur safe-top">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E7DECD] bg-white/90 px-4 py-3 backdrop-blur safe-top">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#8C4A55] text-sm font-bold text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#6F4A2E] text-sm font-bold text-white">
             {APP_NAME.charAt(0)}
           </div>
           <div>
-            <p className="text-[13px] leading-none text-[#8A8285]">שלום,</p>
-            <p className="text-sm font-bold leading-tight text-[#3A3335]">{user.name}</p>
+            <p className="text-[13px] leading-none text-[#8B8175]">שלום,</p>
+            <p className="text-sm font-bold leading-tight text-[#3B332A]">{user.name}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-1">
           <button
             aria-label="ריענון"
-            className="rounded-full p-2 text-[#8A8285] transition hover:bg-[#F6F5F4] active:scale-90"
+            className="rounded-full p-2 text-[#8B8175] transition hover:bg-[#FAF6EE] active:scale-90"
             onClick={() => window.location.reload()}
           >
             <RefreshCw size={20} />
           </button>
           <button
             aria-label="התראות"
-            className="relative rounded-full p-2 text-[#8A8285] transition hover:bg-[#F6F5F4] active:scale-90"
+            className="relative rounded-full p-2 text-[#8B8175] transition hover:bg-[#FAF6EE] active:scale-90"
             onClick={() => setShowNotifications(true)}
           >
             <Bell size={20} />
@@ -51,7 +51,7 @@ export default function TopBar() {
           </button>
           <button
             aria-label="הגדרות"
-            className="rounded-full p-2 text-[#8A8285] transition hover:bg-[#F6F5F4] active:scale-90"
+            className="rounded-full p-2 text-[#8B8175] transition hover:bg-[#FAF6EE] active:scale-90"
             onClick={() => setShowSettings(true)}
           >
             <Settings size={20} />
@@ -60,7 +60,7 @@ export default function TopBar() {
             <button
               onClick={signOutGoogle}
               aria-label="התנתקות"
-              className="rounded-full p-2 text-[#8A8285] transition hover:bg-[#F6F5F4] active:scale-90"
+              className="rounded-full p-2 text-[#8B8175] transition hover:bg-[#FAF6EE] active:scale-90"
             >
               <LogOut size={20} />
             </button>

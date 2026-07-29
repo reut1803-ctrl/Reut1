@@ -173,7 +173,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+    <div className="overflow-hidden rounded-3xl border border-[#E7DECD] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
         {candidate.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -188,7 +188,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
         <div className="absolute right-3 top-3 flex flex-col items-start gap-1.5">
           {candidate.isNew && (
-            <span className="rounded-full bg-[#8C4A55] px-2.5 py-1 text-[11px] font-bold text-white shadow">חדש</span>
+            <span className="rounded-full bg-[#6F4A2E] px-2.5 py-1 text-[11px] font-bold text-white shadow">חדש</span>
           )}
           <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold shadow ${availability.bg} ${availability.text}`}>
             {candidate.availabilityStatus}
@@ -209,7 +209,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           aria-label="הוספה למועדפים"
           className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow transition active:scale-90"
         >
-          <Heart size={18} className={isFavorite ? "fill-[#8C4A55] text-[#8C4A55]" : "text-[#8A8285]"} />
+          <Heart size={18} className={isFavorite ? "fill-[#6F4A2E] text-[#6F4A2E]" : "text-[#8B8175]"} />
         </button>
 
         <div data-tour="tour-card-info" className="absolute bottom-3 right-3 flex flex-wrap gap-1.5">
@@ -221,8 +221,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
       </div>
 
       <div className="p-4">
-        <h3 className="text-lg font-bold text-[#3A3335]">{candidate.name}</h3>
-        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8A8285]">{candidate.bio}</p>
+        <h3 className="text-lg font-bold text-[#3B332A]">{candidate.name}</h3>
+        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8B8175]">{candidate.bio}</p>
 
         <div className="mt-4 flex flex-col gap-2">
           <Button
@@ -241,7 +241,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           {canSeeFullProfile && (
             <Link
               href={`/crm/proposals?select=${candidate.id}`}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#20A66B] px-4 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(32,166,107,0.25)] transition active:scale-95 hover:bg-[#178A57]"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#7FB33F] px-4 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(32,166,107,0.25)] transition active:scale-95 hover:bg-[#5E9128]"
             >
               <HeartHandshake size={16} /> הצע/י התאמה עבור {firstName}
             </Link>
@@ -250,7 +250,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <div className="flex gap-2">
             <button
               onClick={handleCopy}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#20A66B] bg-white px-3 py-3 text-sm font-semibold text-[#178A57] transition active:scale-95 hover:bg-[#20A66B]/5"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#7FB33F] bg-white px-3 py-3 text-sm font-semibold text-[#5E9128] transition active:scale-95 hover:bg-[#7FB33F]/5"
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
               {copied ? "הועתק!" : "העתקת טקסט"}
@@ -258,7 +258,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
             <button
               onClick={handleDownload}
               disabled={generatingPdf}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#20A66B] bg-white px-3 py-3 text-sm font-semibold text-[#178A57] transition active:scale-95 hover:bg-[#20A66B]/5 disabled:opacity-60"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#7FB33F] bg-white px-3 py-3 text-sm font-semibold text-[#5E9128] transition active:scale-95 hover:bg-[#7FB33F]/5 disabled:opacity-60"
             >
               <Download size={16} /> {generatingPdf ? "מכינה PDF..." : "הורדת PDF"}
             </button>
@@ -266,12 +266,12 @@ export default function ProfileCard({ candidate, onReadMore }) {
         </div>
 
         {proposals.length > 0 && (
-          <div className="mt-4 rounded-2xl bg-[#F6F5F4] p-3">
-            <p className="mb-2 text-[12px] font-semibold text-[#3A3335]">התקדמות בהתאמות ({proposals.length})</p>
+          <div className="mt-4 rounded-2xl bg-[#FAF6EE] p-3">
+            <p className="mb-2 text-[12px] font-semibold text-[#3B332A]">התקדמות בהתאמות ({proposals.length})</p>
             <div className="space-y-2.5">
               {proposals.map((p) => (
                 <div key={p.id}>
-                  <p className="mb-1 text-[11px] font-semibold text-[#8C4A55]">{p.status}</p>
+                  <p className="mb-1 text-[11px] font-semibold text-[#6F4A2E]">{p.status}</p>
                   <StageFunnel status={p.status} compact />
                 </div>
               ))}
@@ -280,11 +280,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
         )}
 
         {canSeeFullProfile && (
-          <div className="mt-4 border-t border-[#EAE5E3] pt-3">
+          <div className="mt-4 border-t border-[#E7DECD] pt-3">
             <button
               data-tour="tour-staff-toggle"
               onClick={() => toggleStaffArea(candidate.id)}
-              className="flex w-full items-center justify-between text-[13px] font-semibold text-[#8C4A55]"
+              className="flex w-full items-center justify-between text-[13px] font-semibold text-[#6F4A2E]"
             >
               <span>אזור פנימי לצוות</span>
               <ChevronDown size={16} className={`transition ${isExpanded ? "rotate-180" : ""}`} />
@@ -295,19 +295,19 @@ export default function ProfileCard({ candidate, onReadMore }) {
                 {role === "admin" && (
                   <Link
                     href={`/crm/edit-candidate?id=${candidate.id}`}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#8C4A55] bg-white px-4 py-2.5 text-sm font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6E4E6]"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#6F4A2E] bg-white px-4 py-2.5 text-sm font-semibold text-[#6F4A2E] transition active:scale-95 hover:bg-[#F3E7D5]"
                   >
                     <PenLine size={15} /> עריכת פרטי הכרטיס
                   </Link>
                 )}
 
                 {candidate.referenceContacts && (
-                  <div data-tour="tour-reference-contacts" className="rounded-2xl border-2 border-[#8C4A55] bg-[#F6E4E6] p-3">
-                    <p className="mb-1.5 text-[12px] font-bold text-[#8C4A55]">מספרים לבירורים</p>
-                    <p className="mb-2 whitespace-pre-wrap text-[13px] text-[#3A3335]">{candidate.referenceContacts}</p>
+                  <div data-tour="tour-reference-contacts" className="rounded-2xl border-2 border-[#6F4A2E] bg-[#F3E7D5] p-3">
+                    <p className="mb-1.5 text-[12px] font-bold text-[#6F4A2E]">מספרים לבירורים</p>
+                    <p className="mb-2 whitespace-pre-wrap text-[13px] text-[#3B332A]">{candidate.referenceContacts}</p>
                     <button
                       onClick={handleCopyReferenceContacts}
-                      className="flex w-full items-center justify-center gap-1 rounded-xl bg-[#8C4A55] py-1.5 text-[12px] font-semibold text-white transition active:scale-95"
+                      className="flex w-full items-center justify-center gap-1 rounded-xl bg-[#6F4A2E] py-1.5 text-[12px] font-semibold text-white transition active:scale-95"
                     >
                       {referenceCopied ? <Check size={13} /> : <Copy size={13} />}
                       {referenceCopied ? "הועתק!" : "העתקה"}
@@ -315,15 +315,15 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   </div>
                 )}
 
-                <div data-tour="tour-voice-notes" className="rounded-2xl bg-[#F6F5F4] p-3">
+                <div data-tour="tour-voice-notes" className="rounded-2xl bg-[#FAF6EE] p-3">
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#3A3335]">
+                    <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#3B332A]">
                       <Mic size={14} /> הקלטות שמע
                     </p>
                     <button
                       onClick={recording ? stopRecording : startRecording}
                       className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${
-                        recording ? "bg-red-500 text-white" : "bg-[#8C4A55] text-white"
+                        recording ? "bg-red-500 text-white" : "bg-[#6F4A2E] text-white"
                       }`}
                     >
                       {recording ? "עצירת הקלטה" : candidate.voiceNotes?.length > 0 ? "הקלטה נוספת" : "הקלטה חדשה"}
@@ -332,7 +332,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת... (נעצרת אוטומטית אחרי 10 דקות)</p>}
                   {recordError && <p className="mb-2 text-[11px] text-red-500">{recordError}</p>}
                   {!candidate.voiceNotes || candidate.voiceNotes.length === 0 ? (
-                    <p className="text-[12px] text-[#B5AEB0]">אין הקלטות עדיין</p>
+                    <p className="text-[12px] text-[#B4AA9C]">אין הקלטות עדיין</p>
                   ) : (
                     <ul className="space-y-1.5">
                       {candidate.voiceNotes.map((vn) => {
@@ -340,13 +340,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
                         return (
                           <li key={vn.id} className="rounded-xl bg-white px-2.5 py-2 text-[12px] shadow-sm">
                             <div className="mb-1 flex items-center gap-2">
-                              <span className="font-medium text-[#3A3335]">{vn.author}</span>
-                              <span className="mr-auto text-[#B5AEB0]">{vn.date}</span>
+                              <span className="font-medium text-[#3B332A]">{vn.author}</span>
+                              <span className="mr-auto text-[#B4AA9C]">{vn.date}</span>
                               {canDelete && (
                                 <button
                                   onClick={() => setPendingDeleteVoiceNoteId(vn.id)}
                                   aria-label="מחיקת הקלטה"
-                                  className="rounded-full p-1 hover:bg-[#F6F5F4]"
+                                  className="rounded-full p-1 hover:bg-[#FAF6EE]"
                                 >
                                   <Trash2 size={13} className="text-[#C24545]" />
                                 </button>
@@ -360,15 +360,15 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   )}
                 </div>
 
-                <div className="rounded-2xl bg-[#F6F5F4] p-3">
-                  <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">סטטוס פניות</p>
+                <div className="rounded-2xl bg-[#FAF6EE] p-3">
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">סטטוס פניות</p>
                   <select
                     value={candidate.availabilityStatus}
                     onChange={(e) => {
                       setCandidateAvailability(candidate.id, e.target.value);
                       showToast("הסטטוס נשמר בהצלחה");
                     }}
-                    className="w-full rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335]"
+                    className="w-full rounded-xl border border-[#E7DECD] bg-white px-2.5 py-2 text-[13px] text-[#3B332A]"
                   >
                     {AVAILABILITY_STATUSES.map((s) => (
                       <option key={s} value={s}>
@@ -378,8 +378,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   </select>
                 </div>
 
-                <div className="rounded-2xl bg-[#F6F5F4] p-3">
-                  <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">מורכבויות וייחודיות</p>
+                <div className="rounded-2xl bg-[#FAF6EE] p-3">
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">מורכבויות וייחודיות</p>
                   <textarea
                     value={complexityDraft}
                     onChange={(e) => setComplexityDraft(e.target.value)}
@@ -391,13 +391,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     }}
                     rows={3}
                     placeholder="מה מיוחד או מורכב אצל המועמד/ת - לשימוש פנימי בלבד..."
-                    className="w-full resize-none rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[13px] text-[#3A3335] outline-none focus:border-[#8C4A55]"
+                    className="w-full resize-none rounded-xl border border-[#E7DECD] bg-white px-2.5 py-2 text-[13px] text-[#3B332A] outline-none focus:border-[#6F4A2E]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl bg-[#F6F5F4] p-3">
-                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3A3335]">
+                  <div className="rounded-2xl bg-[#FAF6EE] p-3">
+                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3B332A]">
                       <FileText size={13} /> כרטיס יבש (PDF)
                     </p>
                     {candidate.pdfUrl ? (
@@ -405,45 +405,45 @@ export default function ProfileCard({ candidate, onReadMore }) {
                         href={candidate.pdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#8C4A55] shadow-sm"
+                        className="block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#6F4A2E] shadow-sm"
                       >
                         צפייה בקובץ
                       </a>
                     ) : (
-                      <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלה קובץ</p>
+                      <p className="mb-1.5 text-[11px] text-[#B4AA9C]">לא הועלה קובץ</p>
                     )}
-                    <label className="mt-1.5 block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
+                    <label className="mt-1.5 block cursor-pointer rounded-xl border border-dashed border-[#E7DECD] bg-white py-1.5 text-center text-[11px] font-semibold text-[#6F4A2E]">
                       העלאת PDF
                       <input type="file" accept="application/pdf" onChange={handleFileUpload("pdfUrl")} className="hidden" />
                     </label>
                   </div>
 
-                  <div className="rounded-2xl bg-[#F6F5F4] p-3">
-                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3A3335]">
+                  <div className="rounded-2xl bg-[#FAF6EE] p-3">
+                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3B332A]">
                       <Music size={13} /> הקלטת היכרות
                     </p>
                     {candidate.introAudioUrl ? (
                       <audio controls src={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
                     ) : (
-                      <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלתה הקלטה</p>
+                      <p className="mb-1.5 text-[11px] text-[#B4AA9C]">לא הועלתה הקלטה</p>
                     )}
-                    <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
+                    <label className="block cursor-pointer rounded-xl border border-dashed border-[#E7DECD] bg-white py-1.5 text-center text-[11px] font-semibold text-[#6F4A2E]">
                       העלאת אודיו
                       <input type="file" accept="audio/*" onChange={handleFileUpload("introAudioUrl")} className="hidden" />
                     </label>
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-[#F6F5F4] p-3">
-                  <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3A3335]">
+                <div className="rounded-2xl bg-[#FAF6EE] p-3">
+                  <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3B332A]">
                     <Link2 size={13} /> קישור אישי לעדכון סטטוס
                   </p>
-                  <p dir="ltr" className="truncate text-[11px] text-[#8A8285]">
+                  <p dir="ltr" className="truncate text-[11px] text-[#8B8175]">
                     {personalLink}
                   </p>
                   <button
                     onClick={handleCopyLink}
-                    className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95"
+                    className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#E7DECD] bg-white py-1.5 text-[11px] font-semibold text-[#6F4A2E] transition active:scale-95"
                   >
                     {linkCopied ? <Check size={13} /> : <Copy size={13} />}
                     {linkCopied ? "הועתק!" : "העתקת קישור"}
@@ -487,14 +487,14 @@ export default function ProfileCard({ candidate, onReadMore }) {
           padding: 4px 10px;
           font-size: 11px;
           font-weight: 700;
-          color: #3a3335;
+          color: #3B332A;
           box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
         }
         .handwritten-note-crm {
           transform: rotate(-1deg);
           border-radius: 12px;
           border: 1px solid #fde68a;
-          background: #fffbeb;
+          background: #FDF6E3;
           padding: 10px 12px;
           font-size: 13px;
           font-style: italic;

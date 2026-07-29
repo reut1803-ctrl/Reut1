@@ -21,12 +21,12 @@ export default function RangeSlider({ min, max, step = 1, value, onChange, unit 
 
   return (
     <div className="w-full pt-2">
-      <div dir="ltr" className="mb-4 flex items-center justify-center gap-3 text-lg font-bold text-[#6E3540]">
+      <div dir="ltr" className="mb-4 flex items-center justify-center gap-3 text-lg font-bold text-[#4E3220]">
         <span>
           {low}
           {unit}
         </span>
-        <span className="text-[#E9B9C0]">—</span>
+        <span className="text-[#E0C79C]">—</span>
         <span>
           {high}
           {unit}
@@ -34,9 +34,9 @@ export default function RangeSlider({ min, max, step = 1, value, onChange, unit 
       </div>
       {/* המסלול נכפה ל-LTR כדי שהחישוב הגרפי של הטווח יהיה עקבי, ללא תלות בכיווניות העמוד */}
       <div dir="ltr" className="relative h-6">
-        <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-[#F6E4E6]" />
+        <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-[#F3E7D5]" />
         <div
-          className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#8C4A55]"
+          className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#6F4A2E]"
           style={{ left: `${lowPct}%`, right: `${100 - highPct}%` }}
         />
         <input
@@ -79,7 +79,7 @@ export default function RangeSlider({ min, max, step = 1, value, onChange, unit 
           width: 24px;
           height: 24px;
           border-radius: 999px;
-          background: #8c4a55;
+          background: #6F4A2E;
           border: 3px solid white;
           box-shadow: 0 2px 8px rgba(140, 74, 85, 0.4);
           cursor: pointer;
@@ -90,7 +90,7 @@ export default function RangeSlider({ min, max, step = 1, value, onChange, unit 
           width: 24px;
           height: 24px;
           border-radius: 999px;
-          background: #8c4a55;
+          background: #6F4A2E;
           border: 3px solid white;
           box-shadow: 0 2px 8px rgba(140, 74, 85, 0.4);
           cursor: pointer;

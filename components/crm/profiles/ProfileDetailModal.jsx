@@ -46,7 +46,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
         </div>
 
         <div className="p-5">
-          <h2 className="text-xl font-bold text-[#3A3335]">{candidate.name}</h2>
+          <h2 className="text-xl font-bold text-[#3B332A]">{candidate.name}</h2>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span className="tag-chip-detail">{candidate.age}</span>
             <span className="tag-chip-detail">{candidate.height} ס״מ</span>
@@ -66,17 +66,17 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 
           {candidate.bio && (
             <div className="mt-4">
-              <p className="mb-1 text-[12px] font-semibold text-[#3A3335]">קצת עליי</p>
-              <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#8A8285]">{candidate.bio}</p>
+              <p className="mb-1 text-[12px] font-semibold text-[#3B332A]">קצת עליי</p>
+              <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#8B8175]">{candidate.bio}</p>
             </div>
           )}
 
           {candidate.traits?.length > 0 && (
             <div className="mt-4">
-              <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">תכונות</p>
+              <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">תכונות</p>
               <div className="flex flex-wrap gap-1.5">
                 {candidate.traits.map((t) => (
-                  <span key={t} className="rounded-full bg-[#F6E4E6] px-2.5 py-1 text-[11px] font-semibold text-[#6E3540]">
+                  <span key={t} className="rounded-full bg-[#F3E7D5] px-2.5 py-1 text-[11px] font-semibold text-[#4E3220]">
                     {t}
                   </span>
                 ))}
@@ -89,11 +89,11 @@ export default function ProfileDetailModal({ candidate, onClose }) {
       <style jsx>{`
         .tag-chip-detail {
           border-radius: 999px;
-          background: #f6f5f4;
+          background: #FAF6EE;
           padding: 4px 10px;
           font-size: 11px;
           font-weight: 700;
-          color: #3a3335;
+          color: #3B332A;
         }
       `}</style>
     </div>
@@ -103,10 +103,10 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 function DetailRow({ icon: Icon, label, value }) {
   if (!value) return null;
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-[#F6F5F4] px-3 py-2.5">
-      <Icon size={16} className="shrink-0 text-[#8C4A55]" />
-      <span className="w-24 shrink-0 text-[12px] text-[#8A8285]">{label}</span>
-      <span className="text-sm font-medium text-[#3A3335]">{value}</span>
+    <div className="flex items-center gap-2.5 rounded-xl bg-[#FAF6EE] px-3 py-2.5">
+      <Icon size={16} className="shrink-0 text-[#6F4A2E]" />
+      <span className="w-24 shrink-0 text-[12px] text-[#8B8175]">{label}</span>
+      <span className="text-sm font-medium text-[#3B332A]">{value}</span>
     </div>
   );
 }

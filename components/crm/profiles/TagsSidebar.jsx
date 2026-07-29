@@ -20,7 +20,7 @@ export default function TagsSidebar() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "סגירת סינון תוויות" : "פתיחת סינון תוויות"}
         style={{ right: open ? "16rem" : "0" }}
-        className="fixed top-1/2 z-50 flex h-12 w-8 -translate-y-1/2 items-center justify-center rounded-r-none rounded-l-xl bg-[#8C4A55] text-white shadow-lg transition-[right] duration-300"
+        className="fixed top-1/2 z-50 flex h-12 w-8 -translate-y-1/2 items-center justify-center rounded-r-none rounded-l-xl bg-[#6F4A2E] text-white shadow-lg transition-[right] duration-300"
       >
         {open ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
@@ -34,8 +34,8 @@ export default function TagsSidebar() {
       >
         <div className="p-5">
           <div className="mb-4 flex items-center gap-1.5">
-            <Tag size={16} className="text-[#8C4A55]" />
-            <h2 className="text-[15px] font-bold text-[#3A3335]">סינון לפי תווית</h2>
+            <Tag size={16} className="text-[#6F4A2E]" />
+            <h2 className="text-[15px] font-bold text-[#3B332A]">סינון לפי תווית</h2>
           </div>
 
           <div className="space-y-2">
@@ -48,7 +48,7 @@ export default function TagsSidebar() {
                   style={{
                     backgroundColor: tag.color,
                     color: tag.textColor,
-                    boxShadow: active ? "0 0 0 2px #3A3335" : "none",
+                    boxShadow: active ? "0 0 0 2px #3B332A" : "none",
                   }}
                   className="w-full rounded-2xl px-4 py-3 text-right text-sm font-semibold transition active:scale-[0.98]"
                 >
@@ -61,7 +61,7 @@ export default function TagsSidebar() {
           {activeTag && (
             <button
               onClick={() => setFilters({ tag: null })}
-              className="mt-4 w-full rounded-2xl border border-[#EAE5E3] py-2.5 text-[13px] font-semibold text-[#3A3335] transition hover:bg-[#F6F5F4]"
+              className="mt-4 w-full rounded-2xl border border-[#E7DECD] py-2.5 text-[13px] font-semibold text-[#3B332A] transition hover:bg-[#FAF6EE]"
             >
               ניקוי סינון
             </button>

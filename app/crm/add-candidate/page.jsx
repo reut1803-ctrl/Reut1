@@ -82,7 +82,7 @@ export default function AddCandidatePage() {
   }, [form, traits]);
 
   if (role !== "staff" && role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#8B8175]">אזור זה זמין לצוות בלבד</p>;
   }
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
@@ -203,19 +203,19 @@ export default function AddCandidatePage() {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="flex items-center gap-2 text-xl font-bold text-[#3A3335]">
+      <h1 className="flex items-center gap-2 text-xl font-bold text-[#3B332A]">
         <UserPlus size={22} /> העלאת מועמד/ת חדש/ה
       </h1>
-      <p className="mt-1 text-[13px] text-[#8A8285]">כל חברי הצוות יכולים להוסיף מועמדים למאגר</p>
+      <p className="mt-1 text-[13px] text-[#8B8175]">כל חברי הצוות יכולים להוסיף מועמדים למאגר</p>
       {draftRestored && (
-        <p className="mt-2 rounded-xl bg-[#FFF8E7] px-3 py-2 text-[12px] font-semibold text-[#946200]">
+        <p className="mt-2 rounded-xl bg-[#FDF6E3] px-3 py-2 text-[12px] font-semibold text-[#8A6A12]">
           שחזרנו טיוטה שלא נשמרה - אפשר להמשיך מאיפה שהפסקת
         </p>
       )}
 
       <div className="mt-4 space-y-4">
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">מגדר</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">מגדר</p>
           <div className="flex gap-2">
             {[
               { key: "male", label: "בחור" },
@@ -226,8 +226,8 @@ export default function AddCandidatePage() {
                 onClick={() => setGender(g.key)}
                 className={`flex-1 rounded-2xl border px-3.5 py-2.5 text-sm font-semibold transition ${
                   form.gender === g.key
-                    ? "border-[#8C4A55] bg-[#8C4A55] text-white"
-                    : "border-[#EAE5E3] bg-white text-[#3A3335]"
+                    ? "border-[#6F4A2E] bg-[#6F4A2E] text-white"
+                    : "border-[#E7DECD] bg-white text-[#3B332A]"
                 }`}
               >
                 {g.label}
@@ -237,14 +237,14 @@ export default function AddCandidatePage() {
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">תמונות * (עד {MAX_PHOTOS})</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">תמונות * (עד {MAX_PHOTOS})</p>
           <div className="flex flex-wrap gap-2.5">
             {photos.map((p, i) => (
-              <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#EAE5E3]">
+              <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#E7DECD]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p} alt="תצוגה מקדימה" className="h-full w-full object-cover" />
                 {i === 0 && (
-                  <span className="absolute bottom-1 right-1 rounded-full bg-[#8C4A55] px-1.5 py-0.5 text-[9px] font-bold text-white">
+                  <span className="absolute bottom-1 right-1 rounded-full bg-[#6F4A2E] px-1.5 py-0.5 text-[9px] font-bold text-white">
                     ראשית
                   </span>
                 )}
@@ -258,7 +258,7 @@ export default function AddCandidatePage() {
               </div>
             ))}
             {photos.length < MAX_PHOTOS && (
-              <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]">
+              <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#E7DECD] bg-white text-[#B4AA9C] transition hover:border-[#6F4A2E] hover:text-[#6F4A2E]">
                 <ImagePlus size={22} />
                 <span className="text-[11px] font-semibold">הוספת תמונה</span>
                 <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
@@ -266,7 +266,7 @@ export default function AddCandidatePage() {
             )}
           </div>
           {photoError && <p className="mt-1 text-[11px] text-red-500">{photoError}</p>}
-          <p className="mt-1 text-[11px] text-[#B5AEB0]">שדה חובה - התמונה הראשונה תוצג ככרטיס הראשי</p>
+          <p className="mt-1 text-[11px] text-[#B4AA9C]">שדה חובה - התמונה הראשונה תוצג ככרטיס הראשי</p>
         </div>
 
         <Field label="שם מלא">
@@ -382,14 +382,14 @@ export default function AddCandidatePage() {
         </Field>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">תכונות</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">תכונות</p>
           <div className="flex flex-wrap gap-2">
             {TRAITS.map((t) => (
               <button
                 key={t}
                 onClick={() => toggleTrait(t)}
                 className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
-                  traits.includes(t) ? "border-[#8C4A55] bg-[#8C4A55] text-white" : "border-[#EAE5E3] bg-white text-[#3A3335]"
+                  traits.includes(t) ? "border-[#6F4A2E] bg-[#6F4A2E] text-white" : "border-[#E7DECD] bg-white text-[#3B332A]"
                 }`}
               >
                 {t}
@@ -452,14 +452,14 @@ export default function AddCandidatePage() {
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="כרטיס יבש (PDF)">
-            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
+            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#E7DECD] bg-white text-[12px] font-semibold text-[#6F4A2E]">
               <FileText size={15} />
               {pdfFile ? pdfFile.name : "העלאת PDF"}
               <input type="file" accept="application/pdf" onChange={handlePdfChange} className="hidden" />
             </label>
           </Field>
           <Field label="הקלטת היכרות">
-            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
+            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#E7DECD] bg-white text-[12px] font-semibold text-[#6F4A2E]">
               <Music size={15} />
               {audioFile ? audioFile.name : "העלאת אודיו"}
               <input type="file" accept="audio/*" onChange={handleAudioChange} className="hidden" />
@@ -480,14 +480,14 @@ export default function AddCandidatePage() {
         .input-crm {
           width: 100%;
           border-radius: 1rem;
-          border: 1px solid #eae5e3;
+          border: 1px solid #E7DECD;
           background: white;
           padding: 0.625rem 0.75rem;
           font-size: 0.875rem;
           outline: none;
         }
         .input-crm:focus {
-          border-color: #8c4a55;
+          border-color: #6F4A2E;
         }
       `}</style>
     </div>
@@ -497,7 +497,7 @@ export default function AddCandidatePage() {
 function Field({ label, children }) {
   return (
     <div>
-      <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">{label}</p>
+      <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">{label}</p>
       {children}
     </div>
   );

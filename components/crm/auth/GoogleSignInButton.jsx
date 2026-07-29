@@ -20,7 +20,7 @@ export default function GoogleSignInButton({ label = "המשך עם חשבון G
     <div>
       <button
         onClick={handleClick}
-        className="flex w-full items-center justify-center gap-2.5 rounded-full border border-[#DADCE0] bg-white px-4 py-2.5 text-sm font-semibold text-[#3A3335] shadow-sm transition active:scale-95 hover:bg-[#F6F5F4]"
+        className="flex w-full items-center justify-center gap-2.5 rounded-full border border-[#DADCE0] bg-white px-4 py-2.5 text-sm font-semibold text-[#3B332A] shadow-sm transition active:scale-95 hover:bg-[#FAF6EE]"
       >
         <svg width="18" height="18" viewBox="0 0 18 18">
           <path

@@ -189,7 +189,7 @@ export default function StaffTour() {
       <button
         onClick={startTour}
         aria-label={role === "admin" ? "הפעלת סיור הדרכה - תצוגת צוות" : "הפעלת סיור הדרכה"}
-        className="safe-bottom fixed bottom-28 left-20 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#8C4A55] text-white shadow-lg transition active:scale-90"
+        className="safe-bottom fixed bottom-28 left-20 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#6F4A2E] text-white shadow-lg transition active:scale-90"
       >
         <HelpCircle size={20} />
       </button>
@@ -211,7 +211,7 @@ export default function StaffTour() {
           skip: "דילוג",
         }}
         styles={{
-          options: { primaryColor: "#8C4A55", zIndex: 10000, arrowColor: "#fff", textColor: "#3A3335" },
+          options: { primaryColor: "#6F4A2E", zIndex: 10000, arrowColor: "#fff", textColor: "#3B332A" },
           tooltip: { direction: "rtl", textAlign: "right", borderRadius: 16 },
           buttonNext: { borderRadius: 12 },
         }}

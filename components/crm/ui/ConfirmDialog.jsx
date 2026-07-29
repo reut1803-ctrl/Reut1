@@ -10,11 +10,11 @@ export default function ConfirmDialog({ message, onConfirm, onCancel }) {
         <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
           <AlertTriangle size={20} className="text-[#C24545]" />
         </div>
-        <p className="mb-5 text-sm font-semibold text-[#3A3335]">{message}</p>
+        <p className="mb-5 text-sm font-semibold text-[#3B332A]">{message}</p>
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-2xl border border-[#EAE5E3] py-2.5 text-sm font-semibold text-[#3A3335]"
+            className="flex-1 rounded-2xl border border-[#E7DECD] py-2.5 text-sm font-semibold text-[#3B332A]"
           >
             ביטול
           </button>
