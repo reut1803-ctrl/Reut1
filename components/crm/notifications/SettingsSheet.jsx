@@ -35,7 +35,7 @@ export default function SettingsSheet({ onClose }) {
         <div className="space-y-5 px-5 py-5">
           <div className="rounded-2xl border border-[#EAE5E3] bg-[#F6F5F4]/60 p-4">
             <InfoRow icon={User} label="שם" value={user.name} />
-            <InfoRow icon={Mail} label="אימייל" value={user.email || "-"} last />
+            <InfoRow icon={Mail} label="אימייל" value={user.email || "-"} ltr last />
           </div>
 
           <div className="flex items-center justify-between rounded-2xl border border-[#EAE5E3] p-4">
@@ -139,12 +139,14 @@ export default function SettingsSheet({ onClose }) {
   );
 }
 
-function InfoRow({ icon: Icon, label, value, last }) {
+function InfoRow({ icon: Icon, label, value, ltr, last }) {
   return (
     <div className={`flex items-center gap-2.5 py-2 ${!last ? "border-b border-[#EAE5E3]" : ""}`}>
       <Icon size={16} className="text-[#8C4A55]" />
       <span className="w-24 shrink-0 text-[12px] text-[#8A8285]">{label}</span>
-      <span className="text-sm font-medium text-[#3A3335]">{value}</span>
+      <span dir={ltr ? "ltr" : undefined} className="text-sm font-medium text-[#3A3335]">
+        {value}
+      </span>
     </div>
   );
 }
