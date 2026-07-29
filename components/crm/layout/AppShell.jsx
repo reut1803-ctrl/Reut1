@@ -7,6 +7,7 @@ import FabButtons from "./FabButtons";
 import TermsGate from "./TermsGate";
 import Toast from "./Toast";
 import SignInGate from "./SignInGate";
+import StaffTour from "@/components/crm/tour/StaffTour";
 import { useScrollRestoration } from "@/lib/crm/useScrollRestoration";
 import { useCrmStore } from "@/lib/crm/store";
 
@@ -33,6 +34,7 @@ export default function AppShell({ children }) {
       <BottomNav />
       <TermsGate />
       <Toast />
+      <StaffTour />
     </div>
   );
 }

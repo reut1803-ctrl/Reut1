@@ -1,12 +1,29 @@
 "use client";
 
-import { Accessibility, MessageCircle, Check } from "lucide-react";
+import { Accessibility, MessageCircle, Check, HelpCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCrmStore } from "@/lib/crm/store";
 
 export default function FabButtons() {
   const [accessibilityOpen, setAccessibilityOpen] = useState(false);
   const [largeText, setLargeText] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
+  const role = useCrmStore((s) => s.role);
+  const requestTour = useCrmStore((s) => s.requestTour);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // הסיור מתחיל תמיד ממסך המאגר, כי שם נמצאות רוב התחנות.
+  // אם לוחצים עליו ממסך אחר, עוברים קודם למאגר ורק אז מפעילים.
+  const handleTour = () => {
+    if (pathname !== "/crm" && pathname !== "/crm/") {
+      router.push("/crm");
+      setTimeout(requestTour, 600);
+      return;
+    }
+    requestTour();
+  };
 
   useEffect(() => {
     document.documentElement.classList.toggle("a11y-large-text", largeText);
@@ -17,7 +34,16 @@ export default function FabButtons() {
   }, [highContrast]);
 
   return (
-    <div className="safe-bottom fixed bottom-28 left-4 z-20 flex flex-col items-center gap-3">
+    <div className="safe-bottom fixed bottom-28 left-4 z-30 flex flex-col items-center gap-3">
+      {(role === "staff" || role === "admin") && (
+        <button
+          aria-label="הפעלת סיור הדרכה"
+          onClick={handleTour}
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#844442] text-white shadow-lg transition active:scale-90"
+        >
+          <HelpCircle size={22} />
+        </button>
+      )}
       <button
         aria-label="פתיחת תפריט נגישות"
         onClick={() => setAccessibilityOpen((v) => !v)}
