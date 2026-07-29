@@ -17,15 +17,15 @@ export default function FavoritesPage() {
 
   return (
     <div className="px-4 py-4">
-      <h1 className="mb-4 text-xl font-bold text-[#2E2116]">מועדפים</h1>
+      <h1 className="mb-4 text-xl font-bold text-[#3A2E26]">מועדפים</h1>
 
       {favCandidates.length === 0 ? (
         <div className="mt-10 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8D9BE]">
-            <Heart size={28} className="text-[#C9A87A]" />
+          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#F0E2DE]">
+            <Heart size={28} className="text-[#C08D88]" />
           </div>
-          <p className="text-sm font-semibold text-[#2E2116]">עדיין אין לך מועדפים</p>
-          <p className="mt-1 text-[13px] text-[#7A6A55]">לחצי על סמל הלב בכרטיסייה כדי לשמור אותה כאן</p>
+          <p className="text-sm font-semibold text-[#3A2E26]">עדיין אין לך מועדפים</p>
+          <p className="mt-1 text-[13px] text-[#7C6E60]">לחצי על סמל הלב בכרטיסייה כדי לשמור אותה כאן</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

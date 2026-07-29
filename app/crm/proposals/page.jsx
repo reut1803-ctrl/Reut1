@@ -35,7 +35,7 @@ export default function ProposalsPage() {
   const [rationale, setRationale] = useState("");
 
   if (role !== "staff" && role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#7A6A55]">אזור זה זמין לצוות בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין לצוות בלבד</p>;
   }
 
   const canCreate = selection.male && selection.female;
@@ -46,16 +46,16 @@ export default function ProposalsPage() {
         <PreselectFromQuery />
       </Suspense>
 
-      <h1 className="text-xl font-bold text-[#2E2116]">הצעת התאמה</h1>
-      <p className="mt-1 text-[13px] text-[#7A6A55]">בחרו בחור ובחורה והציעו התאמה ביניהם</p>
+      <h1 className="text-xl font-bold text-[#3A2E26]">הצעת התאמה</h1>
+      <p className="mt-1 text-[13px] text-[#7C6E60]">בחרו בחור ובחורה והציעו התאמה ביניהם</p>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#2E2116]">בחור</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">בחור</p>
           <select
             value={selection.male || ""}
             onChange={(e) => setSelection("male", e.target.value)}
-            className="w-full rounded-2xl border border-[#D9C6A5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#5B3418]"
+            className="w-full rounded-2xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
           >
             <option value="">בחירת בחור...</option>
             {maleCandidates.map((c) => (
@@ -67,11 +67,11 @@ export default function ProposalsPage() {
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#2E2116]">בחורה</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">בחורה</p>
           <select
             value={selection.female || ""}
             onChange={(e) => setSelection("female", e.target.value)}
-            className="w-full rounded-2xl border border-[#D9C6A5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#5B3418]"
+            className="w-full rounded-2xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
           >
             <option value="">בחירת בחורה...</option>
             {femaleCandidates.map((c) => (
@@ -84,13 +84,13 @@ export default function ProposalsPage() {
       </div>
 
       <div className="mt-3">
-        <p className="mb-1.5 text-[12px] font-semibold text-[#2E2116]">הרציונל (הניצוץ) - למה זה מתאים?</p>
+        <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">הרציונל (הניצוץ) - למה זה מתאים?</p>
         <textarea
           value={rationale}
           onChange={(e) => setRationale(e.target.value)}
           rows={2}
           placeholder="מה משלים בין הצדדים, למה נוצר החיבור..."
-          className="w-full resize-none rounded-2xl border border-[#D9C6A5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#5B3418]"
+          className="w-full resize-none rounded-2xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
         />
       </div>
 
@@ -107,9 +107,9 @@ export default function ProposalsPage() {
       </Button>
 
       <div className="mt-8">
-        <h2 className="mb-3 text-[15px] font-bold text-[#2E2116]">הצעות פעילות ({proposals.length})</h2>
+        <h2 className="mb-3 text-[15px] font-bold text-[#3A2E26]">הצעות פעילות ({proposals.length})</h2>
         {proposals.length === 0 ? (
-          <p className="text-center text-sm text-[#7A6A55]">עדיין לא הוצעו התאמות</p>
+          <p className="text-center text-sm text-[#7C6E60]">עדיין לא הוצעו התאמות</p>
         ) : (
           <div className="space-y-3">
             {proposals.map((p) => (

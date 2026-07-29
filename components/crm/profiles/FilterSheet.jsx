@@ -18,29 +18,29 @@ export default function FilterSheet({ onClose }) {
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl safe-bottom">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-[#2E2116]">סינון חכם</h2>
-          <button onClick={onClose} className="rounded-full p-2 hover:bg-[#F2E8D5]" aria-label="סגירה">
+          <h2 className="text-lg font-bold text-[#3A2E26]">סינון חכם</h2>
+          <button onClick={onClose} className="rounded-full p-2 hover:bg-[#E8DCCB]" aria-label="סגירה">
             <X size={20} />
           </button>
         </div>
 
         <div className="space-y-6">
           <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-[#2E2116]">חיפוש חופשי לפי שם</label>
+            <label className="mb-1.5 block text-[13px] font-semibold text-[#3A2E26]">חיפוש חופשי לפי שם</label>
             <div className="relative">
-              <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A08D74]" />
+              <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A2937F]" />
               <input
                 type="text"
                 value={filters.search}
                 onChange={(e) => setFilters({ search: e.target.value })}
                 placeholder="לדוגמה: שירה"
-                className="w-full rounded-2xl border border-[#D9C6A5] bg-white py-2.5 pr-9 pl-3 text-sm outline-none focus:border-[#5B3418]"
+                className="w-full rounded-2xl border border-[#CCBDAB] bg-white py-2.5 pr-9 pl-3 text-sm outline-none focus:border-[#844442]"
               />
             </div>
           </div>
 
           <div>
-            <p className="mb-1 text-[13px] font-semibold text-[#2E2116]">טווח גילאים</p>
+            <p className="mb-1 text-[13px] font-semibold text-[#3A2E26]">טווח גילאים</p>
             <RangeSlider
               min={18}
               max={50}
@@ -50,7 +50,7 @@ export default function FilterSheet({ onClose }) {
           </div>
 
           <div>
-            <p className="mb-1 text-[13px] font-semibold text-[#2E2116]">טווח גובה</p>
+            <p className="mb-1 text-[13px] font-semibold text-[#3A2E26]">טווח גובה</p>
             <RangeSlider
               min={145}
               max={205}
@@ -61,7 +61,7 @@ export default function FilterSheet({ onClose }) {
           </div>
 
           <div>
-            <p className="mb-2 text-[13px] font-semibold text-[#2E2116]">רמת תורניות</p>
+            <p className="mb-2 text-[13px] font-semibold text-[#3A2E26]">רמת תורניות</p>
             <div className="flex flex-wrap gap-2">
               {["הכל", ...religiousLevels.filter((l) => l !== "הכל")].map((level) => (
                 <button
@@ -69,8 +69,8 @@ export default function FilterSheet({ onClose }) {
                   onClick={() => setFilters({ religiousLevel: level })}
                   className={`rounded-full border px-3.5 py-2 text-[13px] font-semibold transition ${
                     filters.religiousLevel === level
-                      ? "border-[#5B3418] bg-[#5B3418] text-white"
-                      : "border-[#D9C6A5] bg-white text-[#2E2116] hover:bg-[#F2E8D5]"
+                      ? "border-[#844442] bg-[#844442] text-white"
+                      : "border-[#CCBDAB] bg-white text-[#3A2E26] hover:bg-[#E8DCCB]"
                   }`}
                 >
                   {level}
@@ -80,7 +80,7 @@ export default function FilterSheet({ onClose }) {
           </div>
 
           <div>
-            <p className="mb-2 text-[13px] font-semibold text-[#2E2116]">אזור מגורים</p>
+            <p className="mb-2 text-[13px] font-semibold text-[#3A2E26]">אזור מגורים</p>
             <div className="flex flex-wrap gap-2">
               {["הכל", ...REGIONS].map((region) => (
                 <button
@@ -88,8 +88,8 @@ export default function FilterSheet({ onClose }) {
                   onClick={() => setFilters({ region })}
                   className={`rounded-full border px-3.5 py-2 text-[13px] font-semibold transition ${
                     filters.region === region
-                      ? "border-[#5B3418] bg-[#5B3418] text-white"
-                      : "border-[#D9C6A5] bg-white text-[#2E2116] hover:bg-[#F2E8D5]"
+                      ? "border-[#844442] bg-[#844442] text-white"
+                      : "border-[#CCBDAB] bg-white text-[#3A2E26] hover:bg-[#E8DCCB]"
                   }`}
                 >
                   {region}
@@ -100,7 +100,7 @@ export default function FilterSheet({ onClose }) {
         </div>
 
         <div className="mt-6 flex gap-2">
-          <button onClick={resetFilters} className="flex-1 rounded-2xl border border-[#D9C6A5] py-3 text-sm font-semibold text-[#2E2116]">
+          <button onClick={resetFilters} className="flex-1 rounded-2xl border border-[#CCBDAB] py-3 text-sm font-semibold text-[#3A2E26]">
             איפוס
           </button>
           <Button variant="primary" className="flex-1" onClick={onClose}>

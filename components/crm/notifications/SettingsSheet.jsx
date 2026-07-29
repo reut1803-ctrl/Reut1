@@ -25,28 +25,28 @@ export default function SettingsSheet({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
-        <div className="sticky top-0 flex items-center justify-between border-b border-[#D9C6A5] bg-white px-5 py-4">
-          <h2 className="text-lg font-bold text-[#2E2116]">המידע שלי</h2>
-          <button onClick={onClose} className="rounded-full p-2 hover:bg-[#F2E8D5]" aria-label="סגירה">
+        <div className="sticky top-0 flex items-center justify-between border-b border-[#CCBDAB] bg-white px-5 py-4">
+          <h2 className="text-lg font-bold text-[#3A2E26]">המידע שלי</h2>
+          <button onClick={onClose} className="rounded-full p-2 hover:bg-[#E8DCCB]" aria-label="סגירה">
             <X size={20} />
           </button>
         </div>
 
         <div className="space-y-5 px-5 py-5">
-          <div className="rounded-2xl border border-[#D9C6A5] bg-[#F2E8D5]/60 p-4">
+          <div className="rounded-2xl border border-[#CCBDAB] bg-[#E8DCCB]/60 p-4">
             <InfoRow icon={User} label="שם" value={user.name} />
             <InfoRow icon={Mail} label="אימייל" value={user.email || "-"} last />
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl border border-[#D9C6A5] p-4">
+          <div className="flex items-center justify-between rounded-2xl border border-[#CCBDAB] p-4">
             <div>
-              <p className="text-sm font-semibold text-[#2E2116]">התראות מופעלות</p>
-              <p className="text-[12px] text-[#7A6A55]">קבלת עדכונים על הצעות והתאמות חדשות</p>
+              <p className="text-sm font-semibold text-[#3A2E26]">התראות מופעלות</p>
+              <p className="text-[12px] text-[#7C6E60]">קבלת עדכונים על הצעות והתאמות חדשות</p>
             </div>
             <button
               onClick={toggleNotificationsEnabled}
               className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-                notificationsEnabled ? "bg-[#7FB33F]" : "bg-[#D9C6A5]"
+                notificationsEnabled ? "bg-[#62826B]" : "bg-[#CCBDAB]"
               }`}
               aria-pressed={notificationsEnabled}
             >
@@ -58,15 +58,15 @@ export default function SettingsSheet({ onClose }) {
             </button>
           </div>
 
-          <div className="rounded-2xl border border-[#D9C6A5] p-4">
+          <div className="rounded-2xl border border-[#CCBDAB] p-4">
             <div className="mb-2 flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-[#5B3418]" />
-              <p className="text-sm font-semibold text-[#2E2116]">כניסה אישית</p>
+              <ShieldCheck size={16} className="text-[#844442]" />
+              <p className="text-sm font-semibold text-[#3A2E26]">כניסה אישית</p>
             </div>
 
             {!googleUser && (
               <>
-                <p className="mb-3 text-[12px] text-[#7A6A55]">
+                <p className="mb-3 text-[12px] text-[#7C6E60]">
                   התחברות עם חשבון Google - הגישה לצוות ולמנהלת ניתנת רק לכתובות מייל שאושרו מראש.
                 </p>
                 <GoogleSignInButton />
@@ -83,7 +83,7 @@ export default function SettingsSheet({ onClose }) {
                 </p>
                 <button
                   onClick={signOutGoogle}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#D9C6A5] bg-white py-2 text-[12px] font-semibold text-[#2E2116]"
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#CCBDAB] bg-white py-2 text-[12px] font-semibold text-[#3A2E26]"
                 >
                   <LogOut size={13} /> התנתקות
                 </button>
@@ -91,19 +91,19 @@ export default function SettingsSheet({ onClose }) {
             )}
 
             {googleUser && (role === "admin" || role === "staff") && (
-              <div className="flex items-center justify-between rounded-2xl bg-[#F2E8D5] p-3">
+              <div className="flex items-center justify-between rounded-2xl bg-[#E8DCCB] p-3">
                 <div className="flex items-center gap-2.5">
                   {googleUser.picture && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={googleUser.picture} alt="" className="h-9 w-9 rounded-full" referrerPolicy="no-referrer" />
                   )}
                   <div>
-                    <p className="text-sm font-semibold text-[#2E2116]">{googleUser.name}</p>
-                    <p className="text-[11px] text-[#7A6A55]">{ROLE_LABELS[role]}</p>
+                    <p className="text-sm font-semibold text-[#3A2E26]">{googleUser.name}</p>
+                    <p className="text-[11px] text-[#7C6E60]">{ROLE_LABELS[role]}</p>
                   </div>
                 </div>
                 <button onClick={signOutGoogle} aria-label="התנתקות" className="rounded-full p-2 hover:bg-white">
-                  <LogOut size={16} className="text-[#7A6A55]" />
+                  <LogOut size={16} className="text-[#7C6E60]" />
                 </button>
               </div>
             )}
@@ -123,7 +123,7 @@ export default function SettingsSheet({ onClose }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="flex-1 rounded-2xl border border-[#D9C6A5] bg-white px-4 py-2.5 text-sm font-semibold text-[#2E2116]"
+                  className="flex-1 rounded-2xl border border-[#CCBDAB] bg-white px-4 py-2.5 text-sm font-semibold text-[#3A2E26]"
                 >
                   ביטול
                 </button>
@@ -141,10 +141,10 @@ export default function SettingsSheet({ onClose }) {
 
 function InfoRow({ icon: Icon, label, value, last }) {
   return (
-    <div className={`flex items-center gap-2.5 py-2 ${!last ? "border-b border-[#D9C6A5]" : ""}`}>
-      <Icon size={16} className="text-[#5B3418]" />
-      <span className="w-24 shrink-0 text-[12px] text-[#7A6A55]">{label}</span>
-      <span className="text-sm font-medium text-[#2E2116]">{value}</span>
+    <div className={`flex items-center gap-2.5 py-2 ${!last ? "border-b border-[#CCBDAB]" : ""}`}>
+      <Icon size={16} className="text-[#844442]" />
+      <span className="w-24 shrink-0 text-[12px] text-[#7C6E60]">{label}</span>
+      <span className="text-sm font-medium text-[#3A2E26]">{value}</span>
     </div>
   );
 }

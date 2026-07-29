@@ -21,7 +21,7 @@ export default function FabButtons() {
       <button
         aria-label="פתיחת תפריט נגישות"
         onClick={() => setAccessibilityOpen((v) => !v)}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2E2116] text-white shadow-lg transition active:scale-90"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#3A2E26] text-white shadow-lg transition active:scale-90"
       >
         <Accessibility size={22} />
       </button>
@@ -30,27 +30,27 @@ export default function FabButtons() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="פתיחת וואטסאפ"
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#7FB33F] text-white shadow-[0_10px_25px_rgba(32,166,107,0.4)] transition active:scale-90"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#62826B] text-white shadow-[0_10px_25px_rgba(32,166,107,0.4)] transition active:scale-90"
       >
         <MessageCircle size={26} />
       </a>
 
       {accessibilityOpen && (
-        <div className="absolute bottom-0 left-16 w-56 rounded-2xl border border-[#D9C6A5] bg-white p-3 text-sm shadow-xl">
-          <p className="mb-2 font-semibold text-[#2E2116]">הגדרות נגישות</p>
+        <div className="absolute bottom-0 left-16 w-56 rounded-2xl border border-[#CCBDAB] bg-white p-3 text-sm shadow-xl">
+          <p className="mb-2 font-semibold text-[#3A2E26]">הגדרות נגישות</p>
           <button
             onClick={() => setLargeText((v) => !v)}
-            className="mb-1.5 flex w-full items-center justify-between rounded-xl bg-[#F2E8D5] px-3 py-2 text-right text-[13px] hover:bg-[#D9C6A5]"
+            className="mb-1.5 flex w-full items-center justify-between rounded-xl bg-[#E8DCCB] px-3 py-2 text-right text-[13px] hover:bg-[#CCBDAB]"
           >
             הגדלת טקסט
-            {largeText && <Check size={14} className="text-[#7FB33F]" />}
+            {largeText && <Check size={14} className="text-[#62826B]" />}
           </button>
           <button
             onClick={() => setHighContrast((v) => !v)}
-            className="flex w-full items-center justify-between rounded-xl bg-[#F2E8D5] px-3 py-2 text-right text-[13px] hover:bg-[#D9C6A5]"
+            className="flex w-full items-center justify-between rounded-xl bg-[#E8DCCB] px-3 py-2 text-right text-[13px] hover:bg-[#CCBDAB]"
           >
             ניגודיות גבוהה
-            {highContrast && <Check size={14} className="text-[#7FB33F]" />}
+            {highContrast && <Check size={14} className="text-[#62826B]" />}
           </button>
         </div>
       )}

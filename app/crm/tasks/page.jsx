@@ -32,7 +32,7 @@ export default function TasksPage() {
   }, [role, currentStaffEmail, markTasksSeenByStaff]);
 
   if (role !== "staff" && role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#7A6A55]">אזור זה זמין לצוות בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין לצוות בלבד</p>;
   }
 
   const open = tasks.filter((t) => !t.done);
@@ -55,31 +55,31 @@ export default function TasksPage() {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="text-xl font-bold text-[#2E2116]">משימות</h1>
-      <p className="mt-1 text-[13px] text-[#7A6A55]">{open.length} משימות פתוחות</p>
+      <h1 className="text-xl font-bold text-[#3A2E26]">משימות</h1>
+      <p className="mt-1 text-[13px] text-[#7C6E60]">{open.length} משימות פתוחות</p>
 
-      <div className="mt-4 rounded-3xl border border-[#D9C6A5] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-        <p className="mb-2 text-[13px] font-semibold text-[#2E2116]">{role === "admin" ? "משימה חדשה - שיוך לצוות" : "משימה חדשה"}</p>
+      <div className="mt-4 rounded-3xl border border-[#CCBDAB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+        <p className="mb-2 text-[13px] font-semibold text-[#3A2E26]">{role === "admin" ? "משימה חדשה - שיוך לצוות" : "משימה חדשה"}</p>
         <div className="space-y-2">
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="מה צריך לעשות?"
-            className="w-full rounded-xl border border-[#D9C6A5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#5B3418]"
+            className="w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
           />
           <div className="flex gap-2">
             <input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="flex-1 rounded-xl border border-[#D9C6A5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#5B3418]"
+              className="flex-1 rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
             />
             {role === "admin" ? (
               <select
                 value={assigneeId}
                 onChange={(e) => setAssigneeId(e.target.value)}
-                className="flex-1 rounded-xl border border-[#D9C6A5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#5B3418]"
+                className="flex-1 rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
               >
                 {staffList.map((s) => (
                   <option key={s.email} value={s.email}>
@@ -93,7 +93,7 @@ export default function TasksPage() {
                 value={owner}
                 onChange={(e) => setOwner(e.target.value)}
                 placeholder="אחראי/ת"
-                className="flex-1 rounded-xl border border-[#D9C6A5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#5B3418]"
+                className="flex-1 rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
               />
             )}
           </div>
@@ -101,7 +101,7 @@ export default function TasksPage() {
             <select
               value={candidateId}
               onChange={(e) => setCandidateId(e.target.value)}
-              className="w-full rounded-xl border border-[#D9C6A5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#5B3418]"
+              className="w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
             >
               <option value="">ללא מועמד/ת מקושר/ת</option>
               {candidates.map((c) => (
@@ -120,7 +120,7 @@ export default function TasksPage() {
 
       {pushedToMe.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-[#5B3418]">
+          <p className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-[#844442]">
             <Megaphone size={14} /> משימות מהמנהלת
           </p>
           <div className="space-y-2">
@@ -135,25 +135,25 @@ export default function TasksPage() {
         {otherOpen.map((t) => (
           <TaskRow key={t.id} task={t} onToggle={() => toggleTaskDone(t.id)} />
         ))}
-        {open.length === 0 && <p className="py-6 text-center text-sm text-[#7A6A55]">אין משימות פתוחות 🎉</p>}
+        {open.length === 0 && <p className="py-6 text-center text-sm text-[#7C6E60]">אין משימות פתוחות 🎉</p>}
       </div>
 
       {done.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 text-[13px] font-semibold text-[#A08D74]">הושלמו</p>
+          <p className="mb-2 text-[13px] font-semibold text-[#A2937F]">הושלמו</p>
           <div className="space-y-2">
             {done.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 rounded-2xl border border-[#D9C6A5] bg-[#F2E8D5] p-3 opacity-70">
+              <div key={t.id} className="flex items-center gap-3 rounded-2xl border border-[#CCBDAB] bg-[#E8DCCB] p-3 opacity-70">
                 <button
                   onClick={() => toggleTaskDone(t.id)}
                   aria-label="סימון כפתוח"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#7FB33F] text-white"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#62826B] text-white"
                 >
                   <Check size={14} />
                 </button>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-[#2E2116] line-through">{t.title}</p>
-                  <p className="text-[11px] text-[#A08D74]">
+                  <p className="text-sm font-semibold text-[#3A2E26] line-through">{t.title}</p>
+                  <p className="text-[11px] text-[#A2937F]">
                     {t.owner} {t.dueDate && `· ${t.dueDate}`}
                   </p>
                 </div>
@@ -172,17 +172,17 @@ function TaskRow({ task, onToggle, highlighted }) {
 
   return (
     <div
-      className={`rounded-2xl border p-3 ${highlighted ? "border-[#5B3418] bg-[#E8D9BE]" : "border-[#D9C6A5] bg-white"}`}
+      className={`rounded-2xl border p-3 ${highlighted ? "border-[#844442] bg-[#F0E2DE]" : "border-[#CCBDAB] bg-white"}`}
     >
       <div className="flex items-center gap-3">
         <button
           onClick={onToggle}
           aria-label="סימון כהושלם"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#5B3418]"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#844442]"
         />
         <div className="flex-1">
-          <p className="text-sm font-semibold text-[#2E2116]">{task.title}</p>
-          <p className="text-[11px] text-[#7A6A55]">
+          <p className="text-sm font-semibold text-[#3A2E26]">{task.title}</p>
+          <p className="text-[11px] text-[#7C6E60]">
             {task.owner} {task.dueDate && `· ${task.dueDate}`} {candidate && `· בנוגע ל${candidate.name}`}
           </p>
         </div>
@@ -190,14 +190,14 @@ function TaskRow({ task, onToggle, highlighted }) {
 
       {candidate && (
         <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-[12px] shadow-sm">
-          <Link href={`/crm?openCandidate=${candidate.id}`} className="flex items-center gap-1.5 font-semibold text-[#5B3418]">
+          <Link href={`/crm?openCandidate=${candidate.id}`} className="flex items-center gap-1.5 font-semibold text-[#844442]">
             צפייה בכרטיס {candidate.name} <ChevronLeft size={13} />
           </Link>
           {candidate.phone && (
             <a
               href={`tel:${candidate.phone}`}
               dir="ltr"
-              className="flex items-center gap-1 rounded-lg bg-[#F2E8D5] px-2 py-1 font-semibold text-[#2E2116]"
+              className="flex items-center gap-1 rounded-lg bg-[#E8DCCB] px-2 py-1 font-semibold text-[#3A2E26]"
             >
               <Phone size={12} /> {candidate.phone}
             </a>
