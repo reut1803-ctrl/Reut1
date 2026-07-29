@@ -16,7 +16,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
         background: "#ffffff",
         padding: "48px",
         fontFamily: "Arial, Helvetica, sans-serif",
-        color: "#3B332A",
+        color: "#2E2116",
       }}
     >
       {candidate.photoUrl && (
@@ -28,8 +28,8 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
         />
       )}
 
-      <h1 style={{ textAlign: "center", fontSize: "30px", margin: "0 0 6px", color: "#6F4A2E" }}>{candidate.name}</h1>
-      <p style={{ textAlign: "center", fontSize: "15px", color: "#8B8175", margin: "0 0 28px" }}>
+      <h1 style={{ textAlign: "center", fontSize: "30px", margin: "0 0 6px", color: "#5B3418" }}>{candidate.name}</h1>
+      <p style={{ textAlign: "center", fontSize: "15px", color: "#7A6A55", margin: "0 0 28px" }}>
         {candidate.age} | {candidate.height} ס״מ | {candidate.region}
         {candidate.eda ? ` | ${candidate.eda}` : ""}
       </p>
@@ -45,14 +45,14 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
 
       {candidate.bio && (
         <div style={{ marginTop: "28px" }}>
-          <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#6F4A2E" }}>קצת על {firstName}</h3>
+          <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#5B3418" }}>קצת על {firstName}</h3>
           <p style={{ fontSize: "15px", lineHeight: 1.7, whiteSpace: "pre-line", margin: 0 }}>{candidate.bio}</p>
         </div>
       )}
 
       {candidate.traits?.length > 0 && (
         <div style={{ marginTop: "22px" }}>
-          <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#6F4A2E" }}>תכונות</h3>
+          <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#5B3418" }}>תכונות</h3>
           <p style={{ fontSize: "15px", margin: 0 }}>{candidate.traits.join(" · ")}</p>
         </div>
       )}
@@ -63,8 +63,8 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
 function Row({ label, value }) {
   if (!value) return null;
   return (
-    <tr style={{ borderBottom: "1px solid #E7DECD" }}>
-      <td style={{ padding: "10px 0", color: "#8B8175", width: "180px" }}>{label}</td>
+    <tr style={{ borderBottom: "1px solid #D9C6A5" }}>
+      <td style={{ padding: "10px 0", color: "#7A6A55", width: "180px" }}>{label}</td>
       <td style={{ padding: "10px 0", fontWeight: "bold" }}>{value}</td>
     </tr>
   );

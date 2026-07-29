@@ -67,15 +67,15 @@ function EditCandidateForm() {
   }, [id, loaded, findCandidateById]);
 
   if (role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8B8175]">אזור זה זמין למנהלת בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#7A6A55]">אזור זה זמין למנהלת בלבד</p>;
   }
 
   if (!id) {
-    return <p className="px-4 py-10 text-center text-sm text-[#8B8175]">לא נבחר מועמד/ת לעריכה</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#7A6A55]">לא נבחר מועמד/ת לעריכה</p>;
   }
 
   if (!loaded || !form) {
-    return <p className="px-4 py-10 text-center text-sm text-[#8B8175]">טוען פרטי כרטיס...</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#7A6A55]">טוען פרטי כרטיס...</p>;
   }
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
@@ -186,14 +186,14 @@ function EditCandidateForm() {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="flex items-center gap-2 text-xl font-bold text-[#3B332A]">
+      <h1 className="flex items-center gap-2 text-xl font-bold text-[#2E2116]">
         <Save size={22} /> עריכת פרטי הכרטיס
       </h1>
-      <p className="mt-1 text-[13px] text-[#8B8175]">כל שינוי יעודכן על הכרטיס הקיים - לא ייווצר כרטיס חדש</p>
+      <p className="mt-1 text-[13px] text-[#7A6A55]">כל שינוי יעודכן על הכרטיס הקיים - לא ייווצר כרטיס חדש</p>
 
       <div className="mt-4 space-y-4">
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">מגדר</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#2E2116]">מגדר</p>
           <div className="flex gap-2">
             {[
               { key: "male", label: "בחור" },
@@ -204,8 +204,8 @@ function EditCandidateForm() {
                 onClick={() => setGender(g.key)}
                 className={`flex-1 rounded-2xl border px-3.5 py-2.5 text-sm font-semibold transition ${
                   form.gender === g.key
-                    ? "border-[#6F4A2E] bg-[#6F4A2E] text-white"
-                    : "border-[#E7DECD] bg-white text-[#3B332A]"
+                    ? "border-[#5B3418] bg-[#5B3418] text-white"
+                    : "border-[#D9C6A5] bg-white text-[#2E2116]"
                 }`}
               >
                 {g.label}
@@ -215,14 +215,14 @@ function EditCandidateForm() {
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">תמונות * (עד {MAX_PHOTOS})</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#2E2116]">תמונות * (עד {MAX_PHOTOS})</p>
           <div className="flex flex-wrap gap-2.5">
             {photos.map((p, i) => (
-              <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#E7DECD]">
+              <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#D9C6A5]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p} alt="תצוגה מקדימה" className="h-full w-full object-cover" />
                 {i === 0 && (
-                  <span className="absolute bottom-1 right-1 rounded-full bg-[#6F4A2E] px-1.5 py-0.5 text-[9px] font-bold text-white">
+                  <span className="absolute bottom-1 right-1 rounded-full bg-[#5B3418] px-1.5 py-0.5 text-[9px] font-bold text-white">
                     ראשית
                   </span>
                 )}
@@ -236,7 +236,7 @@ function EditCandidateForm() {
               </div>
             ))}
             {photos.length < MAX_PHOTOS && (
-              <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#E7DECD] bg-white text-[#B4AA9C] transition hover:border-[#6F4A2E] hover:text-[#6F4A2E]">
+              <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#D9C6A5] bg-white text-[#A08D74] transition hover:border-[#5B3418] hover:text-[#5B3418]">
                 <ImagePlus size={22} />
                 <span className="text-[11px] font-semibold">הוספת תמונה</span>
                 <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
@@ -346,14 +346,14 @@ function EditCandidateForm() {
         </Field>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">תכונות</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#2E2116]">תכונות</p>
           <div className="flex flex-wrap gap-2">
             {TRAITS.map((t) => (
               <button
                 key={t}
                 onClick={() => toggleTrait(t)}
                 className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
-                  traits.includes(t) ? "border-[#6F4A2E] bg-[#6F4A2E] text-white" : "border-[#E7DECD] bg-white text-[#3B332A]"
+                  traits.includes(t) ? "border-[#5B3418] bg-[#5B3418] text-white" : "border-[#D9C6A5] bg-white text-[#2E2116]"
                 }`}
               >
                 {t}
@@ -413,11 +413,11 @@ function EditCandidateForm() {
         <div className="grid grid-cols-2 gap-3">
           <Field label="כרטיס יבש (PDF)">
             {existingPdfUrl && !pdfFile && (
-              <a href={existingPdfUrl} target="_blank" rel="noopener noreferrer" className="mb-1.5 block truncate text-[11px] font-semibold text-[#6F4A2E]">
+              <a href={existingPdfUrl} target="_blank" rel="noopener noreferrer" className="mb-1.5 block truncate text-[11px] font-semibold text-[#5B3418]">
                 צפייה בקובץ הקיים
               </a>
             )}
-            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#E7DECD] bg-white text-[12px] font-semibold text-[#6F4A2E]">
+            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#D9C6A5] bg-white text-[12px] font-semibold text-[#5B3418]">
               <FileText size={15} />
               {pdfFile ? pdfFile.name : existingPdfUrl ? "החלפת קובץ" : "העלאת PDF"}
               <input type="file" accept="application/pdf" onChange={handlePdfChange} className="hidden" />
@@ -427,7 +427,7 @@ function EditCandidateForm() {
             {existingAudioUrl && !audioFile && (
               <audio controls src={existingAudioUrl} className="mb-1.5 h-8 w-full" />
             )}
-            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#E7DECD] bg-white text-[12px] font-semibold text-[#6F4A2E]">
+            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#D9C6A5] bg-white text-[12px] font-semibold text-[#5B3418]">
               <Music size={15} />
               {audioFile ? audioFile.name : existingAudioUrl ? "החלפת הקלטה" : "העלאת אודיו"}
               <input type="file" accept="audio/*" onChange={handleAudioChange} className="hidden" />
@@ -448,14 +448,14 @@ function EditCandidateForm() {
         .input-crm {
           width: 100%;
           border-radius: 1rem;
-          border: 1px solid #E7DECD;
+          border: 1px solid #D9C6A5;
           background: white;
           padding: 0.625rem 0.75rem;
           font-size: 0.875rem;
           outline: none;
         }
         .input-crm:focus {
-          border-color: #6F4A2E;
+          border-color: #5B3418;
         }
       `}</style>
     </div>
@@ -465,7 +465,7 @@ function EditCandidateForm() {
 function Field({ label, children }) {
   return (
     <div>
-      <p className="mb-1.5 text-[12px] font-semibold text-[#3B332A]">{label}</p>
+      <p className="mb-1.5 text-[12px] font-semibold text-[#2E2116]">{label}</p>
       {children}
     </div>
   );

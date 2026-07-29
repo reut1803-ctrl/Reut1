@@ -31,7 +31,7 @@ export default function BottomNav() {
   const badgeCount = { favorites: favCount, tasks: role === "staff" ? pendingTasksCount : 0 };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E7DECD] bg-white/95 backdrop-blur safe-bottom">
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#D9C6A5] bg-white/95 backdrop-blur safe-bottom">
       <div className="mx-auto flex max-w-md items-stretch justify-around">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
@@ -45,15 +45,15 @@ export default function BottomNav() {
               className="relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-semibold transition"
             >
               <span className="relative">
-                <Icon size={22} className={active ? "text-[#6F4A2E]" : "text-[#B4AA9C]"} strokeWidth={active ? 2.5 : 2} />
+                <Icon size={22} className={active ? "text-[#5B3418]" : "text-[#A08D74]"} strokeWidth={active ? 2.5 : 2} />
                 {count > 0 && (
                   <span className="absolute -top-1.5 -left-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#7FB33F] px-1 text-[10px] font-bold text-white">
                     {count}
                   </span>
                 )}
               </span>
-              <span className={active ? "text-[#6F4A2E]" : "text-[#B4AA9C]"}>{tab.label}</span>
-              {active && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-[#6F4A2E]" />}
+              <span className={active ? "text-[#5B3418]" : "text-[#A08D74]"}>{tab.label}</span>
+              {active && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-[#5B3418]" />}
             </Link>
           );
         })}

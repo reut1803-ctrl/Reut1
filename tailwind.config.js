@@ -7,12 +7,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        cream: "#FAF6EE",
-        blush: "#F3E8D8",
-        rose: "#6F4A2E",
-        roseDark: "#4E3220",
-        sand: "#EAE0CD",
-        ink: "#3B332A",
+        cream: "#F2E8D5",
+        blush: "#E8DAC0",
+        rose: "#5B3418",
+        roseDark: "#331D07",
+        sand: "#D9C6A5",
+        ink: "#2E2116",
       },
       fontFamily: {
         sans: ["Heebo", "system-ui", "sans-serif"],

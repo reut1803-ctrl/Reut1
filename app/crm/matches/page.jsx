@@ -26,7 +26,7 @@ export default function MatchesPage() {
       <div className="px-4 py-4">
         <GenderToggle />
 
-        <div className="mt-4 rounded-3xl bg-gradient-to-l from-[#6F4A2E] to-[#4E3220] p-5 text-white shadow-lg">
+        <div className="mt-4 rounded-3xl bg-gradient-to-l from-[#5B3418] to-[#331D07] p-5 text-white shadow-lg">
           <div className="flex items-center gap-2">
             <Sparkles size={20} />
             <p className="text-lg font-bold">{matches.length} התאמות גבוהות מעל 70%!</p>
@@ -44,7 +44,7 @@ export default function MatchesPage() {
         </div>
 
         {matches.length === 0 ? (
-          <p className="mt-16 text-center text-sm text-[#8B8175]">אין כרגע התאמות במאגר הזה</p>
+          <p className="mt-16 text-center text-sm text-[#7A6A55]">אין כרגע התאמות במאגר הזה</p>
         ) : (
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {matches.map((c) => (
@@ -66,12 +66,12 @@ export default function MatchesPage() {
       <GenderToggle />
 
       {!showWizard ? (
-        <div className="mt-8 flex flex-col items-center rounded-3xl border border-[#E7DECD] bg-white p-6 text-center shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#F3E7D5]">
-            <Sparkles size={28} className="text-[#6F4A2E]" />
+        <div className="mt-8 flex flex-col items-center rounded-3xl border border-[#D9C6A5] bg-white p-6 text-center shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8D9BE]">
+            <Sparkles size={28} className="text-[#5B3418]" />
           </div>
-          <h2 className="text-lg font-bold text-[#3B332A]">רוצה לקבל התאמות מותאמות אישית?</h2>
-          <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-[#8B8175]">
+          <h2 className="text-lg font-bold text-[#2E2116]">רוצה לקבל התאמות מותאמות אישית?</h2>
+          <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-[#7A6A55]">
             שאלון קצר בן 7 שאלות שיעזור לנו למצוא עבורך את ההצעות המתאימות ביותר מהמאגר
           </p>
           <Button variant="primary" className="mt-5" onClick={() => setShowWizard(true)}>

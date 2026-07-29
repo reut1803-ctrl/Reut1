@@ -21,7 +21,7 @@ export default function FabButtons() {
       <button
         aria-label="פתיחת תפריט נגישות"
         onClick={() => setAccessibilityOpen((v) => !v)}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#3B332A] text-white shadow-lg transition active:scale-90"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2E2116] text-white shadow-lg transition active:scale-90"
       >
         <Accessibility size={22} />
       </button>
@@ -36,18 +36,18 @@ export default function FabButtons() {
       </a>
 
       {accessibilityOpen && (
-        <div className="absolute bottom-0 left-16 w-56 rounded-2xl border border-[#E7DECD] bg-white p-3 text-sm shadow-xl">
-          <p className="mb-2 font-semibold text-[#3B332A]">הגדרות נגישות</p>
+        <div className="absolute bottom-0 left-16 w-56 rounded-2xl border border-[#D9C6A5] bg-white p-3 text-sm shadow-xl">
+          <p className="mb-2 font-semibold text-[#2E2116]">הגדרות נגישות</p>
           <button
             onClick={() => setLargeText((v) => !v)}
-            className="mb-1.5 flex w-full items-center justify-between rounded-xl bg-[#FAF6EE] px-3 py-2 text-right text-[13px] hover:bg-[#E7DECD]"
+            className="mb-1.5 flex w-full items-center justify-between rounded-xl bg-[#F2E8D5] px-3 py-2 text-right text-[13px] hover:bg-[#D9C6A5]"
           >
             הגדלת טקסט
             {largeText && <Check size={14} className="text-[#7FB33F]" />}
           </button>
           <button
             onClick={() => setHighContrast((v) => !v)}
-            className="flex w-full items-center justify-between rounded-xl bg-[#FAF6EE] px-3 py-2 text-right text-[13px] hover:bg-[#E7DECD]"
+            className="flex w-full items-center justify-between rounded-xl bg-[#F2E8D5] px-3 py-2 text-right text-[13px] hover:bg-[#D9C6A5]"
           >
             ניגודיות גבוהה
             {highContrast && <Check size={14} className="text-[#7FB33F]" />}

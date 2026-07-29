@@ -58,13 +58,13 @@ function ProfilesFeed() {
       <GenderToggle />
 
       <div data-tour="tour-search" className="relative mt-4">
-        <Search size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#B4AA9C]" />
+        <Search size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#A08D74]" />
         <input
           type="text"
           value={filters.search}
           onChange={(e) => setFilters({ search: e.target.value })}
           placeholder="חיפוש מועמד (שם, משפחה)..."
-          className="w-full rounded-2xl bg-white py-3 pr-10 pl-4 text-[14px] text-[#3B332A] shadow-sm outline-none placeholder:text-[#B4AA9C] focus:ring-2 focus:ring-[#6F4A2E]/30"
+          className="w-full rounded-2xl bg-white py-3 pr-10 pl-4 text-[14px] text-[#2E2116] shadow-sm outline-none placeholder:text-[#A08D74] focus:ring-2 focus:ring-[#5B3418]/30"
         />
       </div>
 
@@ -73,7 +73,7 @@ function ProfilesFeed() {
           <button
             onClick={() => setTab("new")}
             className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition ${
-              tab === "new" ? "bg-[#F3E7D5] text-[#4E3220]" : "text-[#8B8175]"
+              tab === "new" ? "bg-[#E8D9BE] text-[#331D07]" : "text-[#7A6A55]"
             }`}
           >
             הצעות חדשות
@@ -81,7 +81,7 @@ function ProfilesFeed() {
           <button
             onClick={() => setTab("previous")}
             className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition ${
-              tab === "previous" ? "bg-[#F3E7D5] text-[#4E3220]" : "text-[#8B8175]"
+              tab === "previous" ? "bg-[#E8D9BE] text-[#331D07]" : "text-[#7A6A55]"
             }`}
           >
             הצעות קודמות
@@ -91,7 +91,7 @@ function ProfilesFeed() {
           data-tour="tour-filter"
           onClick={() => setShowFilters(true)}
           aria-label="סינון"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#6F4A2E] shadow-sm transition active:scale-95"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#5B3418] shadow-sm transition active:scale-95"
         >
           <SlidersHorizontal size={18} />
         </button>
@@ -99,7 +99,7 @@ function ProfilesFeed() {
           <Link
             href="/crm/add-candidate"
             aria-label="הוספת מועמד/ת"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#6F4A2E] text-white shadow-sm transition active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#5B3418] text-white shadow-sm transition active:scale-95"
           >
             <UserPlus size={18} />
           </Link>
@@ -107,7 +107,7 @@ function ProfilesFeed() {
       </div>
 
       {candidates.length === 0 ? (
-        <p className="mt-16 text-center text-sm text-[#8B8175]">לא נמצאו התאמות לסינון שבחרת</p>
+        <p className="mt-16 text-center text-sm text-[#7A6A55]">לא נמצאו התאמות לסינון שבחרת</p>
       ) : (
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {candidates.map((c) => (

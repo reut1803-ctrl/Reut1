@@ -7,11 +7,11 @@ export default function GenderToggle() {
   const setBoard = useCrmStore((s) => s.setBoard);
 
   return (
-    <div data-tour="tour-gender" className="mx-auto flex w-full max-w-xs rounded-2xl bg-[#FAF6EE] p-1">
+    <div data-tour="tour-gender" className="mx-auto flex w-full max-w-xs rounded-2xl bg-[#F2E8D5] p-1">
       <button
         onClick={() => setBoard("female")}
         className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${
-          board === "female" ? "bg-white text-[#6F4A2E] shadow-sm" : "text-[#8B8175]"
+          board === "female" ? "bg-white text-[#5B3418] shadow-sm" : "text-[#7A6A55]"
         }`}
       >
         מאגר בנות
@@ -19,7 +19,7 @@ export default function GenderToggle() {
       <button
         onClick={() => setBoard("male")}
         className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition ${
-          board === "male" ? "bg-white text-[#6F4A2E] shadow-sm" : "text-[#8B8175]"
+          board === "male" ? "bg-white text-[#5B3418] shadow-sm" : "text-[#7A6A55]"
         }`}
       >
         מאגר בנים

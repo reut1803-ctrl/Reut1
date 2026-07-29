@@ -24,16 +24,16 @@ export default function StageFunnel({ status, compact = false }) {
             <div
               className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold transition ${
                 active
-                  ? "bg-[#6F4A2E] text-white ring-4 ring-[#6F4A2E]/20"
+                  ? "bg-[#5B3418] text-white ring-4 ring-[#5B3418]/20"
                   : done
                   ? "bg-[#7FB33F] text-white"
-                  : "bg-[#E7DECD] text-[#B4AA9C]"
+                  : "bg-[#D9C6A5] text-[#A08D74]"
               }`}
             >
               {done ? <Check size={12} /> : i + 1}
             </div>
             {!compact && (
-              <span className={`text-center text-[9px] leading-tight ${active ? "font-bold text-[#6F4A2E]" : "text-[#B4AA9C]"}`}>
+              <span className={`text-center text-[9px] leading-tight ${active ? "font-bold text-[#5B3418]" : "text-[#A08D74]"}`}>
                 {stage}
               </span>
             )}

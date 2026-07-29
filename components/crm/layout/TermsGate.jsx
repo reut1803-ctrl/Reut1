@@ -18,24 +18,24 @@ export default function TermsGate() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" dir="rtl">
       <div className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center gap-2 border-b border-[#E7DECD] px-5 py-4">
-          <ShieldCheck size={20} className="text-[#6F4A2E]" />
-          <h2 className="text-lg font-bold text-[#3B332A]">נהלי עבודה וסודיות</h2>
+        <div className="flex items-center gap-2 border-b border-[#D9C6A5] px-5 py-4">
+          <ShieldCheck size={20} className="text-[#5B3418]" />
+          <h2 className="text-lg font-bold text-[#2E2116]">נהלי עבודה וסודיות</h2>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#3B332A]">{termsText}</p>
+          <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#2E2116]">{termsText}</p>
         </div>
 
-        <div className="border-t border-[#E7DECD] px-5 py-4">
+        <div className="border-t border-[#D9C6A5] px-5 py-4">
           <label className="flex cursor-pointer items-start gap-2.5">
             <input
               type="checkbox"
               checked={checked}
               onChange={(e) => setChecked(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[#6F4A2E]"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#5B3418]"
             />
-            <span className="text-[13px] font-semibold text-[#3B332A]">קראתי ואני מאשר/ת את הנהלים</span>
+            <span className="text-[13px] font-semibold text-[#2E2116]">קראתי ואני מאשר/ת את הנהלים</span>
           </label>
           <Button
             variant="primary"
