@@ -59,10 +59,14 @@ export default function DiagnosticsPage() {
       push({ ok: false, title: "בדיקת החיבור ל-Cloudinary נכשלה", detail: err?.message || String(err) });
     }
 
-    // 3. העלאת קובץ אמיתי קטן מהדפדפן, מקצה לקצה
+    // 3. העלאת קובץ אמיתי קטן מהדפדפן, מקצה לקצה.
+    // חובה להשתמש בקובץ תקין באמת (תמונת PNG זעירה), אחרת Cloudinary דוחה אותו
+    // בצדק כ"פורמט לא נתמך" ומתקבלת שגיאה מטעה שאינה מעידה על תקלה.
     try {
-      const blob = new Blob([new Uint8Array(2048)], { type: "audio/ogg" });
-      const file = new File([blob], "בדיקה.ogg", { type: "audio/ogg" });
+      const PNG_1PX =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8AAAwAB/AF+ZQZ2AAAAAElFTkSuQmCC";
+      const bytes = Uint8Array.from(atob(PNG_1PX), (c) => c.charCodeAt(0));
+      const file = new File([bytes], "בדיקה", { type: "image/png" });
       const url = await uploadToCloudinary(file);
       push({ ok: true, title: "העלאת קובץ אמיתי מהדפדפן הצליחה", detail: url });
     } catch (err) {
