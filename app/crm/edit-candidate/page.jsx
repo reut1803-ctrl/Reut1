@@ -6,6 +6,8 @@ import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
+import { saveMedia } from "@/lib/crm/mediaStore";
+import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { compressImage } from "@/lib/crm/compressImage";
 import Button from "@/components/crm/ui/Button";
 
@@ -120,8 +122,8 @@ function EditCandidateForm() {
     setPdfUploading(true);
     setUploadStatus("");
     try {
-      const url = await uploadToCloudinary(file, setUploadStatus);
-      setPdfUrl(url);
+      const ref = await saveMedia(file, setUploadStatus);
+      setPdfUrl(ref);
     } catch (err) {
       setMediaError(`העלאת קובץ ה-PDF נכשלה: ${err?.message || String(err)}`);
     } finally {
@@ -137,8 +139,8 @@ function EditCandidateForm() {
     setAudioUploading(true);
     setUploadStatus("");
     try {
-      const url = await uploadToCloudinary(file, setUploadStatus);
-      setIntroAudioUrl(url);
+      const ref = await saveMedia(file, setUploadStatus);
+      setIntroAudioUrl(ref);
     } catch (err) {
       setMediaError(`העלאת הקלטת ההיכרות נכשלה: ${err?.message || String(err)}`);
     } finally {
@@ -432,14 +434,7 @@ function EditCandidateForm() {
           <Field label="כרטיס יבש (PDF)">
             {pdfUrl ? (
               <div className="space-y-1.5">
-                <a
-                  href={pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block truncate rounded-2xl bg-[#F6F5F4] px-3 py-2 text-center text-[12px] font-semibold text-[#8C4A55]"
-                >
-                  צפייה בקובץ הקיים
-                </a>
+                <MediaFileLink value={pdfUrl} />
                 <div className="flex gap-1.5">
                   <label className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                     <FileText size={13} />
@@ -465,7 +460,7 @@ function EditCandidateForm() {
           <Field label="הקלטת היכרות">
             {introAudioUrl ? (
               <div className="space-y-1.5">
-                <audio controls src={introAudioUrl} className="h-8 w-full" />
+                <MediaAudio value={introAudioUrl} />
                 <div className="flex gap-1.5">
                   <label className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                     <Music size={13} />
@@ -515,6 +510,30 @@ function EditCandidateForm() {
         }
       `}</style>
     </div>
+  );
+}
+
+// מציגים נגן/קישור גם עבור מדיה שנשמרה בחלקים ב-Firestore וגם עבור כתובת רגילה
+function MediaAudio({ value }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#8A8285]">טוען הקלטה...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return <audio controls src={url} className="h-8 w-full" />;
+}
+
+function MediaFileLink({ value }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#8A8285]">טוען קובץ...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block truncate rounded-2xl bg-[#F6F5F4] px-3 py-2 text-center text-[12px] font-semibold text-[#8C4A55]"
+    >
+      צפייה בקובץ הקיים
+    </a>
   );
 }
 

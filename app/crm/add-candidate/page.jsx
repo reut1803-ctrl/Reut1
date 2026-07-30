@@ -6,6 +6,8 @@ import { UserPlus, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
+import { saveMedia } from "@/lib/crm/mediaStore";
+import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { compressImage } from "@/lib/crm/compressImage";
 import Button from "@/components/crm/ui/Button";
 
@@ -55,6 +57,7 @@ export default function AddCandidatePage() {
   const [photoError, setPhotoError] = useState("");
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfUploading, setPdfUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
   const [introAudioUrl, setIntroAudioUrl] = useState(null);
   const [audioUploading, setAudioUploading] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
@@ -131,8 +134,8 @@ export default function AddCandidatePage() {
     setMediaError("");
     setPdfUploading(true);
     try {
-      const url = await uploadToCloudinary(file);
-      setPdfUrl(url);
+      const ref = await saveMedia(file, setUploadStatus);
+      setPdfUrl(ref);
     } catch (err) {
       setMediaError(`העלאת קובץ ה-PDF נכשלה: ${err?.message || String(err)}`);
     } finally {
@@ -147,8 +150,8 @@ export default function AddCandidatePage() {
     setMediaError("");
     setAudioUploading(true);
     try {
-      const url = await uploadToCloudinary(file);
-      setIntroAudioUrl(url);
+      const ref = await saveMedia(file, setUploadStatus);
+      setIntroAudioUrl(ref);
     } catch (err) {
       setMediaError(`העלאת הקלטת ההיכרות נכשלה: ${err?.message || String(err)}`);
     } finally {
@@ -472,14 +475,7 @@ export default function AddCandidatePage() {
           <Field label="כרטיס יבש (PDF)">
             {pdfUrl ? (
               <div className="space-y-1.5">
-                <a
-                  href={pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block truncate rounded-2xl bg-[#F6F5F4] px-3 py-2 text-center text-[12px] font-semibold text-[#8C4A55]"
-                >
-                  צפייה בקובץ שהועלה
-                </a>
+                <MediaFileLink value={pdfUrl} />
                 <button
                   onClick={() => setPdfUrl(null)}
                   className="flex w-full items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 py-1.5 text-[11px] font-semibold text-[#C24545]"
@@ -490,7 +486,7 @@ export default function AddCandidatePage() {
             ) : (
               <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
                 <FileText size={15} />
-                {pdfUploading ? "מעלה..." : "העלאת PDF"}
+                {pdfUploading ? uploadStatus || "מעלה..." : "העלאת PDF"}
                 <input type="file" accept="application/pdf" onChange={handlePdfChange} disabled={pdfUploading} className="hidden" />
               </label>
             )}
@@ -498,7 +494,7 @@ export default function AddCandidatePage() {
           <Field label="הקלטת היכרות">
             {introAudioUrl ? (
               <div className="space-y-1.5">
-                <audio controls src={introAudioUrl} className="h-9 w-full" />
+                <MediaAudio value={introAudioUrl} />
                 <button
                   onClick={() => setIntroAudioUrl(null)}
                   className="flex w-full items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 py-1.5 text-[11px] font-semibold text-[#C24545]"
@@ -509,7 +505,7 @@ export default function AddCandidatePage() {
             ) : (
               <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
                 <Music size={15} />
-                {audioUploading ? "מעלה..." : "העלאת אודיו"}
+                {audioUploading ? uploadStatus || "מעלה..." : "העלאת אודיו"}
                 <input type="file" accept="audio/*" onChange={handleAudioChange} disabled={audioUploading} className="hidden" />
               </label>
             )}
@@ -540,6 +536,25 @@ export default function AddCandidatePage() {
         }
       `}</style>
     </div>
+  );
+}
+
+function MediaAudio({ value }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#8A8285]">טוען הקלטה...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return <audio controls src={url} className="h-9 w-full" />;
+}
+
+function MediaFileLink({ value }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#8A8285]">טוען קובץ...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="block truncate rounded-2xl bg-[#F6F5F4] px-3 py-2 text-center text-[12px] font-semibold text-[#8C4A55]">
+      צפייה בקובץ שהועלה
+    </a>
   );
 }
 

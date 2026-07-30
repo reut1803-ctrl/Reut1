@@ -28,7 +28,8 @@ import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTe
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
-import { uploadToCloudinary } from "@/lib/crm/cloudinary";
+import { saveMedia } from "@/lib/crm/mediaStore";
+import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -60,6 +61,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [pendingDeleteVoiceNoteId, setPendingDeleteVoiceNoteId] = useState(null);
   const [uploadingRecording, setUploadingRecording] = useState(false);
   const [uploadingField, setUploadingField] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [recordStatus, setRecordStatus] = useState("");
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
   const candidateTag = CANDIDATE_TAGS.find((t) => t.name === candidate.tag);
@@ -94,7 +97,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
         setUploadingRecording(true);
         try {
-          const audioUrl = await uploadToCloudinary(blob);
+          const audioUrl = await saveMedia(blob, setRecordStatus);
           const newNote = {
             id: `${Date.now()}`,
             author: currentUser().name,
@@ -125,8 +128,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
     if (!file) return;
     setUploadingField(field);
     try {
-      const url = await uploadToCloudinary(file);
-      await updateCandidate(candidate.id, { [field]: url });
+      const ref = await saveMedia(file, setUploadStatus);
+      await updateCandidate(candidate.id, { [field]: ref });
       showToast("הקובץ נשמר בהצלחה");
     } catch (err) {
       showToast(`העלאת הקובץ נכשלה: ${err?.message || String(err)}`);
@@ -334,7 +337,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       }`}
                     >
                       {uploadingRecording
-                        ? "שומרת..."
+                        ? recordStatus || "שומרת..."
                         : recording
                         ? "עצירת הקלטה"
                         : candidate.voiceNotes?.length > 0
@@ -365,7 +368,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                                 </button>
                               )}
                             </div>
-                            <audio controls src={vn.audioUrl} className="h-8 w-full" />
+                            <MediaAudio value={vn.audioUrl} className="h-8 w-full" />
                           </li>
                         );
                       })}
@@ -415,17 +418,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     </p>
                     {candidate.pdfUrl ? (
                       <>
-                        <a
-                          href={candidate.pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mb-1.5 block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#8C4A55] shadow-sm"
-                        >
-                          צפייה בקובץ
-                        </a>
+                        <MediaFileLink value={candidate.pdfUrl} />
                         <div className="flex gap-1.5">
                           <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
-                            {uploadingField === "pdfUrl" ? "מעלה..." : "החלפה"}
+                            {uploadingField === "pdfUrl" ? uploadStatus || "מעלה..." : "החלפה"}
                             <input
                               type="file"
                               accept="application/pdf"
@@ -447,7 +443,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <>
                         <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלה קובץ</p>
                         <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
-                          {uploadingField === "pdfUrl" ? "מעלה..." : "העלאת PDF"}
+                          {uploadingField === "pdfUrl" ? uploadStatus || "מעלה..." : "העלאת PDF"}
                           <input
                             type="file"
                             accept="application/pdf"
@@ -466,10 +462,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     </p>
                     {candidate.introAudioUrl ? (
                       <>
-                        <audio controls src={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
+                        <MediaAudio value={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
                         <div className="flex gap-1.5">
                           <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
-                            {uploadingField === "introAudioUrl" ? "מעלה..." : "החלפה"}
+                            {uploadingField === "introAudioUrl" ? uploadStatus || "מעלה..." : "החלפה"}
                             <input
                               type="file"
                               accept="audio/*"
@@ -491,7 +487,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <>
                         <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלתה הקלטה</p>
                         <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
-                          {uploadingField === "introAudioUrl" ? "מעלה..." : "העלאת אודיו"}
+                          {uploadingField === "introAudioUrl" ? uploadStatus || "מעלה..." : "העלאת אודיו"}
                           <input
                             type="file"
                             accept="audio/*"
@@ -584,5 +580,29 @@ export default function ProfileCard({ candidate, onReadMore }) {
       )}
       <CandidateExportTemplate candidate={candidate} forwardedRef={exportRef} />
     </div>
+  );
+}
+
+// נגן/קישור שמתמודד גם עם מדיה שנשמרה בחלקים ב-Firestore וגם עם כתובת רגילה
+function MediaAudio({ value, onPlay, className }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#8A8285]">טוען הקלטה...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return <audio controls src={url} onPlay={onPlay} className={className} />;
+}
+
+function MediaFileLink({ value }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#8A8285]">טוען קובץ...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mb-1.5 block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#8C4A55] shadow-sm"
+    >
+      צפייה בקובץ
+    </a>
   );
 }
