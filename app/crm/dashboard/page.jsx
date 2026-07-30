@@ -5,7 +5,6 @@ import Link from "next/link";
 import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
-import TagGroupsManager from "@/components/crm/settings/TagGroupsManager";
 
 function metricColor(ratio) {
   if (ratio >= 1) return "bg-[#20A66B]";
@@ -145,8 +144,6 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
-
-      <TagGroupsManager />
 
       <Link
         href="/crm/diagnostics"

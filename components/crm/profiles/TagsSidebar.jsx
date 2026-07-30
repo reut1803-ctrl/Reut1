@@ -3,18 +3,18 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Tag } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
+import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
-import TagGroupPicker from "@/components/crm/ui/TagGroupPicker";
 
 export default function TagsSidebar() {
   const [open, setOpen] = useState(false);
   useBackToClose(open, () => setOpen(false));
-  const tagGroups = useCrmStore((s) => s.tagGroups);
-  const selected = useCrmStore((s) => s.filters.tags);
-  const toggleTagFilter = useCrmStore((s) => s.toggleTagFilter);
-  const clearTagFilters = useCrmStore((s) => s.clearTagFilters);
+  const activeTag = useCrmStore((s) => s.filters.tag);
+  const setFilters = useCrmStore((s) => s.setFilters);
 
-  const activeCount = Object.values(selected || {}).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+  const handleSelect = (tagName) => {
+    setFilters({ tag: activeTag === tagName ? null : tagName });
+  };
 
   return (
     <>
@@ -25,11 +25,6 @@ export default function TagsSidebar() {
         className="fixed top-1/2 z-50 flex h-12 w-8 -translate-y-1/2 items-center justify-center rounded-r-none rounded-l-xl bg-[#8C4A55] text-white shadow-lg transition-[right] duration-300"
       >
         {open ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-        {!open && activeCount > 0 && (
-          <span className="absolute -top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#3A3335] text-[10px] font-bold">
-            {activeCount}
-          </span>
-        )}
       </button>
 
       {open && <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setOpen(false)} />}
@@ -40,29 +35,35 @@ export default function TagsSidebar() {
         }`}
       >
         <div className="p-5">
-          <div className="mb-1.5 flex items-center gap-1.5">
+          <div className="mb-4 flex items-center gap-1.5">
             <Tag size={16} className="text-[#8C4A55]" />
-            <h2 className="text-[15px] font-bold text-[#3A3335]">סינון לפי תוויות</h2>
-          </div>
-          <p className="mb-4 text-[11px] leading-relaxed text-[#8A8082]">
-            אפשר לבחור כמה תוויות בכל קטגוריה, וגם לשלב בין קטגוריות שונות יחד.
-          </p>
-
-          <div className="space-y-4">
-            {tagGroups.map((g) => (
-              <TagGroupPicker
-                key={g.id}
-                group={g}
-                selected={selected?.[g.id]}
-                onToggle={(option) => toggleTagFilter(g.id, option)}
-              />
-            ))}
+            <h2 className="text-[15px] font-bold text-[#3A3335]">סינון לפי תווית</h2>
           </div>
 
-          {activeCount > 0 && (
+          <div className="space-y-2">
+            {CANDIDATE_TAGS.map((tag) => {
+              const active = activeTag === tag.name;
+              return (
+                <button
+                  key={tag.name}
+                  onClick={() => handleSelect(tag.name)}
+                  style={{
+                    backgroundColor: tag.color,
+                    color: tag.textColor,
+                    boxShadow: active ? "0 0 0 2px #3A3335" : "none",
+                  }}
+                  className="w-full rounded-2xl px-4 py-3 text-right text-sm font-semibold transition active:scale-[0.98]"
+                >
+                  {tag.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {activeTag && (
             <button
-              onClick={clearTagFilters}
-              className="mt-5 w-full rounded-2xl border border-[#EAE5E3] py-2.5 text-[13px] font-semibold text-[#3A3335] transition hover:bg-[#F6F5F4]"
+              onClick={() => setFilters({ tag: null })}
+              className="mt-4 w-full rounded-2xl border border-[#EAE5E3] py-2.5 text-[13px] font-semibold text-[#3A3335] transition hover:bg-[#F6F5F4]"
             >
               ניקוי סינון
             </button>

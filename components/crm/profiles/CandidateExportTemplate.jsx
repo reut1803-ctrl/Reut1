@@ -1,13 +1,6 @@
-"use client";
-
-import { useCrmStore } from "@/lib/crm/store";
-import { candidateTagsByGroup } from "@/lib/crm/mockData";
-
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
 export default function CandidateExportTemplate({ candidate, forwardedRef }) {
-  const tagGroups = useCrmStore((s) => s.tagGroups);
-  const tagsByGroup = candidateTagsByGroup(candidate, tagGroups);
   const eduLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
   const firstName = candidate.name?.split(" ")[0] || "";
 
@@ -46,11 +39,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
           <Row label={candidate.gender === "male" ? "רמת לימוד" : "השכלה / עיסוק"} value={eduLabel} />
           <Row label="עישון" value={candidate.smoking} />
-          {(tagGroups || []).map((g) =>
-            (tagsByGroup[g.id] || []).length > 0 ? (
-              <Row key={g.id} label={g.label} value={tagsByGroup[g.id].join(", ")} />
-            ) : null
-          )}
+          {candidate.tag && <Row label="תווית" value={candidate.tag} />}
         </tbody>
       </table>
 

@@ -20,7 +20,6 @@ function ProfilesFeed() {
   const filters = useCrmStore((s) => s.filters);
   const setFilters = useCrmStore((s) => s.setFilters);
   const allCandidates = useCrmStore((s) => s.allCandidates);
-  const matchesTagFilters = useCrmStore((s) => s.matchesTagFilters);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
   const tab = useCrmStore((s) => s.feedTab);
@@ -48,10 +47,10 @@ function ProfilesFeed() {
       if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
       if (filters.region !== "הכל" && c.region !== filters.region) return false;
       if (filters.search && !c.name.includes(filters.search.trim())) return false;
-      if (!matchesTagFilters(c)) return false;
+      if (filters.tag && c.tag !== filters.tag) return false;
       return true;
     });
-  }, [board, tab, filters, candidates_, matchesTagFilters]);
+  }, [board, tab, filters, candidates_]);
 
   return (
     <div className="px-4 py-4">
