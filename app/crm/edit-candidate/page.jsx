@@ -29,7 +29,7 @@ function EditCandidateForm() {
   const [photoError, setPhotoError] = useState("");
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfUploading, setPdfUploading] = useState(false);
-  const [uploadPct, setUploadPct] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState("");
   const [introAudioUrl, setIntroAudioUrl] = useState(null);
   const [audioUploading, setAudioUploading] = useState(false);
   const [mediaError, setMediaError] = useState("");
@@ -118,9 +118,9 @@ function EditCandidateForm() {
     if (!file) return;
     setMediaError("");
     setPdfUploading(true);
-    setUploadPct(0);
+    setUploadStatus("");
     try {
-      const url = await uploadToCloudinary(file, setUploadPct);
+      const url = await uploadToCloudinary(file, setUploadStatus);
       setPdfUrl(url);
     } catch (err) {
       setMediaError(`העלאת קובץ ה-PDF נכשלה: ${err?.message || String(err)}`);
@@ -135,9 +135,9 @@ function EditCandidateForm() {
     if (!file) return;
     setMediaError("");
     setAudioUploading(true);
-    setUploadPct(0);
+    setUploadStatus("");
     try {
-      const url = await uploadToCloudinary(file, setUploadPct);
+      const url = await uploadToCloudinary(file, setUploadStatus);
       setIntroAudioUrl(url);
     } catch (err) {
       setMediaError(`העלאת הקלטת ההיכרות נכשלה: ${err?.message || String(err)}`);
@@ -443,7 +443,7 @@ function EditCandidateForm() {
                 <div className="flex gap-1.5">
                   <label className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                     <FileText size={13} />
-                    {pdfUploading ? `מעלה ${uploadPct}%` : "החלפת קובץ"}
+                    {pdfUploading ? uploadStatus || "מעלה..." : "החלפת קובץ"}
                     <input type="file" accept="application/pdf" onChange={handlePdfChange} disabled={pdfUploading} className="hidden" />
                   </label>
                   <button
@@ -457,7 +457,7 @@ function EditCandidateForm() {
             ) : (
               <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
                 <FileText size={15} />
-                {pdfUploading ? `מעלה ${uploadPct}%` : "העלאת PDF"}
+                {pdfUploading ? uploadStatus || "מעלה..." : "העלאת PDF"}
                 <input type="file" accept="application/pdf" onChange={handlePdfChange} disabled={pdfUploading} className="hidden" />
               </label>
             )}
@@ -469,7 +469,7 @@ function EditCandidateForm() {
                 <div className="flex gap-1.5">
                   <label className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                     <Music size={13} />
-                    {audioUploading ? `מעלה ${uploadPct}%` : "החלפת הקלטה"}
+                    {audioUploading ? uploadStatus || "מעלה..." : "החלפת הקלטה"}
                     <input type="file" accept="audio/*" onChange={handleAudioChange} disabled={audioUploading} className="hidden" />
                   </label>
                   <button
@@ -484,7 +484,7 @@ function EditCandidateForm() {
             ) : (
               <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
                 <Music size={15} />
-                {audioUploading ? `מעלה ${uploadPct}%` : "העלאת אודיו"}
+                {audioUploading ? uploadStatus || "מעלה..." : "העלאת אודיו"}
                 <input type="file" accept="audio/*" onChange={handleAudioChange} disabled={audioUploading} className="hidden" />
               </label>
             )}
