@@ -22,7 +22,8 @@ function ProfilesFeed() {
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
-  const [tab, setTab] = useState("new");
+  const tab = useCrmStore((s) => s.feedTab);
+  const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {

@@ -5,8 +5,10 @@ import { useCrmStore } from "@/lib/crm/store";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import { REGIONS, religiousLevelsFor } from "@/lib/crm/mockData";
 import Button from "@/components/crm/ui/Button";
+import { useBackToClose } from "@/lib/crm/useBackToClose";
 
 export default function FilterSheet({ onClose }) {
+  useBackToClose(true, onClose);
   const filters = useCrmStore((s) => s.filters);
   const setFilters = useCrmStore((s) => s.setFilters);
   const resetFilters = useCrmStore((s) => s.resetFilters);

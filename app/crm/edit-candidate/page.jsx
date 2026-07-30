@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
-import { openCloudinaryWidget } from "@/lib/crm/cloudinaryWidget";
+import { uploadToCloudinary } from "@/lib/crm/cloudinary";
+import { compressImage } from "@/lib/crm/compressImage";
 import Button from "@/components/crm/ui/Button";
 
 const MAX_PHOTOS = 4;
@@ -82,58 +83,64 @@ function EditCandidateForm() {
   const setGender = (gender) =>
     setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
 
-  const openPhotoWidget = () => {
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("יש לבחור קובץ תמונה בלבד");
+      return;
+    }
     if (photos.length >= MAX_PHOTOS) {
       setPhotoError(`אפשר להעלות עד ${MAX_PHOTOS} תמונות לכרטיס`);
       return;
     }
     setPhotoError("");
     setPhotoUploading(true);
-    openCloudinaryWidget({
-      resourceType: "image",
-      onSuccess: (url) => {
-        setPhotos((cur) => [...cur, url]);
-        setPhotoUploading(false);
-      },
-      onError: (err) => {
-        setPhotoError(`העלאת התמונה נכשלה: ${err?.message || String(err)}`);
-        setPhotoUploading(false);
-      },
-    });
+    try {
+      const compressed = await compressImage(file, { maxDimension: 1200, quality: 0.8 });
+      const blob = await (await fetch(compressed)).blob();
+      const url = await uploadToCloudinary(blob);
+      setPhotos((cur) => [...cur, url]);
+    } catch (err) {
+      setPhotoError(`העלאת התמונה נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setPhotoUploading(false);
+    }
   };
 
   const removePhoto = (index) => setPhotos((cur) => cur.filter((_, i) => i !== index));
 
-  const openPdfWidget = () => {
+  const handlePdfChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
     setMediaError("");
     setPdfUploading(true);
-    openCloudinaryWidget({
-      resourceType: "auto",
-      onSuccess: (url) => {
-        setPdfUrl(url);
-        setPdfUploading(false);
-      },
-      onError: (err) => {
-        setMediaError(`העלאת קובץ ה-PDF נכשלה: ${err?.message || String(err)}`);
-        setPdfUploading(false);
-      },
-    });
+    try {
+      const url = await uploadToCloudinary(file);
+      setPdfUrl(url);
+    } catch (err) {
+      setMediaError(`העלאת קובץ ה-PDF נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
-  const openAudioWidget = () => {
+  const handleAudioChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
     setMediaError("");
     setAudioUploading(true);
-    openCloudinaryWidget({
-      resourceType: "auto",
-      onSuccess: (url) => {
-        setIntroAudioUrl(url);
-        setAudioUploading(false);
-      },
-      onError: (err) => {
-        setMediaError(`העלאת הקלטת ההיכרות נכשלה: ${err?.message || String(err)}`);
-        setAudioUploading(false);
-      },
-    });
+    try {
+      const url = await uploadToCloudinary(file);
+      setIntroAudioUrl(url);
+    } catch (err) {
+      setMediaError(`העלאת הקלטת ההיכרות נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setAudioUploading(false);
+    }
   };
 
   const canSubmit =
@@ -244,13 +251,11 @@ function EditCandidateForm() {
               </div>
             )}
             {photos.length < MAX_PHOTOS && !photoUploading && (
-              <button
-                onClick={openPhotoWidget}
-                className="flex h-32 w-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]"
-              >
+              <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]">
                 <ImagePlus size={22} />
                 <span className="text-[11px] font-semibold">הוספת תמונה</span>
-              </button>
+                <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+              </label>
             )}
           </div>
           {photoError && <p className="mt-1 text-[11px] text-red-500">{photoError}</p>}
@@ -433,14 +438,11 @@ function EditCandidateForm() {
                   צפייה בקובץ הקיים
                 </a>
                 <div className="flex gap-1.5">
-                  <button
-                    onClick={openPdfWidget}
-                    disabled={pdfUploading}
-                    className="flex h-9 flex-1 items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55] disabled:opacity-60"
-                  >
+                  <label className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                     <FileText size={13} />
                     {pdfUploading ? "מעלה..." : "החלפת קובץ"}
-                  </button>
+                    <input type="file" accept="application/pdf" onChange={handlePdfChange} disabled={pdfUploading} className="hidden" />
+                  </label>
                   <button
                     onClick={() => setPdfUrl(null)}
                     className="flex h-9 items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2.5 text-[11px] font-semibold text-[#C24545]"
@@ -450,14 +452,11 @@ function EditCandidateForm() {
                 </div>
               </div>
             ) : (
-              <button
-                onClick={openPdfWidget}
-                disabled={pdfUploading}
-                className="flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55] disabled:opacity-60"
-              >
+              <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
                 <FileText size={15} />
                 {pdfUploading ? "מעלה..." : "העלאת PDF"}
-              </button>
+                <input type="file" accept="application/pdf" onChange={handlePdfChange} disabled={pdfUploading} className="hidden" />
+              </label>
             )}
           </Field>
           <Field label="הקלטת היכרות">
@@ -465,14 +464,11 @@ function EditCandidateForm() {
               <div className="space-y-1.5">
                 <audio controls src={introAudioUrl} className="h-8 w-full" />
                 <div className="flex gap-1.5">
-                  <button
-                    onClick={openAudioWidget}
-                    disabled={audioUploading}
-                    className="flex h-9 flex-1 items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55] disabled:opacity-60"
-                  >
+                  <label className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                     <Music size={13} />
                     {audioUploading ? "מעלה..." : "החלפת הקלטה"}
-                  </button>
+                    <input type="file" accept="audio/*" onChange={handleAudioChange} disabled={audioUploading} className="hidden" />
+                  </label>
                   <button
                     onClick={() => setIntroAudioUrl(null)}
                     aria-label="מחיקת הקלטה"
@@ -483,14 +479,11 @@ function EditCandidateForm() {
                 </div>
               </div>
             ) : (
-              <button
-                onClick={openAudioWidget}
-                disabled={audioUploading}
-                className="flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55] disabled:opacity-60"
-              >
+              <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[12px] font-semibold text-[#8C4A55]">
                 <Music size={15} />
                 {audioUploading ? "מעלה..." : "העלאת אודיו"}
-              </button>
+                <input type="file" accept="audio/*" onChange={handleAudioChange} disabled={audioUploading} className="hidden" />
+              </label>
             )}
           </Field>
         </div>

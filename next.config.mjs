@@ -6,7 +6,9 @@ const isPages = process.env.GITHUB_PAGES === "true";
 
 const nextConfig = {
   reactStrictMode: true,
-  output: "export",
+  // ייצוא סטטי רק לבנייה ל-GitHub Pages. ב-Vercel נשארת בנייה מלאה עם שרת,
+  // כדי שנתיב ההעלאה בשרת (app/api/upload) יוכל לרוץ ולעקוף חסימות רשת בצד הלקוח.
+  ...(isPages ? { output: "export" } : {}),
   images: { unoptimized: true },
   trailingSlash: true,
   basePath: isPages ? "/Reut1" : "",

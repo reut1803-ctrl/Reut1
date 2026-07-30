@@ -28,10 +28,9 @@ import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTe
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
-import { uploadToCloudinary } from "@/lib/crm/cloudinary";
-import { openCloudinaryWidget } from "@/lib/crm/cloudinaryWidget";
+import { uploadToCloudinary, MAX_UPLOAD_SIZE } from "@/lib/crm/cloudinary";
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // בייטים - תקרת סבירות בלבד, לא מגבלת Firestore יותר
+const MAX_FILE_SIZE = MAX_UPLOAD_SIZE;
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -126,20 +125,20 @@ export default function ProfileCard({ candidate, onReadMore }) {
     }
   };
 
-  const openFileWidget = (field) => () => {
+  const handleFileUpload = (field) => async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
     setUploadingField(field);
-    openCloudinaryWidget({
-      resourceType: "auto",
-      onSuccess: async (url) => {
-        await updateCandidate(candidate.id, { [field]: url });
-        showToast("הקובץ נשמר בהצלחה");
-        setUploadingField(null);
-      },
-      onError: (err) => {
-        showToast(`העלאת הקובץ נכשלה: ${err?.message || String(err)}`);
-        setUploadingField(null);
-      },
-    });
+    try {
+      const url = await uploadToCloudinary(file);
+      await updateCandidate(candidate.id, { [field]: url });
+      showToast("הקובץ נשמר בהצלחה");
+    } catch (err) {
+      showToast(`העלאת הקובץ נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setUploadingField(null);
+    }
   };
 
   const handleRemoveFile = (field) => async () => {
@@ -431,13 +430,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
                           צפייה בקובץ
                         </a>
                         <div className="flex gap-1.5">
-                          <button
-                            onClick={openFileWidget("pdfUrl")}
-                            disabled={uploadingField === "pdfUrl"}
-                            className="flex h-8 flex-1 items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55] disabled:opacity-60"
-                          >
+                          <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                             {uploadingField === "pdfUrl" ? "מעלה..." : "החלפה"}
-                          </button>
+                            <input
+                              type="file"
+                              accept="application/pdf"
+                              onChange={handleFileUpload("pdfUrl")}
+                              disabled={uploadingField === "pdfUrl"}
+                              className="hidden"
+                            />
+                          </label>
                           <button
                             onClick={handleRemoveFile("pdfUrl")}
                             aria-label="מחיקת קובץ"
@@ -450,13 +452,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     ) : (
                       <>
                         <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלה קובץ</p>
-                        <button
-                          onClick={openFileWidget("pdfUrl")}
-                          disabled={uploadingField === "pdfUrl"}
-                          className="block w-full cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55] disabled:opacity-60"
-                        >
+                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
                           {uploadingField === "pdfUrl" ? "מעלה..." : "העלאת PDF"}
-                        </button>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            onChange={handleFileUpload("pdfUrl")}
+                            disabled={uploadingField === "pdfUrl"}
+                            className="hidden"
+                          />
+                        </label>
                       </>
                     )}
                   </div>
@@ -469,13 +474,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <>
                         <audio controls src={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
                         <div className="flex gap-1.5">
-                          <button
-                            onClick={openFileWidget("introAudioUrl")}
-                            disabled={uploadingField === "introAudioUrl"}
-                            className="flex h-8 flex-1 items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55] disabled:opacity-60"
-                          >
+                          <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                             {uploadingField === "introAudioUrl" ? "מעלה..." : "החלפה"}
-                          </button>
+                            <input
+                              type="file"
+                              accept="audio/*"
+                              onChange={handleFileUpload("introAudioUrl")}
+                              disabled={uploadingField === "introAudioUrl"}
+                              className="hidden"
+                            />
+                          </label>
                           <button
                             onClick={handleRemoveFile("introAudioUrl")}
                             aria-label="מחיקת הקלטה"
@@ -488,13 +496,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     ) : (
                       <>
                         <p className="mb-1.5 text-[11px] text-[#B5AEB0]">לא הועלתה הקלטה</p>
-                        <button
-                          onClick={openFileWidget("introAudioUrl")}
-                          disabled={uploadingField === "introAudioUrl"}
-                          className="block w-full cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55] disabled:opacity-60"
-                        >
+                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#EAE5E3] bg-white py-1.5 text-center text-[11px] font-semibold text-[#8C4A55]">
                           {uploadingField === "introAudioUrl" ? "מעלה..." : "העלאת אודיו"}
-                        </button>
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={handleFileUpload("introAudioUrl")}
+                            disabled={uploadingField === "introAudioUrl"}
+                            className="hidden"
+                          />
+                        </label>
                       </>
                     )}
                   </div>

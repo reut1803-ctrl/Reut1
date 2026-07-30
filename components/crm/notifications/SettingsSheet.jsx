@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, User, Mail, Trash2, ShieldCheck, LogOut, AlertTriangle } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import GoogleSignInButton from "@/components/crm/auth/GoogleSignInButton";
+import { useBackToClose } from "@/lib/crm/useBackToClose";
 
 const ROLE_LABELS = {
   admin: "מנהלת מערכת (הרשאת-על)",
@@ -12,6 +13,7 @@ const ROLE_LABELS = {
 };
 
 export default function SettingsSheet({ onClose }) {
+  useBackToClose(true, onClose);
   const role = useCrmStore((s) => s.role);
   const currentUser = useCrmStore((s) => s.currentUser);
   const googleUser = useCrmStore((s) => s.googleUser);

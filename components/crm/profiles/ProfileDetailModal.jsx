@@ -2,8 +2,10 @@
 
 import { X, MapPin, GraduationCap, Cigarette, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
+import { useBackToClose } from "@/lib/crm/useBackToClose";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
+  useBackToClose(true, onClose);
   const educationLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
   const photos = candidate.photoUrls?.length > 0 ? candidate.photoUrls : candidate.photoUrl ? [candidate.photoUrl] : [];
 
