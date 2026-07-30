@@ -22,6 +22,8 @@ function ProfilesFeed() {
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
+  const candidatesLoaded = useCrmStore((s) => s.candidatesLoaded);
+  const candidatesError = useCrmStore((s) => s.candidatesError);
   const tab = useCrmStore((s) => s.feedTab);
   const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
@@ -107,7 +109,15 @@ function ProfilesFeed() {
         )}
       </div>
 
-      {candidates.length === 0 ? (
+      {candidatesError ? (
+        <p className="mt-16 text-center text-sm leading-relaxed text-[#C24545]">
+          לא הצלחנו לטעון את המאגר.
+          <br />
+          נסו לרענן את הדף, ואם זה חוזר - פנו למנהלת לבדיקת ההרשאות.
+        </p>
+      ) : !candidatesLoaded ? (
+        <p className="mt-16 text-center text-sm text-[#8A8285]">טוען את המאגר...</p>
+      ) : candidates.length === 0 ? (
         <p className="mt-16 text-center text-sm text-[#8A8285]">לא נמצאו התאמות לסינון שבחרת</p>
       ) : (
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
