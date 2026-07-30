@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet } from "lucide-react";
+import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 
@@ -144,6 +144,20 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      <Link
+        href="/crm/diagnostics"
+        className="mt-6 flex items-center justify-between rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)] transition active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-2">
+          <Stethoscope size={17} className="text-[#8C4A55]" />
+          <div>
+            <p className="text-[13px] font-bold text-[#3A3335]">בדיקת מערכת</p>
+            <p className="text-[11px] text-[#8A8285]">איתור תקלות בהעלאת קבצים</p>
+          </div>
+        </div>
+        <ChevronLeft size={18} className="text-[#8C4A55]" />
+      </Link>
 
       <h2 className="mt-6 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
         <Wallet size={17} /> כספים

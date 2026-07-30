@@ -10,6 +10,33 @@ const UPLOAD_PRESET = "shiduchim_uploads";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// בדיקת בריאות: מאשרת שנתיב השרת קיים ופעיל, ובודקת אם השרת עצמו מצליח להגיע ל-Cloudinary.
+// משמשת את מסך "בדיקת מערכת" כדי לאבחן היכן בדיוק נתקעת העלאה.
+export async function GET() {
+  const result = { serverAlive: true, cloudinaryReachable: false, detail: "" };
+  try {
+    const probe = new FormData();
+    probe.append("file", new Blob(["diag"], { type: "text/plain" }), "diag.txt");
+    probe.append("upload_preset", UPLOAD_PRESET);
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+      method: "POST",
+      body: probe,
+    });
+    const data = await res.json().catch(() => null);
+
+    if (res.ok && data?.secure_url) {
+      result.cloudinaryReachable = true;
+      result.detail = "העלאת בדיקה ל-Cloudinary הצליחה";
+    } else {
+      result.detail = data?.error?.message || `Cloudinary החזיר שגיאה ${res.status}`;
+    }
+  } catch (err) {
+    result.detail = `השרת לא הצליח להגיע ל-Cloudinary: ${err?.message || String(err)}`;
+  }
+  return Response.json(result);
+}
+
 export async function POST(request) {
   try {
     const incoming = await request.formData();
