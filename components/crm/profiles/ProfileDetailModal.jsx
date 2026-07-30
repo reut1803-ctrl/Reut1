@@ -3,9 +3,16 @@
 import { X, MapPin, GraduationCap, Cigarette, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
+import { useCrmStore } from "@/lib/crm/store";
+import { candidateTagsByGroup, tagChipStyle } from "@/lib/crm/mockData";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   useBackToClose(true, onClose);
+  const tagGroups = useCrmStore((s) => s.tagGroups);
+  const tagsByGroup = candidateTagsByGroup(candidate, tagGroups);
+  const displayTags = (tagGroups || []).flatMap((g) =>
+    (tagsByGroup[g.id] || []).map((name) => ({ key: `${g.id}:${name}`, name, style: tagChipStyle(g, g.options.indexOf(name)) }))
+  );
   const educationLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
   const photos = candidate.photoUrls?.length > 0 ? candidate.photoUrls : candidate.photoUrl ? [candidate.photoUrl] : [];
 
@@ -58,6 +65,16 @@ export default function ProfileDetailModal({ candidate, onClose }) {
               </span>
             )}
           </div>
+
+          {displayTags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {displayTags.map((t) => (
+                <span key={t.key} className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={t.style}>
+                  {t.name}
+                </span>
+              ))}
+            </div>
+          )}
 
           <div className="mt-4 space-y-2.5">
             <DetailRow icon={Sparkles} label="רמת תורניות" value={candidate.religiousLevel} />

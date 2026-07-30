@@ -4,11 +4,12 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { compressImage } from "@/lib/crm/compressImage";
+import TagGroupPicker from "@/components/crm/ui/TagGroupPicker";
 import Button from "@/components/crm/ui/Button";
 
 const MAX_PHOTOS = 4;
@@ -20,6 +21,7 @@ function EditCandidateForm() {
   const role = useCrmStore((s) => s.role);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
+  const tagGroups = useCrmStore((s) => s.tagGroups);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const showToast = useCrmStore((s) => s.showToast);
 
@@ -55,6 +57,7 @@ function EditCandidateForm() {
       yeshivaLevel: c.yeshivaLevel || YESHIVA_LEVELS[0],
       smoking: c.smoking,
       tag: c.tag || "",
+      tags: c.tags || {},
       phone: c.phone || "",
       bio: c.bio || "",
       availabilityStatus: c.availabilityStatus || AVAILABILITY_STATUSES[0],
@@ -82,6 +85,12 @@ function EditCandidateForm() {
   }
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
+  const toggleFormTag = (groupId, option) =>
+    setForm((f) => {
+      const cur = f.tags?.[groupId] || [];
+      const next = cur.includes(option) ? cur.filter((o) => o !== option) : [...cur, option];
+      return { ...f, tags: { ...f.tags, [groupId]: next } };
+    });
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
   const setGender = (gender) =>
     setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
@@ -177,6 +186,7 @@ function EditCandidateForm() {
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
         smoking: form.smoking,
         tag: form.tag || null,
+        tags: form.tags || {},
         phone: form.phone.trim(),
         bio: form.bio.trim(),
         traits,
@@ -354,16 +364,16 @@ function EditCandidateForm() {
           </select>
         </Field>
 
-        <Field label="תווית (רשות)">
-          <select value={form.tag} onChange={(e) => set({ tag: e.target.value })} className="input-crm">
-            <option value="">ללא תווית</option>
-            {CANDIDATE_TAGS.map((t) => (
-              <option key={t.name} value={t.name}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <div className="space-y-3">
+          {tagGroups.map((g) => (
+            <TagGroupPicker
+              key={g.id}
+              group={g}
+              selected={form.tags?.[g.id]}
+              onToggle={(option) => toggleFormTag(g.id, option)}
+            />
+          ))}
+        </div>
 
         <div>
           <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">תכונות</p>
