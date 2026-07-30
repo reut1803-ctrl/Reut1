@@ -46,19 +46,24 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
     const owner = c && data.reps.find((r) => r.id === c.assignedRep);
     return !!(owner && (owner.coveredBy || []).includes(user.repId));
   };
+  // הסתרה נקודתית - חוק ברזל שגובר על הכל: מועמד שהוסתר מהנציג/ה הנוכחי לא קיים עבורו/ה כלל.
+  const hiddenFromMe = (c) =>
+    user.role === "rep" && !!user.repId && !!c && (c.hiddenFrom || []).includes(user.repId);
   const canView = (c) =>
-    !c.restricted || user.role === "admin" || managedByMe(c);
+    !hiddenFromMe(c) && (!c.restricted || user.role === "admin" || managedByMe(c));
   const men = data.candidates.filter((c) => c.gender === "male" && canView(c));
   const women = data.candidates.filter((c) => c.gender === "female" && canView(c));
   const repById = (id) => data.reps.find((r) => r.id === id);
   const candById = (id) => data.candidates.find((c) => c.id === id);
 
   // מנהלת רואה הכל; נציג רואה התאמות שמערבות מועמד שלו, וגם התאמות שהוא/היא יצר/ה.
+  // אבל אם מועמד בהתאמה הוסתר מהנציג/ה - ההתאמה כולה לא תוצג לו/ה.
   const visibleMatches = data.matches.filter((m) => {
-    if (user.role === "admin") return true;
-    if (m.createdByRep && m.createdByRep === user.repId) return true;
     const man = candById(m.manId);
     const woman = candById(m.womanId);
+    if (hiddenFromMe(man) || hiddenFromMe(woman)) return false;
+    if (user.role === "admin") return true;
+    if (m.createdByRep && m.createdByRep === user.repId) return true;
     return (man && managedByMe(man)) || (woman && managedByMe(woman));
   });
 

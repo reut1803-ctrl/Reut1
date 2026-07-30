@@ -136,11 +136,13 @@ export default function AdminPage() {
   const canEditOf = (c) => isAdmin || (managedByMe(c) && !myReadOnly);
 
   // הסתרה נקודתית - כרטיס שהמנהלת הסתירה מנציג/ה מסוים/ת (חל על נציגים בלבד).
+  // חוק ברזל: זה גובר על הכל - עבור אותו/ה נציג/ה המועמד פשוט לא קיים (גם לא השם, גם לא עם מנעול).
   const hiddenFromMe = (c) =>
     !isAdmin && !isViewer && !!user.repId && (c.hiddenFrom || []).includes(user.repId);
-  // כרטיס מוגבל - גלוי למנהלת, לצופה, ולנציג המנהל (כולל מחליף/ה). כרטיס מוסתר נקודתית - לא נראה לאותו/ה נציג/ה.
-  const canViewCandidate = (c) =>
-    !hiddenFromMe(c) && (!c.restricted || isAdmin || isViewer || managedByMe(c));
+  // כרטיס מוגבל מופיע לכלל הצוות (חוץ ממי שהוסתר נקודתית), אך למי שאינו מורשה - בתצוגה נעולה בלבד.
+  const canViewCandidate = (c) => !hiddenFromMe(c);
+  // מי שאינו מנהלת/צופה/נציג מטפל רואה כרטיס מוגבל בתצוגה חלקית (נעולה).
+  const lockedFor = (c) => !!c.restricted && !(isAdmin || isViewer || managedByMe(c));
 
   // חיפוש מועמדים לפי שם, מקום, עדה, עיסוק או טלפון.
   const term = search.trim().toLowerCase();
@@ -249,6 +251,7 @@ export default function AdminPage() {
                       canSeeSensitive={canSeeSensitiveOf(c)}
                       currentRepId={user.repId || "admin"}
                       isAdmin={isAdmin}
+                      locked={lockedFor(c)}
                       onUpdate={updateCandidate}
                       onDelete={isAdmin ? deleteCandidate : undefined}
                     />
@@ -279,6 +282,7 @@ export default function AdminPage() {
                         canSeeSensitive={canSeeSensitiveOf(c)}
                         currentRepId={user.repId || "admin"}
                         isAdmin={isAdmin}
+                        locked={lockedFor(c)}
                         onUpdate={updateCandidate}
                         onDelete={isAdmin ? deleteCandidate : undefined}
                       />
@@ -305,6 +309,7 @@ export default function AdminPage() {
                       canSeeSensitive={isAdmin}
                       currentRepId={user.repId || "admin"}
                       isAdmin={isAdmin}
+                      locked={lockedFor(c)}
                       onUpdate={updateCandidate}
                       onDelete={isAdmin ? deleteCandidate : undefined}
                     />

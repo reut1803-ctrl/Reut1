@@ -10,7 +10,8 @@ import { copyClean, downloadPdf } from "../lib/export";
 import { displayRep } from "../lib/store";
 
 // כרטיס מועמד: תצוגה מקוצרת + תצוגה מורחבת (טופס מלא).
-export default function CandidateCard({ candidate, openQuestions, reps, canEdit, canSeeSensitive, currentRepId, isAdmin = false, onUpdate, onDelete }) {
+// locked = כרטיס מוגבל שהמשתמש/ת אינו/ה מורשה/ית לפרטים המלאים: מוצגים שם/גיל/נציג + מנעול בלבד.
+export default function CandidateCard({ candidate, openQuestions, reps, canEdit, canSeeSensitive, currentRepId, isAdmin = false, locked = false, onUpdate, onDelete }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -29,14 +30,17 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
       {/* כרטיס מקוצר */}
       <div className="card cursor-pointer transition hover:shadow-lg" onClick={() => setOpen(true)}>
         <div className="flex items-center gap-3">
-          {candidate.photo ? (
+          {candidate.photo && !locked ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={candidate.photo} alt={candidate.fullName} className="h-14 w-14 rounded-2xl object-cover" />
           ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blush text-2xl">👤</div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blush text-2xl">{locked ? "🔒" : "👤"}</div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold text-ink">{candidate.fullName}</p>
+            <p className="flex items-center gap-1 truncate font-semibold text-ink">
+              {candidate.fullName}
+              {locked && <span className="text-base" title="כרטיס מוגבל">🔒</span>}
+            </p>
             <p className="text-sm text-ink/60">
               {candidate.gender === "female" ? "בחורה" : "בחור"} · גיל {candidate.age}
             </p>
@@ -48,7 +52,16 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
       {/* תצוגה מורחבת */}
       {open && (
         <Modal title={candidate.fullName} onClose={() => { setOpen(false); setEditing(false); }}>
-          {editing ? (
+          {locked ? (
+            // כרטיס מוגבל - תצוגה נקייה לשם בלבד, עם הודעת דיסקרטיות. שום מידע רגיש/הקלטה/ייצוא.
+            <div className="space-y-4 py-2 text-center">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-blush text-4xl">🔒</div>
+              <p className="text-xl font-bold text-ink">{candidate.fullName}</p>
+              <p className="rounded-2xl bg-blush/50 p-4 text-base leading-relaxed text-ink/80">
+                הפרטים המלאים וההקלטה שמורים בדיסקרטיות וגלויים למנהלת ולנציג המטפל בלבד.
+              </p>
+            </div>
+          ) : editing ? (
             <CandidateEditor
               initial={candidate}
               openQuestions={openQuestions}
