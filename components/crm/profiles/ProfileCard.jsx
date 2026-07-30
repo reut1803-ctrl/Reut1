@@ -59,6 +59,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [showDetail, setShowDetail] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
   const [pendingDeleteVoiceNoteId, setPendingDeleteVoiceNoteId] = useState(null);
+  const [pendingDeleteField, setPendingDeleteField] = useState(null);
   const [uploadingRecording, setUploadingRecording] = useState(false);
   const [uploadingField, setUploadingField] = useState(null);
   const [uploadStatus, setUploadStatus] = useState("");
@@ -138,9 +139,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
     }
   };
 
-  const handleRemoveFile = (field) => async () => {
+  const handleRemoveFile = async (field) => {
     await updateCandidate(candidate.id, { [field]: null });
     showToast("הקובץ נמחק");
+    setPendingDeleteField(null);
   };
 
   const canSeeFullProfile = role === "staff" || role === "admin";
@@ -419,25 +421,27 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     {candidate.pdfUrl ? (
                       <>
                         <MediaFileLink value={candidate.pdfUrl} />
-                        <div className="flex gap-1.5">
-                          <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
-                            {uploadingField === "pdfUrl" ? uploadStatus || "מעלה..." : "החלפה"}
-                            <input
-                              type="file"
-                              accept="application/pdf"
-                              onChange={handleFileUpload("pdfUrl")}
-                              disabled={uploadingField === "pdfUrl"}
-                              className="hidden"
-                            />
-                          </label>
-                          <button
-                            onClick={handleRemoveFile("pdfUrl")}
-                            aria-label="מחיקת קובץ"
-                            className="flex h-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-2.5 text-[#C24545]"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
+                        {role === "admin" && (
+                          <div className="flex gap-1.5">
+                            <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
+                              {uploadingField === "pdfUrl" ? uploadStatus || "מעלה..." : "החלפה"}
+                              <input
+                                type="file"
+                                accept="application/pdf"
+                                onChange={handleFileUpload("pdfUrl")}
+                                disabled={uploadingField === "pdfUrl"}
+                                className="hidden"
+                              />
+                            </label>
+                            <button
+                              onClick={() => setPendingDeleteField("pdfUrl")}
+                              aria-label="מחיקת קובץ"
+                              className="flex h-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-2.5 text-[#C24545]"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <>
@@ -463,7 +467,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     {candidate.introAudioUrl ? (
                       <>
                         <MediaAudio value={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
-                        <div className="flex gap-1.5">
+                        {role === "admin" && (
+                          <div className="flex gap-1.5">
                           <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EAE5E3] bg-white text-[11px] font-semibold text-[#8C4A55]">
                             {uploadingField === "introAudioUrl" ? uploadStatus || "מעלה..." : "החלפה"}
                             <input
@@ -474,14 +479,15 @@ export default function ProfileCard({ candidate, onReadMore }) {
                               className="hidden"
                             />
                           </label>
-                          <button
-                            onClick={handleRemoveFile("introAudioUrl")}
-                            aria-label="מחיקת הקלטה"
-                            className="flex h-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-2.5 text-[#C24545]"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
+                            <button
+                              onClick={() => setPendingDeleteField("introAudioUrl")}
+                              aria-label="מחיקת הקלטה"
+                              className="flex h-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-2.5 text-[#C24545]"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <>
@@ -576,6 +582,17 @@ export default function ProfileCard({ candidate, onReadMore }) {
           message="האם את בטוחה שברצונך למחוק הקלטה זו?"
           onConfirm={() => handleDeleteVoiceNote(pendingDeleteVoiceNoteId)}
           onCancel={() => setPendingDeleteVoiceNoteId(null)}
+        />
+      )}
+      {pendingDeleteField && (
+        <ConfirmDialog
+          message={
+            pendingDeleteField === "introAudioUrl"
+              ? "האם את בטוחה שברצונך למחוק את הקלטת ההיכרות?"
+              : "האם את בטוחה שברצונך למחוק את קובץ ה-PDF?"
+          }
+          onConfirm={() => handleRemoveFile(pendingDeleteField)}
+          onCancel={() => setPendingDeleteField(null)}
         />
       )}
       <CandidateExportTemplate candidate={candidate} forwardedRef={exportRef} />
