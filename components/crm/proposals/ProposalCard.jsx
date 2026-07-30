@@ -10,6 +10,10 @@ import StageFunnel from "./StageFunnel";
 function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
+  const contactStaff = useCrmStore((s) => s.contactStaffFor(candidate));
+  const waLink = contactStaff?.phone
+    ? `https://wa.me/${String(contactStaff.phone).replace(/[^0-9]/g, "").replace(/^0/, "972")}`
+    : null;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildProfileShareText(candidate));
@@ -36,6 +40,49 @@ function ContactCard({ candidate }) {
         {copied ? <Check size={13} /> : <Copy size={13} />}
         {copied ? "הועתק!" : "העתקת כרטיס"}
       </button>
+
+      {contactStaff && (
+        <div className="mt-2 rounded-xl border-2 border-[#844442] bg-white p-2">
+          <p className="mb-0.5 flex items-center gap-1 text-[10px] font-bold text-[#844442]">
+            <UserCheck size={11} /> איש קשר בצוות לבירורים
+          </p>
+          <p className="text-[12px] font-bold text-[#3A2E26]">{contactStaff.name}</p>
+          <p className="text-[10px] leading-snug text-[#7C6E60]">
+            מכיר/ה את המועמד/ת אישית - כדאי לדבר לפני שמקדמים את ההצעה
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {contactStaff.phone && (
+              <>
+                <a
+                  href={`tel:${contactStaff.phone}`}
+                  className="rounded-lg bg-[#E8DCCB] px-2 py-1 text-[11px] font-semibold text-[#3A2E26]"
+                >
+                  חיוג
+                </a>
+                <a
+                  href={waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg bg-[#62826B] px-2 py-1 text-[11px] font-semibold text-white"
+                >
+                  וואטסאפ
+                </a>
+              </>
+            )}
+            {contactStaff.email && (
+              <a
+                href={`mailto:${contactStaff.email}`}
+                className="rounded-lg bg-[#E8DCCB] px-2 py-1 text-[11px] font-semibold text-[#3A2E26]"
+              >
+                מייל
+              </a>
+            )}
+          </div>
+          {!contactStaff.phone && (
+            <p className="mt-1 text-[10px] text-[#A2937F]">לא הוזן טלפון לנציג/ה בהגדרות הצוות</p>
+          )}
+        </div>
+      )}
 
       {candidate.referenceContacts && (
         <div className="mt-2 rounded-xl border-2 border-[#844442] bg-white p-2">

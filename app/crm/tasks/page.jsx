@@ -23,6 +23,7 @@ export default function TasksPage() {
   );
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [details, setDetails] = useState("");
   const [owner, setOwner] = useState("");
   const [assigneeId, setAssigneeId] = useState(staffList[0]?.email || "");
   const [candidateId, setCandidateId] = useState("");
@@ -43,12 +44,13 @@ export default function TasksPage() {
   const handleAdd = () => {
     if (!title.trim()) return;
     if (role === "admin") {
-      pushTaskToStaff(title.trim(), dueDate || null, assigneeId, candidateId || null);
+      pushTaskToStaff(title.trim(), dueDate.trim() || null, assigneeId, candidateId || null, details.trim() || null);
     } else {
-      addTask({ title: title.trim(), dueDate: dueDate || null, owner: owner.trim() || "לא משויך" });
+      addTask({ title: title.trim(), dueDate: dueDate.trim() || null, details: details.trim() || null, owner: owner.trim() || "לא משויך" });
     }
     setTitle("");
     setDueDate("");
+    setDetails("");
     setOwner("");
     setCandidateId("");
   };
@@ -68,11 +70,19 @@ export default function TasksPage() {
             placeholder="מה צריך לעשות?"
             className="w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
           />
+          <textarea
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            rows={2}
+            placeholder="פירוט ודגשים (לא חובה)"
+            className="w-full resize-y rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#844442]"
+          />
           <div className="flex gap-2">
             <input
-              type="date"
+              type="text"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
+              placeholder="תאריך יעד (למשל: כ' בחשוון)"
               className="flex-1 rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
             />
             {role === "admin" ? (
@@ -182,7 +192,10 @@ function TaskRow({ task, onToggle, highlighted }) {
         />
         <div className="flex-1">
           <p className="text-sm font-semibold text-[#3A2E26]">{task.title}</p>
-          <p className="text-[11px] text-[#7C6E60]">
+          {task.details && (
+            <p className="mt-1 whitespace-pre-line text-[12px] leading-relaxed text-[#5E2F2D]">{task.details}</p>
+          )}
+          <p className="mt-1 text-[11px] text-[#7C6E60]">
             {task.owner} {task.dueDate && `· ${task.dueDate}`} {candidate && `· בנוגע ל${candidate.name}`}
           </p>
         </div>

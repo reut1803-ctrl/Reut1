@@ -10,7 +10,6 @@ import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
 import TipsCarousel from "@/components/crm/profiles/TipsCarousel";
 import TagsSidebar from "@/components/crm/profiles/TagsSidebar";
-import StaffTour from "@/components/crm/tour/StaffTour";
 
 function ProfilesFeed() {
   const searchParams = useSearchParams();
@@ -129,7 +128,6 @@ function ProfilesFeed() {
 
       {showFilters && <FilterSheet onClose={() => setShowFilters(false)} />}
       <TagsSidebar />
-      <StaffTour />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   Heart,
   Mic,
   PenLine,
+  UserCheck,
   ChevronDown,
   Copy,
   Download,
@@ -45,6 +46,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const showToast = useCrmStore((s) => s.showToast);
   const trackProfileView = useCrmStore((s) => s.trackProfileView);
   const trackAudioPlay = useCrmStore((s) => s.trackAudioPlay);
+  const contactStaff = useCrmStore((s) => s.contactStaffFor(candidate));
+  const setContactStaff = useCrmStore((s) => s.setContactStaff);
+  const staffList = useCrmStore((s) => s.staffList());
+  const canEdit = useCrmStore((s) => s.canEditCandidate(candidate));
   const currentUser = useCrmStore((s) => s.currentUser);
   const [recording, setRecording] = useState(false);
   const [recordError, setRecordError] = useState("");
@@ -317,6 +322,34 @@ export default function ProfileCard({ candidate, onReadMore }) {
           </div>
         )}
 
+        {contactStaff && (
+          <div className="mt-3 flex items-start gap-2 rounded-2xl border-2 border-[#844442] bg-[#F0E2DE] px-3 py-2">
+            <UserCheck size={15} className="mt-0.5 shrink-0 text-[#844442]" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#844442]">איש קשר בצוות לבירורים</p>
+              <p className="text-[13px] font-bold text-[#3A2E26]">{contactStaff.name}</p>
+              {contactStaff.phone && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  <a
+                    href={`tel:${contactStaff.phone}`}
+                    className="rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-[#844442]"
+                  >
+                    חיוג
+                  </a>
+                  <a
+                    href={`https://wa.me/${String(contactStaff.phone).replace(/[^0-9]/g, "").replace(/^0/, "972")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg bg-[#62826B] px-2 py-1 text-[11px] font-semibold text-white"
+                  >
+                    וואטסאפ
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {canSeeFullProfile && (
           <div className="mt-4 border-t border-[#CCBDAB] pt-3">
             <button
@@ -331,6 +364,26 @@ export default function ProfileCard({ candidate, onReadMore }) {
             {isExpanded && (
               <div className="mt-3 space-y-3">
                 {role === "admin" && (
+                  <div>
+                    <p className="mb-1 text-[11px] font-bold text-[#844442]">נציג/ה מלווה - איש קשר לבירורים</p>
+                    <select
+                      value={candidate.contactStaffEmail || ""}
+                      onChange={(e) => {
+                        setContactStaff(candidate.id, e.target.value || null);
+                        showToast(e.target.value ? "הנציג/ה שויכ/ה לכרטיס" : "השיוך הוסר");
+                      }}
+                      className="w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2 text-sm outline-none focus:border-[#844442]"
+                    >
+                      <option value="">ללא נציג/ה מלווה</option>
+                      {staffList.map((st) => (
+                        <option key={st.email} value={st.email}>
+                          {st.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {canEdit && (
                   <Link
                     href={`/crm/edit-candidate?id=${candidate.id}`}
                     className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#844442] bg-white px-4 py-2.5 text-sm font-semibold text-[#844442] transition active:scale-95 hover:bg-[#F0E2DE]"
@@ -564,12 +617,12 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   </button>
                 </div>
 
-                {role === "admin" && (
+                {canEdit && (
                   <>
                     <div>
                       <div className="mb-1 flex items-center justify-between">
                         <span className="flex items-center gap-1 text-[11px] font-bold not-italic text-amber-800">
-                          <PenLine size={12} /> הערת מנהלת
+                          <PenLine size={12} /> הערה פנימית {role === "admin" ? "(מנהלת)" : "(נציג/ה מלווה)"}
                         </span>
                       </div>
                       <textarea

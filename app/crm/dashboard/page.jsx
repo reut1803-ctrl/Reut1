@@ -56,6 +56,7 @@ export default function DashboardPage() {
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("staff");
+  const [newPhone, setNewPhone] = useState("");
   const [goalViewsDraft, setGoalViewsDraft] = useState(weeklyGoals.profileViews);
   const [goalPlaysDraft, setGoalPlaysDraft] = useState(weeklyGoals.audioPlays);
 
@@ -69,9 +70,11 @@ export default function DashboardPage() {
       email: newEmail.trim().toLowerCase(),
       name: newName.trim() || newEmail.trim(),
       role: newRole,
+      phone: newPhone.trim() || null,
     });
     setNewEmail("");
     setNewName("");
+    setNewPhone("");
   };
 
   const handleSaveGoals = () => {
@@ -146,6 +149,14 @@ export default function DashboardPage() {
             onChange={(e) => setNewName(e.target.value)}
             placeholder="שם תצוגה"
             className="w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2 text-sm outline-none focus:border-[#844442]"
+          />
+          <input
+            type="tel"
+            dir="ltr"
+            value={newPhone}
+            onChange={(e) => setNewPhone(e.target.value)}
+            placeholder="טלפון (לא חובה) - לפניות מהצוות"
+            className="w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2 text-left text-sm outline-none focus:border-[#844442]"
           />
           <select
             value={newRole}
