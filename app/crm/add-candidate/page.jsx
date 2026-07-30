@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
-import { uploadToCloudinary, MAX_UPLOAD_SIZE } from "@/lib/crm/cloudinary";
+import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { compressImage } from "@/lib/crm/compressImage";
 import Button from "@/components/crm/ui/Button";
 
 const DRAFT_KEY = "crm_add_candidate_draft";
 const MAX_PHOTOS = 4;
-const MB = Math.round(MAX_UPLOAD_SIZE / 1024 / 1024);
 
 const EMPTY_FORM = {
   gender: "male",

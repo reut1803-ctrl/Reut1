@@ -1,9 +1,14 @@
 // נתיב העלאה בצד השרת: הדפדפן שולח את הקובץ לכאן, והשרת שלנו (שאינו חסום ע"י
 // סינון/חסימות רשת בצד הלקוח) הוא זה שמעלה בפועל ל-Cloudinary ומחזיר את הקישור.
+//
+// קובץ גדול מגיע בחלקים (chunks) מהדפדפן, כדי לא לחרוג ממגבלת גוף הבקשה בשרת.
+// כל חלק מועבר ל-Cloudinary עם כותרות שמאפשרות לו להרכיב את הקובץ המלא,
+// והתשובה עם הקישור הסופי מתקבלת בחלק האחרון.
 const CLOUD_NAME = "ewx9uylu";
 const UPLOAD_PRESET = "shiduchim_uploads";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request) {
   try {
@@ -18,16 +23,30 @@ export async function POST(request) {
     outgoing.append("file", file);
     outgoing.append("upload_preset", UPLOAD_PRESET);
 
+    const headers = {};
+    const uploadId = request.headers.get("x-upload-id");
+    const chunkRange = request.headers.get("x-chunk-range");
+    if (uploadId && chunkRange) {
+      headers["X-Unique-Upload-Id"] = uploadId;
+      headers["Content-Range"] = chunkRange;
+    }
+
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
       method: "POST",
       body: outgoing,
+      headers,
     });
 
     const data = await res.json().catch(() => null);
 
-    if (!res.ok || !data?.secure_url) {
+    if (!res.ok) {
       const detail = data?.error?.message || `Cloudinary HTTP ${res.status}`;
       return Response.json({ error: detail }, { status: 502 });
+    }
+
+    // בהעלאה בחלקים, כל חלק שאינו האחרון מחזיר אישור ביניים ללא קישור סופי
+    if (!data?.secure_url) {
+      return Response.json({ pending: true });
     }
 
     return Response.json({ url: data.secure_url });

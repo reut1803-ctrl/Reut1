@@ -28,9 +28,7 @@ import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTe
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
-import { uploadToCloudinary, MAX_UPLOAD_SIZE } from "@/lib/crm/cloudinary";
-
-const MAX_FILE_SIZE = MAX_UPLOAD_SIZE;
+import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -94,10 +92,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        if (blob.size > MAX_FILE_SIZE) {
-          setRecordError(`ההקלטה גדולה מדי (מקסימום ${Math.round(MAX_FILE_SIZE / 1024 / 1024)}MB) - נסי הקלטה קצרה יותר`);
-          return;
-        }
         setUploadingRecording(true);
         try {
           const audioUrl = await uploadToCloudinary(blob);
