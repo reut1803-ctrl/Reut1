@@ -1,16 +1,18 @@
 "use client";
 
+import MediaImage from "@/components/crm/ui/MediaImage";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Save, ImagePlus, X, FileText, Music } from "lucide-react";
+import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { uploadToCloudinary } from "@/lib/crm/cloudinary";
+import { saveMedia } from "@/lib/crm/mediaStore";
+import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { compressImage } from "@/lib/crm/compressImage";
 import Button from "@/components/crm/ui/Button";
 
 const MAX_PHOTOS = 4;
-const MAX_PDF_SIZE = 350 * 1024;
-const MAX_AUDIO_SIZE = 400 * 1024;
 
 function EditCandidateForm() {
   const router = useRouter();
@@ -26,11 +28,13 @@ function EditCandidateForm() {
   const [form, setForm] = useState(null);
   const [traits, setTraits] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
-  const [pdfFile, setPdfFile] = useState(null);
-  const [existingPdfUrl, setExistingPdfUrl] = useState(null);
-  const [audioFile, setAudioFile] = useState(null);
-  const [existingAudioUrl, setExistingAudioUrl] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [introAudioUrl, setIntroAudioUrl] = useState(null);
+  const [audioUploading, setAudioUploading] = useState(false);
   const [mediaError, setMediaError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -61,8 +65,8 @@ function EditCandidateForm() {
     });
     setTraits(c.traits || []);
     setPhotos(c.photoUrls?.length > 0 ? c.photoUrls : c.photoUrl ? [c.photoUrl] : []);
-    setExistingPdfUrl(c.pdfUrl || null);
-    setExistingAudioUrl(c.introAudioUrl || null);
+    setPdfUrl(c.pdfUrl || null);
+    setIntroAudioUrl(c.introAudioUrl || null);
     setLoaded(true);
   }, [id, loaded, findCandidateById]);
 
@@ -84,71 +88,83 @@ function EditCandidateForm() {
     setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
 
   const handlePhotoChange = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    const invalid = files.some((f) => !f.type.startsWith("image/"));
-    if (invalid) {
-      setPhotoError("יש לבחור קובצי תמונה בלבד");
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("יש לבחור קובץ תמונה בלבד");
       return;
     }
-    if (photos.length + files.length > MAX_PHOTOS) {
+    if (photos.length >= MAX_PHOTOS) {
       setPhotoError(`אפשר להעלות עד ${MAX_PHOTOS} תמונות לכרטיס`);
       return;
     }
     setPhotoError("");
-    e.target.value = "";
-    for (const file of files) {
-      try {
-        const compressed = await compressImage(file);
-        setPhotos((cur) => [...cur, compressed]);
-      } catch {
-        setPhotoError("העלאת אחת התמונות נכשלה, נסי שוב");
-      }
+    setPhotoUploading(true);
+    try {
+      const compressed = await compressImage(file, { maxDimension: 1200, quality: 0.8 });
+      const blob = await (await fetch(compressed)).blob();
+      const url = await uploadToCloudinary(blob);
+      setPhotos((cur) => [...cur, url]);
+    } catch (err) {
+      setPhotoError(`העלאת התמונה נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
   const removePhoto = (index) => setPhotos((cur) => cur.filter((_, i) => i !== index));
 
-  const handlePdfChange = (e) => {
-    const file = e.target.files?.[0] || null;
+  const handlePdfChange = async (e) => {
+    const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.size > MAX_PDF_SIZE) {
-      setMediaError(`קובץ ה-PDF גדול מדי (מקסימום ${Math.round(MAX_PDF_SIZE / 1024)}KB)`);
-      return;
-    }
     setMediaError("");
-    setPdfFile(file);
+    setPdfUploading(true);
+    setUploadStatus("");
+    try {
+      const ref = await saveMedia(file, setUploadStatus);
+      setPdfUrl(ref);
+    } catch (err) {
+      setMediaError(`העלאת קובץ ה-PDF נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
-  const handleAudioChange = (e) => {
-    const file = e.target.files?.[0] || null;
+  const handleAudioChange = async (e) => {
+    const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.size > MAX_AUDIO_SIZE) {
-      setMediaError(`הקובץ גדול מדי (מקסימום ${Math.round(MAX_AUDIO_SIZE / 1024)}KB)`);
-      return;
-    }
     setMediaError("");
-    setAudioFile(file);
+    setAudioUploading(true);
+    setUploadStatus("");
+    try {
+      const ref = await saveMedia(file, setUploadStatus);
+      setIntroAudioUrl(ref);
+    } catch (err) {
+      setMediaError(`העלאת הקלטת ההיכרות נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setAudioUploading(false);
+    }
   };
 
-  const readAsDataUrl = (file) =>
-    new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(file);
-    });
-
-  const canSubmit = form.name.trim() && form.age && form.height && form.phone.trim() && photos.length > 0 && !submitting;
+  const canSubmit =
+    form.name.trim() &&
+    form.age &&
+    form.height &&
+    form.phone.trim() &&
+    photos.length > 0 &&
+    !submitting &&
+    !photoUploading &&
+    !pdfUploading &&
+    !audioUploading;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitError("");
     setSubmitting(true);
     try {
-      const pdfUrl = pdfFile ? await readAsDataUrl(pdfFile) : existingPdfUrl;
-      const introAudioUrl = audioFile ? await readAsDataUrl(audioFile) : existingAudioUrl;
       await updateCandidate(id, {
         gender: form.gender,
         name: form.name.trim(),
@@ -220,7 +236,7 @@ function EditCandidateForm() {
             {photos.map((p, i) => (
               <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#CCBDAB]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p} alt="תצוגה מקדימה" className="h-full w-full object-cover" />
+                <MediaImage src={p} alt="תצוגה מקדימה" className="h-full w-full object-cover" />
                 {i === 0 && (
                   <span className="absolute bottom-1 right-1 rounded-full bg-[#844442] px-1.5 py-0.5 text-[9px] font-bold text-white">
                     ראשית
@@ -235,7 +251,12 @@ function EditCandidateForm() {
                 </button>
               </div>
             ))}
-            {photos.length < MAX_PHOTOS && (
+            {photoUploading && (
+              <div className="flex h-32 w-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CCBDAB] bg-white text-[#A2937F]">
+                <span className="text-[11px] font-semibold">מעלה תמונה...</span>
+              </div>
+            )}
+            {photos.length < MAX_PHOTOS && !photoUploading && (
               <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CCBDAB] bg-white text-[#A2937F] transition hover:border-[#844442] hover:text-[#844442]">
                 <ImagePlus size={22} />
                 <span className="text-[11px] font-semibold">הוספת תמונה</span>
@@ -412,26 +433,57 @@ function EditCandidateForm() {
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="כרטיס יבש (PDF)">
-            {existingPdfUrl && !pdfFile && (
-              <a href={existingPdfUrl} target="_blank" rel="noopener noreferrer" className="mb-1.5 block truncate text-[11px] font-semibold text-[#844442]">
-                צפייה בקובץ הקיים
-              </a>
+            {pdfUrl ? (
+              <div className="space-y-1.5">
+                <MediaFileLink value={pdfUrl} />
+                <div className="flex gap-1.5">
+                  <label className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white text-[11px] font-semibold text-[#844442]">
+                    <FileText size={13} />
+                    {pdfUploading ? uploadStatus || "מעלה..." : "החלפת קובץ"}
+                    <input type="file" accept="application/pdf" onChange={handlePdfChange} disabled={pdfUploading} className="hidden" />
+                  </label>
+                  <button
+                    onClick={() => setPdfUrl(null)}
+                    className="flex h-9 items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2.5 text-[11px] font-semibold text-[#C24545]"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CCBDAB] bg-white text-[12px] font-semibold text-[#844442]">
+                <FileText size={15} />
+                {pdfUploading ? uploadStatus || "מעלה..." : "העלאת PDF"}
+                <input type="file" accept="application/pdf" onChange={handlePdfChange} disabled={pdfUploading} className="hidden" />
+              </label>
             )}
-            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CCBDAB] bg-white text-[12px] font-semibold text-[#844442]">
-              <FileText size={15} />
-              {pdfFile ? pdfFile.name : existingPdfUrl ? "החלפת קובץ" : "העלאת PDF"}
-              <input type="file" accept="application/pdf" onChange={handlePdfChange} className="hidden" />
-            </label>
           </Field>
           <Field label="הקלטת היכרות">
-            {existingAudioUrl && !audioFile && (
-              <audio controls src={existingAudioUrl} className="mb-1.5 h-8 w-full" />
+            {introAudioUrl ? (
+              <div className="space-y-1.5">
+                <MediaAudio value={introAudioUrl} />
+                <div className="flex gap-1.5">
+                  <label className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white text-[11px] font-semibold text-[#844442]">
+                    <Music size={13} />
+                    {audioUploading ? uploadStatus || "מעלה..." : "החלפת הקלטה"}
+                    <input type="file" accept="audio/*" onChange={handleAudioChange} disabled={audioUploading} className="hidden" />
+                  </label>
+                  <button
+                    onClick={() => setIntroAudioUrl(null)}
+                    aria-label="מחיקת הקלטה"
+                    className="flex h-9 items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2.5 text-[11px] font-semibold text-[#C24545]"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CCBDAB] bg-white text-[12px] font-semibold text-[#844442]">
+                <Music size={15} />
+                {audioUploading ? uploadStatus || "מעלה..." : "העלאת אודיו"}
+                <input type="file" accept="audio/*" onChange={handleAudioChange} disabled={audioUploading} className="hidden" />
+              </label>
             )}
-            <label className="flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CCBDAB] bg-white text-[12px] font-semibold text-[#844442]">
-              <Music size={15} />
-              {audioFile ? audioFile.name : existingAudioUrl ? "החלפת הקלטה" : "העלאת אודיו"}
-              <input type="file" accept="audio/*" onChange={handleAudioChange} className="hidden" />
-            </label>
           </Field>
         </div>
         {mediaError && <p className="text-[11px] text-red-500">{mediaError}</p>}
@@ -459,6 +511,30 @@ function EditCandidateForm() {
         }
       `}</style>
     </div>
+  );
+}
+
+// מציגים נגן/קישור גם עבור מדיה שנשמרה בחלקים ב-Firestore וגם עבור כתובת רגילה
+function MediaAudio({ value }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#7C6E60]">טוען הקלטה...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return <audio controls src={url} className="h-8 w-full" />;
+}
+
+function MediaFileLink({ value }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#7C6E60]">טוען קובץ...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block truncate rounded-2xl bg-[#E8DCCB] px-3 py-2 text-center text-[12px] font-semibold text-[#844442]"
+    >
+      צפייה בקובץ הקיים
+    </a>
   );
 }
 

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
+import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope } from "lucide-react";
+import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 
 function metricColor(ratio) {
@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const authAllowlist = useCrmStore((s) => s.authAllowlist);
   const addAllowlistEntry = useCrmStore((s) => s.addAllowlistEntry);
   const removeAllowlistEntry = useCrmStore((s) => s.removeAllowlistEntry);
+  const repairAllowlistEntry = useCrmStore((s) => s.repairAllowlistEntry);
   const staffList = useCrmStore((s) => s.staffList());
   const weeklyGoals = useCrmStore((s) => s.weeklyGoals);
   const setWeeklyGoals = useCrmStore((s) => s.setWeeklyGoals);
@@ -101,16 +102,31 @@ export default function DashboardPage() {
       <div className="rounded-3xl border border-[#CCBDAB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
         <div className="space-y-2">
           {authAllowlist.map((entry) => (
-            <div key={entry.email} className="flex items-center justify-between rounded-xl bg-[#E8DCCB] px-3 py-2">
-              <div>
-                <p className="text-[13px] font-semibold text-[#3A2E26]">{entry.name}</p>
-                <p dir="ltr" className="text-left text-[11px] text-[#7C6E60]">
-                  {entry.email} · {entry.role === "admin" ? "מנהלת" : "צוות"}
-                </p>
+            <div key={entry.id} className="rounded-xl bg-[#E8DCCB] px-3 py-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[13px] font-semibold text-[#3A2E26]">{entry.name || allowlistEmail(entry)}</p>
+                  <p dir="ltr" className="text-left text-[11px] text-[#7C6E60]">
+                    {allowlistEmail(entry)} · {entry.role === "admin" ? "מנהלת" : "צוות"}
+                  </p>
+                </div>
+                <button onClick={() => removeAllowlistEntry(entry.id)} aria-label="הסרה" className="rounded-full p-1.5 hover:bg-white">
+                  <Trash2 size={14} className="text-[#C24545]" />
+                </button>
               </div>
-              <button onClick={() => removeAllowlistEntry(entry.email)} aria-label="הסרה" className="rounded-full p-1.5 hover:bg-white">
-                <Trash2 size={14} className="text-[#C24545]" />
-              </button>
+              {isBrokenAllowlistEntry(entry) && (
+                <div className="mt-2 rounded-lg bg-[#FBEDED] px-2.5 py-2">
+                  <p className="text-[11px] leading-relaxed text-[#C24545]">
+                    בכתובת הזו נשמר תו או רווח מיותר, ולכן הכניסה לא תזוהה. לחצי לתיקון אוטומטי.
+                  </p>
+                  <button
+                    onClick={() => repairAllowlistEntry(entry)}
+                    className="mt-1.5 rounded-lg bg-[#C24545] px-3 py-1.5 text-[11px] font-semibold text-white"
+                  >
+                    תיקון הכתובת
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -144,6 +160,20 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      <Link
+        href="/crm/diagnostics"
+        className="mt-6 flex items-center justify-between rounded-3xl border border-[#CCBDAB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)] transition active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-2">
+          <Stethoscope size={17} className="text-[#844442]" />
+          <div>
+            <p className="text-[13px] font-bold text-[#3A2E26]">בדיקת מערכת</p>
+            <p className="text-[11px] text-[#7C6E60]">איתור תקלות בהעלאת קבצים</p>
+          </div>
+        </div>
+        <ChevronLeft size={18} className="text-[#844442]" />
+      </Link>
 
       <h2 className="mt-6 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A2E26]">
         <Wallet size={17} /> כספים

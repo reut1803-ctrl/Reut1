@@ -4,9 +4,11 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Tag } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { useBackToClose } from "@/lib/crm/useBackToClose";
 
 export default function TagsSidebar() {
   const [open, setOpen] = useState(false);
+  useBackToClose(open, () => setOpen(false));
   const activeTag = useCrmStore((s) => s.filters.tag);
   const setFilters = useCrmStore((s) => s.setFilters);
 

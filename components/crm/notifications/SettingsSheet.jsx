@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, User, Mail, Trash2, ShieldCheck, LogOut, AlertTriangle } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import GoogleSignInButton from "@/components/crm/auth/GoogleSignInButton";
+import { useBackToClose } from "@/lib/crm/useBackToClose";
 
 const ROLE_LABELS = {
   admin: "מנהלת מערכת (הרשאת-על)",
@@ -12,6 +13,7 @@ const ROLE_LABELS = {
 };
 
 export default function SettingsSheet({ onClose }) {
+  useBackToClose(true, onClose);
   const role = useCrmStore((s) => s.role);
   const currentUser = useCrmStore((s) => s.currentUser);
   const googleUser = useCrmStore((s) => s.googleUser);
@@ -35,7 +37,7 @@ export default function SettingsSheet({ onClose }) {
         <div className="space-y-5 px-5 py-5">
           <div className="rounded-2xl border border-[#CCBDAB] bg-[#E8DCCB]/60 p-4">
             <InfoRow icon={User} label="שם" value={user.name} />
-            <InfoRow icon={Mail} label="אימייל" value={user.email || "-"} last />
+            <InfoRow icon={Mail} label="אימייל" value={user.email || "-"} ltr last />
           </div>
 
           <div className="flex items-center justify-between rounded-2xl border border-[#CCBDAB] p-4">
@@ -79,7 +81,7 @@ export default function SettingsSheet({ onClose }) {
                   <AlertTriangle size={15} /> אין לך הרשאת גישה
                 </p>
                 <p className="mt-1 text-[12px] text-amber-700">
-                  מחוברת כ-{googleUser.email}. הכתובת הזו לא ברשימת ההרשאות. פני למנהלת כדי להצטרף.
+                  מחוברת כ-<span dir="ltr">{googleUser.email}</span>. הכתובת הזו לא ברשימת ההרשאות. פני למנהלת כדי להצטרף.
                 </p>
                 <button
                   onClick={signOutGoogle}
@@ -139,12 +141,14 @@ export default function SettingsSheet({ onClose }) {
   );
 }
 
-function InfoRow({ icon: Icon, label, value, last }) {
+function InfoRow({ icon: Icon, label, value, ltr, last }) {
   return (
     <div className={`flex items-center gap-2.5 py-2 ${!last ? "border-b border-[#CCBDAB]" : ""}`}>
       <Icon size={16} className="text-[#844442]" />
       <span className="w-24 shrink-0 text-[12px] text-[#7C6E60]">{label}</span>
-      <span className="text-sm font-medium text-[#3A2E26]">{value}</span>
+      <span dir={ltr ? "ltr" : undefined} className="text-sm font-medium text-[#3A2E26]">
+        {value}
+      </span>
     </div>
   );
 }

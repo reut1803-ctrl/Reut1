@@ -1,5 +1,6 @@
 "use client";
 
+import MediaImage from "@/components/crm/ui/MediaImage";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -28,8 +29,8 @@ import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTe
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
-
-const MAX_FILE_SIZE = 400 * 1024; // בייטים - PDF/הקלטה בכרטיס קיים
+import { saveMedia } from "@/lib/crm/mediaStore";
+import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -59,6 +60,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [showDetail, setShowDetail] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
   const [pendingDeleteVoiceNoteId, setPendingDeleteVoiceNoteId] = useState(null);
+  const [pendingDeleteField, setPendingDeleteField] = useState(null);
+  const [uploadingRecording, setUploadingRecording] = useState(false);
+  const [uploadingField, setUploadingField] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [recordStatus, setRecordStatus] = useState("");
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
   const candidateTag = CANDIDATE_TAGS.find((t) => t.name === candidate.tag);
@@ -88,26 +94,26 @@ export default function ProfileCard({ candidate, onReadMore }) {
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        if (blob.size > MAX_FILE_SIZE) {
-          setRecordError(`ההקלטה גדולה מדי (מקסימום ${Math.round(MAX_FILE_SIZE / 1024)}KB) - נסי הקלטה קצרה יותר`);
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => {
+        setUploadingRecording(true);
+        try {
+          const audioUrl = await saveMedia(blob, setRecordStatus);
           const newNote = {
             id: `${Date.now()}`,
             author: currentUser().name,
             authorEmail: currentUser().email,
             date: new Date().toLocaleDateString("he-IL"),
-            audioUrl: reader.result,
+            audioUrl,
           };
-          updateCandidate(candidate.id, { voiceNotes: [...(candidate.voiceNotes || []), newNote] });
+          await updateCandidate(candidate.id, { voiceNotes: [...(candidate.voiceNotes || []), newNote] });
           showToast("ההקלטה נשמרה בהצלחה");
-        };
-        reader.readAsDataURL(blob);
+        } catch (err) {
+          setRecordError(`שמירת ההקלטה נכשלה: ${err?.message || String(err)}`);
+        } finally {
+          setUploadingRecording(false);
+        }
       };
       recorder.start();
       mediaRecorderRef.current = recorder;
@@ -118,20 +124,52 @@ export default function ProfileCard({ candidate, onReadMore }) {
     }
   };
 
-  const handleFileUpload = (field) => (e) => {
+  const handleFileUpload = (field) => async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
     e.target.value = "";
-    if (file.size > MAX_FILE_SIZE) {
-      showToast(`הקובץ גדול מדי (מקסימום ${Math.round(MAX_FILE_SIZE / 1024)}KB)`);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateCandidate(candidate.id, { [field]: reader.result });
+    if (!file) return;
+    setUploadingField(field);
+    try {
+      const ref = await saveMedia(file, setUploadStatus);
+      await updateCandidate(candidate.id, { [field]: ref });
       showToast("הקובץ נשמר בהצלחה");
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      showToast(`העלאת הקובץ נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setUploadingField(null);
+    }
+  };
+
+  // הוספת הקלטה קיימת מהמכשיר לרשימת הקלטות השמע - כדי שאפשר יהיה לצבור כמה הקלטות
+  // ממקורות שונים (למשל הקלטות קוליות שהתקבלו בוואטסאפ), ולא רק להקליט חי.
+  const handleAddVoiceNoteFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setRecordError("");
+    setUploadingRecording(true);
+    try {
+      const audioUrl = await saveMedia(file, setRecordStatus);
+      const newNote = {
+        id: `${Date.now()}`,
+        author: currentUser().name,
+        authorEmail: currentUser().email,
+        date: new Date().toLocaleDateString("he-IL"),
+        audioUrl,
+      };
+      await updateCandidate(candidate.id, { voiceNotes: [...(candidate.voiceNotes || []), newNote] });
+      showToast("ההקלטה נוספה בהצלחה");
+    } catch (err) {
+      setRecordError(`הוספת ההקלטה נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setUploadingRecording(false);
+    }
+  };
+
+  const handleRemoveFile = async (field) => {
+    await updateCandidate(candidate.id, { [field]: null });
+    showToast("הקובץ נמחק");
+    setPendingDeleteField(null);
   };
 
   const canSeeFullProfile = role === "staff" || role === "admin";
@@ -177,7 +215,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
       <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
         {candidate.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={candidate.photoUrl} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
+          <MediaImage src={candidate.photoUrl} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
@@ -320,14 +358,35 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#3A2E26]">
                       <Mic size={14} /> הקלטות שמע
                     </p>
-                    <button
-                      onClick={recording ? stopRecording : startRecording}
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${
-                        recording ? "bg-red-500 text-white" : "bg-[#844442] text-white"
-                      }`}
-                    >
-                      {recording ? "עצירת הקלטה" : candidate.voiceNotes?.length > 0 ? "הקלטה נוספת" : "הקלטה חדשה"}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {!recording && (
+                        <label className="cursor-pointer rounded-full border border-[#844442] bg-white px-2.5 py-1 text-[11px] font-bold text-[#844442]">
+                          {uploadingRecording ? recordStatus || "שומרת..." : "הוספת קובץ"}
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={handleAddVoiceNoteFile}
+                            disabled={uploadingRecording}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                      <button
+                        onClick={recording ? stopRecording : startRecording}
+                        disabled={uploadingRecording}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-60 ${
+                          recording ? "bg-red-500 text-white" : "bg-[#844442] text-white"
+                        }`}
+                      >
+                        {uploadingRecording && !recording
+                          ? recordStatus || "שומרת..."
+                          : recording
+                          ? "עצירת הקלטה"
+                          : candidate.voiceNotes?.length > 0
+                          ? "הקלטה נוספת"
+                          : "הקלטה חדשה"}
+                      </button>
+                    </div>
                   </div>
                   {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת... (נעצרת אוטומטית אחרי 10 דקות)</p>}
                   {recordError && <p className="mb-2 text-[11px] text-red-500">{recordError}</p>}
@@ -352,7 +411,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                                 </button>
                               )}
                             </div>
-                            <audio controls src={vn.audioUrl} className="h-8 w-full" />
+                            <MediaAudio value={vn.audioUrl} className="h-8 w-full" />
                           </li>
                         );
                       })}
@@ -401,21 +460,45 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <FileText size={13} /> כרטיס יבש (PDF)
                     </p>
                     {candidate.pdfUrl ? (
-                      <a
-                        href={candidate.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#844442] shadow-sm"
-                      >
-                        צפייה בקובץ
-                      </a>
+                      <>
+                        <MediaFileLink value={candidate.pdfUrl} />
+                        {role === "admin" && (
+                          <div className="flex gap-1.5">
+                            <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#CCBDAB] bg-white text-[11px] font-semibold text-[#844442]">
+                              {uploadingField === "pdfUrl" ? uploadStatus || "מעלה..." : "החלפה"}
+                              <input
+                                type="file"
+                                accept="application/pdf"
+                                onChange={handleFileUpload("pdfUrl")}
+                                disabled={uploadingField === "pdfUrl"}
+                                className="hidden"
+                              />
+                            </label>
+                            <button
+                              onClick={() => setPendingDeleteField("pdfUrl")}
+                              aria-label="מחיקת קובץ"
+                              className="flex h-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-2.5 text-[#C24545]"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )}
+                      </>
                     ) : (
-                      <p className="mb-1.5 text-[11px] text-[#A2937F]">לא הועלה קובץ</p>
+                      <>
+                        <p className="mb-1.5 text-[11px] text-[#A2937F]">לא הועלה קובץ</p>
+                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#CCBDAB] bg-white py-1.5 text-center text-[11px] font-semibold text-[#844442]">
+                          {uploadingField === "pdfUrl" ? uploadStatus || "מעלה..." : "העלאת PDF"}
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            onChange={handleFileUpload("pdfUrl")}
+                            disabled={uploadingField === "pdfUrl"}
+                            className="hidden"
+                          />
+                        </label>
+                      </>
                     )}
-                    <label className="mt-1.5 block cursor-pointer rounded-xl border border-dashed border-[#CCBDAB] bg-white py-1.5 text-center text-[11px] font-semibold text-[#844442]">
-                      העלאת PDF
-                      <input type="file" accept="application/pdf" onChange={handleFileUpload("pdfUrl")} className="hidden" />
-                    </label>
                   </div>
 
                   <div className="rounded-2xl bg-[#E8DCCB] p-3">
@@ -423,14 +506,45 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       <Music size={13} /> הקלטת היכרות
                     </p>
                     {candidate.introAudioUrl ? (
-                      <audio controls src={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
+                      <>
+                        <MediaAudio value={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
+                        {role === "admin" && (
+                          <div className="flex gap-1.5">
+                          <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#CCBDAB] bg-white text-[11px] font-semibold text-[#844442]">
+                            {uploadingField === "introAudioUrl" ? uploadStatus || "מעלה..." : "החלפה"}
+                            <input
+                              type="file"
+                              accept="audio/*"
+                              onChange={handleFileUpload("introAudioUrl")}
+                              disabled={uploadingField === "introAudioUrl"}
+                              className="hidden"
+                            />
+                          </label>
+                            <button
+                              onClick={() => setPendingDeleteField("introAudioUrl")}
+                              aria-label="מחיקת הקלטה"
+                              className="flex h-8 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-2.5 text-[#C24545]"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )}
+                      </>
                     ) : (
-                      <p className="mb-1.5 text-[11px] text-[#A2937F]">לא הועלתה הקלטה</p>
+                      <>
+                        <p className="mb-1.5 text-[11px] text-[#A2937F]">לא הועלתה הקלטה</p>
+                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#CCBDAB] bg-white py-1.5 text-center text-[11px] font-semibold text-[#844442]">
+                          {uploadingField === "introAudioUrl" ? uploadStatus || "מעלה..." : "העלאת אודיו"}
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={handleFileUpload("introAudioUrl")}
+                            disabled={uploadingField === "introAudioUrl"}
+                            className="hidden"
+                          />
+                        </label>
+                      </>
                     )}
-                    <label className="block cursor-pointer rounded-xl border border-dashed border-[#CCBDAB] bg-white py-1.5 text-center text-[11px] font-semibold text-[#844442]">
-                      העלאת אודיו
-                      <input type="file" accept="audio/*" onChange={handleFileUpload("introAudioUrl")} className="hidden" />
-                    </label>
                   </div>
                 </div>
 
@@ -493,7 +607,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
         .handwritten-note-crm {
           transform: rotate(-1deg);
           border-radius: 12px;
-          border: 1px solid #fde68a;
+          border: 1px solid #E0C478;
           background: #F5E7E2;
           padding: 10px 12px;
           font-size: 13px;
@@ -511,7 +625,42 @@ export default function ProfileCard({ candidate, onReadMore }) {
           onCancel={() => setPendingDeleteVoiceNoteId(null)}
         />
       )}
+      {pendingDeleteField && (
+        <ConfirmDialog
+          message={
+            pendingDeleteField === "introAudioUrl"
+              ? "האם את בטוחה שברצונך למחוק את הקלטת ההיכרות?"
+              : "האם את בטוחה שברצונך למחוק את קובץ ה-PDF?"
+          }
+          onConfirm={() => handleRemoveFile(pendingDeleteField)}
+          onCancel={() => setPendingDeleteField(null)}
+        />
+      )}
       <CandidateExportTemplate candidate={candidate} forwardedRef={exportRef} />
     </div>
+  );
+}
+
+// נגן/קישור שמתמודד גם עם מדיה שנשמרה בחלקים ב-Firestore וגם עם כתובת רגילה
+function MediaAudio({ value, onPlay, className }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#7C6E60]">טוען הקלטה...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return <audio controls src={url} onPlay={onPlay} className={className} />;
+}
+
+function MediaFileLink({ value }) {
+  const { url, error, loading } = useMediaUrl(value);
+  if (loading) return <p className="text-[11px] text-[#7C6E60]">טוען קובץ...</p>;
+  if (error) return <p className="text-[11px] text-red-500">{error}</p>;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mb-1.5 block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#844442] shadow-sm"
+    >
+      צפייה בקובץ
+    </a>
   );
 }

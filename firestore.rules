@@ -55,6 +55,18 @@ service cloud.firestore {
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availabilityStatus']);
     }
 
+    // מדיה (הקלטות/PDF) נשמרת בחלקים קטנים, כי רשתות מסוימות לא מעבירות בקשה אחת גדולה.
+    // מסמך הכתר ב-media מחזיק את סוג הקובץ ומספר החלקים, והתוכן עצמו יושב ב-mediaChunks.
+    match /media/{id} {
+      allow read, create, update: if isStaff();
+      allow delete: if isStaff();
+    }
+
+    match /mediaChunks/{id} {
+      allow read, create, update: if isStaff();
+      allow delete: if isStaff();
+    }
+
     match /proposals/{id} {
       allow read, create, update: if isStaff();
       allow delete: if isAdmin();

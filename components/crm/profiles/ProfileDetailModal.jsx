@@ -1,9 +1,12 @@
 "use client";
 
+import MediaImage from "@/components/crm/ui/MediaImage";
 import { X, MapPin, GraduationCap, Cigarette, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
+import { useBackToClose } from "@/lib/crm/useBackToClose";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
+  useBackToClose(true, onClose);
   const educationLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
   const photos = candidate.photoUrls?.length > 0 ? candidate.photoUrls : candidate.photoUrl ? [candidate.photoUrl] : [];
 
@@ -15,8 +18,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           {photos.length > 0 ? (
             <div className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [&::-webkit-scrollbar]:hidden">
               {photos.map((url, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <MediaImage
                   key={i}
                   src={url}
                   alt={candidate.name}
