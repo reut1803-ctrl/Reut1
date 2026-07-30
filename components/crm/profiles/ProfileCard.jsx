@@ -139,6 +139,32 @@ export default function ProfileCard({ candidate, onReadMore }) {
     }
   };
 
+  // הוספת הקלטה קיימת מהמכשיר לרשימת הקלטות השמע - כדי שאפשר יהיה לצבור כמה הקלטות
+  // ממקורות שונים (למשל הקלטות קוליות שהתקבלו בוואטסאפ), ולא רק להקליט חי.
+  const handleAddVoiceNoteFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setRecordError("");
+    setUploadingRecording(true);
+    try {
+      const audioUrl = await saveMedia(file, setRecordStatus);
+      const newNote = {
+        id: `${Date.now()}`,
+        author: currentUser().name,
+        authorEmail: currentUser().email,
+        date: new Date().toLocaleDateString("he-IL"),
+        audioUrl,
+      };
+      await updateCandidate(candidate.id, { voiceNotes: [...(candidate.voiceNotes || []), newNote] });
+      showToast("ההקלטה נוספה בהצלחה");
+    } catch (err) {
+      setRecordError(`הוספת ההקלטה נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setUploadingRecording(false);
+    }
+  };
+
   const handleRemoveFile = async (field) => {
     await updateCandidate(candidate.id, { [field]: null });
     showToast("הקובץ נמחק");
@@ -331,21 +357,35 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#3A3335]">
                       <Mic size={14} /> הקלטות שמע
                     </p>
-                    <button
-                      onClick={recording ? stopRecording : startRecording}
-                      disabled={uploadingRecording}
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-60 ${
-                        recording ? "bg-red-500 text-white" : "bg-[#8C4A55] text-white"
-                      }`}
-                    >
-                      {uploadingRecording
-                        ? recordStatus || "שומרת..."
-                        : recording
-                        ? "עצירת הקלטה"
-                        : candidate.voiceNotes?.length > 0
-                        ? "הקלטה נוספת"
-                        : "הקלטה חדשה"}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {!recording && (
+                        <label className="cursor-pointer rounded-full border border-[#8C4A55] bg-white px-2.5 py-1 text-[11px] font-bold text-[#8C4A55]">
+                          {uploadingRecording ? recordStatus || "שומרת..." : "הוספת קובץ"}
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={handleAddVoiceNoteFile}
+                            disabled={uploadingRecording}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                      <button
+                        onClick={recording ? stopRecording : startRecording}
+                        disabled={uploadingRecording}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-60 ${
+                          recording ? "bg-red-500 text-white" : "bg-[#8C4A55] text-white"
+                        }`}
+                      >
+                        {uploadingRecording && !recording
+                          ? recordStatus || "שומרת..."
+                          : recording
+                          ? "עצירת הקלטה"
+                          : candidate.voiceNotes?.length > 0
+                          ? "הקלטה נוספת"
+                          : "הקלטה חדשה"}
+                      </button>
+                    </div>
                   </div>
                   {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת... (נעצרת אוטומטית אחרי 10 דקות)</p>}
                   {recordError && <p className="mb-2 text-[11px] text-red-500">{recordError}</p>}
