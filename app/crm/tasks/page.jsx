@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Check, Megaphone, Phone, ChevronLeft } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
+import { useCrmStore, allowlistEmail } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 
 export default function TasksPage() {
@@ -22,9 +22,10 @@ export default function TasksPage() {
     [allCandidates, candidates_]
   );
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [owner, setOwner] = useState("");
-  const [assigneeId, setAssigneeId] = useState(staffList[0]?.email || "");
+  const [assigneeId, setAssigneeId] = useState(allowlistEmail(staffList[0]) || "");
   const [candidateId, setCandidateId] = useState("");
 
   useEffect(() => {
@@ -43,11 +44,17 @@ export default function TasksPage() {
   const handleAdd = () => {
     if (!title.trim()) return;
     if (role === "admin") {
-      pushTaskToStaff(title.trim(), dueDate || null, assigneeId, candidateId || null);
+      pushTaskToStaff(title.trim(), dueDate.trim() || null, assigneeId, candidateId || null, description.trim());
     } else {
-      addTask({ title: title.trim(), dueDate: dueDate || null, owner: owner.trim() || "לא משויך" });
+      addTask({
+        title: title.trim(),
+        description: description.trim(),
+        dueDate: dueDate.trim() || null,
+        owner: owner.trim() || "לא משויך",
+      });
     }
     setTitle("");
+    setDescription("");
     setDueDate("");
     setOwner("");
     setCandidateId("");
@@ -68,11 +75,19 @@ export default function TasksPage() {
             placeholder="מה צריך לעשות?"
             className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
           />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            placeholder="פירוט ודגשים (לא חובה)"
+            className="w-full resize-y rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#8C4A55]"
+          />
           <div className="flex gap-2">
             <input
-              type="date"
+              type="text"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
+              placeholder="תאריך (למשל: כ' בחשוון)"
               className="flex-1 rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
             />
             {role === "admin" ? (
@@ -82,7 +97,7 @@ export default function TasksPage() {
                 className="flex-1 rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
               >
                 {staffList.map((s) => (
-                  <option key={s.email} value={s.email}>
+                  <option key={allowlistEmail(s)} value={allowlistEmail(s)}>
                     {s.name}
                   </option>
                 ))}
@@ -153,6 +168,7 @@ export default function TasksPage() {
                 </button>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-[#3A3335] line-through">{t.title}</p>
+                  {t.description && <p className="mt-0.5 text-[12px] text-[#B5AEB0]">{t.description}</p>}
                   <p className="text-[11px] text-[#B5AEB0]">
                     {t.owner} {t.dueDate && `· ${t.dueDate}`}
                   </p>
@@ -182,7 +198,10 @@ function TaskRow({ task, onToggle, highlighted }) {
         />
         <div className="flex-1">
           <p className="text-sm font-semibold text-[#3A3335]">{task.title}</p>
-          <p className="text-[11px] text-[#8A8285]">
+          {task.description && (
+            <p className="mt-0.5 whitespace-pre-line text-[12px] leading-relaxed text-[#6B6265]">{task.description}</p>
+          )}
+          <p className="mt-0.5 text-[11px] text-[#8A8285]">
             {task.owner} {task.dueDate && `· ${task.dueDate}`} {candidate && `· בנוגע ל${candidate.name}`}
           </p>
         </div>
