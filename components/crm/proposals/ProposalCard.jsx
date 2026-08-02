@@ -3,9 +3,27 @@
 import { useState } from "react";
 import { ChevronDown, Clock, Copy, Check, Phone, Sparkles, Trash2, UserCheck, X } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
+import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
+
+function ExternalContactCard({ data }) {
+  const { url } = useMediaUrl(data.audioUrl);
+  return (
+    <div className="rounded-2xl border-2 border-dashed border-[#844442] bg-[#E8DCCB] p-3">
+      <p className="text-[10px] font-bold text-[#844442]">מהמעגל האישי - לא במאגר</p>
+      <p className="mt-0.5 text-[13px] font-bold text-[#3A2E26]">{data.name}</p>
+      {data.notes && (
+        <p className="mt-1 whitespace-pre-line text-[11px] leading-relaxed text-[#3A2E26]">{data.notes}</p>
+      )}
+      {url && (
+        // eslint-disable-next-line jsx-a11y/media-has-caption
+        <audio src={url} controls className="mt-2 h-8 w-full" />
+      )}
+    </div>
+  );
+}
 
 function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
@@ -115,9 +133,14 @@ export default function ProposalCard({ proposal }) {
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const male = findCandidateById(proposal.maleId);
-  const female = findCandidateById(proposal.femaleId);
-  if (!male || !female) return null;
+  const male = proposal.maleId ? findCandidateById(proposal.maleId) : null;
+  const female = proposal.femaleId ? findCandidateById(proposal.femaleId) : null;
+  const extMale = proposal.externalMale || null;
+  const extFemale = proposal.externalFemale || null;
+  // הצעה מוצגת כל עוד לכל צד יש מקור - כרטיס במאגר או פרטים מהמעגל האישי
+  if ((!male && !extMale) || (!female && !extFemale)) return null;
+  const maleName = male?.name || extMale?.name || "";
+  const femaleName = female?.name || extFemale?.name || "";
 
   const handleDelete = async () => {
     await deleteProposal(proposal.id);
@@ -129,7 +152,7 @@ export default function ProposalCard({ proposal }) {
     <div className="rounded-3xl border border-[#CCBDAB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <div className="flex items-center justify-between">
         <h3 className="text-[15px] font-bold text-[#3A2E26]">
-          {male.name} ⚭ {female.name}
+          {maleName} ⚭ {femaleName}
         </h3>
         <div className="flex items-center gap-1">
           {role === "admin" && (
@@ -191,8 +214,8 @@ export default function ProposalCard({ proposal }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <ContactCard candidate={male} />
-        <ContactCard candidate={female} />
+        {male ? <ContactCard candidate={male} /> : <ExternalContactCard data={extMale} />}
+        {female ? <ContactCard candidate={female} /> : <ExternalContactCard data={extFemale} />}
       </div>
 
       {open && (

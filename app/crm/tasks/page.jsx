@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Check, Megaphone, Phone, ChevronLeft } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
+import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 
 export default function TasksPage() {
   const role = useCrmStore((s) => s.role);
@@ -36,8 +37,12 @@ export default function TasksPage() {
     return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין לצוות בלבד</p>;
   }
 
-  const open = tasks.filter((t) => !t.done);
-  const done = tasks.filter((t) => t.done);
+  // הגבלת תצוגה: מנהלת רואה את כל המשימות, ואשת צוות רק את אלו המשויכות אליה.
+  // השרת ממילא מחזיר לצוות רק את שלהן, וזו שכבת הגנה נוספת במסך עצמו.
+  const visibleTasks =
+    role === "admin" ? tasks : tasks.filter((t) => t.assigneeId && t.assigneeId === currentStaffEmail);
+  const open = visibleTasks.filter((t) => !t.done);
+  const done = visibleTasks.filter((t) => t.done);
   const pushedToMe = role === "staff" ? open.filter((t) => t.pushedByAdmin && t.assigneeId === currentStaffEmail) : [];
   const otherOpen = role === "staff" ? open.filter((t) => !(t.pushedByAdmin && t.assigneeId === currentStaffEmail)) : open;
 
@@ -86,17 +91,14 @@ export default function TasksPage() {
               className="flex-1 rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
             />
             {role === "admin" ? (
-              <select
+              <SearchableSelect
+                className="flex-1"
                 value={assigneeId}
-                onChange={(e) => setAssigneeId(e.target.value)}
-                className="flex-1 rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
-              >
-                {staffList.map((s) => (
-                  <option key={s.email} value={s.email}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setAssigneeId}
+                options={staffList.map((st) => ({ value: st.email, label: st.name }))}
+                placeholder="שיוך לאשת צוות..."
+                searchPlaceholder="הקלידו שם..."
+              />
             ) : (
               <input
                 type="text"
@@ -108,18 +110,16 @@ export default function TasksPage() {
             )}
           </div>
           {role === "admin" && (
-            <select
+            <SearchableSelect
               value={candidateId}
-              onChange={(e) => setCandidateId(e.target.value)}
-              className="w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#844442]"
-            >
-              <option value="">ללא מועמד/ת מקושר/ת</option>
-              {candidates.map((c) => (
-                <option key={c.id} value={c.id}>
-                  בנוגע ל: {c.name}
-                </option>
-              ))}
-            </select>
+              onChange={setCandidateId}
+              options={[
+                { value: "", label: "ללא מועמד/ת מקושר/ת" },
+                ...candidates.map((c) => ({ value: c.id, label: `בנוגע ל: ${c.name}` })),
+              ]}
+              placeholder="ללא מועמד/ת מקושר/ת"
+              searchPlaceholder="הקלידו שם מועמד/ת..."
+            />
           )}
           <Button variant="primary" className="w-full" onClick={handleAdd}>
             {role === "admin" ? <Megaphone size={16} /> : <Plus size={16} />}

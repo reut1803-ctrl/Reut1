@@ -72,8 +72,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // משימות: המנהלת רואה ומעדכנת הכל. אשת צוות רואה ומעדכנת אך ורק משימות
+    // שמשויכות אליה, כך שההגבלה נאכפת בשרת ולא רק במסך.
     match /tasks/{id} {
-      allow read, create, update: if isStaff();
+      // בשאילתת רשימה הכלל נבדק מול כל מסמך שמוחזר, ולכן שאילתה לא מסוננת
+      // של אשת צוות תיחסם כולה - וזו בדיוק ההגנה הרצויה.
+      allow read: if isAdmin() || (isStaff() && resource.data.assigneeId == myEmail());
+      allow create: if isAdmin()
+        || (isStaff() && request.resource.data.assigneeId == myEmail());
+      allow update: if isAdmin() || (isStaff() && resource.data.assigneeId == myEmail());
       allow delete: if isAdmin();
     }
 
