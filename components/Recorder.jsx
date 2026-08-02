@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useData } from "../lib/useData";
-import { addRecording, getRecordingAudio, deleteRecording } from "../lib/store";
+import { addRecording, getRecordingAudio, deleteRecording, trackEngagement } from "../lib/store";
 
 const MAX_SECONDS = 600; // עד 10 דקות
 const MAX_BYTES = 980000; // מגבלת גודל לשמירה בטוחה
@@ -112,6 +112,7 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
 
   async function play(id, mime) {
     if (urls[id]) return; // כבר נטען
+    trackEngagement("play"); // ספירת השמעת הקלטה למעקב מעורבות
     setLoadingId(id);
     try {
       const bytes = await getRecordingAudio(id);

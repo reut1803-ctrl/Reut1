@@ -9,6 +9,7 @@ import MatchesPanel from "../../components/MatchesPanel";
 import TasksPanel from "../../components/TasksPanel";
 import QuestionsEditor from "../../components/QuestionsEditor";
 import RepsManager from "../../components/RepsManager";
+import EngagementPanel from "../../components/EngagementPanel";
 import LogViewer from "../../components/LogViewer";
 import PopupEditor from "../../components/PopupEditor";
 import PopupNotice from "../../components/PopupNotice";
@@ -324,6 +325,7 @@ export default function AdminPage() {
         {tab === "tasks" && <TasksPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "manage" && isAdmin && (
           <div className="space-y-8">
+            <EngagementPanel data={data} />
             <RepsManager data={data} />
             <LogViewer data={data} />
             <PopupEditor data={data} />

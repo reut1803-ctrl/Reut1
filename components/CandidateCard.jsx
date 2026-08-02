@@ -7,7 +7,7 @@ import Recorder from "./Recorder";
 import { PERSONAL_FIELDS, genderLabel } from "../lib/questions";
 import { toHebrewDate } from "../lib/dates";
 import { copyClean, downloadPdf } from "../lib/export";
-import { displayRep } from "../lib/store";
+import { displayRep, trackEngagement } from "../lib/store";
 
 // כרטיס מועמד: תצוגה מקוצרת + תצוגה מורחבת (טופס מלא).
 // locked = כרטיס מוגבל שהמשתמש/ת אינו/ה מורשה/ית לפרטים המלאים: מוצגים שם/גיל/נציג + מנעול בלבד.
@@ -28,7 +28,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
   return (
     <>
       {/* כרטיס מקוצר */}
-      <div className="card cursor-pointer transition hover:shadow-lg" onClick={() => setOpen(true)}>
+      <div className="card cursor-pointer transition hover:shadow-lg" onClick={() => { trackEngagement("view"); setOpen(true); }}>
         <div className="flex items-center gap-3">
           {candidate.photo && !locked ? (
             // eslint-disable-next-line @next/next/no-img-element
