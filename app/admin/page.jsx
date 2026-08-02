@@ -222,7 +222,7 @@ export default function AdminPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
               {/* מתג סינון מגדרי (Segmented Control) - משפיע רק על "מועמדים קודמים" */}
-              <div className="flex shrink-0 rounded-full border border-sand bg-white p-0.5 text-sm">
+              <div data-tour="gender" className="flex shrink-0 rounded-full border border-sand bg-white p-0.5 text-sm">
                 <button
                   onClick={() => setGenderFilter("all")}
                   className={`rounded-full px-3 py-1.5 font-medium transition ${genderFilter === "all" ? "bg-sand text-ink" : "text-ink/50"}`}
