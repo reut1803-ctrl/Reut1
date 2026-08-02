@@ -100,6 +100,15 @@ export default function ProposalCard({ proposal }) {
     setConfirmingDelete(false);
   };
 
+  // עדכון סטטוס - גם מלחיצה על עיגול בסרגל ההתקדמות וגם מכפתורי השלבים ביומן.
+  // ההערה שהוקלדה (אם יש) מצורפת ליומן ומתאפסת אחרי השמירה.
+  const handleStageChange = async (stage) => {
+    if (stage === proposal.status) return;
+    await updateProposalStatus(proposal.id, stage, note);
+    setNote("");
+    showToast(`הסטטוס עודכן ל"${stage}"`);
+  };
+
   return (
     <div className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <div className="flex items-center justify-between">
@@ -148,7 +157,7 @@ export default function ProposalCard({ proposal }) {
       </div>
 
       <div className="relative mt-3">
-        <StageFunnel status={proposal.status} />
+        <StageFunnel status={proposal.status} onSelect={handleStageChange} />
       </div>
 
       <div className="mt-4 rounded-2xl bg-[#FFF8E7] p-3">
@@ -178,7 +187,7 @@ export default function ProposalCard({ proposal }) {
               {[...PROPOSAL_STAGES, PROPOSAL_DROPPED].map((stage) => (
                 <button
                   key={stage}
-                  onClick={() => updateProposalStatus(proposal.id, stage, note)}
+                  onClick={() => handleStageChange(stage)}
                   className={`rounded-full border px-2.5 py-1.5 text-[11px] font-semibold transition ${
                     proposal.status === stage
                       ? "border-[#8C4A55] bg-[#8C4A55] text-white"
