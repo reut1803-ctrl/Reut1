@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
+import { normalizeTagName } from "@/lib/crm/mockData";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
@@ -49,7 +50,7 @@ function ProfilesFeed() {
       if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
       if (filters.region !== "הכל" && c.region !== filters.region) return false;
       if (filters.search && !c.name.includes(filters.search.trim())) return false;
-      if (filters.tag && c.tag !== filters.tag) return false;
+      if (filters.tag && normalizeTagName(c.tag) !== filters.tag) return false;
       return true;
     });
   }, [board, tab, filters, candidates_]);

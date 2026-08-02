@@ -1,3 +1,5 @@
+import { normalizeTagName } from "@/lib/crm/mockData";
+
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
 export default function CandidateExportTemplate({ candidate, forwardedRef }) {
@@ -39,7 +41,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
           <Row label={candidate.gender === "male" ? "רמת לימוד" : "השכלה / עיסוק"} value={eduLabel} />
           <Row label="עישון" value={candidate.smoking} />
-          {candidate.tag && <Row label="תווית" value={candidate.tag} />}
+          {candidate.tag && <Row label="תווית" value={normalizeTagName(candidate.tag)} />}
         </tbody>
       </table>
 

@@ -58,8 +58,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // משימות: המנהלת רואה הכל. אשת צוות רואה אך ורק משימות שמשויכות אליה,
+    // ולכן היא חייבת לשלוח שאילתה מסוננת לפי assigneeId (כפי שהאפליקציה עושה).
+    function isMyTask() {
+      return resource.data.get('assigneeId', '') == myEmail();
+    }
+
     match /tasks/{id} {
-      allow read, create, update: if isStaff();
+      allow get, list: if isAdmin() || (isStaff() && isMyTask());
+      allow create: if isStaff();
+      allow update: if isAdmin() || (isStaff() && isMyTask());
       allow delete: if isAdmin();
     }
 

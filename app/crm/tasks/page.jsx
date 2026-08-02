@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Check, Megaphone, Phone, ChevronLeft } from "lucide-react";
 import { useCrmStore, allowlistEmail } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
+import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 
 export default function TasksPage() {
   const role = useCrmStore((s) => s.role);
@@ -17,6 +18,8 @@ export default function TasksPage() {
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const candidates_ = useCrmStore((s) => s.candidates);
   const staffList = useCrmStore((s) => s.staffList());
+  const currentUser = useCrmStore((s) => s.currentUser);
+  const showToast = useCrmStore((s) => s.showToast);
   const candidates = useMemo(
     () => [...allCandidates("male"), ...allCandidates("female")],
     [allCandidates, candidates_]
@@ -32,25 +35,40 @@ export default function TasksPage() {
     if (role === "staff") markTasksSeenByStaff(currentStaffEmail);
   }, [role, currentStaffEmail, markTasksSeenByStaff]);
 
+  // רשימת הצוות נטענת מהשרת אחרי הרינדור הראשון, ולכן בוחרים נציגה ראשונה כשהיא מגיעה
+  useEffect(() => {
+    if (!assigneeId && staffList.length > 0) setAssigneeId(allowlistEmail(staffList[0]));
+  }, [assigneeId, staffList]);
+
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
   }
 
-  const open = tasks.filter((t) => !t.done);
-  const done = tasks.filter((t) => t.done);
+  // המנהלת רואה את כל המשימות. אשת צוות רואה אך ורק את המשימות שמשויכות אליה -
+  // גם בשאילתה מול השרת וגם כאן בתצוגה, כדי שמשימות של אחרות לא יתערבבו לעולם.
+  const visibleTasks = role === "admin" ? tasks : tasks.filter((t) => t.assigneeId === currentStaffEmail);
+  const open = visibleTasks.filter((t) => !t.done);
+  const done = visibleTasks.filter((t) => t.done);
   const pushedToMe = role === "staff" ? open.filter((t) => t.pushedByAdmin && t.assigneeId === currentStaffEmail) : [];
   const otherOpen = role === "staff" ? open.filter((t) => !(t.pushedByAdmin && t.assigneeId === currentStaffEmail)) : open;
 
   const handleAdd = () => {
     if (!title.trim()) return;
     if (role === "admin") {
+      // בלי נציגה משויכת המשימה לא תגיע לאף אחת, ולכן חוסמים יצירה כזו
+      if (!assigneeId) {
+        showToast("יש לבחור נציגה לשיוך המשימה");
+        return;
+      }
       pushTaskToStaff(title.trim(), dueDate.trim() || null, assigneeId, candidateId || null, description.trim());
     } else {
+      // משימה שאשת צוות יוצרת לעצמה משויכת אליה, כדי שתראה אותה במסך שלה
       addTask({
         title: title.trim(),
         description: description.trim(),
         dueDate: dueDate.trim() || null,
-        owner: owner.trim() || "לא משויך",
+        owner: owner.trim() || currentUser().name,
+        assigneeId: currentStaffEmail || "",
       });
     }
     setTitle("");
@@ -91,17 +109,14 @@ export default function TasksPage() {
               className="flex-1 rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
             />
             {role === "admin" ? (
-              <select
+              <SearchableSelect
+                className="flex-1"
                 value={assigneeId}
-                onChange={(e) => setAssigneeId(e.target.value)}
-                className="flex-1 rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
-              >
-                {staffList.map((s) => (
-                  <option key={allowlistEmail(s)} value={allowlistEmail(s)}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setAssigneeId}
+                placeholder="בחירת נציגה..."
+                emptyText="לא נמצאה נציגה בשם הזה"
+                options={staffList.map((s) => ({ value: allowlistEmail(s), label: s.name || allowlistEmail(s) }))}
+              />
             ) : (
               <input
                 type="text"
@@ -113,18 +128,13 @@ export default function TasksPage() {
             )}
           </div>
           {role === "admin" && (
-            <select
+            <SearchableSelect
               value={candidateId}
-              onChange={(e) => setCandidateId(e.target.value)}
-              className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
-            >
-              <option value="">ללא מועמד/ת מקושר/ת</option>
-              {candidates.map((c) => (
-                <option key={c.id} value={c.id}>
-                  בנוגע ל: {c.name}
-                </option>
-              ))}
-            </select>
+              onChange={setCandidateId}
+              placeholder="ללא מועמד/ת מקושר/ת"
+              emptyText="לא נמצא מועמד/ת בשם הזה"
+              options={candidates.map((c) => ({ value: c.id, label: `בנוגע ל: ${c.name}` }))}
+            />
           )}
           <Button variant="primary" className="w-full" onClick={handleAdd}>
             {role === "admin" ? <Megaphone size={16} /> : <Plus size={16} />}

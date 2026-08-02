@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -54,7 +54,7 @@ function EditCandidateForm() {
       education: c.education,
       yeshivaLevel: c.yeshivaLevel || YESHIVA_LEVELS[0],
       smoking: c.smoking,
-      tag: c.tag || "",
+      tag: normalizeTagName(c.tag) || "",
       phone: c.phone || "",
       bio: c.bio || "",
       availabilityStatus: c.availabilityStatus || AVAILABILITY_STATUSES[0],
