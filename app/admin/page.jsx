@@ -110,6 +110,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   // לשונית משנה במסך המועמדים: "new" = 5 החדשים; "previous" = השאר. ברירת מחדל - חדשים.
   const [candView, setCandView] = useState("new");
+  // מתג סינון מגדרי - חל אך ורק על "מועמדים קודמים". "all" | "male" | "female".
+  const [genderFilter, setGenderFilter] = useState("all");
 
   if (!data) return <main className="p-8 text-center text-ink/50">טוען…</main>;
   if (!user) return <Login data={data} />;
@@ -152,6 +154,9 @@ export default function AdminPage() {
     [c.fullName, c.location, c.community, c.work, c.degree, c.phone]
       .some((v) => (v || "").toString().toLowerCase().includes(term));
 
+  // סינון מגדרי - חל רק על "מועמדים קודמים" (לא על "חדשים").
+  const genderOk = (c) => genderFilter === "all" || c.gender === genderFilter;
+
   // 5 המועמדים האחרונים שהצטרפו (מבין אלה שהמשתמש/ת רשאי/ת לראות) - לפי מועד ההוספה.
   const viewableSorted = data.candidates
     .filter((c) => canViewCandidate(c))
@@ -163,7 +168,7 @@ export default function AdminPage() {
   // בתצוגת "קודמים" מחריגים את 5 החדשים (הם מופיעים בלשונית "חדשים").
   const unassigned = data.candidates.filter((c) => {
     const dr = displayRep(c, data.reps);
-    return (!dr || !visibleRepIds.has(dr.id)) && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c);
+    return (!dr || !visibleRepIds.has(dr.id)) && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c);
   });
 
   async function handleAdd(form) {
@@ -210,12 +215,27 @@ export default function AdminPage() {
             <div className="flex flex-wrap items-center gap-2">
               <input
                 data-tour="search"
-                className="field-input flex-1"
+                className="field-input min-w-[150px] flex-1"
                 type="search"
                 placeholder="🔍 חיפוש מועמד (שם, מקום, עדה...)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
+              {/* מתג סינון מגדרי (Segmented Control) - משפיע רק על "מועמדים קודמים" */}
+              <div className="flex shrink-0 rounded-full border border-sand bg-white p-0.5 text-sm">
+                <button
+                  onClick={() => setGenderFilter("all")}
+                  className={`rounded-full px-3 py-1.5 font-medium transition ${genderFilter === "all" ? "bg-sand text-ink" : "text-ink/50"}`}
+                >הכל</button>
+                <button
+                  onClick={() => setGenderFilter("male")}
+                  className={`rounded-full px-3 py-1.5 font-medium transition ${genderFilter === "male" ? "bg-blue-100 text-blue-700" : "text-ink/50"}`}
+                >בנים</button>
+                <button
+                  onClick={() => setGenderFilter("female")}
+                  className={`rounded-full px-3 py-1.5 font-medium transition ${genderFilter === "female" ? "bg-blush text-roseDark" : "text-ink/50"}`}
+                >בנות</button>
+              </div>
               {!isViewer && !myReadOnly && (
                 <button data-tour="add" className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
               )}
@@ -262,7 +282,7 @@ export default function AdminPage() {
             )}
 
             {(candView === "previous" || term) && visibleReps.map((rep) => {
-              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c));
+              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c));
               if (term && cands.length === 0) return null;
               return (
                 <section key={rep.id} className="space-y-3">
