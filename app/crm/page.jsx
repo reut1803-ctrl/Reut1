@@ -17,6 +17,7 @@ function ProfilesFeed() {
   const role = useCrmStore((s) => s.role);
   const filters = useCrmStore((s) => s.filters);
   const setFilters = useCrmStore((s) => s.setFilters);
+  const resetFilters = useCrmStore((s) => s.resetFilters);
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
@@ -37,19 +38,41 @@ function ProfilesFeed() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  const boardCandidates = useMemo(() => allCandidates(board), [board, candidates_]);
+
+  // כרטיס שאין לו גיל או גובה עדיין חייב להופיע. בעבר טווח הסינון הסתיר אותו
+  // לגמרי (ערך ריק נחשב כאפס), והוא נעלם מהמסך אף שנשמר במאגר.
+  const inRange = (value, [min, max]) => {
+    if (value === null || value === undefined || value === "") return true;
+    const n = Number(value);
+    return !Number.isFinite(n) || (n >= min && n <= max);
+  };
+
+  // "קודמות" היא המשלימה המלאה של "חדשות", כדי שאף כרטיס לא ייפול בין הלשוניות
+  const tabCandidates = useMemo(
+    () => boardCandidates.filter((c) => (tab === "new" ? !!c.isNew : !c.isNew)),
+    [boardCandidates, tab]
+  );
+
   const candidates = useMemo(() => {
-    const all = allCandidates(board);
-    return all.filter((c) => {
-      if (tab === "new" && !c.isNew) return false;
-      if (tab === "previous" && !c.isPrevious) return false;
-      if (c.age < filters.ageRange[0] || c.age > filters.ageRange[1]) return false;
-      if (c.height < filters.heightRange[0] || c.height > filters.heightRange[1]) return false;
+    return tabCandidates.filter((c) => {
+      if (!inRange(c.age, filters.ageRange)) return false;
+      if (!inRange(c.height, filters.heightRange)) return false;
       if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
       if (filters.region !== "הכל" && c.region !== filters.region) return false;
-      if (filters.search && !c.name.includes(filters.search.trim())) return false;
+      if (filters.search && !String(c.name || "").includes(filters.search.trim())) return false;
       return true;
     });
-  }, [board, tab, filters, candidates_]);
+  }, [tabCandidates, filters]);
+
+  // כמה כרטיסים בלשונית הנוכחית מוסתרים בגלל הסינון, וכמה יושבים בלשונית השנייה
+  const hiddenByFilters = tabCandidates.length - candidates.length;
+  const otherTabCount = boardCandidates.length - tabCandidates.length;
+
+  const handleClearAll = () => {
+    resetFilters();
+    setFilters({ search: "" });
+  };
 
   return (
     <div className="px-4 py-4">
@@ -115,13 +138,44 @@ function ProfilesFeed() {
       ) : !candidatesLoaded ? (
         <p className="mt-16 text-center text-sm text-[#7C6E60]">טוען את המאגר...</p>
       ) : candidates.length === 0 ? (
-        <p className="mt-16 text-center text-sm text-[#7C6E60]">לא נמצאו התאמות לסינון שבחרת</p>
-      ) : (
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {candidates.map((c) => (
-            <ProfileCard key={c.id} candidate={c} />
-          ))}
+        <div className="mt-16 text-center">
+          <p className="text-sm leading-relaxed text-[#7C6E60]">
+            {boardCandidates.length === 0
+              ? "אין עדיין מועמדים במאגר הזה"
+              : `לא נמצאו התאמות לסינון שבחרת. ${hiddenByFilters} מועמדים בלשונית הזו מוסתרים בגלל הסינון${
+                  otherTabCount > 0 ? `, ועוד ${otherTabCount} נמצאים בלשונית השנייה` : ""
+                }.`}
+          </p>
+          {hiddenByFilters > 0 && (
+            <button
+              onClick={handleClearAll}
+              className="mt-3 rounded-2xl border-2 border-[#844442] bg-white px-4 py-2 text-[13px] font-semibold text-[#844442] transition active:scale-95"
+            >
+              ניקוי הסינון והצגת הכל
+            </button>
+          )}
         </div>
+      ) : (
+        <>
+          {/* חיווי ברור כשיש כרטיסים שהסינון או הלשונית מסתירים,
+              כדי שכרטיס שנשמר לא ייראה כאילו נעלם מהמערכת */}
+          {hiddenByFilters > 0 && (
+            <button
+              onClick={handleClearAll}
+              className="mt-3 flex w-full items-center justify-between gap-2 rounded-2xl bg-[#E8DCCB] px-3 py-2 text-right"
+            >
+              <span className="shrink-0 text-[12px] font-bold text-[#844442]">ניקוי סינון</span>
+              <span className="text-[12px] text-[#7C6E60]">
+                {hiddenByFilters} מועמדים נוספים מוסתרים כרגע בגלל הסינון
+              </span>
+            </button>
+          )}
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {candidates.map((c) => (
+              <ProfileCard key={c.id} candidate={c} />
+            ))}
+          </div>
+        </>
       )}
 
       {showFilters && <FilterSheet onClose={() => setShowFilters(false)} />}

@@ -45,7 +45,7 @@ export default function FilterSheet({ onClose }) {
             <p className="mb-1 text-[13px] font-semibold text-[#3A2E26]">טווח גילאים</p>
             <RangeSlider
               min={18}
-              max={50}
+              max={70}
               value={filters.ageRange}
               onChange={(v) => setFilters({ ageRange: v })}
             />
@@ -54,8 +54,8 @@ export default function FilterSheet({ onClose }) {
           <div>
             <p className="mb-1 text-[13px] font-semibold text-[#3A2E26]">טווח גובה</p>
             <RangeSlider
-              min={145}
-              max={205}
+              min={140}
+              max={210}
               value={filters.heightRange}
               onChange={(v) => setFilters({ heightRange: v })}
               unit=" ס״מ"
