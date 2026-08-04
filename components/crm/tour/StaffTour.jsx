@@ -122,7 +122,7 @@ function buildSteps({ hasCards, hasReferenceContacts }) {
     pointStep(
       "tour-nav-matches",
       "מבחן ההתאמות - איך מוצאים שידוך",
-      "שאלון בן 7 שאלות על מה שמחפשים, והמערכת מדרגת התאמות מהמאגר."
+      "שאלון בן 8 שאלות על מה שמחפשים, והמערכת מדרגת התאמות מהמאגר."
     ),
     pointStep(
       "tour-nav-proposals",

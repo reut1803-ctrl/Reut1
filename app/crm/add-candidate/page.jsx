@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, LIFESTYLE_TAGS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -53,6 +53,7 @@ export default function AddCandidatePage() {
   const showToast = useCrmStore((s) => s.showToast);
   const [form, setForm] = useState(EMPTY_FORM);
   const [traits, setTraits] = useState([]);
+  const [lifestyle, setLifestyle] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
@@ -73,6 +74,7 @@ export default function AddCandidatePage() {
       // (כמו "כרטיס חסוי") לא תשלח ל-Firestore ערך undefined לשדה שחסר בה ותפיל את השמירה.
       setForm({ ...EMPTY_FORM, ...draft.form });
       setTraits(draft.traits || []);
+      setLifestyle(draft.lifestyle || []);
       setDraftRestored(true);
     }
   }, []);
@@ -84,8 +86,8 @@ export default function AddCandidatePage() {
       window.localStorage.removeItem(DRAFT_KEY);
       return;
     }
-    window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, traits }));
-  }, [form, traits]);
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, traits, lifestyle }));
+  }, [form, traits, lifestyle]);
 
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין לצוות בלבד</p>;
@@ -192,6 +194,7 @@ export default function AddCandidatePage() {
         phone: form.phone.trim(),
         bio: form.bio.trim(),
         traits,
+        lifestyle,
         photoUrl: photos[0],
         photoUrls: photos,
         availabilityStatus: form.availabilityStatus,
@@ -402,6 +405,25 @@ export default function AddCandidatePage() {
             ))}
           </select>
         </Field>
+
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">סגנון חיים והשקפה</p>
+          <div className="flex flex-wrap gap-2">
+            {LIFESTYLE_TAGS.map((t) => (
+              <button
+                key={t}
+                onClick={() =>
+                  setLifestyle((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]))
+                }
+                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
+                  lifestyle.includes(t) ? "border-[#844442] bg-[#844442] text-white" : "border-[#CCBDAB] bg-white text-[#3A2E26]"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div>
           <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">תכונות</p>

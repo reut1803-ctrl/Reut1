@@ -38,7 +38,6 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
         <tbody>
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
           <Row label={candidate.gender === "male" ? "רמת לימוד" : "השכלה / עיסוק"} value={eduLabel} />
-          <Row label="עישון" value={candidate.smoking} />
           {candidate.tag && <Row label="תווית" value={candidate.tag} />}
         </tbody>
       </table>
@@ -55,6 +54,11 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
           <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#844442" }}>תכונות</h3>
           <p style={{ fontSize: "15px", margin: 0 }}>{candidate.traits.join(" · ")}</p>
         </div>
+      )}
+
+      {/* עישון כהערת שוליים עדינה בתחתית, ולא כשורה בולטת בטבלה */}
+      {candidate.smoking && (
+        <p style={{ marginTop: "26px", fontSize: "12px", color: "#A2937F" }}>* {candidate.smoking}</p>
       )}
     </div>
   );

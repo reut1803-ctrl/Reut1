@@ -8,6 +8,7 @@ import {
   Mic,
   PenLine,
   UserCheck,
+  MessageCircle,
   ChevronDown,
   Copy,
   Download,
@@ -32,6 +33,9 @@ import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+
+// המרת מספר ישראלי לפורמט שוואטסאפ מצפה לו
+export const waDigits = (phone) => String(phone || "").replace(/[^0-9]/g, "").replace(/^0/, "972");
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -327,7 +331,24 @@ export default function ProfileCard({ candidate, onReadMore }) {
             <UserCheck size={15} className="mt-0.5 shrink-0 text-[#844442]" />
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wide text-[#844442]">איש קשר בצוות לבירורים</p>
-              <p className="text-[13px] font-bold text-[#3A2E26]">{contactStaff.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[13px] font-bold text-[#3A2E26]">{contactStaff.name}</p>
+                {/* התייעצות מהירה עם הנציג/ה המטפל/ת - במקום קבוצת וואטסאפ חיצונית */}
+                {contactStaff.phone && (
+                  <a
+                    href={`https://wa.me/${waDigits(contactStaff.phone)}?text=${encodeURIComponent(
+                      `היי ${contactStaff.name}, רציתי להתייעץ איתך לגבי ${candidate.name} מהמאגר`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`התייעצות בוואטסאפ עם ${contactStaff.name}`}
+                    title={`התייעצות בוואטסאפ עם ${contactStaff.name}`}
+                    className="text-[#62826B] transition active:scale-90"
+                  >
+                    <MessageCircle size={15} />
+                  </a>
+                )}
+              </div>
               {contactStaff.phone && (
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   <a
@@ -337,7 +358,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     חיוג
                   </a>
                   <a
-                    href={`https://wa.me/${String(contactStaff.phone).replace(/[^0-9]/g, "").replace(/^0/, "972")}`}
+                    href={`https://wa.me/${waDigits(contactStaff.phone)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-lg bg-[#62826B] px-2 py-1 text-[11px] font-semibold text-white"

@@ -27,6 +27,7 @@ function EditCandidateForm() {
   const [loaded, setLoaded] = useState(false);
   const [form, setForm] = useState(null);
   const [traits, setTraits] = useState([]);
+  const [lifestyle, setLifestyle] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
@@ -64,6 +65,7 @@ function EditCandidateForm() {
       confidential: c.confidential || false,
     });
     setTraits(c.traits || []);
+    setLifestyle(c.lifestyle || []);
     setPhotos(c.photoUrls?.length > 0 ? c.photoUrls : c.photoUrl ? [c.photoUrl] : []);
     setPdfUrl(c.pdfUrl || null);
     setIntroAudioUrl(c.introAudioUrl || null);
@@ -181,6 +183,7 @@ function EditCandidateForm() {
         phone: form.phone.trim(),
         bio: form.bio.trim(),
         traits,
+        lifestyle,
         photoUrl: photos[0],
         photoUrls: photos,
         complexityNotes: form.complexityNotes.trim(),
@@ -365,6 +368,25 @@ function EditCandidateForm() {
             ))}
           </select>
         </Field>
+
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">סגנון חיים והשקפה</p>
+          <div className="flex flex-wrap gap-2">
+            {LIFESTYLE_TAGS.map((t) => (
+              <button
+                key={t}
+                onClick={() =>
+                  setLifestyle((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]))
+                }
+                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
+                  lifestyle.includes(t) ? "border-[#844442] bg-[#844442] text-white" : "border-[#CCBDAB] bg-white text-[#3A2E26]"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div>
           <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">תכונות</p>

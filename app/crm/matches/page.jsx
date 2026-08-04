@@ -12,13 +12,14 @@ export default function MatchesPage() {
   const board = useCrmStore((s) => s.board);
   const quizCompleted = useCrmStore((s) => s.quizCompleted);
   const resetQuiz = useCrmStore((s) => s.resetQuiz);
-  const allCandidates = useCrmStore((s) => s.allCandidates);
+  const quizMatches = useCrmStore((s) => s.quizMatches);
+  const quizAnswers = useCrmStore((s) => s.quizAnswers);
   const candidates_ = useCrmStore((s) => s.candidates);
   const [showWizard, setShowWizard] = useState(false);
 
   const matches = useMemo(
-    () => allCandidates(board).filter((c) => c.matchScore >= 70).sort((a, b) => b.matchScore - a.matchScore),
-    [board, candidates_]
+    () => quizMatches(board).filter((c) => c.matchScore >= 70),
+    [board, candidates_, quizAnswers, quizMatches]
   );
 
   if (quizCompleted) {
@@ -72,7 +73,7 @@ export default function MatchesPage() {
           </div>
           <h2 className="text-lg font-bold text-[#3A2E26]">רוצה לקבל התאמות מותאמות אישית?</h2>
           <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-[#7C6E60]">
-            שאלון קצר בן 7 שאלות שיעזור לנו למצוא עבורך את ההצעות המתאימות ביותר מהמאגר
+            שאלון קצר בן 8 שאלות שיעזור לנו למצוא עבורך את ההצעות המתאימות ביותר מהמאגר
           </p>
           <Button variant="primary" className="mt-5" onClick={() => setShowWizard(true)}>
             מלאי שאלון קצר

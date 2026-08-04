@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Sparkles, Users, HeartHandshake, ListChecks, BarChart3 } from "lucide-react";
+import { Heart, Sparkles, Users, HeartHandshake, ListChecks, BarChart3, UserCheck, Inbox } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 
 const TABS = [
@@ -13,7 +13,9 @@ const TABS = [
 
 const STAFF_TABS = [
   { href: "/crm/proposals", label: "שידוכים", icon: HeartHandshake, key: "proposals" },
+  { href: "/crm/my-candidates", label: "שלי", icon: UserCheck, key: "my-candidates" },
   { href: "/crm/tasks", label: "משימות", icon: ListChecks, key: "tasks" },
+  { href: "/crm/requests", label: "בקשות", icon: Inbox, key: "requests" },
 ];
 
 const ADMIN_TABS = [{ href: "/crm/dashboard", label: "לוח בקרה", icon: BarChart3, key: "dashboard" }];

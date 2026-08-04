@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { REGIONS, YESHIVA_LEVELS, EDUCATION_OPTIONS, religiousLevelsFor, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
+import { REGIONS, YESHIVA_LEVELS, EDUCATION_OPTIONS, religiousLevelsFor, smokingOptionsFor, TRAITS, LIFESTYLE_TAGS } from "@/lib/crm/mockData";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import Button from "@/components/crm/ui/Button";
 
@@ -13,6 +13,7 @@ const STEP_TITLES = [
   "רמת תורניות",
   "אזור מועדף",
   "לימודים",
+  "סגנון חיים והשקפה",
   "עישון",
   "עד 3 תכונות אופי",
 ];
@@ -36,6 +37,11 @@ export default function MatchingWizard() {
     const current = answers.regions.filter((r) => r !== "לא משנה");
     const next = current.includes(region) ? current.filter((r) => r !== region) : [...current, region];
     setAnswers({ regions: next });
+  };
+
+  const toggleLifestyle = (tag) => {
+    const current = answers.lifestyle || [];
+    setAnswers({ lifestyle: current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag] });
   };
 
   const toggleTrait = (trait) => {
@@ -104,6 +110,21 @@ export default function MatchingWizard() {
         )}
 
         {step === 5 && (
+          <div>
+            <p className="mb-3 text-center text-[12px] leading-relaxed text-[#7C6E60]">
+              בחירה מרובה - אפשר לסמן כמה שרוצים, או לדלג.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {LIFESTYLE_TAGS.map((tag) => (
+                <Chip key={tag} active={(answers.lifestyle || []).includes(tag)} onClick={() => toggleLifestyle(tag)}>
+                  {tag}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 6 && (
           <ChoiceList
             options={smokingOptions}
             selected={[answers.smoking]}
@@ -111,7 +132,7 @@ export default function MatchingWizard() {
           />
         )}
 
-        {step === 6 && (
+        {step === 7 && (
           <div>
             <p className="mb-3 text-center text-[12px] text-[#7C6E60]">נבחרו {answers.traits.length} מתוך 3</p>
             <div className="flex flex-wrap justify-center gap-2">

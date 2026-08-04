@@ -84,6 +84,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // תיבת בקשות חסויה: כל אשת צוות יכולה להגיש בקשה בשמה, אך רק המנהלת
+    // רואה את הלוח. הכלל נבדק מול כל מסמך, ולכן שאילתת רשימה של אשת צוות
+    // תיחסם בשרת ולא רק במסך.
+    match /staffRequests/{id} {
+      allow read: if isAdmin();
+      allow create: if isStaff() && request.resource.data.createdBy == myEmail();
+      allow update, delete: if isAdmin();
+    }
+
     match /telemetry/{staffEmail} {
       allow read: if isStaff();
       allow write: if isStaff() && myEmail() == staffEmail;
