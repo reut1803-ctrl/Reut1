@@ -13,13 +13,13 @@ import {
   ChevronDown,
   Copy,
   Download,
-  ImageDown,
   HeartHandshake,
   Check,
   FileText,
   Music,
   Link2,
   Trash2,
+  Plus,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -32,7 +32,7 @@ import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
-import { saveMedia, resolveMediaDataUrl, downloadMedia } from "@/lib/crm/mediaStore";
+import { saveMedia, resolveMediaDataUrl } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 
 // המרת מספר ישראלי לפורמט שוואטסאפ מצפה לו
@@ -56,6 +56,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const staffList = useCrmStore((s) => s.staffList());
   const canEdit = useCrmStore((s) => s.canEditCandidate(candidate));
   const currentUser = useCrmStore((s) => s.currentUser);
+  const personalNote = useCrmStore((s) => s.personalNoteFor(candidate.id));
+  const setPersonalNote = useCrmStore((s) => s.setPersonalNote);
   const [recording, setRecording] = useState(false);
   const [recordError, setRecordError] = useState("");
   const mediaRecorderRef = useRef(null);
@@ -65,7 +67,9 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [linkCopied, setLinkCopied] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [exportPhoto, setExportPhoto] = useState(null);
+  const [noteOpen, setNoteOpen] = useState(false);
   const exportRef = useRef(null);
+  const [noteDraft, setNoteDraft] = useState(personalNote);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
   const [adminNoteDraft, setAdminNoteDraft] = useState(candidate.adminNote || "");
   const [showDetail, setShowDetail] = useState(false);
@@ -208,6 +212,12 @@ export default function ProfileCard({ candidate, onReadMore }) {
     setPendingDeleteVoiceNoteId(null);
   };
 
+  const handleSaveNote = async () => {
+    await setPersonalNote(candidate.id, noteDraft);
+    setNoteOpen(false);
+    showToast(noteDraft.trim() ? "ההערה האישית נשמרה" : "ההערה האישית נמחקה");
+  };
+
   const handleDownload = async () => {
     if (generatingPdf) return;
     setGeneratingPdf(true);
@@ -223,20 +233,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
     } finally {
       setExportPhoto(null);
       setGeneratingPdf(false);
-    }
-  };
-
-  const handleDownloadPhoto = async () => {
-    const source = candidate.photoUrl || candidate.photoUrls?.[0] || null;
-    if (!source) {
-      showToast("אין תמונה לכרטיס הזה");
-      return;
-    }
-    try {
-      await downloadMedia(source, `${candidate.name}.jpg`);
-      showToast("התמונה יורדת למכשיר");
-    } catch {
-      showToast("הורדת התמונה נכשלה, נסי שוב");
     }
   };
 
@@ -324,14 +320,59 @@ export default function ProfileCard({ candidate, onReadMore }) {
             </button>
           </div>
 
-          {(candidate.photoUrl || candidate.photoUrls?.length > 0) && (
-            <button
-              onClick={handleDownloadPhoto}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#62826B] bg-white px-3 py-3 text-sm font-semibold text-[#4A6552] transition active:scale-95 hover:bg-[#62826B]/5"
-            >
-              <ImageDown size={16} /> הורדת תמונה
-            </button>
-          )}
+          {/* הערה אישית - צמודה לאזור הפעולות, כמו הלב והשמירה למועדפים.
+              נשמרת פרטית לכל אחד/ת, ואיש מלבדו/ה אינו רואה אותה. */}
+          {canSeeFullProfile &&
+            (noteOpen ? (
+              <div className="rounded-2xl border border-dashed border-[#844442] bg-[#F5E7E2] p-3">
+                <p className="mb-1.5 text-[12px] font-semibold text-[#5E2F2D]">הערה אישית (רק את/ה רואה אותה)</p>
+                <textarea
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  rows={3}
+                  autoFocus
+                  placeholder="מה חשוב לך לזכור על המועמד/ת הזה/זו..."
+                  className="w-full resize-none rounded-xl border border-[#CCBDAB] bg-white px-2.5 py-2 text-[13px] leading-relaxed text-[#3A2E26] outline-none focus:border-[#844442]"
+                />
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={handleSaveNote}
+                    className="flex-1 rounded-xl bg-[#844442] py-2 text-[12px] font-semibold text-white transition active:scale-95"
+                  >
+                    שמירה
+                  </button>
+                  <button
+                    onClick={() => {
+                      setNoteDraft(personalNote);
+                      setNoteOpen(false);
+                    }}
+                    className="rounded-xl border border-[#CCBDAB] bg-white px-4 py-2 text-[12px] font-semibold text-[#3A2E26] transition active:scale-95"
+                  >
+                    ביטול
+                  </button>
+                </div>
+              </div>
+            ) : personalNote ? (
+              <button
+                onClick={() => setNoteOpen(true)}
+                className="w-full rounded-2xl border border-dashed border-[#844442] bg-[#F5E7E2] p-3 text-right transition active:scale-[0.99]"
+              >
+                <span className="flex items-center gap-1 text-[11px] font-bold text-[#844442]">
+                  <PenLine size={12} /> ההערה האישית שלי
+                </span>
+                <span className="mt-1 block whitespace-pre-line text-[13px] leading-relaxed text-[#3A2E26]">
+                  {personalNote}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setNoteOpen(true)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[#CCBDAB] bg-white py-2.5 text-[13px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#F5E7E2]"
+              >
+                <Plus size={15} /> הוספת הערה אישית
+              </button>
+            ))}
+
         </div>
 
         {proposals.length > 0 && (
