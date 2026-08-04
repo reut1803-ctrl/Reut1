@@ -1,6 +1,6 @@
 "use client";
 
-import { X, MapPin, GraduationCap, Cigarette, Sparkles, Globe } from "lucide-react";
+import { X, MapPin, GraduationCap, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 
@@ -62,7 +62,6 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           <div className="mt-4 space-y-2.5">
             <DetailRow icon={Sparkles} label="רמת תורניות" value={candidate.religiousLevel} />
             <DetailRow icon={GraduationCap} label={candidate.gender === "male" ? "רמת לימוד" : "השכלה / עיסוק"} value={educationLabel} />
-            <DetailRow icon={Cigarette} label="עישון" value={candidate.smoking} />
             <DetailRow icon={Globe} label="עדה" value={candidate.eda} />
           </div>
 
@@ -84,6 +83,12 @@ export default function ProfileDetailModal({ candidate, onClose }) {
                 ))}
               </div>
             </div>
+          )}
+
+          {candidate.smoking && (
+            <p className="mt-4 border-t border-[#EAE5E3] pt-2.5 text-[11px] text-[#8A8285]">
+              * עישון: {candidate.smoking}
+            </p>
           )}
         </div>
       </div>

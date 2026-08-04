@@ -1,16 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Clock, Copy, Check, Phone, Sparkles, Trash2, UserCheck, X } from "lucide-react";
+import { ChevronDown, Clock, Copy, Check, Download, Phone, Sparkles, Trash2, UserCheck, X } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
 
+// Cloudinary מאפשר לכפות הורדה של הקובץ באמצעות התוספת fl_attachment בנתיב.
+// כך ההורדה עובדת גם בנייד, בלי לפתוח את התמונה בלשונית חדשה.
+function downloadUrlFor(url, fileName) {
+  if (!url) return null;
+  if (url.includes("/upload/")) {
+    const safe = (fileName || "photo").replace(/[^֐-׿a-zA-Z0-9]+/g, "_");
+    return url.replace("/upload/", `/upload/fl_attachment:${safe}/`);
+  }
+  return url;
+}
+
 function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
+  const photo = candidate.photoUrl || candidate.photoUrls?.[0] || null;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildProfileShareText(candidate));
@@ -37,6 +49,16 @@ function ContactCard({ candidate }) {
         {copied ? <Check size={13} /> : <Copy size={13} />}
         {copied ? "הועתק!" : "העתקת כרטיס"}
       </button>
+
+      {photo && (
+        <a
+          href={downloadUrlFor(photo, candidate.name)}
+          download={`${candidate.name || "מועמד"}.jpg`}
+          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4]"
+        >
+          <Download size={13} /> הורדת תמונה
+        </a>
+      )}
 
       {candidate.referenceContacts && (
         <div className="mt-2 rounded-xl border-2 border-[#8C4A55] bg-white p-2">

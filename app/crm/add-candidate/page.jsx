@@ -10,6 +10,7 @@ import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { compressImage } from "@/lib/crm/compressImage";
 import Button from "@/components/crm/ui/Button";
+import SmartPastePanel from "@/components/crm/profiles/SmartPastePanel";
 
 const DRAFT_KEY = "crm_add_candidate_draft";
 const MAX_PHOTOS = 4;
@@ -91,6 +92,20 @@ export default function AddCandidatePage() {
   }
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
+
+  // מילוי השדות מטקסט חופשי שהודבק. רק שדות שזוהו מתעדכנים - השאר נשאר כפי שהוא.
+  const applyParsedText = ({ fields, traits: parsedTraits }) => {
+    setForm((f) => {
+      const next = { ...f, ...fields };
+      // רשימות הבחירה של רמה דתית ועישון תלויות במגדר, ולכן מיישרים אותן אם המגדר השתנה
+      if (fields.gender && fields.gender !== f.gender) {
+        if (!fields.religiousLevel) next.religiousLevel = religiousLevelsFor(fields.gender)[0];
+        if (!fields.smoking) next.smoking = smokingOptionsFor(fields.gender)[0];
+      }
+      return next;
+    });
+    if (parsedTraits?.length > 0) setTraits((cur) => [...new Set([...cur, ...parsedTraits])]);
+  };
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
   const setGender = (gender) =>
     setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
@@ -228,6 +243,8 @@ export default function AddCandidatePage() {
           שחזרנו טיוטה שלא נשמרה - אפשר להמשיך מאיפה שהפסקת
         </p>
       )}
+
+      <SmartPastePanel onApply={applyParsedText} />
 
       <div className="mt-4 space-y-4">
         <div>
