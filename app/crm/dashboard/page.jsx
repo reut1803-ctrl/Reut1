@@ -7,6 +7,7 @@ import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/s
 import Button from "@/components/crm/ui/Button";
 import AssignmentReport from "@/components/crm/dashboard/AssignmentReport";
 import CopyStaffButton, { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
+import ProfessionalsDirectory from "@/components/crm/dashboard/ProfessionalsDirectory";
 
 function metricColor(ratio) {
   if (ratio >= 1) return "bg-[#62826B]";
@@ -102,6 +103,8 @@ export default function DashboardPage() {
       <p className="mt-1 text-[13px] text-[#7C6E60]">שיוכים, מעורבות צוות, נהלים, טיפים ומעקב מיילים</p>
 
       <AssignmentReport />
+
+      <ProfessionalsDirectory />
 
       <h2 data-tour="tour-admin-allowlist" className="mt-8 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A2E26]">
         <KeyRound size={17} /> הרשאות כניסה (Google)
