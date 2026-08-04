@@ -18,6 +18,8 @@ function ProfilesFeed() {
   const filters = useCrmStore((s) => s.filters);
   const setFilters = useCrmStore((s) => s.setFilters);
   const resetFilters = useCrmStore((s) => s.resetFilters);
+  const searchFromLink = useCrmStore((s) => s.searchFromLink);
+  const setSearchFromLink = useCrmStore((s) => s.setSearchFromLink);
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
@@ -29,12 +31,21 @@ function ProfilesFeed() {
 
   useEffect(() => {
     const openId = searchParams.get("openCandidate");
-    if (!openId) return;
+    if (!openId) {
+      // חזרה למאגר בלי קישור לכרטיס מסוים - מנקים חיפוש שמולא אוטומטית בפעם הקודמת,
+      // אחרת הוא ממשיך להסתיר את כל שאר המועמדים.
+      if (searchFromLink) {
+        setFilters({ search: "" });
+        setSearchFromLink(false);
+      }
+      return;
+    }
     const c = findCandidateById(openId);
     if (!c) return;
     setBoard(c.gender);
     setTab(c.isNew ? "new" : "previous");
     setFilters({ search: c.name });
+    setSearchFromLink(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -72,6 +83,7 @@ function ProfilesFeed() {
   const handleClearAll = () => {
     resetFilters();
     setFilters({ search: "" });
+    setSearchFromLink(false);
   };
 
   return (
