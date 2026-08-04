@@ -12,15 +12,21 @@ const countLabel = (n) => (n === 0 ? "אין מועמדים" : n === 1 ? "מוע
 // הדוח נשען על שדה "נציג/ה מלווה" שבכרטיס המועמד/ת (contactStaffEmail).
 export default function AssignmentReport() {
   const candidates = useCrmStore((s) => s.candidates);
-  const staffList = useCrmStore((s) => s.staffList());
+  // נשענים ישירות על רשימת ההרשאות (מערך יציב מה-store) ולא על staffList(),
+  // שמחזירה מערך חדש בכל רינדור ומאלצת חישוב מיותר של הדוח.
   const authAllowlist = useCrmStore((s) => s.authAllowlist);
 
   const reportRef = useRef(null);
   const [busy, setBusy] = useState(false);
 
   const { groups, unassigned, assignedCount } = useMemo(
-    () => buildAssignmentGroups({ candidates, staffList, allowlist: authAllowlist }),
-    [candidates, staffList, authAllowlist]
+    () =>
+      buildAssignmentGroups({
+        candidates,
+        staffList: authAllowlist.filter((e) => e.role === "staff"),
+        allowlist: authAllowlist,
+      }),
+    [candidates, authAllowlist]
   );
 
   const now = new Date();
