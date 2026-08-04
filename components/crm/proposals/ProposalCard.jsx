@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, CopyPlus, Check, ImageDown, Pencil, Sparkles, Trash2, UserCheck, X } from "lucide-react";
+import { ChevronDown, Clock, Copy, Check, ImageDown, Mic, Pencil, Sparkles, Trash2, UserCheck, X } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { buildProfileShareText } from "@/lib/crm/shareText";
@@ -12,6 +12,31 @@ import { downloadMedia } from "@/lib/crm/mediaStore";
 
 function ExternalContactCard({ data }) {
   const { url } = useMediaUrl(data.audioUrl);
+  const showToast = useCrmStore((s) => s.showToast);
+  const [copied, setCopied] = useState(false);
+
+  // לכרטיס מהמעגל האישי אין תמונה, אלא הקלטה - ולכן הכפתור כאן הוא הורדת ההקלטה
+  const handleDownloadAudio = async () => {
+    if (!data.audioUrl) return;
+    try {
+      await downloadMedia(data.audioUrl, `${data.name || "הקלטה"}.webm`);
+      showToast("ההקלטה יורדת למכשיר");
+    } catch {
+      showToast("הורדת ההקלטה נכשלה, נסי שוב");
+    }
+  };
+
+  const handleCopy = async () => {
+    const text = [`${data.name} (מהמעגל האישי - לא במאגר)`, data.notes || null].filter(Boolean).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast("ההעתקה נכשלה, נסי שוב");
+    }
+  };
+
   return (
     <div className="rounded-2xl border-2 border-dashed border-[#844442] bg-[#E8DCCB] p-3">
       <p className="text-[10px] font-bold text-[#844442]">מהמעגל האישי - לא במאגר</p>
@@ -22,6 +47,23 @@ function ExternalContactCard({ data }) {
       {url && (
         // eslint-disable-next-line jsx-a11y/media-has-caption
         <audio src={url} controls className="mt-2 h-8 w-full" />
+      )}
+
+      <button
+        onClick={handleCopy}
+        className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
+      >
+        {copied ? <Check size={13} /> : <Copy size={13} />}
+        {copied ? "הועתק!" : "העתקת הפרטים"}
+      </button>
+
+      {data.audioUrl && (
+        <button
+          onClick={handleDownloadAudio}
+          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
+        >
+          <Mic size={13} /> הורדת ההקלטה
+        </button>
       )}
     </div>
   );
@@ -40,6 +82,19 @@ function ContactCard({ candidate }) {
     await navigator.clipboard.writeText(buildProfileShareText(candidate));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const hasPhoto = !!(candidate.photoUrl || candidate.photoUrls?.length);
+  const recordingRef = candidate.introAudioUrl || candidate.voiceNotes?.[0]?.audioUrl || null;
+
+  const handleDownloadRecording = async () => {
+    if (!recordingRef) return;
+    try {
+      await downloadMedia(recordingRef, `${candidate.name}.webm`);
+      showToast("ההקלטה יורדת למכשיר");
+    } catch {
+      showToast("הורדת ההקלטה נכשלה, נסי שוב");
+    }
   };
 
   const handleDownloadPhoto = async () => {
@@ -75,12 +130,23 @@ function ContactCard({ candidate }) {
         {copied ? <Check size={13} /> : <Copy size={13} />}
         {copied ? "הועתק!" : "העתקת כרטיס"}
       </button>
-      <button
-        onClick={handleDownloadPhoto}
-        className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
-      >
-        <ImageDown size={13} /> הורדת תמונה
-      </button>
+      {hasPhoto && (
+        <button
+          onClick={handleDownloadPhoto}
+          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
+        >
+          <ImageDown size={13} /> הורדת תמונה
+        </button>
+      )}
+
+      {recordingRef && (
+        <button
+          onClick={handleDownloadRecording}
+          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
+        >
+          <Mic size={13} /> הורדת ההקלטה
+        </button>
+      )}
 
       {contactStaff && (
         <div className="mt-2 rounded-xl border-2 border-[#844442] bg-white p-2">
@@ -149,7 +215,6 @@ export default function ProposalCard({ proposal }) {
   const assignProposal = useCrmStore((s) => s.assignProposal);
   const assignProposalToSelf = useCrmStore((s) => s.assignProposalToSelf);
   const deleteProposal = useCrmStore((s) => s.deleteProposal);
-  const duplicateProposal = useCrmStore((s) => s.duplicateProposal);
   const showToast = useCrmStore((s) => s.showToast);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const [open, setOpen] = useState(false);
@@ -157,7 +222,6 @@ export default function ProposalCard({ proposal }) {
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [proposalCopied, setProposalCopied] = useState(false);
-  const [duplicating, setDuplicating] = useState(false);
   const rationaleRef = useRef(null);
 
   const male = proposal.maleId ? findCandidateById(proposal.maleId) : null;
@@ -187,20 +251,29 @@ export default function ProposalCard({ proposal }) {
     }, 60);
   };
 
-  // שכפול הכרטיס בתוך המערכת: נפתחת הצעה חדשה עם אותם צדדים ואותו רציונל,
-  // כולל פרטי מועמד/ת שאינם במאגר - כדי לא להקליד הכל מחדש.
-  const handleDuplicate = async () => {
-    if (duplicating) return;
-    setDuplicating(true);
+  // העתקת ההצעה כטקסט, להדבקה בוואטסאפ או בכל מקום אחר.
+  // בכוונה אין כאן שכפול של הכרטיס - כדי לא ליצור הצעות כפולות במערכת.
+  const handleCopyProposal = async () => {
+    const lines = [
+      `${maleName} ⚭ ${femaleName}`,
+      `שלב: ${proposal.status}`,
+      proposal.assignee ? `מטופל/ת ע״י: ${proposal.assignee}` : null,
+      extMale?.notes ? `\n${maleName} (מהמעגל האישי):\n${extMale.notes}` : null,
+      extFemale?.notes ? `\n${femaleName} (מהמעגל האישי):\n${extFemale.notes}` : null,
+      rationaleDraft.trim() ? `\nהרציונל:\n${rationaleDraft.trim()}` : null,
+      proposal.journal?.length
+        ? `\nיומן התקדמות:\n${proposal.journal
+            .map((j) => `· ${new Date(j.date).toLocaleDateString("he-IL")} - ${j.status}${j.note ? `: ${j.note}` : ""}`)
+            .join("\n")}`
+        : null,
+    ].filter(Boolean);
     try {
-      await duplicateProposal({ ...proposal, rationale: rationaleDraft });
+      await navigator.clipboard.writeText(lines.join("\n"));
       setProposalCopied(true);
-      showToast("נוצר עותק חדש של ההצעה");
-      setTimeout(() => setProposalCopied(false), 2500);
+      showToast("פרטי ההצעה הועתקו");
+      setTimeout(() => setProposalCopied(false), 2000);
     } catch {
-      showToast("השכפול נכשל, נסי שוב");
-    } finally {
-      setDuplicating(false);
+      showToast("ההעתקה נכשלה, נסי שוב");
     }
   };
 
@@ -229,19 +302,14 @@ export default function ProposalCard({ proposal }) {
           >
             <Pencil size={15} className="text-[#7C6E60]" />
           </button>
-          {/* שכפול ההצעה לכרטיס חדש בתוך המערכת */}
+          {/* העתקת פרטי ההצעה כטקסט, להדבקה בוואטסאפ */}
           <button
-            onClick={handleDuplicate}
-            disabled={duplicating}
-            className="rounded-full p-1.5 hover:bg-[#E8DCCB] disabled:opacity-50"
-            aria-label="שכפול ההצעה לכרטיס חדש"
-            title="שכפול ההצעה לכרטיס חדש"
+            onClick={handleCopyProposal}
+            className="rounded-full p-1.5 hover:bg-[#E8DCCB]"
+            aria-label="העתקת פרטי ההצעה כטקסט"
+            title="העתקת פרטי ההצעה כטקסט"
           >
-            {proposalCopied ? (
-              <Check size={15} className="text-[#4A6552]" />
-            ) : (
-              <CopyPlus size={15} className="text-[#7C6E60]" />
-            )}
+            {proposalCopied ? <Check size={15} className="text-[#4A6552]" /> : <Copy size={15} className="text-[#7C6E60]" />}
           </button>
           <button onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:bg-[#E8DCCB]" aria-label="פתיחת יומן">
             <ChevronDown size={18} className={`transition ${open ? "rotate-180" : ""}`} />
