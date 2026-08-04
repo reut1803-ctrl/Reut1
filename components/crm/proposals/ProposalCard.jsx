@@ -92,6 +92,18 @@ function ExternalContactCard({ person }) {
   );
 }
 
+// כרטיס מועמד/ת שנמחק מהמאגר. ההצעה עצמה נשמרת ומוצגת, כדי שהרציונל והיומן לא ילכו לאיבוד.
+function MissingContactCard({ name }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-[#EAE5E3] bg-[#F6F5F4] p-3">
+      <p className="text-[13px] font-bold text-[#3A3335]">{name}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-[#8A8285]">
+        הכרטיס אינו קיים יותר במאגר, ולכן אין פרטי קשר להצגה. ההצעה עצמה נשמרה במלואה.
+      </p>
+    </div>
+  );
+}
+
 export default function ProposalCard({ proposal }) {
   const role = useCrmStore((s) => s.role);
   const updateProposalStatus = useCrmStore((s) => s.updateProposalStatus);
@@ -101,6 +113,8 @@ export default function ProposalCard({ proposal }) {
   const deleteProposal = useCrmStore((s) => s.deleteProposal);
   const showToast = useCrmStore((s) => s.showToast);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
+  const candidateExistsInDb = useCrmStore((s) => s.candidateExistsInDb);
+  const candidatesLoaded = useCrmStore((s) => s.candidatesLoaded);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
@@ -110,11 +124,22 @@ export default function ProposalCard({ proposal }) {
   const female = findCandidateById(proposal.femaleId);
   const externalMale = proposal.externalMale || null;
   const externalFemale = proposal.externalFemale || null;
-  // צד תקין הוא מועמד/ת מהמאגר או אדם חיצוני שנשמר בתוך ההצעה
-  if ((!male && !externalMale) || (!female && !externalFemale)) return null;
 
-  const maleName = male?.name || externalMale?.name;
-  const femaleName = female?.name || externalFemale?.name;
+  // ממתינים לטעינת המאגר, אחרת כל ההצעות ייראו לרגע כאילו הכרטיסים שלהן נמחקו
+  if (!candidatesLoaded) return null;
+
+  // צד חסר יכול לנבוע משתי סיבות שונות לגמרי:
+  // 1. הכרטיס קיים אבל חסוי למשתמש/ת הנוכחי/ת - אז מסתירים את ההצעה כולה (שמירה על סודיות).
+  // 2. הכרטיס נמחק מהמאגר - אז ההצעה עדיין מוצגת עם השם השמור, כדי שהרציונל,
+  //    היומן והסטטוס לא ייעלמו מהמסך.
+  const maleHidden = !male && !externalMale && candidateExistsInDb(proposal.maleId);
+  const femaleHidden = !female && !externalFemale && candidateExistsInDb(proposal.femaleId);
+  if (maleHidden || femaleHidden) return null;
+
+  const maleMissing = !male && !externalMale;
+  const femaleMissing = !female && !externalFemale;
+  const maleName = male?.name || externalMale?.name || proposal.maleName || "כרטיס שנמחק מהמאגר";
+  const femaleName = female?.name || externalFemale?.name || proposal.femaleName || "כרטיס שנמחק מהמאגר";
 
   const handleDelete = async () => {
     await deleteProposal(proposal.id);
@@ -197,8 +222,20 @@ export default function ProposalCard({ proposal }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        {male ? <ContactCard candidate={male} /> : <ExternalContactCard person={externalMale} />}
-        {female ? <ContactCard candidate={female} /> : <ExternalContactCard person={externalFemale} />}
+        {male ? (
+          <ContactCard candidate={male} />
+        ) : maleMissing ? (
+          <MissingContactCard name={maleName} />
+        ) : (
+          <ExternalContactCard person={externalMale} />
+        )}
+        {female ? (
+          <ContactCard candidate={female} />
+        ) : femaleMissing ? (
+          <MissingContactCard name={femaleName} />
+        ) : (
+          <ExternalContactCard person={externalFemale} />
+        )}
       </div>
 
       {open && (
