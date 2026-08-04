@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope } from "lucide-react";
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
+import AssignmentReport from "@/components/crm/dashboard/AssignmentReport";
 
 function metricColor(ratio) {
   if (ratio >= 1) return "bg-[#62826B]";
@@ -97,9 +98,11 @@ export default function DashboardPage() {
       <h1 className="flex items-center gap-2 text-xl font-bold text-[#3A2E26]">
         <BarChart3 size={22} /> לוח בקרה
       </h1>
-      <p className="mt-1 text-[13px] text-[#7C6E60]">מעורבות צוות, נהלים, טיפים ומעקב מיילים</p>
+      <p className="mt-1 text-[13px] text-[#7C6E60]">שיוכים, מעורבות צוות, נהלים, טיפים ומעקב מיילים</p>
 
-      <h2 className="mt-6 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A2E26]">
+      <AssignmentReport />
+
+      <h2 data-tour="tour-admin-allowlist" className="mt-8 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A2E26]">
         <KeyRound size={17} /> הרשאות כניסה (Google)
       </h2>
       <div className="rounded-3xl border border-[#CCBDAB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">

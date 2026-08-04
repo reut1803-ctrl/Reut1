@@ -327,7 +327,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
         )}
 
         {contactStaff && (
-          <div className="mt-3 flex items-start gap-2 rounded-2xl border-2 border-[#844442] bg-[#F0E2DE] px-3 py-2">
+          <div
+            data-tour="tour-contact-staff"
+            className="mt-3 flex items-start gap-2 rounded-2xl border-2 border-[#844442] bg-[#F0E2DE] px-3 py-2"
+          >
             <UserCheck size={15} className="mt-0.5 shrink-0 text-[#844442]" />
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wide text-[#844442]">איש קשר בצוות לבירורים</p>

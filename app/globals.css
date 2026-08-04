@@ -42,3 +42,26 @@ html.a11y-high-contrast {
     @apply rounded-3xl bg-white p-5 shadow-soft border border-sand/60;
   }
 }
+
+/* הדפסת דוח השיוכים: בלחיצה על "הדפסה" מודפס רק הדוח עצמו, בלי התפריטים והכפתורים */
+@media print {
+  html.printing-report body * {
+    visibility: hidden;
+  }
+  html.printing-report [data-print-area],
+  html.printing-report [data-print-area] * {
+    visibility: visible;
+  }
+  html.printing-report [data-print-area] {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    box-shadow: none;
+    border: 0;
+  }
+  html.printing-report [data-print-hide] {
+    display: none !important;
+  }
+}

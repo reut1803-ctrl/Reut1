@@ -1,13 +1,16 @@
 import "./globals.css";
 import { APP_NAME, APP_SUBTITLE, APP_DESCRIPTION } from "../lib/appConfig";
 
+// באתר הסטטי המערכת יושבת תחת /adama, ולכן נתיבים מוחלטים לאייקון ולמניפסט
+// חייבים לכלול את הקידומת - אחרת האייקון לא נטען ב"הוספה למסך הבית".
+const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export const metadata = {
   title: `${APP_NAME} - ${APP_SUBTITLE}`,
   description: APP_DESCRIPTION,
-  manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    icon: `${base}/icons/icon-192.png`,
+    apple: `${base}/icons/icon-192.png`,
   },
 };
 

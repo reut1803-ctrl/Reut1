@@ -26,12 +26,15 @@ const pointStep = (selector, title, content) => ({
   content,
 });
 
-// כל התחנות מותאמות לעבודת הצוות - בלי התייחסות לפעולות שמיועדות למנהלת בלבד.
-function buildSteps({ hasCards, hasReferenceContacts }) {
+// הסיור מותאם להרשאות: שגריר/ה מקבל/ת הדרכה אך ורק על מסכים שפתוחים לו/ה.
+// תחנות של מנהלת (לוח בקרה, דוח שיוכים, לוח הבקשות החסוי) נבנות רק כש-isAdmin.
+function buildSteps({ hasCards, hasReferenceContacts, hasContactStaff, isAdmin }) {
   const steps = [
     centerStep(
       "ברוכה הבאה למאגר השידוכים",
-      "סיור קצר על הכלים המרכזיים. אפשר לעצור בכל רגע ב\"דילוג\"."
+      isAdmin
+        ? "סיור קצר על כל הכלים, כולל אזורי הניהול. אפשר לעצור ב\"דילוג\"."
+        : "סיור קצר על הכלים המרכזיים. אפשר לעצור בכל רגע ב\"דילוג\"."
     ),
     pointStep(
       "tour-search",
@@ -75,7 +78,9 @@ function buildSteps({ hasCards, hasReferenceContacts }) {
       pointStep(
         "tour-staff-toggle",
         "האזור הפנימי לצוות",
-        "מידע שגלוי לצוות בלבד: הקלטות, סטטוס, הערות ומספרים לבירורים."
+        isAdmin
+          ? "גלוי לצוות בלבד: הקלטות, סטטוס, הערות, בירורים, ושיוך נציג/ה מלווה."
+          : "מידע שגלוי לצוות בלבד: הקלטות, סטטוס, הערות ומספרים לבירורים."
       ),
       pointStep(
         "tour-voice-notes",
@@ -83,6 +88,27 @@ function buildSteps({ hasCards, hasReferenceContacts }) {
         "האזנה להקלטות קיימות, או הוספת הקלטה חדשה."
       )
     );
+
+    if (hasContactStaff) {
+      steps.push(
+        pointStep(
+          "tour-contact-staff",
+          "נציג/ה מלווה",
+          isAdmin
+            ? "מי מהצוות מלווה את המועמד/ת. השיוך נעשה באזור הפנימי שבכרטיס."
+            : "מי מהצוות מכיר/ה אישית. אייקון הוואטסאפ פותח התייעצות מהירה."
+        )
+      );
+    } else {
+      steps.push(
+        centerStep(
+          "נציג/ה מלווה",
+          isAdmin
+            ? "לכל מועמד/ת אפשר לשייך נציג/ה מלווה, מתוך האזור הפנימי שבכרטיס."
+            : "בכרטיסים משויכים תופיע הנציג/ה המלווה, עם כפתור התייעצות בוואטסאפ."
+        )
+      );
+    }
 
     steps.push(
       hasReferenceContacts
@@ -109,6 +135,12 @@ function buildSteps({ hasCards, hasReferenceContacts }) {
       centerStep(
         "האזור הפנימי לצוות",
         "אזור נפתח בכל כרטיס, גלוי לצוות בלבד: הקלטות, סטטוס, הערות ובירורים."
+      ),
+      centerStep(
+        "נציג/ה מלווה",
+        isAdmin
+          ? "לכל מועמד/ת אפשר לשייך נציג/ה מלווה, מתוך האזור הפנימי שבכרטיס."
+          : "בכרטיסים משויכים תופיע הנציג/ה המלווה, עם כפתור התייעצות בוואטסאפ."
       )
     );
   }
@@ -122,18 +154,51 @@ function buildSteps({ hasCards, hasReferenceContacts }) {
     pointStep(
       "tour-nav-matches",
       "מבחן ההתאמות - איך מוצאים שידוך",
-      "שאלון בן 8 שאלות על מה שמחפשים, והמערכת מדרגת התאמות מהמאגר."
+      "שאלון קצר על מה שמחפשים, כולל סגנון חיים, והמערכת מדרגת התאמות."
     ),
     pointStep(
       "tour-nav-proposals",
       "שידוכים - מעקב אחרי הצעה",
-      "מעקב בשישה שלבים, מ\"הוצע\" ועד \"אירוסין\", עם רציונל ויומן התקדמות."
+      "מעקב בשישה שלבים עם רציונל. אפשר גם להציע מישהו/י מהמעגל האישי."
+    ),
+    pointStep(
+      "tour-nav-my-candidates",
+      "\"שלי\" - המועמדים שבאחריותך",
+      isAdmin
+        ? "כל המועמדים המשויכים, מקובצים לפי נציג/ה, עם חיוג, וואטסאפ ו-SMS."
+        : "המועמדים שאת/ה מלווה, עם חיוג, וואטסאפ ו-SMS בלחיצה אחת."
     ),
     pointStep(
       "tour-nav-tasks",
       "משימות - שלא ייפול כלום",
-      "מעקב יומי עם תאריך יעד וקישור למועמד/ת. גם המנהלת יכולה לשייך לך."
+      isAdmin
+        ? "כל משימות הצוות. אפשר לפתוח משימה ולשייך אותה לאשת צוות מסוימת."
+        : "כאן רק המשימות שלך. אחרים לא רואים אותן, וגם את/ה לא רואה אחרות."
     ),
+    pointStep(
+      "tour-nav-requests",
+      "בקשות מיוחדות",
+      isAdmin
+        ? "כאן מרוכזות כל בקשות הצוות, עם סימון \"חדש\", \"בטיפול\" ו\"טופל\"."
+        : "מגישים כאן בקשה עבור מועמד/ת. היא נשלחת ישירות למנהלת בלבד."
+    )
+  );
+
+  if (isAdmin) {
+    steps.push(
+      pointStep(
+        "tour-nav-dashboard",
+        "לוח בקרה - למנהלת בלבד",
+        "הרשאות כניסה, יעדים, תקנון, טיפים וכספים. הצוות אינו רואה מסך זה."
+      ),
+      centerStep(
+        "דוח שיוכים",
+        "בראש לוח הבקרה: מי מלווה את מי, מי נשאר בלי שיוך, והורדה כ-PDF או הדפסה."
+      )
+    );
+  }
+
+  steps.push(
     pointStep(
       "tour-nav-profiles",
       "חזרה למאגר",
@@ -183,7 +248,8 @@ export default function StaffTour() {
     setTimeout(() => {
       const hasCards = !!document.querySelector('[data-tour="tour-card-info"]');
       const hasReferenceContacts = !!document.querySelector('[data-tour="tour-reference-contacts"]');
-      setSteps(buildSteps({ hasCards, hasReferenceContacts }));
+      const hasContactStaff = !!document.querySelector('[data-tour="tour-contact-staff"]');
+      setSteps(buildSteps({ hasCards, hasReferenceContacts, hasContactStaff, isAdmin: role === "admin" }));
       setStepIndex(0);
       setRun(true);
     }, 400);
