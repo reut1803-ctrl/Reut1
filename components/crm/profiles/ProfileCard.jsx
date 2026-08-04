@@ -58,6 +58,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const currentUser = useCrmStore((s) => s.currentUser);
   const personalNote = useCrmStore((s) => s.personalNoteFor(candidate.id));
   const setPersonalNote = useCrmStore((s) => s.setPersonalNote);
+  const deleteCandidate = useCrmStore((s) => s.deleteCandidate);
   const [recording, setRecording] = useState(false);
   const [recordError, setRecordError] = useState("");
   const mediaRecorderRef = useRef(null);
@@ -68,6 +69,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [exportPhoto, setExportPhoto] = useState(null);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [confirmingDeleteCard, setConfirmingDeleteCard] = useState(false);
+  const [deletingCard, setDeletingCard] = useState(false);
   const exportRef = useRef(null);
   const [noteDraft, setNoteDraft] = useState(personalNote);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
@@ -210,6 +213,20 @@ export default function ProfileCard({ candidate, onReadMore }) {
     });
     showToast("ההקלטה נמחקה");
     setPendingDeleteVoiceNoteId(null);
+  };
+
+  const handleDeleteCard = async () => {
+    if (deletingCard) return;
+    setDeletingCard(true);
+    try {
+      await deleteCandidate(candidate.id);
+      showToast(`הכרטיס של ${candidate.name} נמחק`);
+    } catch {
+      showToast("המחיקה נכשלה, נסי שוב");
+    } finally {
+      setDeletingCard(false);
+      setConfirmingDeleteCard(false);
+    }
   };
 
   const handleSaveNote = async () => {
@@ -477,6 +494,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   >
                     <PenLine size={15} /> עריכת פרטי הכרטיס
                   </Link>
+                )}
+
+                {/* מחיקת כרטיס - למנהלת בלבד, ותמיד עם אישור מפורש */}
+                {role === "admin" && (
+                  <button
+                    onClick={() => setConfirmingDeleteCard(true)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-[#C24545] bg-white px-4 py-2.5 text-sm font-semibold text-[#C24545] transition active:scale-95 hover:bg-red-50"
+                  >
+                    <Trash2 size={15} /> מחיקת הכרטיס מהמאגר
+                  </button>
                 )}
 
                 {candidate.referenceContacts && (
@@ -776,6 +803,14 @@ export default function ProfileCard({ candidate, onReadMore }) {
           onCancel={() => setPendingDeleteField(null)}
         />
       )}
+      {confirmingDeleteCard && (
+        <ConfirmDialog
+          message={`למחוק לצמיתות את הכרטיס של ${candidate.name}? כל הפרטים, התמונות וההקלטות יימחקו, והצעות שידוך שקשורות אליו לא יוצגו יותר. אי אפשר לבטל.`}
+          onConfirm={handleDeleteCard}
+          onCancel={() => setConfirmingDeleteCard(false)}
+        />
+      )}
+
       <CandidateExportTemplate candidate={candidate} forwardedRef={exportRef} photoDataUrl={exportPhoto} />
     </div>
   );
