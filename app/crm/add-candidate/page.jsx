@@ -3,8 +3,9 @@
 import MediaImage from "@/components/crm/ui/MediaImage";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
+import { UserPlus, ImagePlus, X, FileText, Music, Trash2, Wand2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
+import { parseCandidateText } from "@/lib/crm/parseCandidateText";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, LIFESTYLE_TAGS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
@@ -61,6 +62,8 @@ export default function AddCandidatePage() {
   const [uploadStatus, setUploadStatus] = useState("");
   const [introAudioUrl, setIntroAudioUrl] = useState(null);
   const [audioUploading, setAudioUploading] = useState(false);
+  const [smartText, setSmartText] = useState("");
+  const [smartResult, setSmartResult] = useState("");
   const [draftRestored, setDraftRestored] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -96,6 +99,24 @@ export default function AddCandidatePage() {
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
   const setGender = (gender) =>
     setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
+
+  // מילוי אוטומטי מטקסט חופשי. ממלא רק שדות שזוהו בוודאות, ואינו מוחק
+  // ערכים קיימים שלא נמצאו בטקסט.
+  const handleSmartFill = () => {
+    if (!smartText.trim()) {
+      setSmartResult("צריך להדביק קודם טקסט בתיבה");
+      return;
+    }
+    const { fields, traits: foundTraits, lifestyle: foundLifestyle, found } = parseCandidateText(smartText, form.gender);
+    if (found.length === 0) {
+      setSmartResult("לא זוהו פרטים בטקסט הזה. אפשר למלא ידנית, או להדביק טקסט מפורט יותר.");
+      return;
+    }
+    setForm((f) => ({ ...f, ...fields }));
+    if (foundTraits.length) setTraits((cur) => Array.from(new Set([...cur, ...foundTraits])));
+    if (foundLifestyle.length) setLifestyle((cur) => Array.from(new Set([...cur, ...foundLifestyle])));
+    setSmartResult(`מולאו: ${found.join(", ")}. עברו על הטופס והשלימו את מה שחסר.`);
+  };
   const clearDraft = () => {
     if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
   };
@@ -230,6 +251,47 @@ export default function AddCandidatePage() {
           שחזרנו טיוטה שלא נשמרה - אפשר להמשיך מאיפה שהפסקת
         </p>
       )}
+
+      {/* הזנה חכמה: מדביקים טקסט חופשי (למשל הודעת וואטסאפ) והמערכת מפזרת
+          את מה שהיא מזהה לשדות. מה שלא זוהה נשאר ריק להשלמה ידנית. */}
+      <div className="mt-4 rounded-3xl border-2 border-dashed border-[#844442] bg-[#F5E7E2] p-3">
+        <p className="flex items-center gap-1.5 text-[13px] font-bold text-[#6B3A34]">
+          <Wand2 size={15} /> הזנה חכמה מטקסט
+        </p>
+        <p className="mt-0.5 text-[11px] leading-relaxed text-[#7C6E60]">
+          הדביקו כאן טקסט חופשי על המועמד/ת - הודעה מוואטסאפ, מייל או רשימה - ולחצו על הכפתור.
+          בדקו תמיד את מה שהתמלא לפני השמירה.
+        </p>
+        <textarea
+          value={smartText}
+          onChange={(e) => setSmartText(e.target.value)}
+          rows={4}
+          placeholder={"למשל:\nשם: יוסי כהן\nגיל 26, גובה 178\nטלפון 050-1234567"}
+          className="mt-2 w-full resize-y rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#844442]"
+        />
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={handleSmartFill}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#844442] px-4 py-2.5 text-[13px] font-semibold text-white transition active:scale-95"
+          >
+            <Wand2 size={15} /> מלא אוטומטית
+          </button>
+          {smartText.trim() && (
+            <button
+              onClick={() => {
+                setSmartText("");
+                setSmartResult("");
+              }}
+              className="rounded-2xl border border-[#CCBDAB] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#3A2E26] transition active:scale-95"
+            >
+              ניקוי
+            </button>
+          )}
+        </div>
+        {smartResult && (
+          <p className="mt-2 rounded-xl bg-white px-3 py-2 text-[12px] leading-relaxed text-[#3A2E26]">{smartResult}</p>
+        )}
+      </div>
 
       <div className="mt-4 space-y-4">
         <div>

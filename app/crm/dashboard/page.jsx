@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope } from "lucide-react";
+import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope, Sheet } from "lucide-react";
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import AssignmentReport from "@/components/crm/dashboard/AssignmentReport";
@@ -191,6 +191,20 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      <Link
+        href="/crm/sheet-import"
+        className="mt-6 flex items-center justify-between rounded-3xl border border-[#CCBDAB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)] transition active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-2">
+          <Sheet size={17} className="text-[#844442]" />
+          <div>
+            <p className="text-[13px] font-bold text-[#3A2E26]">ייבוא מגיליון Google</p>
+            <p className="text-[11px] text-[#7C6E60]">שאיבת מועמדים חדשים מתוך גיליון התשובות</p>
+          </div>
+        </div>
+        <ChevronLeft size={18} className="text-[#844442]" />
+      </Link>
 
       <Link
         href="/crm/diagnostics"

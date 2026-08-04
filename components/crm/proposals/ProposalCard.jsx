@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, Clock, Copy, Check, Phone, Sparkles, Trash2, UserCheck, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { ChevronDown, Clock, Copy, Check, ImageDown, Pencil, Sparkles, Trash2, UserCheck, X } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
+import CandidatePhone from "@/components/crm/profiles/CandidatePhone";
+import { downloadMedia } from "@/lib/crm/mediaStore";
 
 function ExternalContactCard({ data }) {
   const { url } = useMediaUrl(data.audioUrl);
@@ -29,6 +31,7 @@ function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
   const contactStaff = useCrmStore((s) => s.contactStaffFor(candidate));
+  const showToast = useCrmStore((s) => s.showToast);
   const waLink = contactStaff?.phone
     ? `https://wa.me/${String(contactStaff.phone).replace(/[^0-9]/g, "").replace(/^0/, "972")}`
     : null;
@@ -37,6 +40,20 @@ function ContactCard({ candidate }) {
     await navigator.clipboard.writeText(buildProfileShareText(candidate));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadPhoto = async () => {
+    const source = candidate.photoUrl || candidate.photoUrls?.[0] || null;
+    if (!source) {
+      showToast("אין תמונה לכרטיס הזה");
+      return;
+    }
+    try {
+      await downloadMedia(source, `${candidate.name}.jpg`);
+      showToast("התמונה יורדת למכשיר");
+    } catch {
+      showToast("הורדת התמונה נכשלה, נסי שוב");
+    }
   };
 
   const handleCopyReferenceContacts = async () => {
@@ -48,15 +65,21 @@ function ContactCard({ candidate }) {
   return (
     <div className="rounded-2xl bg-[#E8DCCB] p-3">
       <p className="text-[13px] font-bold text-[#3A2E26]">{candidate.name}</p>
-      <p dir="ltr" className="mt-0.5 flex items-center gap-1 text-[12px] text-[#7C6E60]">
-        <Phone size={12} /> {candidate.phone}
-      </p>
+      <div className="mt-0.5">
+        <CandidatePhone candidate={candidate} compact />
+      </div>
       <button
         onClick={handleCopy}
         className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
       >
         {copied ? <Check size={13} /> : <Copy size={13} />}
         {copied ? "הועתק!" : "העתקת כרטיס"}
+      </button>
+      <button
+        onClick={handleDownloadPhoto}
+        className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
+      >
+        <ImageDown size={13} /> הורדת תמונה
       </button>
 
       {contactStaff && (
@@ -132,6 +155,8 @@ export default function ProposalCard({ proposal }) {
   const [note, setNote] = useState("");
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [proposalCopied, setProposalCopied] = useState(false);
+  const rationaleRef = useRef(null);
 
   const male = proposal.maleId ? findCandidateById(proposal.maleId) : null;
   const female = proposal.femaleId ? findCandidateById(proposal.femaleId) : null;
@@ -146,6 +171,36 @@ export default function ProposalCard({ proposal }) {
     await deleteProposal(proposal.id);
     showToast("ההתאמה נמחקה");
     setConfirmingDelete(false);
+  };
+
+  const handleEditRationale = () => {
+    setOpen(true);
+    // ממתינים לרינדור של הכרטיס הפתוח לפני שממקדים את השדה
+    setTimeout(() => {
+      const el = rationaleRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 60);
+  };
+
+  const handleCopyProposal = async () => {
+    const lines = [
+      `הצעה: ${maleName} ⚭ ${femaleName}`,
+      `שלב: ${proposal.status}`,
+      proposal.assignee ? `מטופל/ת ע״י: ${proposal.assignee}` : null,
+      rationaleDraft.trim() ? `\nהרציונל:\n${rationaleDraft.trim()}` : null,
+      proposal.log?.length ? `\nיומן התקדמות:\n${proposal.log.map((l) => `· ${l.date} - ${l.text}`).join("\n")}` : null,
+    ].filter(Boolean);
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setProposalCopied(true);
+      showToast("פרטי ההצעה הועתקו");
+      setTimeout(() => setProposalCopied(false), 2000);
+    } catch {
+      showToast("ההעתקה נכשלה, נסי שוב");
+    }
   };
 
   return (
@@ -164,6 +219,24 @@ export default function ProposalCard({ proposal }) {
               <Trash2 size={16} className="text-[#C24545]" />
             </button>
           )}
+          {/* עריכת הרציונל: פותח את הכרטיס וממקד את שדה הטקסט, כדי שיהיה ברור שאפשר לערוך */}
+          <button
+            onClick={handleEditRationale}
+            className="rounded-full p-1.5 hover:bg-[#E8DCCB]"
+            aria-label="עריכת הרציונל"
+            title="עריכת הרציונל"
+          >
+            <Pencil size={15} className="text-[#7C6E60]" />
+          </button>
+          {/* העתקת ההצעה כולה - שמות, שלב, רציונל ופרטים - להדבקה מהירה */}
+          <button
+            onClick={handleCopyProposal}
+            className="rounded-full p-1.5 hover:bg-[#E8DCCB]"
+            aria-label="העתקת פרטי ההצעה"
+            title="העתקת פרטי ההצעה"
+          >
+            {proposalCopied ? <Check size={15} className="text-[#4A6552]" /> : <Copy size={15} className="text-[#7C6E60]" />}
+          </button>
           <button onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:bg-[#E8DCCB]" aria-label="פתיחת יומן">
             <ChevronDown size={18} className={`transition ${open ? "rotate-180" : ""}`} />
           </button>
@@ -204,6 +277,7 @@ export default function ProposalCard({ proposal }) {
           <Sparkles size={12} /> הרציונל (הניצוץ)
         </p>
         <textarea
+          ref={rationaleRef}
           value={rationaleDraft}
           onChange={(e) => setRationaleDraft(e.target.value)}
           onBlur={() => updateProposalRationale(proposal.id, rationaleDraft)}

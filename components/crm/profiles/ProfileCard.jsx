@@ -2,6 +2,7 @@
 
 import MediaImage from "@/components/crm/ui/MediaImage";
 import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import {
   Heart,
@@ -12,6 +13,7 @@ import {
   ChevronDown,
   Copy,
   Download,
+  ImageDown,
   HeartHandshake,
   Check,
   FileText,
@@ -30,7 +32,7 @@ import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
-import { saveMedia } from "@/lib/crm/mediaStore";
+import { saveMedia, resolveMediaDataUrl, downloadMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 
 // המרת מספר ישראלי לפורמט שוואטסאפ מצפה לו
@@ -62,6 +64,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [exportPhoto, setExportPhoto] = useState(null);
   const exportRef = useRef(null);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
   const [adminNoteDraft, setAdminNoteDraft] = useState(candidate.adminNote || "");
@@ -209,11 +212,31 @@ export default function ProfileCard({ candidate, onReadMore }) {
     if (generatingPdf) return;
     setGeneratingPdf(true);
     try {
+      // התמונה נשמרת כהפניה פנימית, ולכן מפענחים אותה לכתובת data: לפני הצילום -
+      // אחרת הקובץ יוצא בלי תמונת הפרופיל.
+      const source = candidate.photoUrl || candidate.photoUrls?.[0] || null;
+      const dataUrl = source ? await resolveMediaDataUrl(source).catch(() => null) : null;
+      flushSync(() => setExportPhoto(dataUrl));
       await generateCandidatePdf(exportRef.current, `${candidate.name}.pdf`);
     } catch {
       showToast("יצירת ה-PDF נכשלה, נסי שוב");
     } finally {
+      setExportPhoto(null);
       setGeneratingPdf(false);
+    }
+  };
+
+  const handleDownloadPhoto = async () => {
+    const source = candidate.photoUrl || candidate.photoUrls?.[0] || null;
+    if (!source) {
+      showToast("אין תמונה לכרטיס הזה");
+      return;
+    }
+    try {
+      await downloadMedia(source, `${candidate.name}.jpg`);
+      showToast("התמונה יורדת למכשיר");
+    } catch {
+      showToast("הורדת התמונה נכשלה, נסי שוב");
     }
   };
 
@@ -300,6 +323,15 @@ export default function ProfileCard({ candidate, onReadMore }) {
               <Download size={16} /> {generatingPdf ? "מכינה PDF..." : "הורדת PDF"}
             </button>
           </div>
+
+          {(candidate.photoUrl || candidate.photoUrls?.length > 0) && (
+            <button
+              onClick={handleDownloadPhoto}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#62826B] bg-white px-3 py-3 text-sm font-semibold text-[#4A6552] transition active:scale-95 hover:bg-[#62826B]/5"
+            >
+              <ImageDown size={16} /> הורדת תמונה
+            </button>
+          )}
         </div>
 
         {proposals.length > 0 && (
@@ -703,7 +735,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           onCancel={() => setPendingDeleteField(null)}
         />
       )}
-      <CandidateExportTemplate candidate={candidate} forwardedRef={exportRef} />
+      <CandidateExportTemplate candidate={candidate} forwardedRef={exportRef} photoDataUrl={exportPhoto} />
     </div>
   );
 }

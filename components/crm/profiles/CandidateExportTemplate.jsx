@@ -1,6 +1,6 @@
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
-export default function CandidateExportTemplate({ candidate, forwardedRef }) {
+export default function CandidateExportTemplate({ candidate, forwardedRef, photoDataUrl }) {
   const eduLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
   const firstName = candidate.name?.split(" ")[0] || "";
 
@@ -19,10 +19,12 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
         color: "#3A2E26",
       }}
     >
-      {candidate.photoUrl && (
+      {/* התמונה מגיעה ככתובת data: מוכנה. התמונה במאגר נשמרת כהפניה פנימית
+          (media:...) שאינה כתובת תקינה לדפדפן, ולכן חייבים לפענח אותה לפני הצילום. */}
+      {photoDataUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={candidate.photoUrl}
+          src={photoDataUrl}
           alt=""
           style={{ display: "block", width: "220px", height: "280px", objectFit: "cover", borderRadius: "16px", margin: "0 auto 28px" }}
         />
