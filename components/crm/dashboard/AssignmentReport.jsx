@@ -5,6 +5,7 @@ import { ClipboardList, Download, Printer, X } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { buildAssignmentGroups } from "@/lib/crm/assignmentReport";
+import CopyStaffButton from "@/components/crm/ui/CopyStaffButton";
 
 const countLabel = (n) => (n === 0 ? "אין מועמדים" : n === 1 ? "מועמד/ת אחד/ת" : `${n} מועמדים`);
 
@@ -87,9 +88,13 @@ export default function AssignmentReport() {
               <div key={g.email}>
                 <div className="flex items-center justify-between gap-2 rounded-xl bg-[#E8DCCB] px-3 py-2">
                   <span className="shrink-0 text-[11px] font-semibold text-[#7C6E60]">{countLabel(g.items.length)}</span>
-                  <span className="min-w-0 truncate text-[13px] font-bold text-[#3A2E26]">
-                    {g.name}
-                    {g.removed && <span className="mr-1 text-[11px] font-normal text-[#C24545]">(כבר לא בצוות)</span>}
+                  <span className="flex min-w-0 items-center gap-0.5">
+                    <span className="min-w-0 break-words text-[13px] font-bold leading-relaxed text-[#3A2E26]">
+                      {g.name}
+                      {g.removed && <span className="mr-1 text-[11px] font-normal text-[#C24545]">(כבר לא בצוות)</span>}
+                    </span>
+                    {/* העתקת "שם - טלפון" של הנציג/ה, להדבקה בהודעה למועמד/ת */}
+                    {!g.removed && <CopyStaffButton name={g.name} phone={g.phone} />}
                   </span>
                 </div>
 
@@ -103,7 +108,7 @@ export default function AssignmentReport() {
                         className="flex items-center justify-between gap-2 border-b border-[#F1E8DC] px-3 py-1.5 last:border-0"
                       >
                         <span className="shrink-0 text-[14px] font-extrabold text-[#4A6552]">V</span>
-                        <span className="min-w-0 truncate text-right text-[13px] text-[#3A2E26]">
+                        <span className="min-w-0 break-words text-right text-[13px] leading-relaxed text-[#3A2E26]">
                           {c.name}
                           {c.age ? <span className="text-[#7C6E60]"> · גיל {c.age}</span> : null}
                         </span>
@@ -132,7 +137,7 @@ export default function AssignmentReport() {
                       <span className="flex shrink-0 items-center gap-1 text-[12px] font-extrabold text-[#C24545]">
                         <X size={15} strokeWidth={3} /> חסר
                       </span>
-                      <span className="min-w-0 truncate text-right text-[13px] text-[#3A2E26]">
+                      <span className="min-w-0 break-words text-right text-[13px] leading-relaxed text-[#3A2E26]">
                         {c.name}
                         {c.age ? <span className="text-[#7C6E60]"> · גיל {c.age}</span> : null}
                       </span>

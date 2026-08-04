@@ -6,6 +6,7 @@ import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserP
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import AssignmentReport from "@/components/crm/dashboard/AssignmentReport";
+import CopyStaffButton, { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 
 function metricColor(ratio) {
   if (ratio >= 1) return "bg-[#62826B]";
@@ -109,14 +110,27 @@ export default function DashboardPage() {
         <div className="space-y-2">
           {authAllowlist.map((entry) => (
             <div key={entry.id} className="rounded-xl bg-[#E8DCCB] px-3 py-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[13px] font-semibold text-[#3A2E26]">{entry.name || allowlistEmail(entry)}</p>
-                  <p dir="ltr" className="text-left text-[11px] text-[#7C6E60]">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-0.5">
+                    <p className="truncate text-[13px] font-semibold text-[#3A2E26]">
+                      {entry.name || allowlistEmail(entry)}
+                    </p>
+                    {/* העתקה מהירה של "שם - טלפון", להדבקה בהודעה למועמד/ת */}
+                    <CopyStaffButton name={entry.name || allowlistEmail(entry)} phone={entry.phone} />
+                  </div>
+                  <p dir="ltr" className="truncate text-left text-[11px] text-[#7C6E60]">
                     {allowlistEmail(entry)} · {entry.role === "admin" ? "מנהלת" : "צוות"}
                   </p>
+                  {entry.phone ? (
+                    <p dir="ltr" className="text-left text-[11px] font-semibold text-[#844442]">
+                      {prettyPhone(entry.phone)}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-[#A2937F]">לא הוזן טלפון - כדאי להוסיף כדי שההעתקה תכלול אותו</p>
+                  )}
                 </div>
-                <button onClick={() => removeAllowlistEntry(entry.id)} aria-label="הסרה" className="rounded-full p-1.5 hover:bg-white">
+                <button onClick={() => removeAllowlistEntry(entry.id)} aria-label="הסרה" className="shrink-0 rounded-full p-1.5 hover:bg-white">
                   <Trash2 size={14} className="text-[#C24545]" />
                 </button>
               </div>
@@ -244,7 +258,10 @@ export default function DashboardPage() {
           const t = telemetry[s.email] || {};
           return (
             <div key={s.email} className="rounded-3xl border border-[#CCBDAB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-              <p className="mb-3 text-sm font-bold text-[#3A2E26]">{s.name}</p>
+              <div className="mb-3 flex items-center gap-0.5">
+                <p className="truncate text-sm font-bold text-[#3A2E26]">{s.name}</p>
+                <CopyStaffButton name={s.name} phone={s.phone} />
+              </div>
               <div className="space-y-2.5">
                 <MetricBar label="צפיות בכרטיסי מועמדים" value={t.profileViews || 0} goal={weeklyGoals.profileViews} />
                 <MetricBar label="השמעות הקלטות היכרות" value={t.audioPlays || 0} goal={weeklyGoals.audioPlays} />
