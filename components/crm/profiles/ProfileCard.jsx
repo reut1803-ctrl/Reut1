@@ -201,7 +201,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
     if (generatingPdf) return;
     setGeneratingPdf(true);
     try {
-      await generateCandidatePdf(exportRef.current, `${candidate.name}.pdf`);
+      const result = await generateCandidatePdf(exportRef.current, `${candidate.name}.pdf`);
+      // אם התמונה לא הצליחה להיטמע, עדיף לומר את זה מפורשות מאשר שתגלי קובץ בלי תמונה
+      if (result && result.photosTotal > 0 && result.photosEmbedded < result.photosTotal) {
+        showToast("הקובץ ירד, אך התמונה לא נטענה. בדקי חיבור אינטרנט ונסי שוב");
+      }
     } catch {
       showToast("יצירת ה-PDF נכשלה, נסי שוב");
     } finally {
