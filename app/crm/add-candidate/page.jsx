@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, LIFESTYLE_TAGS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, LIFESTYLE_TAGS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -29,7 +29,6 @@ const EMPTY_FORM = {
   smoking: smokingOptionsFor("male")[0],
   phone: "",
   bio: "",
-  tag: "",
   availabilityStatus: AVAILABILITY_STATUSES[0],
   complexityNotes: "",
   referenceContacts: "",
@@ -190,7 +189,6 @@ export default function AddCandidatePage() {
         education: form.education,
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
         smoking: form.smoking,
-        tag: form.tag || null,
         phone: form.phone.trim(),
         bio: form.bio.trim(),
         traits,
@@ -390,17 +388,6 @@ export default function AddCandidatePage() {
             {smokingOptionsFor(form.gender).map((s) => (
               <option key={s} value={s}>
                 {s}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label="תווית (רשות)">
-          <select value={form.tag} onChange={(e) => set({ tag: e.target.value })} className="input-crm">
-            <option value="">ללא תווית</option>
-            {CANDIDATE_TAGS.map((t) => (
-              <option key={t.name} value={t.name}>
-                {t.name}
               </option>
             ))}
           </select>

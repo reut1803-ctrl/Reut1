@@ -38,7 +38,6 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
         <tbody>
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
           <Row label={candidate.gender === "male" ? "רמת לימוד" : "השכלה / עיסוק"} value={eduLabel} />
-          {candidate.tag && <Row label="תווית" value={candidate.tag} />}
         </tbody>
       </table>
 

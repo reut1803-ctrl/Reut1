@@ -29,7 +29,6 @@ import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
-import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -76,7 +75,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [recordStatus, setRecordStatus] = useState("");
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
-  const candidateTag = CANDIDATE_TAGS.find((t) => t.name === candidate.tag);
   const personalLink = typeof window !== "undefined" ? `${window.location.origin}/status?id=${candidate.id}` : "";
 
   const handleCopyLink = async () => {
@@ -240,14 +238,6 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold shadow ${availability.bg} ${availability.text}`}>
             {candidate.availabilityStatus}
           </span>
-          {candidateTag && (
-            <span
-              className="rounded-full px-2.5 py-1 text-[11px] font-bold shadow"
-              style={{ backgroundColor: candidateTag.color, color: candidateTag.textColor }}
-            >
-              {candidateTag.name}
-            </span>
-          )}
         </div>
 
         <button
