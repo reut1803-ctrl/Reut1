@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Check, ImageDown, Pencil, Sparkles, Trash2, UserCheck, X } from "lucide-react";
+import { ChevronDown, Clock, Copy, CopyPlus, Check, ImageDown, Pencil, Sparkles, Trash2, UserCheck, X } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { buildProfileShareText } from "@/lib/crm/shareText";
@@ -149,6 +149,7 @@ export default function ProposalCard({ proposal }) {
   const assignProposal = useCrmStore((s) => s.assignProposal);
   const assignProposalToSelf = useCrmStore((s) => s.assignProposalToSelf);
   const deleteProposal = useCrmStore((s) => s.deleteProposal);
+  const duplicateProposal = useCrmStore((s) => s.duplicateProposal);
   const showToast = useCrmStore((s) => s.showToast);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const [open, setOpen] = useState(false);
@@ -156,6 +157,7 @@ export default function ProposalCard({ proposal }) {
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [proposalCopied, setProposalCopied] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const rationaleRef = useRef(null);
 
   const male = proposal.maleId ? findCandidateById(proposal.maleId) : null;
@@ -185,21 +187,20 @@ export default function ProposalCard({ proposal }) {
     }, 60);
   };
 
-  const handleCopyProposal = async () => {
-    const lines = [
-      `הצעה: ${maleName} ⚭ ${femaleName}`,
-      `שלב: ${proposal.status}`,
-      proposal.assignee ? `מטופל/ת ע״י: ${proposal.assignee}` : null,
-      rationaleDraft.trim() ? `\nהרציונל:\n${rationaleDraft.trim()}` : null,
-      proposal.log?.length ? `\nיומן התקדמות:\n${proposal.log.map((l) => `· ${l.date} - ${l.text}`).join("\n")}` : null,
-    ].filter(Boolean);
+  // שכפול הכרטיס בתוך המערכת: נפתחת הצעה חדשה עם אותם צדדים ואותו רציונל,
+  // כולל פרטי מועמד/ת שאינם במאגר - כדי לא להקליד הכל מחדש.
+  const handleDuplicate = async () => {
+    if (duplicating) return;
+    setDuplicating(true);
     try {
-      await navigator.clipboard.writeText(lines.join("\n"));
+      await duplicateProposal({ ...proposal, rationale: rationaleDraft });
       setProposalCopied(true);
-      showToast("פרטי ההצעה הועתקו");
-      setTimeout(() => setProposalCopied(false), 2000);
+      showToast("נוצר עותק חדש של ההצעה");
+      setTimeout(() => setProposalCopied(false), 2500);
     } catch {
-      showToast("ההעתקה נכשלה, נסי שוב");
+      showToast("השכפול נכשל, נסי שוב");
+    } finally {
+      setDuplicating(false);
     }
   };
 
@@ -228,14 +229,19 @@ export default function ProposalCard({ proposal }) {
           >
             <Pencil size={15} className="text-[#7C6E60]" />
           </button>
-          {/* העתקת ההצעה כולה - שמות, שלב, רציונל ופרטים - להדבקה מהירה */}
+          {/* שכפול ההצעה לכרטיס חדש בתוך המערכת */}
           <button
-            onClick={handleCopyProposal}
-            className="rounded-full p-1.5 hover:bg-[#E8DCCB]"
-            aria-label="העתקת פרטי ההצעה"
-            title="העתקת פרטי ההצעה"
+            onClick={handleDuplicate}
+            disabled={duplicating}
+            className="rounded-full p-1.5 hover:bg-[#E8DCCB] disabled:opacity-50"
+            aria-label="שכפול ההצעה לכרטיס חדש"
+            title="שכפול ההצעה לכרטיס חדש"
           >
-            {proposalCopied ? <Check size={15} className="text-[#4A6552]" /> : <Copy size={15} className="text-[#7C6E60]" />}
+            {proposalCopied ? (
+              <Check size={15} className="text-[#4A6552]" />
+            ) : (
+              <CopyPlus size={15} className="text-[#7C6E60]" />
+            )}
           </button>
           <button onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:bg-[#E8DCCB]" aria-label="פתיחת יומן">
             <ChevronDown size={18} className={`transition ${open ? "rotate-180" : ""}`} />

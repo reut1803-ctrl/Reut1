@@ -107,7 +107,10 @@ export default function AddCandidatePage() {
       setSmartResult("צריך להדביק קודם טקסט בתיבה");
       return;
     }
-    const { fields, traits: foundTraits, lifestyle: foundLifestyle, found } = parseCandidateText(smartText, form.gender);
+    const { fields, traits: foundTraits, lifestyle: foundLifestyle, found, negated } = parseCandidateText(
+      smartText,
+      form.gender
+    );
     if (found.length === 0) {
       setSmartResult("לא זוהו פרטים בטקסט הזה. אפשר למלא ידנית, או להדביק טקסט מפורט יותר.");
       return;
@@ -115,7 +118,12 @@ export default function AddCandidatePage() {
     setForm((f) => ({ ...f, ...fields }));
     if (foundTraits.length) setTraits((cur) => Array.from(new Set([...cur, ...foundTraits])));
     if (foundLifestyle.length) setLifestyle((cur) => Array.from(new Set([...cur, ...foundLifestyle])));
-    setSmartResult(`מולאו: ${found.join(", ")}. עברו על הטופס והשלימו את מה שחסר.`);
+    // מדווחים גם על מה שהוזכר בטקסט אך נשלל בו במפורש ("לא עשה צבא"),
+    // כדי שיהיה ברור שההשמטה מכוונת ולא פספוס.
+    const negatedNote = negated.length
+      ? ` לא סומנו כי הטקסט שולל אותם: ${negated.join(", ")}.`
+      : "";
+    setSmartResult(`מולאו: ${found.join(", ")}.${negatedNote} עברו על הטופס והשלימו את מה שחסר.`);
   };
   const clearDraft = () => {
     if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
@@ -260,6 +268,7 @@ export default function AddCandidatePage() {
         </p>
         <p className="mt-0.5 text-[11px] leading-relaxed text-[#7C6E60]">
           הדביקו כאן טקסט חופשי על המועמד/ת - הודעה מוואטסאפ, מייל או רשימה - ולחצו על הכפתור.
+          נשלפות רק עובדות שכתובות במפורש, והטקסט המלא נשמר כלשונו בשדה התיאור.
           בדקו תמיד את מה שהתמלא לפני השמירה.
         </p>
         <textarea
