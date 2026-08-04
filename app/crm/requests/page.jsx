@@ -7,14 +7,20 @@ import { useCrmStore } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 
+const OTHER_KIND = "אחר - הקלדה חופשית";
+
 const REQUEST_KINDS = [
-  "מחפש/ת אימון אישי",
-  "זקוק/ה לשיחות בירור",
-  "ליווי רגשי",
-  "סיוע כלכלי",
-  "ייעוץ מקצועי",
-  "אחר",
+  "אימון לחתונה",
+  "ליווי תוך כדי קשר",
+  "עיבוד אחרי קשר ארוך",
+  OTHER_KIND,
 ];
+
+// הסבר קצר שמופיע מתחת לבחירה, כדי שיהיה ברור מה כל סוג בקשה כולל
+const KIND_HINTS = {
+  "אימון לחתונה": "כמה מפגשי הכנה על עולם השידוכים",
+  [OTHER_KIND]: "כתבו בשדה שלמטה את הבקשה האישית, בחופשיות",
+};
 
 const STATUSES = ["חדש", "בטיפול", "טופל"];
 
@@ -45,7 +51,15 @@ export default function RequestsPage() {
   }
 
   const submit = async () => {
-    if (!note.trim() && !candidateId) return;
+    // בבקשה מסוג "אחר" הפירוט הוא כל תוכן הבקשה, ולכן הוא חובה
+    if (kind === OTHER_KIND && !note.trim()) {
+      showToast("בבקשה מסוג \"אחר\" יש לכתוב את הבקשה בשדה הפירוט");
+      return;
+    }
+    if (!note.trim() && !candidateId) {
+      showToast("צריך לבחור מועמד/ת או לכתוב פירוט");
+      return;
+    }
     await addRequest({ candidateId, kind, note });
     setCandidateId("");
     setNote("");
@@ -83,11 +97,16 @@ export default function RequestsPage() {
             placeholder="סוג הבקשה"
             searchPlaceholder="הקלידו לחיפוש..."
           />
+          {KIND_HINTS[kind] && (
+            <p className="px-1 text-[11px] leading-relaxed text-[#7C6E60]">{KIND_HINTS[kind]}</p>
+          )}
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            placeholder="פירוט הבקשה - מה נדרש ולמה"
+            placeholder={
+              kind === OTHER_KIND ? "כתבו כאן את הבקשה במילים שלכם" : "פירוט הבקשה - מה נדרש ולמה"
+            }
             className="w-full resize-y rounded-xl border border-[#CCBDAB] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#844442]"
           />
           <Button variant="primary" className="w-full" onClick={submit}>

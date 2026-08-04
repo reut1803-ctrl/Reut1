@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { ClipboardList, Download, Printer, X } from "lucide-react";
+import { flushSync } from "react-dom";
+import { ClipboardList, Download, Printer, X, ChevronDown } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { buildAssignmentGroups } from "@/lib/crm/assignmentReport";
@@ -19,6 +20,14 @@ export default function AssignmentReport() {
 
   const reportRef = useRef(null);
   const [busy, setBusy] = useState(false);
+  // הרשימות סגורות כברירת מחדל. openIds מחזיק את מי שנפתח בלחיצה,
+  // ו-expandAll נדלק זמנית בזמן הדפסה/PDF כדי שהקובץ יכיל את כל השמות.
+  const [openIds, setOpenIds] = useState({});
+  const [expandAll, setExpandAll] = useState(false);
+
+  const UNASSIGNED_KEY = "__unassigned__";
+  const isOpen = (key) => expandAll || !!openIds[key];
+  const toggle = (key) => setOpenIds((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const { groups, unassigned, assignedCount } = useMemo(
     () =>
@@ -38,9 +47,13 @@ export default function AssignmentReport() {
   const handlePdf = async () => {
     if (!reportRef.current || busy) return;
     setBusy(true);
+    // פותחים את כל הרשימות לפני הצילום, כדי שהקובץ יכיל את הדוח המלא
+    // גם כשהתצוגה על המסך סגורה. flushSync מוודא שה-DOM כבר עודכן.
+    flushSync(() => setExpandAll(true));
     try {
       await generateCandidatePdf(reportRef.current, `adama-assignments-${fileStamp}.pdf`);
     } finally {
+      setExpandAll(false);
       setBusy(false);
     }
   };
@@ -48,9 +61,11 @@ export default function AssignmentReport() {
   const handlePrint = () => {
     if (typeof window === "undefined") return;
     const root = document.documentElement;
+    flushSync(() => setExpandAll(true));
     root.classList.add("printing-report");
     const cleanup = () => {
       root.classList.remove("printing-report");
+      setExpandAll(false);
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);
@@ -86,28 +101,99 @@ export default function AssignmentReport() {
           <div className="space-y-4">
             {groups.map((g) => (
               <div key={g.email}>
-                <div className="flex items-center justify-between gap-2 rounded-xl bg-[#E8DCCB] px-3 py-2">
-                  <span className="shrink-0 text-[11px] font-semibold text-[#7C6E60]">{countLabel(g.items.length)}</span>
+                <div className="flex items-center justify-between gap-1 rounded-xl bg-[#E8DCCB] px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => toggle(g.email)}
+                    aria-expanded={isOpen(g.email)}
+                    aria-label={`${isOpen(g.email) ? "סגירת" : "פתיחת"} רשימת המועמדים של ${g.name}`}
+                    className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-[#7C6E60]"
+                  >
+                    <ChevronDown
+                      size={16}
+                      data-print-hide
+                      data-html2canvas-ignore="true"
+                      className={`text-[#844442] transition-transform ${isOpen(g.email) ? "rotate-180" : ""}`}
+                    />
+                    {countLabel(g.items.length)}
+                  </button>
                   <span className="flex min-w-0 items-center gap-0.5">
-                    <span className="min-w-0 break-words text-[13px] font-bold leading-relaxed text-[#3A2E26]">
+                    <button
+                      type="button"
+                      onClick={() => toggle(g.email)}
+                      aria-expanded={isOpen(g.email)}
+                      className="min-w-0 break-words text-right text-[13px] font-bold leading-relaxed text-[#3A2E26]"
+                    >
                       {g.name}
                       {g.removed && <span className="mr-1 text-[11px] font-normal text-[#C24545]">(כבר לא בצוות)</span>}
-                    </span>
+                    </button>
                     {/* העתקת "שם - טלפון" של הנציג/ה, להדבקה בהודעה למועמד/ת */}
                     {!g.removed && <CopyStaffButton name={g.name} phone={g.phone} />}
                   </span>
                 </div>
 
-                {g.items.length === 0 ? (
-                  <p className="px-3 py-2 text-right text-[12px] text-[#A2937F]">עדיין לא שויכו מועמדים</p>
+                {isOpen(g.email) &&
+                  (g.items.length === 0 ? (
+                    <p className="px-3 py-2 text-right text-[12px] text-[#A2937F]">עדיין לא שויכו מועמדים</p>
+                  ) : (
+                    <ul className="mt-1 space-y-0.5">
+                      {g.items.map((c) => (
+                        <li
+                          key={c.id}
+                          className="flex items-center justify-between gap-2 border-b border-[#F1E8DC] px-3 py-1.5 last:border-0"
+                        >
+                          <span className="shrink-0 text-[14px] font-extrabold text-[#4A6552]">V</span>
+                          <span className="min-w-0 break-words text-right text-[13px] leading-relaxed text-[#3A2E26]">
+                            {c.name}
+                            {c.age ? <span className="text-[#7C6E60]"> · גיל {c.age}</span> : null}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ))}
+              </div>
+            ))}
+
+            <div>
+              <div className="flex items-center justify-between gap-1 rounded-xl bg-[#FBEDED] px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => toggle(UNASSIGNED_KEY)}
+                  aria-expanded={isOpen(UNASSIGNED_KEY)}
+                  aria-label={`${isOpen(UNASSIGNED_KEY) ? "סגירת" : "פתיחת"} רשימת המועמדים ללא שיוך`}
+                  className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-[#C24545]"
+                >
+                  <ChevronDown
+                    size={16}
+                    data-print-hide
+                    data-html2canvas-ignore="true"
+                    className={`transition-transform ${isOpen(UNASSIGNED_KEY) ? "rotate-180" : ""}`}
+                  />
+                  {countLabel(unassigned.length)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggle(UNASSIGNED_KEY)}
+                  aria-expanded={isOpen(UNASSIGNED_KEY)}
+                  className="text-[13px] font-bold text-[#C24545]"
+                >
+                  מועמדים ללא שיוך
+                </button>
+              </div>
+
+              {isOpen(UNASSIGNED_KEY) &&
+                (unassigned.length === 0 ? (
+                  <p className="px-3 py-2 text-right text-[12px] text-[#4A6552]">מצוין - כל המועמדים משויכים לנציג/ה</p>
                 ) : (
                   <ul className="mt-1 space-y-0.5">
-                    {g.items.map((c) => (
+                    {unassigned.map((c) => (
                       <li
                         key={c.id}
                         className="flex items-center justify-between gap-2 border-b border-[#F1E8DC] px-3 py-1.5 last:border-0"
                       >
-                        <span className="shrink-0 text-[14px] font-extrabold text-[#4A6552]">V</span>
+                        <span className="flex shrink-0 items-center gap-1 text-[12px] font-extrabold text-[#C24545]">
+                          <X size={15} strokeWidth={3} /> חסר
+                        </span>
                         <span className="min-w-0 break-words text-right text-[13px] leading-relaxed text-[#3A2E26]">
                           {c.name}
                           {c.age ? <span className="text-[#7C6E60]"> · גיל {c.age}</span> : null}
@@ -115,36 +201,7 @@ export default function AssignmentReport() {
                       </li>
                     ))}
                   </ul>
-                )}
-              </div>
-            ))}
-
-            <div>
-              <div className="flex items-center justify-between gap-2 rounded-xl bg-[#FBEDED] px-3 py-2">
-                <span className="shrink-0 text-[11px] font-semibold text-[#C24545]">{countLabel(unassigned.length)}</span>
-                <span className="text-[13px] font-bold text-[#C24545]">מועמדים ללא שיוך</span>
-              </div>
-
-              {unassigned.length === 0 ? (
-                <p className="px-3 py-2 text-right text-[12px] text-[#4A6552]">מצוין - כל המועמדים משויכים לנציג/ה</p>
-              ) : (
-                <ul className="mt-1 space-y-0.5">
-                  {unassigned.map((c) => (
-                    <li
-                      key={c.id}
-                      className="flex items-center justify-between gap-2 border-b border-[#F1E8DC] px-3 py-1.5 last:border-0"
-                    >
-                      <span className="flex shrink-0 items-center gap-1 text-[12px] font-extrabold text-[#C24545]">
-                        <X size={15} strokeWidth={3} /> חסר
-                      </span>
-                      <span className="min-w-0 break-words text-right text-[13px] leading-relaxed text-[#3A2E26]">
-                        {c.name}
-                        {c.age ? <span className="text-[#7C6E60]"> · גיל {c.age}</span> : null}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                ))}
             </div>
           </div>
         )}
