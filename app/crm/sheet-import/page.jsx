@@ -11,6 +11,7 @@ import {
   rowKey,
   rowToCandidate,
   photoUrlVariants,
+  guessBioColumns,
   FIELD_LABELS,
 } from "@/lib/crm/sheetImport";
 import { saveMedia, isMediaRef } from "@/lib/crm/mediaStore";
@@ -35,11 +36,13 @@ export default function SheetImportPage() {
   const [progress, setProgress] = useState("");
   const [forcedGender, setForcedGender] = useState("");
   const [repairing, setRepairing] = useState(false);
+  const [bioColumns, setBioColumns] = useState([]);
 
   useEffect(() => {
     setLinkDraft(sheetImport?.csvUrl || "");
     if (sheetImport?.mapping && Object.keys(sheetImport.mapping).length) setMapping(sheetImport.mapping);
     if (sheetImport?.forcedGender) setForcedGender(sheetImport.forcedGender);
+    if (Array.isArray(sheetImport?.bioColumns)) setBioColumns(sheetImport.bioColumns);
   }, [sheetImport]);
 
   // מפתחות השורות שכבר יובאו, כדי שאותה שורה לא תיפתח פעמיים ככרטיס
@@ -71,7 +74,11 @@ export default function SheetImportPage() {
       setRows(r);
       const nextMapping = Object.keys(mapping).length ? mapping : guessMapping(h);
       setMapping(nextMapping);
-      await setSheetImportConfig({ csvUrl, mapping: nextMapping });
+      // בפעם הראשונה בוחרים אוטומטית את השאלות האישיות בלבד, בלי הטכניות
+      const savedBio = Array.isArray(sheetImport?.bioColumns) ? sheetImport.bioColumns : null;
+      const nextBio = savedBio && savedBio.length ? savedBio : guessBioColumns(h, nextMapping);
+      setBioColumns(nextBio);
+      await setSheetImportConfig({ csvUrl, mapping: nextMapping, bioColumns: nextBio });
     } catch (e) {
       setError(e?.message || "שאיבת הגיליון נכשלה");
       setHeaders([]);
@@ -128,7 +135,21 @@ export default function SheetImportPage() {
   };
 
   // המרת שורה לכרטיס, תמיד עם הכותרות ועם בחירת המאגר
-  const toCandidate = (row) => rowToCandidate(row, mapping, { headers, forcedGender });
+  const toCandidate = (row) => rowToCandidate(row, mapping, { headers, forcedGender, bioColumns });
+
+  const toggleBioColumn = async (index) => {
+    const next = bioColumns.includes(index)
+      ? bioColumns.filter((i) => i !== index)
+      : [...bioColumns, index].sort((a, b) => a - b);
+    setBioColumns(next);
+    await setSheetImportConfig({ bioColumns: next });
+  };
+
+  const setAllBioColumns = async (all) => {
+    const next = all ? headers.map((_, i) => i) : [];
+    setBioColumns(next);
+    await setSheetImportConfig({ bioColumns: next });
+  };
 
   const changeMapping = async (field, value) => {
     const next = { ...mapping };
@@ -317,6 +338,49 @@ export default function SheetImportPage() {
                 <span className="w-28 shrink-0 text-right text-[12px] font-semibold text-[#3A2E26]">{label}</span>
               </div>
             ))}
+          </div>
+
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#3A2E26]">מה ייכנס לתיאור האישי?</h2>
+          <p className="mb-2 text-[11px] leading-relaxed text-[#7C6E60]">
+            סמנו כמה עמודות שתרצו. התשובות ייכנסו לתיאור כטקסט רציף, בלי כותרות השאלות.
+            שאלות טכניות (טלפון, מייל, חותמת זמן) אינן מסומנות מראש.
+          </p>
+          <div className="rounded-3xl border border-[#CCBDAB] bg-white p-4">
+            <div className="mb-2 flex gap-2">
+              <button
+                onClick={() => setAllBioColumns(true)}
+                className="rounded-xl border border-[#CCBDAB] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3A2E26]"
+              >
+                סימון הכל
+              </button>
+              <button
+                onClick={() => setAllBioColumns(false)}
+                className="rounded-xl border border-[#CCBDAB] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#3A2E26]"
+              >
+                ניקוי הכל
+              </button>
+              <span className="flex-1 self-center text-left text-[11px] text-[#7C6E60]">
+                {bioColumns.length} עמודות נבחרו
+              </span>
+            </div>
+            <div className="max-h-64 space-y-0.5 overflow-y-auto">
+              {headers.map((header, index) => (
+                <label
+                  key={index}
+                  className="flex cursor-pointer items-center justify-end gap-2 rounded-xl px-2 py-1.5 hover:bg-[#F5E7E2]"
+                >
+                  <span className="min-w-0 flex-1 break-words text-right text-[12px] leading-relaxed text-[#3A2E26]">
+                    {header || `עמודה ${index + 1}`}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={bioColumns.includes(index)}
+                    onChange={() => toggleBioColumn(index)}
+                    className="h-4 w-4 shrink-0 accent-[#844442]"
+                  />
+                </label>
+              ))}
+            </div>
           </div>
 
           <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#3A2E26]">לאיזה מאגר השורות שייכות?</h2>
