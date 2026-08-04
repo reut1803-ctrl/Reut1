@@ -10,8 +10,10 @@ import {
   guessMapping,
   rowKey,
   rowToCandidate,
+  photoUrlVariants,
   FIELD_LABELS,
 } from "@/lib/crm/sheetImport";
+import { saveMedia, isMediaRef } from "@/lib/crm/mediaStore";
 
 // ייבוא מועמדים מגיליון Google. מסך למנהלת בלבד.
 export default function SheetImportPage() {
@@ -79,6 +81,47 @@ export default function SheetImportPage() {
     }
   };
 
+  // מורידים את התמונה מהקישור בגיליון ושומרים אותה בתוך המערכת עצמה.
+  // כך היא לא תלויה יותר בהרשאות של Google Drive ולא תיעלם בעתיד.
+  // אם הורדה נחסמת (הקובץ אינו משותף), נשמר הקישור הישיר כגיבוי.
+  const storePhotoLocally = async (value) => {
+    for (const candidateUrl of photoUrlVariants(value)) {
+      try {
+        const res = await fetch(candidateUrl, { mode: "cors" });
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        if (!blob.type.startsWith("image/")) continue;
+        return await saveMedia(blob);
+      } catch {
+        // ממשיכים לצורת הכתובת הבאה
+      }
+    }
+    return null;
+  };
+
+  const withStoredPhotos = async (data) => {
+    const sources = data.photoUrls?.length ? data.photoUrls : data.photoUrl ? [data.photoUrl] : [];
+    if (sources.length === 0) return { data, stored: 0, linked: 0 };
+    let stored = 0;
+    let linked = 0;
+    const saved = [];
+    for (const source of sources) {
+      if (isMediaRef(source)) {
+        saved.push(source);
+        continue;
+      }
+      const ref = await storePhotoLocally(source);
+      if (ref) {
+        saved.push(ref);
+        stored++;
+      } else {
+        saved.push(source);
+        linked++;
+      }
+    }
+    return { data: { ...data, photoUrls: saved, photoUrl: saved[0] || null }, stored, linked };
+  };
+
   const chooseGender = async (value) => {
     setForcedGender(value);
     await setSheetImportConfig({ forcedGender: value });
@@ -109,14 +152,19 @@ export default function SheetImportPage() {
     setError("");
     let ok = 0;
     let skipped = 0;
+    let photosStored = 0;
+    let photosLinked = 0;
     for (let i = 0; i < newRows.length; i++) {
       setProgress(`מייבאת ${i + 1} מתוך ${newRows.length}...`);
-      const data = toCandidate(newRows[i]);
-      if (!data.name) {
+      const parsed = toCandidate(newRows[i]);
+      if (!parsed.name) {
         skipped++;
         continue;
       }
       try {
+        const { data, stored, linked } = await withStoredPhotos(parsed);
+        photosStored += stored;
+        photosLinked += linked;
         await addCandidate(data);
         ok++;
       } catch {
@@ -125,7 +173,11 @@ export default function SheetImportPage() {
     }
     setProgress("");
     setImporting(false);
-    showToast(`יובאו ${ok} מועמדים${skipped ? `, ${skipped} דולגו` : ""}`);
+    showToast(
+      `יובאו ${ok} מועמדים${skipped ? `, ${skipped} דולגו` : ""}` +
+        (photosStored ? ` · ${photosStored} תמונות נשמרו במערכת` : "") +
+        (photosLinked ? ` · ${photosLinked} תמונות לא ניתנות להורדה` : "")
+    );
   };
 
   // עדכון כרטיסים שכבר יובאו מהגיליון: משלים את התיאור המלא ואת המאגר הנכון,
@@ -140,6 +192,8 @@ export default function SheetImportPage() {
     });
 
     let updated = 0;
+    let photosStored = 0;
+    let photosLinked = 0;
     for (let i = 0; i < rows.length; i++) {
       setProgress(`מעדכנת ${i + 1} מתוך ${rows.length}...`);
       const key = rowKey(rows[i], mapping);
@@ -148,6 +202,19 @@ export default function SheetImportPage() {
       const fresh = toCandidate(rows[i]);
       const patch = {};
       if (fresh.bio && fresh.bio !== existing.bio) patch.bio = fresh.bio;
+
+      // תמונה: משלימים כרטיס בלי תמונה, וגם מחליפים קישור שנשמר בעבר
+      // בעותק ששמור בתוך המערכת ולכן תמיד נטען.
+      const hasStoredPhoto = isMediaRef(existing.photoUrl);
+      if (fresh.photoUrls?.length && !hasStoredPhoto) {
+        const { data, stored, linked } = await withStoredPhotos(fresh);
+        photosStored += stored;
+        photosLinked += linked;
+        if (data.photoUrl && data.photoUrl !== existing.photoUrl) {
+          patch.photoUrl = data.photoUrl;
+          patch.photoUrls = data.photoUrls;
+        }
+      }
       if (forcedGender && existing.gender !== forcedGender) {
         patch.gender = forcedGender;
         patch.religiousLevel = fresh.religiousLevel;
@@ -164,7 +231,11 @@ export default function SheetImportPage() {
     }
     setProgress("");
     setRepairing(false);
-    showToast(updated ? `עודכנו ${updated} כרטיסים קיימים` : "לא נמצאו כרטיסים לעדכון");
+    showToast(
+      (updated ? `עודכנו ${updated} כרטיסים קיימים` : "לא נמצאו כרטיסים לעדכון") +
+        (photosStored ? ` · ${photosStored} תמונות נשמרו במערכת` : "") +
+        (photosLinked ? ` · ${photosLinked} תמונות לא ניתנות להורדה` : "")
+    );
   };
 
   const alreadyImported = rows.filter((r) => importedKeys.has(rowKey(r, mapping))).length;
@@ -280,7 +351,8 @@ export default function SheetImportPage() {
               <div className="rounded-3xl border border-[#CCBDAB] bg-white p-4">
                 <p className="text-[12px] leading-relaxed text-[#7C6E60]">
                   {alreadyImported} שורות בגיליון כבר קיימות ככרטיסים במאגר. הכפתור משלים בהן את
-                  התיאור המלא (כל שאר השאלות והתשובות מהגיליון) ומתקן את המאגר לפי הבחירה שלמעלה.
+                  התיאור המלא (כל שאר השאלות והתשובות מהגיליון), מוריד את התמונות מהגיליון
+                  ושומר אותן בתוך המערכת, ומתקן את המאגר לפי הבחירה שלמעלה.
                   לא נוצרים כרטיסים חדשים.
                 </p>
                 <button
