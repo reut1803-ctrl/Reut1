@@ -20,6 +20,7 @@ export default function SheetImportPage() {
   const setSheetImportConfig = useCrmStore((s) => s.setSheetImportConfig);
   const candidates = useCrmStore((s) => s.candidates);
   const addCandidate = useCrmStore((s) => s.addCandidate);
+  const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const showToast = useCrmStore((s) => s.showToast);
 
   const [linkDraft, setLinkDraft] = useState("");
@@ -30,10 +31,13 @@ export default function SheetImportPage() {
   const [error, setError] = useState("");
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState("");
+  const [forcedGender, setForcedGender] = useState("");
+  const [repairing, setRepairing] = useState(false);
 
   useEffect(() => {
     setLinkDraft(sheetImport?.csvUrl || "");
     if (sheetImport?.mapping && Object.keys(sheetImport.mapping).length) setMapping(sheetImport.mapping);
+    if (sheetImport?.forcedGender) setForcedGender(sheetImport.forcedGender);
   }, [sheetImport]);
 
   // מפתחות השורות שכבר יובאו, כדי שאותה שורה לא תיפתח פעמיים ככרטיס
@@ -75,6 +79,14 @@ export default function SheetImportPage() {
     }
   };
 
+  const chooseGender = async (value) => {
+    setForcedGender(value);
+    await setSheetImportConfig({ forcedGender: value });
+  };
+
+  // המרת שורה לכרטיס, תמיד עם הכותרות ועם בחירת המאגר
+  const toCandidate = (row) => rowToCandidate(row, mapping, { headers, forcedGender });
+
   const changeMapping = async (field, value) => {
     const next = { ...mapping };
     if (value === "") delete next[field];
@@ -89,13 +101,17 @@ export default function SheetImportPage() {
       setError("חובה לבחור עמודה של שם מלא לפני הייבוא");
       return;
     }
+    if (!forcedGender && mapping.gender === undefined) {
+      setError("חובה לבחור אם השורות בגיליון הזה הן בנים או בנות");
+      return;
+    }
     setImporting(true);
     setError("");
     let ok = 0;
     let skipped = 0;
     for (let i = 0; i < newRows.length; i++) {
       setProgress(`מייבאת ${i + 1} מתוך ${newRows.length}...`);
-      const data = rowToCandidate(newRows[i], mapping);
+      const data = toCandidate(newRows[i]);
       if (!data.name) {
         skipped++;
         continue;
@@ -111,6 +127,47 @@ export default function SheetImportPage() {
     setImporting(false);
     showToast(`יובאו ${ok} מועמדים${skipped ? `, ${skipped} דולגו` : ""}`);
   };
+
+  // עדכון כרטיסים שכבר יובאו מהגיליון: משלים את התיאור המלא ואת המאגר הנכון,
+  // בלי ליצור כרטיסים חדשים ובלי לגעת בכרטיסים שלא הגיעו מהגיליון.
+  const runRepair = async () => {
+    if (rows.length === 0 || repairing) return;
+    setRepairing(true);
+    setError("");
+    const byKey = new Map();
+    candidates.forEach((c) => {
+      if (c.sheetRowKey) byKey.set(c.sheetRowKey, c);
+    });
+
+    let updated = 0;
+    for (let i = 0; i < rows.length; i++) {
+      setProgress(`מעדכנת ${i + 1} מתוך ${rows.length}...`);
+      const key = rowKey(rows[i], mapping);
+      const existing = byKey.get(key);
+      if (!existing) continue;
+      const fresh = toCandidate(rows[i]);
+      const patch = {};
+      if (fresh.bio && fresh.bio !== existing.bio) patch.bio = fresh.bio;
+      if (forcedGender && existing.gender !== forcedGender) {
+        patch.gender = forcedGender;
+        patch.religiousLevel = fresh.religiousLevel;
+        patch.education = fresh.education;
+        patch.yeshivaLevel = fresh.yeshivaLevel;
+      }
+      if (Object.keys(patch).length === 0) continue;
+      try {
+        await updateCandidate(existing.id, patch);
+        updated++;
+      } catch {
+        // ממשיכים לשורה הבאה
+      }
+    }
+    setProgress("");
+    setRepairing(false);
+    showToast(updated ? `עודכנו ${updated} כרטיסים קיימים` : "לא נמצאו כרטיסים לעדכון");
+  };
+
+  const alreadyImported = rows.filter((r) => importedKeys.has(rowKey(r, mapping))).length;
 
   return (
     <div className="px-4 py-6">
@@ -191,6 +248,53 @@ export default function SheetImportPage() {
             ))}
           </div>
 
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#3A2E26]">לאיזה מאגר השורות שייכות?</h2>
+          <div className="rounded-3xl border border-[#CCBDAB] bg-white p-4">
+            <div className="flex gap-2">
+              {[
+                { key: "female", label: "בנות" },
+                { key: "male", label: "בנים" },
+                ...(mapping.gender !== undefined ? [{ key: "", label: "לפי העמודה בגיליון" }] : []),
+              ].map((option) => (
+                <button
+                  key={option.key || "column"}
+                  onClick={() => chooseGender(option.key)}
+                  className={`flex-1 rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition ${
+                    forcedGender === option.key
+                      ? "border-[#844442] bg-[#844442] text-white"
+                      : "border-[#CCBDAB] bg-white text-[#3A2E26]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-[#7C6E60]">
+              כל השורות בגיליון הזה ייכנסו למאגר שנבחר כאן. הבחירה נשמרת לפעם הבאה.
+            </p>
+          </div>
+
+          {alreadyImported > 0 && (
+            <>
+              <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#3A2E26]">עדכון כרטיסים שכבר יובאו</h2>
+              <div className="rounded-3xl border border-[#CCBDAB] bg-white p-4">
+                <p className="text-[12px] leading-relaxed text-[#7C6E60]">
+                  {alreadyImported} שורות בגיליון כבר קיימות ככרטיסים במאגר. הכפתור משלים בהן את
+                  התיאור המלא (כל שאר השאלות והתשובות מהגיליון) ומתקן את המאגר לפי הבחירה שלמעלה.
+                  לא נוצרים כרטיסים חדשים.
+                </p>
+                <button
+                  onClick={runRepair}
+                  disabled={repairing}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#844442] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#844442] transition active:scale-95 disabled:opacity-60"
+                >
+                  <RefreshCw size={15} className={repairing ? "animate-spin" : ""} />
+                  {repairing ? progress || "מעדכנת..." : `עדכון ${alreadyImported} הכרטיסים הקיימים`}
+                </button>
+              </div>
+            </>
+          )}
+
           <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#3A2E26]">
             שורות חדשות לייבוא ({newRows.length} מתוך {rows.length})
           </h2>
@@ -204,7 +308,7 @@ export default function SheetImportPage() {
             <>
               <div className="space-y-1.5">
                 {newRows.slice(0, 25).map((r, i) => {
-                  const preview = rowToCandidate(r, mapping);
+                  const preview = toCandidate(r);
                   return (
                     <div key={i} className="rounded-2xl border border-[#CCBDAB] bg-white px-3 py-2">
                       <p className="text-[13px] font-bold text-[#3A2E26]">{preview.name || "(ללא שם - ידולג)"}</p>
