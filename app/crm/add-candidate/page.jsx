@@ -1,9 +1,9 @@
 "use client";
 
 import MediaImage from "@/components/crm/ui/MediaImage";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, ImagePlus, X, FileText, Music, Trash2, Wand2 } from "lucide-react";
+import { UserPlus, ImagePlus, X, FileText, Music, Trash2, Wand2, AlertCircle } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { parseCandidateText } from "@/lib/crm/parseCandidateText";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, lifestyleTagsFor } from "@/lib/crm/mockData";
@@ -68,6 +68,9 @@ export default function AddCandidatePage() {
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [mediaError, setMediaError] = useState("");
+  // נדלק אחרי לחיצה ראשונה על "הוספה למאגר" - ואז השדות החסרים מסומנים באדום
+  const [attempted, setAttempted] = useState(false);
+  const alertRef = useRef(null);
 
   useEffect(() => {
     const draft = loadDraft();
@@ -90,6 +93,11 @@ export default function AddCandidatePage() {
     }
     window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, traits, lifestyle }));
   }, [form, traits, lifestyle]);
+
+  // ברגע שמתקנים שדה - הודעת השגיאה נעלמת, כדי שלא תישאר על המסך אחרי שכבר תוקנה
+  useEffect(() => {
+    setSubmitError("");
+  }, [form.name, form.age, form.height, form.phone, photos.length]);
 
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין לצוות בלבד</p>;
@@ -125,6 +133,8 @@ export default function AddCandidatePage() {
       : "";
     setSmartResult(`מולאו: ${found.join(", ")}.${negatedNote} עברו על הטופס והשלימו את מה שחסר.`);
   };
+  // מסמן באדום שדה חובה שנשאר ריק, אבל רק אחרי שניסו לשמור - כדי לא לצבוע טופס ריק
+  const fieldCls = (bad) => (attempted && bad ? "input-crm input-crm-error" : "input-crm");
   const clearDraft = () => {
     if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
   };
@@ -190,19 +200,51 @@ export default function AddCandidatePage() {
     }
   };
 
-  const canSubmit =
-    form.name.trim() &&
-    form.age &&
-    form.height &&
-    form.phone.trim() &&
-    photos.length > 0 &&
-    !submitting &&
-    !photoUploading &&
-    !pdfUploading &&
-    !audioUploading;
+  // רשימת מה שחסר בטופס, בשמות שמופיעים על המסך. מחושבת בכל רגע כדי שנוכל
+  // גם להציג אותה מראש וגם לענות מיד בלחיצה על הכפתור - במקום כפתור אילם.
+  const missingName = !form.name.trim();
+  const missingAge = !String(form.age).trim() || !Number.isFinite(Number(form.age));
+  const missingHeight = !String(form.height).trim() || !Number.isFinite(Number(form.height));
+  const missingPhone = !form.phone.trim();
+  const missingPhoto = photos.length === 0;
+
+  const missing = [];
+  if (missingName) missing.push("שם מלא");
+  if (missingAge) missing.push("גיל (מספר בלבד)");
+  if (missingHeight) missing.push("גובה בס״מ (מספר בלבד)");
+  if (missingPhone) missing.push("טלפון");
+  if (missingPhoto) missing.push("תמונה אחת לפחות");
+
+  // העלאה שעדיין רצה אינה "שדה חסר" אלא המתנה קצרה - מסבירים אותה בנפרד
+  const uploadingLabel = photoUploading
+    ? "תמונה"
+    : pdfUploading
+    ? "קובץ PDF"
+    : audioUploading
+    ? "הקלטת היכרות"
+    : "";
+  const busyUploading = !!uploadingLabel;
+
+  // הכפתור נחסם רק בזמן פעולה שממש רצה. כשחסרים פרטים הוא נשאר לחיץ ומסביר מה חסר.
+  const blockedNow = submitting || busyUploading;
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    setAttempted(true);
+    if (busyUploading) {
+      setSubmitError(`רגע - ${uploadingLabel} עדיין בהעלאה. אפשר ללחוץ שוב בעוד כמה שניות.`);
+      return;
+    }
+    if (submitting) return;
+    if (missing.length > 0) {
+      setSubmitError(
+        `לא ניתן לשמור עדיין. חסר למלא: ${missing.join(" · ")}${
+          missingPhoto && photoError ? ` (העלאת התמונה נכשלה: ${photoError})` : ""
+        }`
+      );
+      // גוללים אל ההודעה כדי שלא תישאר מחוץ למסך במכשיר נייד
+      setTimeout(() => alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 30);
+      return;
+    }
     setSubmitError("");
     setSubmitting(true);
     try {
@@ -238,6 +280,7 @@ export default function AddCandidatePage() {
       setPdfUrl(null);
       setIntroAudioUrl(null);
       setMediaError("");
+      setAttempted(false);
       showToast("הפרטים נשמרו בהצלחה");
       router.push(`/crm?added=${candidate.id}`);
     } catch (err) {
@@ -359,26 +402,30 @@ export default function AddCandidatePage() {
               </label>
             )}
           </div>
-          {photoError && <p className="mt-1 text-[11px] text-red-500">{photoError}</p>}
-          <p className="mt-1 text-[11px] text-[#A2937F]">שדה חובה - התמונה הראשונה תוצג ככרטיס הראשי</p>
+          {photoError && (
+            <p className="mt-1 rounded-xl bg-red-50 px-2.5 py-1.5 text-[12px] font-semibold text-[#C24545]">{photoError}</p>
+          )}
+          <p className={`mt-1 text-[11px] ${attempted && missingPhoto ? "font-bold text-[#C24545]" : "text-[#A2937F]"}`}>
+            שדה חובה - התמונה הראשונה תוצג ככרטיס הראשי
+          </p>
         </div>
 
-        <Field label="שם מלא">
+        <Field label="שם מלא *">
           <input
             type="text"
             value={form.name}
             onChange={(e) => set({ name: e.target.value })}
             placeholder="לדוגמה: דוד ישראלי"
-            className="input-crm"
+            className={fieldCls(missingName)}
           />
         </Field>
 
         <div className="grid grid-cols-3 gap-3">
-          <Field label="גיל">
-            <input type="number" value={form.age} onChange={(e) => set({ age: e.target.value })} className="input-crm" />
+          <Field label="גיל *">
+            <input type="number" value={form.age} onChange={(e) => set({ age: e.target.value })} className={fieldCls(missingAge)} />
           </Field>
-          <Field label="גובה (ס״מ)">
-            <input type="number" value={form.height} onChange={(e) => set({ height: e.target.value })} className="input-crm" />
+          <Field label="גובה (ס״מ) *">
+            <input type="number" value={form.height} onChange={(e) => set({ height: e.target.value })} className={fieldCls(missingHeight)} />
           </Field>
           <Field label="עדה">
             <input
@@ -391,14 +438,14 @@ export default function AddCandidatePage() {
           </Field>
         </div>
 
-        <Field label="טלפון">
+        <Field label="טלפון *">
           <input
             type="tel"
             dir="ltr"
             value={form.phone}
             onChange={(e) => set({ phone: e.target.value })}
             placeholder="050-1234567"
-            className="input-crm"
+            className={fieldCls(missingPhone)}
           />
         </Field>
 
@@ -594,11 +641,33 @@ export default function AddCandidatePage() {
         </div>
         {mediaError && <p className="text-[11px] text-red-500">{mediaError}</p>}
 
-        {submitError && (
-          <p className="rounded-xl bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">{submitError}</p>
-        )}
-        <Button variant="primary" className="w-full" disabled={!canSubmit} onClick={handleSubmit}>
-          <UserPlus size={16} /> {submitting ? "שומרת..." : "הוספה למאגר"}
+        {/* חיווי חי: מה עוד חסר כדי לשמור. מופיע לפני הלחיצה, ונצבע באדום אחריה. */}
+        <div ref={alertRef}>
+          {submitError ? (
+            <div className="flex items-start gap-2 rounded-2xl border-2 border-[#C24545] bg-red-50 px-3.5 py-3 text-[13px] font-semibold leading-relaxed text-[#C24545]">
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <span>{submitError}</span>
+            </div>
+          ) : missing.length > 0 ? (
+            <div
+              className={`flex items-start gap-2 rounded-2xl border-2 px-3.5 py-3 text-[13px] leading-relaxed ${
+                attempted
+                  ? "border-[#C24545] bg-red-50 text-[#C24545]"
+                  : "border-[#D9A441] bg-[#FDF6E7] text-[#7A5A18]"
+              }`}
+            >
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <span>
+                <span className="font-bold">כדי לשמור את הכרטיס חסר עוד:</span>
+                <br />
+                {missing.join(" · ")}
+              </span>
+            </div>
+          ) : null}
+        </div>
+        <Button variant="primary" className="w-full" disabled={blockedNow} onClick={handleSubmit}>
+          <UserPlus size={16} />{" "}
+          {submitting ? "שומרת..." : busyUploading ? `מעלה ${uploadingLabel}...` : "הוספה למאגר"}
         </Button>
       </div>
 
@@ -614,6 +683,11 @@ export default function AddCandidatePage() {
         }
         .input-crm:focus {
           border-color: #844442;
+        }
+        .input-crm-error {
+          border-color: #C24545;
+          border-width: 2px;
+          background: #FFF5F5;
         }
       `}</style>
     </div>
