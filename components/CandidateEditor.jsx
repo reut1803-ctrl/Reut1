@@ -58,18 +58,29 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
 
   function analyzeSmart() {
     if (!smartText.trim()) { setSmartNote("אין טקסט לניתוח."); return; }
-    const { fields, description } = parseCandidateText(smartText);
+    const { fields, answers, description } = parseCandidateText(smartText, openQuestions);
     setForm((f) => {
       const next = { ...f };
+      // שיבוץ נקי לשדות האישיים
       Object.entries(fields).forEach(([k, v]) => { if (v) next[k] = v; });
+      // שיבוץ נקי לשאלות הפתוחות (כל תשובה בשאלה שלה)
+      if (answers && Object.keys(answers).length) {
+        next.answers = { ...(f.answers || {}) };
+        Object.entries(answers).forEach(([k, v]) => { if (v) next.answers[k] = v; });
+      }
+      // גיבוי בלבד: הטקסט המלא בתיאור (נקי, ללא מעטפת הלוח החכם)
       next.description = f.description ? `${f.description}\n\n${description}` : description;
       return next;
     });
     const names = Object.keys(fields).map((k) => PARSE_FIELD_NAMES[k] || k);
+    const qCount = answers ? Object.keys(answers).length : 0;
+    const bits = [];
+    if (names.length) bits.push(`שדות: ${names.join(", ")}`);
+    if (qCount) bits.push(`${qCount} שאלות פתוחות`);
     setSmartNote(
-      names.length
-        ? `✓ מולאו אוטומטית: ${names.join(", ")}. הטקסט המלא נשמר בתיאור. אפשר לבדוק ולתקן לפני שמירה.`
-        : "לא זוהו שדות מפורשים - הטקסט נשמר בתיאור בלבד (ללא ניחוש)."
+      bits.length
+        ? `✓ שובצו אוטומטית — ${bits.join(" · ")}. הטקסט המלא נשמר בתיאור לגיבוי. אפשר לבדוק ולתקן לפני שמירה.`
+        : "לא זוהו נתונים מפורשים — הטקסט נשמר בתיאור בלבד (ללא ניחוש)."
     );
   }
 
