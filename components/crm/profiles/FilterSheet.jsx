@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Search } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
+import { useCrmStore, AGE_LIMITS, HEIGHT_LIMITS } from "@/lib/crm/store";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import { REGIONS, religiousLevelsFor } from "@/lib/crm/mockData";
 import Button from "@/components/crm/ui/Button";
@@ -44,8 +44,8 @@ export default function FilterSheet({ onClose }) {
           <div>
             <p className="mb-1 text-[13px] font-semibold text-[#3A3335]">טווח גילאים</p>
             <RangeSlider
-              min={18}
-              max={50}
+              min={AGE_LIMITS[0]}
+              max={AGE_LIMITS[1]}
               value={filters.ageRange}
               onChange={(v) => setFilters({ ageRange: v })}
             />
@@ -54,8 +54,8 @@ export default function FilterSheet({ onClose }) {
           <div>
             <p className="mb-1 text-[13px] font-semibold text-[#3A3335]">טווח גובה</p>
             <RangeSlider
-              min={145}
-              max={205}
+              min={HEIGHT_LIMITS[0]}
+              max={HEIGHT_LIMITS[1]}
               value={filters.heightRange}
               onChange={(v) => setFilters({ heightRange: v })}
               unit=" ס״מ"

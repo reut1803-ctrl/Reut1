@@ -20,6 +20,10 @@ function ProfilesFeed() {
   const role = useCrmStore((s) => s.role);
   const filters = useCrmStore((s) => s.filters);
   const setFilters = useCrmStore((s) => s.setFilters);
+  const searchAutoFilled = useCrmStore((s) => s.searchAutoFilled);
+  const setAutoSearch = useCrmStore((s) => s.setAutoSearch);
+  const clearAutoSearch = useCrmStore((s) => s.clearAutoSearch);
+  const clearAllFilters = useCrmStore((s) => s.clearAllFilters);
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
@@ -31,29 +35,57 @@ function ProfilesFeed() {
 
   useEffect(() => {
     const openId = searchParams.get("openCandidate");
-    if (!openId) return;
+    // בכניסה רגילה למאגר (בלי קישור לכרטיס) מנקים חיפוש שמולא אוטומטית בפעם קודמת,
+    // אחרת הוא נשאר תקוע ומסתיר את כל שאר המאגר.
+    if (!openId) {
+      clearAutoSearch();
+      return;
+    }
     const c = findCandidateById(openId);
     if (!c) return;
     setBoard(c.gender);
     setTab(c.isNew ? "new" : "previous");
-    setFilters({ search: c.name });
+    setAutoSearch(c.name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const candidates = useMemo(() => {
-    const all = allCandidates(board);
-    return all.filter((c) => {
-      if (tab === "new" && !c.isNew) return false;
-      if (tab === "previous" && !c.isPrevious) return false;
-      if (c.age < filters.ageRange[0] || c.age > filters.ageRange[1]) return false;
-      if (c.height < filters.heightRange[0] || c.height > filters.heightRange[1]) return false;
-      if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
-      if (filters.region !== "הכל" && c.region !== filters.region) return false;
-      if (filters.search && !c.name.includes(filters.search.trim())) return false;
-      if (filters.tag && normalizeTagName(c.tag) !== filters.tag) return false;
-      return true;
-    });
-  }, [board, tab, filters, candidates_]);
+  // "קודמות" מוגדרת כ"כל מי שאינו חדש" - משלימה מתמטית, כדי שכרטיס לא ייפול בין הלשוניות
+  const inTab = (c, which) => (which === "new" ? !!c.isNew : !c.isNew);
+
+  // ערך חסר (גיל/גובה שלא הוזנו) אינו מסנן כלל. רק ערך מספרי אמיתי נבדק מול הטווח.
+  const inRange = (value, [min, max]) => {
+    const n = Number(value);
+    if (value === null || value === undefined || value === "" || Number.isNaN(n)) return true;
+    return n >= min && n <= max;
+  };
+
+  const visibleInBoard = useMemo(() => allCandidates(board), [board, allCandidates, candidates_]);
+
+  const passesFilters = (c) => {
+    if (!inRange(c.age, filters.ageRange)) return false;
+    if (!inRange(c.height, filters.heightRange)) return false;
+    if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
+    if (filters.region !== "הכל" && c.region !== filters.region) return false;
+    if (filters.search && !(c.name || "").includes(filters.search.trim())) return false;
+    if (filters.tag && normalizeTagName(c.tag) !== filters.tag) return false;
+    return true;
+  };
+
+  const candidates = useMemo(
+    () => visibleInBoard.filter((c) => inTab(c, tab) && passesFilters(c)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibleInBoard, tab, filters]
+  );
+
+  // כמה כרטיסים יש בלשונית הנוכחית לפני הסינון, וכמה מוסתרים בגללו
+  const totalInTab = useMemo(() => visibleInBoard.filter((c) => inTab(c, tab)).length, [visibleInBoard, tab]);
+  const hiddenByFilters = totalInTab - candidates.length;
+  const otherTab = tab === "new" ? "previous" : "new";
+  const matchesInOtherTab = useMemo(
+    () => visibleInBoard.filter((c) => inTab(c, otherTab) && passesFilters(c)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibleInBoard, otherTab, filters]
+  );
 
   return (
     <div className="px-4 py-4">
@@ -70,6 +102,14 @@ function ProfilesFeed() {
           placeholder="חיפוש מועמד (שם, משפחה)..."
           className="w-full rounded-2xl bg-white py-3 pr-10 pl-4 text-[14px] text-[#3A3335] shadow-sm outline-none placeholder:text-[#B5AEB0] focus:ring-2 focus:ring-[#8C4A55]/30"
         />
+        {searchAutoFilled && filters.search && (
+          <p className="mt-1 flex items-center gap-1.5 px-1 text-[11px] text-[#8A8285]">
+            החיפוש הזה מולא אוטומטית לפי הכרטיס שנפתח
+            <button onClick={clearAutoSearch} className="font-bold text-[#8C4A55] underline">
+              ניקוי
+            </button>
+          </p>
+        )}
       </div>
 
       <div className="mt-4 flex items-center gap-2">
@@ -119,13 +159,61 @@ function ProfilesFeed() {
       ) : !candidatesLoaded ? (
         <p className="mt-16 text-center text-sm text-[#8A8285]">טוען את המאגר...</p>
       ) : candidates.length === 0 ? (
-        <p className="mt-16 text-center text-sm text-[#8A8285]">לא נמצאו התאמות לסינון שבחרת</p>
-      ) : (
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {candidates.map((c) => (
-            <ProfileCard key={c.id} candidate={c} />
-          ))}
+        <div className="mt-16 text-center text-sm leading-relaxed text-[#8A8285]">
+          {hiddenByFilters > 0 || matchesInOtherTab > 0 ? (
+            <>
+              <p>
+                {hiddenByFilters > 0 && `${hiddenByFilters} מועמדים בלשונית הזו מוסתרים כרגע בגלל הסינון.`}
+                {hiddenByFilters > 0 && matchesInOtherTab > 0 && <br />}
+                {matchesInOtherTab > 0 &&
+                  `יש ${matchesInOtherTab} מועמדים שמתאימים לסינון בלשונית "${
+                    otherTab === "new" ? "הצעות חדשות" : "הצעות קודמות"
+                  }".`}
+              </p>
+              <div className="mt-3 flex justify-center gap-2">
+                {matchesInOtherTab > 0 && (
+                  <button
+                    onClick={() => setTab(otherTab)}
+                    className="rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-[12px] font-semibold text-[#3A3335]"
+                  >
+                    מעבר ללשונית השנייה
+                  </button>
+                )}
+                {hiddenByFilters > 0 && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="rounded-xl bg-[#8C4A55] px-3 py-2 text-[12px] font-semibold text-white"
+                  >
+                    ניקוי סינון
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <p>אין עדיין מועמדים בלשונית הזו</p>
+          )}
         </div>
+      ) : (
+        <>
+          {hiddenByFilters > 0 && (
+            <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-[#F0DFA0] bg-[#FFF8E7] px-3 py-2">
+              <p className="text-[12px] font-semibold text-[#946200]">
+                {hiddenByFilters} מועמדים נוספים מוסתרים כרגע בגלל הסינון
+              </p>
+              <button
+                onClick={clearAllFilters}
+                className="shrink-0 rounded-xl bg-[#946200] px-2.5 py-1.5 text-[11px] font-bold text-white transition active:scale-95"
+              >
+                ניקוי סינון
+              </button>
+            </div>
+          )}
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {candidates.map((c) => (
+              <ProfileCard key={c.id} candidate={c} />
+            ))}
+          </div>
+        </>
       )}
 
       {showFilters && <FilterSheet onClose={() => setShowFilters(false)} />}
