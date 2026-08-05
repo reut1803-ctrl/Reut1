@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { REGIONS, YESHIVA_LEVELS, EDUCATION_OPTIONS, religiousLevelsFor, smokingOptionsFor, TRAITS, LIFESTYLE_TAGS } from "@/lib/crm/mockData";
+import { REGIONS, YESHIVA_LEVELS, EDUCATION_OPTIONS, religiousLevelsFor, smokingOptionsFor, TRAITS, lifestyleTagsFor } from "@/lib/crm/mockData";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import Button from "@/components/crm/ui/Button";
 
@@ -41,7 +41,15 @@ export default function MatchingWizard() {
 
   const toggleLifestyle = (tag) => {
     const current = answers.lifestyle || [];
-    setAnswers({ lifestyle: current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag] });
+    // "לא משנה" הוא בחירה בלעדית: הוא מבטל את שאר הסימונים, וסימון אחר מבטל אותו
+    if (tag === "לא משנה") {
+      setAnswers({ lifestyle: current.includes(tag) ? [] : ["לא משנה"] });
+      return;
+    }
+    const withoutAny = current.filter((t) => t !== "לא משנה");
+    setAnswers({
+      lifestyle: withoutAny.includes(tag) ? withoutAny.filter((t) => t !== tag) : [...withoutAny, tag],
+    });
   };
 
   const toggleTrait = (trait) => {
@@ -115,7 +123,7 @@ export default function MatchingWizard() {
               בחירה מרובה - אפשר לסמן כמה שרוצים, או לדלג.
             </p>
             <div className="flex flex-wrap justify-center gap-2">
-              {LIFESTYLE_TAGS.map((tag) => (
+              {lifestyleTagsFor(board).map((tag) => (
                 <Chip key={tag} active={(answers.lifestyle || []).includes(tag)} onClick={() => toggleLifestyle(tag)}>
                   {tag}
                 </Chip>

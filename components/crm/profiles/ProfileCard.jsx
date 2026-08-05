@@ -59,6 +59,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const personalNote = useCrmStore((s) => s.personalNoteFor(candidate.id));
   const setPersonalNote = useCrmStore((s) => s.setPersonalNote);
   const deleteCandidate = useCrmStore((s) => s.deleteCandidate);
+  const canDeleteCandidates = useCrmStore((s) => s.canDeleteCandidates());
   const [recording, setRecording] = useState(false);
   const [recordError, setRecordError] = useState("");
   const mediaRecorderRef = useRef(null);
@@ -217,6 +218,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
   const handleDeleteCard = async () => {
     if (deletingCard) return;
+    if (!canDeleteCandidates) {
+      showToast("רק המנהלת הראשית יכולה למחוק כרטיסים");
+      setConfirmingDeleteCard(false);
+      return;
+    }
     setDeletingCard(true);
     try {
       await deleteCandidate(candidate.id);
@@ -496,8 +502,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   </Link>
                 )}
 
-                {/* מחיקת כרטיס - למנהלת בלבד, ותמיד עם אישור מפורש */}
-                {role === "admin" && (
+                {/* מחיקת כרטיס - לחשבון המנהלת הראשית בלבד, ותמיד עם אישור מפורש */}
+                {canDeleteCandidates && (
                   <button
                     onClick={() => setConfirmingDeleteCard(true)}
                     className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-[#C24545] bg-white px-4 py-2.5 text-sm font-semibold text-[#C24545] transition active:scale-95 hover:bg-red-50"

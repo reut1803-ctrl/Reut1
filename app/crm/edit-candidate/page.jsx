@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, LIFESTYLE_TAGS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, lifestyleTagsFor } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -359,7 +359,7 @@ function EditCandidateForm() {
         <div>
           <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">סגנון חיים והשקפה</p>
           <div className="flex flex-wrap gap-2">
-            {LIFESTYLE_TAGS.map((t) => (
+            {lifestyleTagsFor(form.gender).filter((t) => t !== "לא משנה").map((t) => (
               <button
                 key={t}
                 onClick={() =>
