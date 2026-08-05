@@ -10,6 +10,7 @@ import TasksPanel from "../../components/TasksPanel";
 import QuestionsEditor from "../../components/QuestionsEditor";
 import RepsManager from "../../components/RepsManager";
 import EngagementPanel from "../../components/EngagementPanel";
+import SheetImport from "../../components/SheetImport";
 import LogViewer from "../../components/LogViewer";
 import PopupEditor from "../../components/PopupEditor";
 import PopupNotice from "../../components/PopupNotice";
@@ -346,6 +347,11 @@ export default function AdminPage() {
         {tab === "manage" && isAdmin && (
           <div className="space-y-8">
             <EngagementPanel data={data} />
+            <div className="card space-y-2">
+              <h2 className="text-lg font-bold text-roseDark">📥 ייבוא מרוכז</h2>
+              <p className="text-xs text-ink/60">ייבוא מועמדים מגיליון Google Sheets (מפורסם לצפייה) עם מיפוי עמודות וזיהוי כפילויות.</p>
+              <SheetImport data={data} />
+            </div>
             <RepsManager data={data} />
             <LogViewer data={data} />
             <PopupEditor data={data} />
