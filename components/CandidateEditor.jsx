@@ -50,7 +50,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
   const [saving, setSaving] = useState(false);
 
   // ----- לוח חכם: הדבקת טקסט / הכתבה קולית + ניתוח -----
-  const [showSmart, setShowSmart] = useState(isNew);
+  const [showSmart, setShowSmart] = useState(true);
   const [smartText, setSmartText] = useState("");
   const [listening, setListening] = useState(false);
   const [smartNote, setSmartNote] = useState("");
