@@ -60,6 +60,8 @@ export default function DashboardPage() {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("staff");
   const [newPhone, setNewPhone] = useState("");
+  const [savingEntry, setSavingEntry] = useState(false);
+  const [allowlistMessage, setAllowlistMessage] = useState("");
   const [goalViewsDraft, setGoalViewsDraft] = useState(weeklyGoals.profileViews);
   const [goalPlaysDraft, setGoalPlaysDraft] = useState(weeklyGoals.audioPlays);
 
@@ -67,17 +69,28 @@ export default function DashboardPage() {
     return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין למנהלת בלבד</p>;
   }
 
-  const handleAddAllowlist = () => {
-    if (!newEmail.trim()) return;
-    addAllowlistEntry({
-      email: newEmail.trim().toLowerCase(),
-      name: newName.trim() || newEmail.trim(),
-      role: newRole,
-      phone: newPhone.trim() || null,
-    });
-    setNewEmail("");
-    setNewName("");
-    setNewPhone("");
+  // ההוספה ממתינה לאישור מהשרת לפני שהיא מנקה את השדות, ומדווחת בבירור
+  // אם השמירה נכשלה - אחרת אפשר לחשוב שההרשאה נוספה כשבפועל היא לא נשמרה.
+  const handleAddAllowlist = async () => {
+    if (!newEmail.trim() || savingEntry) return;
+    setSavingEntry(true);
+    setAllowlistMessage("");
+    try {
+      const saved = await addAllowlistEntry({
+        email: newEmail,
+        name: newName,
+        role: newRole,
+        phone: newPhone.trim() || null,
+      });
+      setNewEmail("");
+      setNewName("");
+      setNewPhone("");
+      setAllowlistMessage(`ההרשאה נשמרה בשרת עבור ${saved}. אפשר להיכנס עכשיו.`);
+    } catch (err) {
+      setAllowlistMessage(`השמירה נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setSavingEntry(false);
+    }
   };
 
   const handleSaveGoals = () => {
@@ -186,9 +199,18 @@ export default function DashboardPage() {
             <option value="staff">צוות</option>
             <option value="admin">מנהלת</option>
           </select>
-          <Button variant="primary" className="w-full" onClick={handleAddAllowlist}>
-            <UserPlus size={16} /> הוספת הרשאה
+          <Button variant="primary" className="w-full" onClick={handleAddAllowlist} disabled={savingEntry}>
+            <UserPlus size={16} /> {savingEntry ? "שומרת בשרת..." : "הוספת הרשאה"}
           </Button>
+          {allowlistMessage && (
+            <p className="rounded-xl bg-[#E8DCCB] px-3 py-2 text-[12px] leading-relaxed text-[#3A2E26]">
+              {allowlistMessage}
+            </p>
+          )}
+          <p className="text-[11px] leading-relaxed text-[#7C6E60]">
+            חשוב: זו חייבת להיות הכתובת שאיתה נכנסים לגוגל. אם הכניסה נחסמת, בקשי צילום מסך
+            של הודעת החסימה - מופיעה בה הכתובת המדויקת שאיתה ניסו להיכנס.
+          </p>
         </div>
       </div>
 
