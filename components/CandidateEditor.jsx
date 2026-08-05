@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DateField from "./DateField";
 import { compressImage } from "../lib/image";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
+import { parseCandidateText, PARSE_FIELD_NAMES } from "../lib/parse";
 
 // טופס להוספה/עריכה של מועמד על ידי נציג או מנהלת.
 export default function CandidateEditor({ initial, openQuestions, reps, onSave, onCancel, isAdmin = false }) {
@@ -32,6 +33,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       ],
       assignedRep: "",
       sensitiveInfo: "",
+      description: "",
       restricted: false,
       hiddenFrom: [],
       ...initial,
@@ -46,6 +48,55 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
   });
 
   const [saving, setSaving] = useState(false);
+
+  // ----- לוח חכם: הדבקת טקסט / הכתבה קולית + ניתוח -----
+  const [showSmart, setShowSmart] = useState(isNew);
+  const [smartText, setSmartText] = useState("");
+  const [listening, setListening] = useState(false);
+  const [smartNote, setSmartNote] = useState("");
+  const recogRef = useRef(null);
+
+  function analyzeSmart() {
+    if (!smartText.trim()) { setSmartNote("אין טקסט לניתוח."); return; }
+    const { fields, description } = parseCandidateText(smartText);
+    setForm((f) => {
+      const next = { ...f };
+      Object.entries(fields).forEach(([k, v]) => { if (v) next[k] = v; });
+      next.description = f.description ? `${f.description}\n\n${description}` : description;
+      return next;
+    });
+    const names = Object.keys(fields).map((k) => PARSE_FIELD_NAMES[k] || k);
+    setSmartNote(
+      names.length
+        ? `✓ מולאו אוטומטית: ${names.join(", ")}. הטקסט המלא נשמר בתיאור. אפשר לבדוק ולתקן לפני שמירה.`
+        : "לא זוהו שדות מפורשים - הטקסט נשמר בתיאור בלבד (ללא ניחוש)."
+    );
+  }
+
+  function toggleMic() {
+    const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SR) { setSmartNote("הכתבה קולית נתמכת בדפדפן Chrome. אפשר להדביק טקסט במקום."); return; }
+    if (listening) { try { recogRef.current && recogRef.current.stop(); } catch (e) {} return; }
+    try {
+      const r = new SR();
+      r.lang = "he-IL";
+      r.continuous = true;
+      r.interimResults = false;
+      r.onresult = (e) => {
+        let t = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+        setSmartText((s) => (s ? s + " " : "") + t.trim());
+      };
+      r.onend = () => setListening(false);
+      r.onerror = () => { setListening(false); setSmartNote("ההקלטה נעצרה. נסי שוב או הדביקי טקסט."); };
+      recogRef.current = r;
+      r.start();
+      setListening(true);
+      setSmartNote("🎙️ מקשיב… דברי, והטקסט יתווסף. לחיצה נוספת לעצירה.");
+    } catch (e) {
+      setSmartNote("לא ניתן להפעיל הכתבה קולית במכשיר הזה. אפשר להדביק טקסט.");
+    }
+  }
 
   // שמירת טיוטה אוטומטית בכל שינוי
   useEffect(() => {
@@ -100,6 +151,37 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
 
   return (
     <div className="space-y-5">
+      {/* לוח חכם: הדבקת טקסט / הכתבה קולית + ניתוח אוטומטי לשדות */}
+      <section className="rounded-2xl border-2 border-rose/30 bg-blush/30 p-3">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between text-right"
+          onClick={() => setShowSmart((v) => !v)}
+        >
+          <span className="text-base font-bold text-roseDark">🧠 לוח חכם — הדבקה / הכתבה קולית</span>
+          <span className="text-sm text-ink/50">{showSmart ? "▲" : "▼"}</span>
+        </button>
+        {showSmart && (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs text-ink/60">הדביקי טקסט חופשי (וואטסאפ/מייל) או הכתיבי בקול — המערכת תשבץ אוטומטית מה שהיא מזהה בוודאות, והשאר יישמר בתיאור. אין ניחושים.</p>
+            <textarea
+              className="field-input min-h-[110px]"
+              placeholder="הדביקי כאן את הטקסט על המועמד/ת…"
+              value={smartText}
+              onChange={(e) => setSmartText(e.target.value)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn-primary" onClick={analyzeSmart}>✨ נתח ומלא שדות</button>
+              <button type="button" className={`btn-soft ${listening ? "!bg-rose !text-white" : ""}`} onClick={toggleMic}>
+                {listening ? "⏹️ עצור הקלטה" : "🎙️ הכתבה קולית"}
+              </button>
+              {smartText && <button type="button" className="btn-soft" onClick={() => { setSmartText(""); setSmartNote(""); }}>ניקוי</button>}
+            </div>
+            {smartNote && <p className="rounded-xl bg-white/70 p-2 text-xs font-medium text-ink/80">{smartNote}</p>}
+          </div>
+        )}
+      </section>
+
       <section className="space-y-4">
         <div>
           <label className="field-label">מסלול</label>
@@ -168,6 +250,15 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
               <option key={r.id} value={r.id}>{r.name} ({r.institution})</option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className="field-label">📝 תיאור אישי / טקסט מקורי</label>
+          <textarea
+            className="field-input min-h-[90px]"
+            placeholder="תיאור חופשי או הטקסט המקורי שהודבק/הוכתב"
+            value={form.description || ""}
+            onChange={(e) => set("description", e.target.value)}
+          />
         </div>
         <div>
           <label className="field-label">🔒 מידע רגיש (גלוי רק לנציג ולמנהלת)</label>

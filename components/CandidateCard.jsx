@@ -104,6 +104,13 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
                 </div>
               )}
 
+              {candidate.description && (
+                <div className="border-t border-sand pt-3">
+                  <p className="mb-1.5 text-base font-bold text-roseDark">📝 תיאור אישי</p>
+                  <div className="whitespace-pre-wrap rounded-2xl bg-blush/50 p-4 text-lg leading-relaxed text-ink/90">{candidate.description}</div>
+                </div>
+              )}
+
               <div className="space-y-4 border-t border-sand pt-3">
                 {(openQuestions || []).map((q) => (
                   <div key={q.key}>
