@@ -113,31 +113,48 @@ export default function AddCandidatePage() {
     if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
   };
 
+  // אפשר לבחור כמה תמונות בבת אחת. כל תמונה מועלית בנפרד, וכישלון של אחת
+  // אינו מבטל את השאר - מוצג בדיוק מה נכשל ומה עלה בהצלחה.
   const handlePhotoChange = async (e) => {
-    const file = e.target.files?.[0];
+    const chosen = [...(e.target.files || [])];
     e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setPhotoError("יש לבחור קובץ תמונה בלבד");
-      return;
-    }
-    if (photos.length >= MAX_PHOTOS) {
+    if (chosen.length === 0) return;
+
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) {
       setPhotoError(`אפשר להעלות עד ${MAX_PHOTOS} תמונות לכרטיס`);
       return;
     }
+
+    const images = chosen.filter((f) => f.type.startsWith("image/"));
+    if (images.length === 0) {
+      setPhotoError("יש לבחור קובץ תמונה בלבד");
+      return;
+    }
+
+    const batch = images.slice(0, room);
+    const skipped = images.length - batch.length;
     setPhotoError("");
     setPhotoUploading(true);
-    try {
-      // מכווצים תמונה בדפדפן לפני השליחה, כדי שתמונות ממצלמת הטלפון לא יחרגו ממגבלת גוף הבקשה בשרת
-      const compressed = await compressImage(file, { maxDimension: 1200, quality: 0.8 });
-      const blob = await (await fetch(compressed)).blob();
-      const url = await uploadToCloudinary(blob);
-      setPhotos((cur) => [...cur, url]);
-    } catch (err) {
-      setPhotoError(`העלאת התמונה נכשלה: ${err?.message || String(err)}`);
-    } finally {
-      setPhotoUploading(false);
+    const failures = [];
+
+    for (const file of batch) {
+      try {
+        // מכווצים תמונה בדפדפן לפני השליחה, כדי שתמונות ממצלמת הטלפון לא יחרגו ממגבלת גוף הבקשה בשרת
+        const compressed = await compressImage(file, { maxDimension: 1200, quality: 0.8 });
+        const blob = await (await fetch(compressed)).blob();
+        const url = await uploadToCloudinary(blob);
+        setPhotos((cur) => (cur.length >= MAX_PHOTOS ? cur : [...cur, url]));
+      } catch (err) {
+        failures.push(`${file.name}: ${err?.message || String(err)}`);
+      }
     }
+
+    setPhotoUploading(false);
+    const notes = [];
+    if (failures.length > 0) notes.push(`העלאה נכשלה עבור ${failures.join(" | ")}`);
+    if (skipped > 0) notes.push(`${skipped} תמונות לא נוספו כי הגעת למקסימום ${MAX_PHOTOS}`);
+    setPhotoError(notes.join(". "));
   };
 
   const removePhoto = (index) => setPhotos((cur) => cur.filter((_, i) => i !== index));
@@ -296,15 +313,28 @@ export default function AddCandidatePage() {
               </div>
             )}
             {photos.length < MAX_PHOTOS && !photoUploading && (
-              <label className="flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]">
+              // הקלט מוסתר חזותית אך נשאר קיים בעמוד. עם display:none חלק מדפדפני
+              // הנייד לא פותחים כלל את בוחר הקבצים בלחיצה על המסגרת.
+              <label className="relative flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl border-2 border-dashed border-[#EAE5E3] bg-white text-[#B5AEB0] transition hover:border-[#8C4A55] hover:text-[#8C4A55]">
                 <ImagePlus size={22} />
                 <span className="text-[11px] font-semibold">הוספת תמונה</span>
-                <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+                <span className="text-[10px]">
+                  {photos.length}/{MAX_PHOTOS}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoChange}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
               </label>
             )}
           </div>
           {photoError && <p className="mt-1 text-[11px] text-red-500">{photoError}</p>}
-          <p className="mt-1 text-[11px] text-[#B5AEB0]">שדה חובה - התמונה הראשונה תוצג ככרטיס הראשי</p>
+          <p className="mt-1 text-[11px] text-[#B5AEB0]">
+            שדה חובה - התמונה הראשונה תוצג ככרטיס הראשי. אפשר לבחור כמה תמונות יחד.
+          </p>
         </div>
 
         <Field label="שם מלא">
