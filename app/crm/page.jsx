@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
@@ -28,6 +28,21 @@ function ProfilesFeed() {
   const tab = useCrmStore((s) => s.feedTab);
   const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
+  const handledSavedId = useRef(null);
+
+  // אחרי הוספה או עריכה של כרטיס - עוברים ללוח הנכון (בנים/בנות) וללשונית שבה הוא יושב,
+  // כדי שהכרטיס שהרגע נשמר ייראה מיד בראש הרשימה ולא "ייעלם" בלוח השני.
+  // מתבצע פעם אחת בלבד לכל כרטיס, כדי שעדכון מהשרת לא יחזיר את המשתמשת ללוח הזה שוב.
+  useEffect(() => {
+    const savedId = searchParams.get("added") || searchParams.get("edited");
+    if (!savedId || handledSavedId.current === savedId) return;
+    const c = findCandidateById(savedId);
+    if (!c) return;
+    handledSavedId.current = savedId;
+    setBoard(c.gender);
+    setTab(c.isNew ? "new" : "previous");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, candidates_]);
 
   useEffect(() => {
     const openId = searchParams.get("openCandidate");
