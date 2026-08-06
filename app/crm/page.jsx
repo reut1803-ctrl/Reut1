@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
+import { useCrmStore, AGE_LIMITS, HEIGHT_LIMITS } from "@/lib/crm/store";
 import { normalizeTagName } from "@/lib/crm/mockData";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
@@ -33,6 +33,19 @@ function ProfilesFeed() {
   const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
 
+  // אחרי הוספת מועמד/ת חדש/ה: מנקים כל סינון פעיל ועוברים למאגר וללשונית הנכונים,
+  // כדי שהכרטיס החדש ייראה מיד בראש הרשימה ולא "ייבלע" בסינון קודם שנשאר ברקע.
+  useEffect(() => {
+    const addedId = searchParams.get("added");
+    if (!addedId) return;
+    const c = findCandidateById(addedId);
+    if (!c) return;
+    clearAllFilters();
+    setBoard(c.gender);
+    setTab("new");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, candidates_]);
+
   useEffect(() => {
     const openId = searchParams.get("openCandidate");
     // בכניסה רגילה למאגר (בלי קישור לכרטיס) מנקים חיפוש שמולא אוטומטית בפעם קודמת,
@@ -53,7 +66,10 @@ function ProfilesFeed() {
   const inTab = (c, which) => (which === "new" ? !!c.isNew : !c.isNew);
 
   // ערך חסר (גיל/גובה שלא הוזנו) אינו מסנן כלל. רק ערך מספרי אמיתי נבדק מול הטווח.
-  const inRange = (value, [min, max]) => {
+  // ומחוון שנמצא על הטווח המלא אינו מסנן בכלל - כדי ש"ניקוי סינון" באמת יציג את כולם,
+  // גם כרטיס שהוזן בו ערך חריג או שגוי.
+  const inRange = (value, [min, max], [limitMin, limitMax]) => {
+    if (min <= limitMin && max >= limitMax) return true;
     const n = Number(value);
     if (value === null || value === undefined || value === "" || Number.isNaN(n)) return true;
     return n >= min && n <= max;
@@ -62,8 +78,8 @@ function ProfilesFeed() {
   const visibleInBoard = useMemo(() => allCandidates(board), [board, allCandidates, candidates_]);
 
   const passesFilters = (c) => {
-    if (!inRange(c.age, filters.ageRange)) return false;
-    if (!inRange(c.height, filters.heightRange)) return false;
+    if (!inRange(c.age, filters.ageRange, AGE_LIMITS)) return false;
+    if (!inRange(c.height, filters.heightRange, HEIGHT_LIMITS)) return false;
     if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
     if (filters.region !== "הכל" && c.region !== filters.region) return false;
     if (filters.search && !(c.name || "").includes(filters.search.trim())) return false;
