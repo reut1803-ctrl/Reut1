@@ -58,7 +58,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
 
   function analyzeSmart() {
     if (!smartText.trim()) { setSmartNote("אין טקסט לניתוח."); return; }
-    const { fields, answers, description } = parseCandidateText(smartText, openQuestions);
+    const { fields, answers, references, description } = parseCandidateText(smartText, openQuestions);
     setForm((f) => {
       const next = { ...f };
       // שיבוץ נקי לשדות האישיים
@@ -68,19 +68,31 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
         next.answers = { ...(f.answers || {}) };
         Object.entries(answers).forEach(([k, v]) => { if (v) next.answers[k] = v; });
       }
-      // גיבוי בלבד: הטקסט המלא בתיאור (נקי, ללא מעטפת הלוח החכם)
-      next.description = f.description ? `${f.description}\n\n${description}` : description;
+      // אנשי קשר / מספרים לבירורים - ממלאים לשדות אנשי הקשר הקיימים
+      if (references && references.length) {
+        const cur = Array.isArray(f.references) ? [...f.references] : [];
+        references.forEach((r) => {
+          const slot = cur.findIndex((x) => !x.name && !x.phone);
+          if (slot >= 0) cur[slot] = { ...cur[slot], ...r };
+          else cur.push(r);
+        });
+        next.references = cur;
+      }
+      // התיאור מכיל אך ורק טקסט שנשאר בלי שדה ייעודי
+      next.description = description || f.description || "";
       return next;
     });
     const names = Object.keys(fields).map((k) => PARSE_FIELD_NAMES[k] || k);
     const qCount = answers ? Object.keys(answers).length : 0;
+    const rCount = references ? references.length : 0;
     const bits = [];
     if (names.length) bits.push(`שדות: ${names.join(", ")}`);
     if (qCount) bits.push(`${qCount} שאלות פתוחות`);
+    if (rCount) bits.push(`${rCount} אנשי קשר`);
     setSmartNote(
       bits.length
-        ? `✓ שובצו אוטומטית — ${bits.join(" · ")}. הטקסט המלא נשמר בתיאור לגיבוי. אפשר לבדוק ולתקן לפני שמירה.`
-        : "לא זוהו נתונים מפורשים — הטקסט נשמר בתיאור בלבד (ללא ניחוש)."
+        ? `✓ שובצו אוטומטית — ${bits.join(" · ")}. רק מה שאין לו שדה נשמר בתיאור. אפשר לבדוק ולתקן לפני שמירה.`
+        : "לא זוהו נתונים מפורשים — הטקסט נשמר בתיאור בלבד."
     );
   }
 
