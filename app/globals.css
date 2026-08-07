@@ -34,3 +34,20 @@ body {
     @apply rounded-3xl bg-white p-5 shadow-soft border border-sand/60;
   }
 }
+
+/* אפקט נצנצים (Confetti) לפופ-אפ מזל טוב */
+@keyframes confetti-fall {
+  0% { transform: translateY(-20vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0.9; }
+}
+.confetti-piece {
+  position: fixed;
+  top: 0;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}

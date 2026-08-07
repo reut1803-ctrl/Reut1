@@ -14,6 +14,8 @@ import SheetImport from "../../components/SheetImport";
 import LogViewer from "../../components/LogViewer";
 import PopupEditor from "../../components/PopupEditor";
 import PopupNotice from "../../components/PopupNotice";
+import MazalTovPopup from "../../components/MazalTovPopup";
+import MazalTovEditor from "../../components/MazalTovEditor";
 import TipBanner from "../../components/TipBanner";
 import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
@@ -191,6 +193,7 @@ export default function AdminPage() {
   return (
     <div>
       <PopupNotice popup={data.popup} role={user.role} />
+      <MazalTovPopup mazalTov={data.mazalTov} />
       <Header>
         <span className="text-sm text-ink/70">
           {isAdmin ? "מנהלת" : isViewer ? "👁️ צפייה בלבד" : `${myRep?.name} · ${myRep?.institution}`}
@@ -353,6 +356,7 @@ export default function AdminPage() {
               <SheetImport data={data} />
             </div>
             <RepsManager data={data} />
+            <MazalTovEditor data={data} />
             <LogViewer data={data} />
             <PopupEditor data={data} />
             <QuestionsEditor data={data} />
