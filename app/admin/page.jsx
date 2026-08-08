@@ -13,7 +13,6 @@ import EngagementPanel from "../../components/EngagementPanel";
 import SheetImport from "../../components/SheetImport";
 import LogViewer from "../../components/LogViewer";
 import PopupEditor from "../../components/PopupEditor";
-import PopupNotice from "../../components/PopupNotice";
 import MazalTovPopup from "../../components/MazalTovPopup";
 import MazalTovEditor from "../../components/MazalTovEditor";
 import TipBanner from "../../components/TipBanner";
@@ -192,7 +191,6 @@ export default function AdminPage() {
 
   return (
     <div>
-      <PopupNotice popup={data.popup} role={user.role} />
       <MazalTovPopup mazalTov={data.mazalTov} />
       <Header>
         <span className="text-sm text-ink/70">
