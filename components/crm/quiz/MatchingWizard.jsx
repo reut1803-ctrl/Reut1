@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { REGIONS, YESHIVA_LEVELS, EDUCATION_OPTIONS, religiousLevelsFor, smokingOptionsFor, TRAITS, lifestyleTagsFor } from "@/lib/crm/mockData";
+import { REGIONS, occupationTagsFor, religiousLevelsFor, smokingOptionsFor, TRAITS, lifestyleTagsFor } from "@/lib/crm/mockData";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import Button from "@/components/crm/ui/Button";
 
@@ -12,7 +12,7 @@ const STEP_TITLES = [
   "טווח גובה מבוקש",
   "רמת תורניות",
   "אזור מועדף",
-  "לימודים",
+  "עיסוק ורקע",
   "סגנון חיים והשקפה",
   "עישון",
   "עד 3 תכונות אופי",
@@ -49,6 +49,19 @@ export default function MatchingWizard() {
     const withoutAny = current.filter((t) => t !== "לא משנה");
     setAnswers({
       lifestyle: withoutAny.includes(tag) ? withoutAny.filter((t) => t !== tag) : [...withoutAny, tag],
+    });
+  };
+
+  // עיסוק ורקע: בחירה מרובה, בדיוק כמו סגנון חיים. "לא משנה" מבטל את השאר.
+  const toggleOccupation = (tag) => {
+    const current = answers.occupations || [];
+    if (tag === "לא משנה") {
+      setAnswers({ occupations: current.includes(tag) ? [] : ["לא משנה"] });
+      return;
+    }
+    const withoutAny = current.filter((t) => t !== "לא משנה");
+    setAnswers({
+      occupations: withoutAny.includes(tag) ? withoutAny.filter((t) => t !== tag) : [...withoutAny, tag],
     });
   };
 
@@ -110,11 +123,24 @@ export default function MatchingWizard() {
         )}
 
         {step === 4 && (
-          <ChoiceList
-            options={board === "male" ? YESHIVA_LEVELS : EDUCATION_OPTIONS}
-            selected={[answers.education]}
-            onSelect={(v) => setAnswers({ education: v })}
-          />
+          <div>
+            <p className="mb-3 text-center text-[12px] leading-relaxed text-[#7C6E60]">
+              בחירה מרובה - סמנו כל רקע שחשוב לכם, או דלגו.
+              <br />
+              מספיק שאחד מהם מתקיים כדי לקדם את ההתאמה.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {[...occupationTagsFor(board), "לא משנה"].map((tag) => (
+                <Chip
+                  key={tag}
+                  active={(answers.occupations || []).includes(tag)}
+                  onClick={() => toggleOccupation(tag)}
+                >
+                  {tag}
+                </Chip>
+              ))}
+            </div>
+          </div>
         )}
 
         {step === 5 && (

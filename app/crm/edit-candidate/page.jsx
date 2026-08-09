@@ -5,7 +5,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Save, ImagePlus, X, FileText, Music, Trash2, AlertCircle } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, lifestyleTagsFor } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, smokingOptionsFor, TRAITS, lifestyleTagsFor, occupationTagsFor, occupationsOf } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -28,6 +28,8 @@ function EditCandidateForm() {
   const [form, setForm] = useState(null);
   const [traits, setTraits] = useState([]);
   const [lifestyle, setLifestyle] = useState([]);
+  // עיסוק ורקע - בחירה מרובה. כרטיס ותיק נטען מהשדה הישן דרך occupationsOf.
+  const [occupations, setOccupations] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
@@ -56,8 +58,6 @@ function EditCandidateForm() {
       region: c.region || REGIONS[0],
       city: c.city || "",
       religiousLevel: c.religiousLevel || religiousLevelsFor(c.gender)[0],
-      education: c.education || EDUCATION_OPTIONS[0],
-      yeshivaLevel: c.yeshivaLevel || YESHIVA_LEVELS[0],
       smoking: c.smoking || smokingOptionsFor(c.gender)[0],
       phone: c.phone || "",
       bio: c.bio || "",
@@ -68,6 +68,7 @@ function EditCandidateForm() {
     });
     setTraits(c.traits || []);
     setLifestyle(c.lifestyle || []);
+    setOccupations(occupationsOf(c));
     setPhotos(c.photoUrls?.length > 0 ? c.photoUrls : c.photoUrl ? [c.photoUrl] : []);
     setPdfUrl(c.pdfUrl || null);
     setIntroAudioUrl(c.introAudioUrl || null);
@@ -93,8 +94,12 @@ function EditCandidateForm() {
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
-  const setGender = (gender) =>
+  const setGender = (gender) => {
     setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
+    setOccupations((cur) => cur.filter((t) => occupationTagsFor(gender).includes(t)));
+  };
+  const toggleOccupation = (t) =>
+    setOccupations((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
@@ -212,8 +217,7 @@ function EditCandidateForm() {
         region: form.region,
         city: form.city.trim(),
         religiousLevel: form.religiousLevel,
-        education: form.education,
-        yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
+        occupations,
         smoking: form.smoking,
         phone: form.phone.trim(),
         bio: form.bio.trim(),
@@ -366,27 +370,25 @@ function EditCandidateForm() {
           </select>
         </Field>
 
-        {form.gender === "male" ? (
-          <Field label="רמת לימוד">
-            <select value={form.yeshivaLevel} onChange={(e) => set({ yeshivaLevel: e.target.value })} className="input-crm">
-              {YESHIVA_LEVELS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </Field>
-        ) : (
-          <Field label="השכלה / עיסוק">
-            <select value={form.education} onChange={(e) => set({ education: e.target.value })} className="input-crm">
-              {EDUCATION_OPTIONS.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">עיסוק ורקע</p>
+          <p className="mb-2 text-[11px] leading-relaxed text-[#A2937F]">
+            אפשר לסמן כמה שרוצים - כל מה שהוא/היא עשו או עושים. מבחן ההתאמות בודק את כל הסימונים.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {occupationTagsFor(form.gender).map((t) => (
+              <button
+                key={t}
+                onClick={() => toggleOccupation(t)}
+                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
+                  occupations.includes(t) ? "border-[#844442] bg-[#844442] text-white" : "border-[#CCBDAB] bg-white text-[#3A2E26]"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <Field label="עישון">
           <select value={form.smoking} onChange={(e) => set({ smoking: e.target.value })} className="input-crm">

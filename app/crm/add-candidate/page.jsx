@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music, Trash2, Wand2, AlertCircle } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { parseCandidateText } from "@/lib/crm/parseCandidateText";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, lifestyleTagsFor } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, smokingOptionsFor, TRAITS, lifestyleTagsFor, occupationTagsFor, occupationsOf } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -25,8 +25,6 @@ const EMPTY_FORM = {
   region: REGIONS[0],
   city: "",
   religiousLevel: religiousLevelsFor("male")[0],
-  education: EDUCATION_OPTIONS[0],
-  yeshivaLevel: YESHIVA_LEVELS[0],
   smoking: smokingOptionsFor("male")[0],
   phone: "",
   bio: "",
@@ -54,6 +52,8 @@ export default function AddCandidatePage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [traits, setTraits] = useState([]);
   const [lifestyle, setLifestyle] = useState([]);
+  // עיסוק ורקע - בחירה מרובה. החליף את "רמת לימוד" / "השכלה" שהיו בחירה יחידה.
+  const [occupations, setOccupations] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
@@ -80,6 +80,7 @@ export default function AddCandidatePage() {
       setForm({ ...EMPTY_FORM, ...draft.form });
       setTraits(draft.traits || []);
       setLifestyle(draft.lifestyle || []);
+      setOccupations(draft.occupations || []);
       setDraftRestored(true);
     }
   }, []);
@@ -91,8 +92,8 @@ export default function AddCandidatePage() {
       window.localStorage.removeItem(DRAFT_KEY);
       return;
     }
-    window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, traits, lifestyle }));
-  }, [form, traits, lifestyle]);
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, traits, lifestyle, occupations }));
+  }, [form, traits, lifestyle, occupations]);
 
   // ברגע שמתקנים שדה - הודעת השגיאה נעלמת, כדי שלא תישאר על המסך אחרי שכבר תוקנה
   useEffect(() => {
@@ -105,8 +106,13 @@ export default function AddCandidatePage() {
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
-  const setGender = (gender) =>
+  const setGender = (gender) => {
     setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
+    // רשימת העיסוקים שונה בין המאגרים, ולכן סימונים מהמאגר הקודם נשמרים רק אם הם קיימים גם כאן
+    setOccupations((cur) => cur.filter((t) => occupationTagsFor(gender).includes(t)));
+  };
+  const toggleOccupation = (t) =>
+    setOccupations((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
 
   // מילוי אוטומטי מטקסט חופשי. ממלא רק שדות שזוהו בוודאות, ואינו מוחק
   // ערכים קיימים שלא נמצאו בטקסט.
@@ -115,10 +121,14 @@ export default function AddCandidatePage() {
       setSmartResult("צריך להדביק קודם טקסט בתיבה");
       return;
     }
-    const { fields, traits: foundTraits, lifestyle: foundLifestyle, found, negated } = parseCandidateText(
-      smartText,
-      form.gender
-    );
+    const {
+      fields,
+      traits: foundTraits,
+      lifestyle: foundLifestyle,
+      occupations: foundOccupations,
+      found,
+      negated,
+    } = parseCandidateText(smartText, form.gender);
     if (found.length === 0) {
       setSmartResult("לא זוהו פרטים בטקסט הזה. אפשר למלא ידנית, או להדביק טקסט מפורט יותר.");
       return;
@@ -126,6 +136,7 @@ export default function AddCandidatePage() {
     setForm((f) => ({ ...f, ...fields }));
     if (foundTraits.length) setTraits((cur) => Array.from(new Set([...cur, ...foundTraits])));
     if (foundLifestyle.length) setLifestyle((cur) => Array.from(new Set([...cur, ...foundLifestyle])));
+    if (foundOccupations?.length) setOccupations((cur) => Array.from(new Set([...cur, ...foundOccupations])));
     // מדווחים גם על מה שהוזכר בטקסט אך נשלל בו במפורש ("לא עשה צבא"),
     // כדי שיהיה ברור שההשמטה מכוונת ולא פספוס.
     const negatedNote = negated.length
@@ -257,8 +268,7 @@ export default function AddCandidatePage() {
         region: form.region,
         city: form.city.trim(),
         religiousLevel: form.religiousLevel,
-        education: form.education,
-        yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
+        occupations,
         smoking: form.smoking,
         phone: form.phone.trim(),
         bio: form.bio.trim(),
@@ -276,6 +286,7 @@ export default function AddCandidatePage() {
       clearDraft();
       setForm(EMPTY_FORM);
       setTraits([]);
+      setOccupations([]);
       setPhotos([]);
       setPdfUrl(null);
       setIntroAudioUrl(null);
@@ -479,27 +490,25 @@ export default function AddCandidatePage() {
           </select>
         </Field>
 
-        {form.gender === "male" ? (
-          <Field label="רמת לימוד">
-            <select value={form.yeshivaLevel} onChange={(e) => set({ yeshivaLevel: e.target.value })} className="input-crm">
-              {YESHIVA_LEVELS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </Field>
-        ) : (
-          <Field label="השכלה / עיסוק">
-            <select value={form.education} onChange={(e) => set({ education: e.target.value })} className="input-crm">
-              {EDUCATION_OPTIONS.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">עיסוק ורקע</p>
+          <p className="mb-2 text-[11px] leading-relaxed text-[#A2937F]">
+            אפשר לסמן כמה שרוצים - כל מה שהוא/היא עשו או עושים. מבחן ההתאמות בודק את כל הסימונים.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {occupationTagsFor(form.gender).map((t) => (
+              <button
+                key={t}
+                onClick={() => toggleOccupation(t)}
+                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
+                  occupations.includes(t) ? "border-[#844442] bg-[#844442] text-white" : "border-[#CCBDAB] bg-white text-[#3A2E26]"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <Field label="עישון">
           <select value={form.smoking} onChange={(e) => set({ smoking: e.target.value })} className="input-crm">

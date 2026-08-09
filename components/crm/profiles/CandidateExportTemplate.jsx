@@ -1,7 +1,8 @@
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
+import { occupationsOf } from "@/lib/crm/mockData";
 export default function CandidateExportTemplate({ candidate, forwardedRef, photoDataUrl }) {
-  const eduLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
+  const eduLabel = occupationsOf(candidate).join(" · ");
   const firstName = candidate.name?.split(" ")[0] || "";
 
   return (
@@ -39,7 +40,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef, photo
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "16px" }}>
         <tbody>
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
-          <Row label={candidate.gender === "male" ? "רמת לימוד" : "השכלה / עיסוק"} value={eduLabel} />
+          <Row label="עיסוק ורקע" value={eduLabel} />
         </tbody>
       </table>
 
