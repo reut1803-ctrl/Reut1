@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
-import { REGIONS, YESHIVA_LEVELS, EDUCATION_OPTIONS, religiousLevelsFor, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
+import { useCrmStore, AGE_LIMITS, HEIGHT_LIMITS } from "@/lib/crm/store";
+import { REGIONS, OCCUPATION_OPTIONS, CANDIDATE_TAGS, religiousLevelsFor, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import Button from "@/components/crm/ui/Button";
 
@@ -12,8 +12,9 @@ const STEP_TITLES = [
   "טווח גובה מבוקש",
   "רמת תורניות",
   "אזור מועדף",
-  "לימודים",
+  "עיסוק",
   "עישון",
+  "סגנון חיים",
   "עד 3 תכונות אופי",
 ];
 
@@ -36,6 +37,16 @@ export default function MatchingWizard() {
     const current = answers.regions.filter((r) => r !== "לא משנה");
     const next = current.includes(region) ? current.filter((r) => r !== region) : [...current, region];
     setAnswers({ regions: next });
+  };
+
+  const toggleOccupation = (o) => {
+    const cur = answers.occupations || [];
+    setAnswers({ occupations: cur.includes(o) ? cur.filter((x) => x !== o) : [...cur, o] });
+  };
+
+  const toggleTag = (t) => {
+    const cur = answers.tags || [];
+    setAnswers({ tags: cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t] });
   };
 
   const toggleTrait = (trait) => {
@@ -64,13 +75,18 @@ export default function MatchingWizard() {
 
       <div className="min-h-[180px]">
         {step === 0 && (
-          <RangeSlider min={18} max={50} value={answers.ageRange} onChange={(v) => setAnswers({ ageRange: v })} />
+          <RangeSlider
+            min={AGE_LIMITS[0]}
+            max={AGE_LIMITS[1]}
+            value={answers.ageRange}
+            onChange={(v) => setAnswers({ ageRange: v })}
+          />
         )}
 
         {step === 1 && (
           <RangeSlider
-            min={145}
-            max={205}
+            min={HEIGHT_LIMITS[0]}
+            max={HEIGHT_LIMITS[1]}
             value={answers.heightRange}
             onChange={(v) => setAnswers({ heightRange: v })}
             unit=" ס״מ"
@@ -96,11 +112,18 @@ export default function MatchingWizard() {
         )}
 
         {step === 4 && (
-          <ChoiceList
-            options={board === "male" ? YESHIVA_LEVELS : EDUCATION_OPTIONS}
-            selected={[answers.education]}
-            onSelect={(v) => setAnswers({ education: v })}
-          />
+          <div>
+            <p className="mb-3 text-center text-[12px] text-[#8A8285]">
+              אפשר לסמן כמה שרוצים. מה שלא תסמני פשוט לא ייבדק.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {OCCUPATION_OPTIONS.map((o) => (
+                <Chip key={o} active={answers.occupations?.includes(o)} onClick={() => toggleOccupation(o)}>
+                  {o}
+                </Chip>
+              ))}
+            </div>
+          </div>
         )}
 
         {step === 5 && (
@@ -112,6 +135,16 @@ export default function MatchingWizard() {
         )}
 
         {step === 6 && (
+          <div className="flex flex-wrap justify-center gap-2">
+            {CANDIDATE_TAGS.map((t) => (
+              <Chip key={t.name} active={answers.tags?.includes(t.name)} onClick={() => toggleTag(t.name)}>
+                {t.name}
+              </Chip>
+            ))}
+          </div>
+        )}
+
+        {step === 7 && (
           <div>
             <p className="mb-3 text-center text-[12px] text-[#8A8285]">נבחרו {answers.traits.length} מתוך 3</p>
             <div className="flex flex-wrap justify-center gap-2">

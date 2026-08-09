@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, OCCUPATION_OPTIONS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS, normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -53,6 +53,7 @@ function EditCandidateForm() {
       religiousLevel: c.religiousLevel,
       education: c.education,
       yeshivaLevel: c.yeshivaLevel || YESHIVA_LEVELS[0],
+      occupations: candidateOccupations(c),
       smoking: c.smoking,
       tag: normalizeTagName(c.tag) || "",
       phone: c.phone || "",
@@ -82,6 +83,11 @@ function EditCandidateForm() {
   }
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
+  const toggleOccupation = (o) =>
+    setForm((f) => {
+      const cur = f.occupations || [];
+      return { ...f, occupations: cur.includes(o) ? cur.filter((x) => x !== o) : [...cur, o] };
+    });
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
   const setGender = (gender) =>
     setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
@@ -192,6 +198,7 @@ function EditCandidateForm() {
         religiousLevel: form.religiousLevel,
         education: form.education,
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
+        occupations: form.occupations || [],
         smoking: form.smoking,
         tag: form.tag || null,
         phone: form.phone.trim(),
@@ -351,27 +358,26 @@ function EditCandidateForm() {
           </select>
         </Field>
 
-        {form.gender === "male" ? (
-          <Field label="רמת לימוד">
-            <select value={form.yeshivaLevel} onChange={(e) => set({ yeshivaLevel: e.target.value })} className="input-crm">
-              {YESHIVA_LEVELS.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </Field>
-        ) : (
-          <Field label="השכלה / עיסוק">
-            <select value={form.education} onChange={(e) => set({ education: e.target.value })} className="input-crm">
-              {EDUCATION_OPTIONS.map((o) => (
-                <option key={o} value={o}>
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">עיסוק (אפשר לסמן כמה)</p>
+          <div className="flex flex-wrap gap-2">
+            {OCCUPATION_OPTIONS.map((o) => {
+              const active = form.occupations?.includes(o);
+              return (
+                <button
+                  key={o}
+                  type="button"
+                  onClick={() => toggleOccupation(o)}
+                  className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition active:scale-95 ${
+                    active ? "border-transparent bg-[#8C4A55] text-white" : "border-[#EAE5E3] bg-white text-[#3A3335]"
+                  }`}
+                >
                   {o}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <Field label="עישון">
           <select value={form.smoking} onChange={(e) => set({ smoking: e.target.value })} className="input-crm">

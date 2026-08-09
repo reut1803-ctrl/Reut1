@@ -3,10 +3,11 @@
 import { X, MapPin, GraduationCap, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
+import { candidateOccupations } from "@/lib/crm/mockData";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   useBackToClose(true, onClose);
-  const educationLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
+  const occupations = candidateOccupations(candidate);
   const photos = candidate.photoUrls?.length > 0 ? candidate.photoUrls : candidate.photoUrl ? [candidate.photoUrl] : [];
 
   return (
@@ -61,7 +62,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 
           <div className="mt-4 space-y-2.5">
             <DetailRow icon={Sparkles} label="רמת תורניות" value={candidate.religiousLevel} />
-            <DetailRow icon={GraduationCap} label={candidate.gender === "male" ? "רמת לימוד" : "השכלה / עיסוק"} value={educationLabel} />
+            <DetailRow icon={GraduationCap} label="עיסוק" value={occupations.join(" · ")} />
             <DetailRow icon={Globe} label="עדה" value={candidate.eda} />
           </div>
 

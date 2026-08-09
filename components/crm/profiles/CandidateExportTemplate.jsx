@@ -1,9 +1,9 @@
-import { normalizeTagName } from "@/lib/crm/mockData";
+import { normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
 
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
 export default function CandidateExportTemplate({ candidate, forwardedRef }) {
-  const eduLabel = candidate.gender === "male" ? candidate.yeshivaLevel : candidate.education;
+  const eduLabel = candidateOccupations(candidate).join(" · ");
   const firstName = candidate.name?.split(" ")[0] || "";
 
   return (
@@ -39,7 +39,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "16px" }}>
         <tbody>
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
-          <Row label={candidate.gender === "male" ? "רמת לימוד" : "השכלה / עיסוק"} value={eduLabel} />
+          <Row label="עיסוק" value={eduLabel} />
           {candidate.tag && <Row label="תווית" value={normalizeTagName(candidate.tag)} />}
         </tbody>
       </table>
