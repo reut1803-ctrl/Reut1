@@ -40,7 +40,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef, photo
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "16px" }}>
         <tbody>
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
-          <Row label="עיסוק נוכחי" value={candidate.currentOccupation} />
+          <Row label="עיסוק כיום" value={candidate.currentOccupation} />
         </tbody>
       </table>
 

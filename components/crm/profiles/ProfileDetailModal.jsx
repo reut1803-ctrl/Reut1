@@ -1,7 +1,7 @@
 "use client";
 
 import MediaImage from "@/components/crm/ui/MediaImage";
-import { X, MapPin, Briefcase, Sparkles, Globe, Route } from "lucide-react";
+import { X, MapPin, Briefcase, Sparkles, Route } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { occupationsOf } from "@/lib/crm/mockData";
@@ -53,6 +53,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span className="tag-chip-detail">{candidate.age}</span>
             <span className="tag-chip-detail">{candidate.height} ס״מ</span>
+            {candidate.eda && <span className="tag-chip-detail">{candidate.eda}</span>}
             {candidate.city && (
               <span className="tag-chip-detail flex items-center gap-1">
                 <MapPin size={11} /> {candidate.city}
@@ -61,9 +62,10 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           </div>
 
           <div className="mt-4 space-y-2.5">
+            {/* שתי שורות בלבד ובסדר קבוע: קודם הרמה התורנית, אחריה מה שהוא/היא
+                עושים כיום. העדה עלתה לשורת העיגולים, והמסלול ירד לתחתית הכרטיס. */}
             <DetailRow icon={Sparkles} label="רמת תורניות" value={candidate.religiousLevel} />
-            <DetailRow icon={Briefcase} label="עיסוק נוכחי" value={candidate.currentOccupation} />
-            <DetailRow icon={Globe} label="עדה" value={candidate.eda} />
+            <DetailRow icon={Briefcase} label="עיסוק כיום" value={candidate.currentOccupation} />
           </div>
 
           {candidate.bio && (
