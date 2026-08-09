@@ -8,21 +8,51 @@ import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
 
-// Cloudinary מאפשר לכפות הורדה של הקובץ באמצעות התוספת fl_attachment בנתיב.
-// כך ההורדה עובדת גם בנייד, בלי לפתוח את התמונה בלשונית חדשה.
-function downloadUrlFor(url, fileName) {
+// כתובת גיבוי שכופה הורדה בצד השרת. חשוב: בלי שם קובץ מותאם - שם בעברית
+// בתוך הכתובת נדחה על ידי שרת התמונות ומחזיר שגיאה 400.
+function forcedDownloadUrl(url) {
   if (!url) return null;
-  if (url.includes("/upload/")) {
-    const safe = (fileName || "photo").replace(/[^֐-׿a-zA-Z0-9]+/g, "_");
-    return url.replace("/upload/", `/upload/fl_attachment:${safe}/`);
+  return url.includes("/upload/") ? url.replace("/upload/", "/upload/fl_attachment/") : url;
+}
+
+// מורידים את התמונה עצמה ואז שומרים אותה מקומית, כך שאפשר לתת לקובץ שם בעברית
+// בלי לשלוח את השם לשרת. אם ההורדה הישירה נחסמת - נופלים לכתובת הגיבוי.
+async function downloadPhoto(url, fileName) {
+  try {
+    const res = await fetch(url, { mode: "cors", cache: "no-store" });
+    if (!res.ok) throw new Error(String(res.status));
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = `${fileName || "תמונה"}.jpg`;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    // משאירים את הקישור רגע בעמוד: הסרה מיידית מבטלת לפעמים את שם הקובץ המבוקש
+    setTimeout(() => {
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    }, 1500);
+    return true;
+  } catch {
+    window.open(forcedDownloadUrl(url), "_blank", "noopener");
+    return false;
   }
-  return url;
 }
 
 function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const photo = candidate.photoUrl || candidate.photoUrls?.[0] || null;
+
+  const handleDownloadPhoto = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    await downloadPhoto(photo, candidate.name);
+    setDownloading(false);
+  };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildProfileShareText(candidate));
@@ -51,13 +81,14 @@ function ContactCard({ candidate }) {
       </button>
 
       {photo && (
-        <a
-          href={downloadUrlFor(photo, candidate.name)}
-          download={`${candidate.name || "מועמד"}.jpg`}
-          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4]"
+        <button
+          type="button"
+          onClick={handleDownloadPhoto}
+          disabled={downloading}
+          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4] disabled:opacity-60"
         >
-          <Download size={13} /> הורדת תמונה
-        </a>
+          <Download size={13} /> {downloading ? "מוריד..." : "הורדת תמונה"}
+        </button>
       )}
 
       {candidate.referenceContacts && (
