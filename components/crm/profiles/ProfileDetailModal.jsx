@@ -1,14 +1,14 @@
 "use client";
 
 import MediaImage from "@/components/crm/ui/MediaImage";
-import { X, MapPin, GraduationCap, Sparkles, Globe } from "lucide-react";
+import { X, MapPin, Briefcase, Sparkles, Globe, Route } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { occupationsOf } from "@/lib/crm/mockData";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   useBackToClose(true, onClose);
-  const educationLabel = occupationsOf(candidate).join(" · ");
+  const routeTags = occupationsOf(candidate);
   const photos = candidate.photoUrls?.length > 0 ? candidate.photoUrls : candidate.photoUrl ? [candidate.photoUrl] : [];
 
   return (
@@ -62,7 +62,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 
           <div className="mt-4 space-y-2.5">
             <DetailRow icon={Sparkles} label="רמת תורניות" value={candidate.religiousLevel} />
-            <DetailRow icon={GraduationCap} label="עיסוק ורקע" value={educationLabel} />
+            <DetailRow icon={Briefcase} label="עיסוק נוכחי" value={candidate.currentOccupation} />
             <DetailRow icon={Globe} label="עדה" value={candidate.eda} />
           </div>
 
@@ -70,6 +70,23 @@ export default function ProfileDetailModal({ candidate, onClose }) {
             <div className="mt-4">
               <p className="mb-1 text-[12px] font-semibold text-[#3A2E26]">קצת עליי</p>
               <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#7C6E60]">{candidate.bio}</p>
+            </div>
+          )}
+
+          {/* "המסלול שלי" - כל הדרכים שהאדם עבר. יושב למטה ליד התכונות, ולא
+              בין הנתונים הקצרים למעלה, כי זה סיפור רקע ולא פרט זיהוי. */}
+          {routeTags.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-[#3A2E26]">
+                <Route size={13} /> המסלול שלי
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {routeTags.map((t) => (
+                  <span key={t} className="rounded-full bg-[#E8DCCB] px-2.5 py-1 text-[11px] font-semibold text-[#3A2E26]">
+                    {t}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

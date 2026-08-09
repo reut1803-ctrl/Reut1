@@ -25,6 +25,7 @@ const EMPTY_FORM = {
   region: REGIONS[0],
   city: "",
   religiousLevel: religiousLevelsFor("male")[0],
+  currentOccupation: "",
   smoking: smokingOptionsFor("male")[0],
   phone: "",
   bio: "",
@@ -268,6 +269,7 @@ export default function AddCandidatePage() {
         region: form.region,
         city: form.city.trim(),
         religiousLevel: form.religiousLevel,
+        currentOccupation: form.currentOccupation.trim(),
         occupations,
         smoking: form.smoking,
         phone: form.phone.trim(),
@@ -480,6 +482,18 @@ export default function AddCandidatePage() {
           />
         </Field>
 
+        {/* מה הוא/היא עושים היום - טקסט חופשי קצר. מופיע בראש הפרופיל
+            ליד שאר פרטי הזיהוי, בנפרד מ"המסלול שלי" שהוא סיפור הרקע. */}
+        <Field label="עיסוק נוכחי">
+          <input
+            type="text"
+            value={form.currentOccupation}
+            onChange={(e) => set({ currentOccupation: e.target.value })}
+            placeholder="לדוגמה: לומד בכולל / עובד בהייטק / מורה"
+            className="input-crm"
+          />
+        </Field>
+
         <Field label="רמת תורניות">
           <select value={form.religiousLevel} onChange={(e) => set({ religiousLevel: e.target.value })} className="input-crm">
             {religiousLevelsFor(form.gender).map((r) => (
@@ -489,26 +503,6 @@ export default function AddCandidatePage() {
             ))}
           </select>
         </Field>
-
-        <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">עיסוק ורקע</p>
-          <p className="mb-2 text-[11px] leading-relaxed text-[#A2937F]">
-            אפשר לסמן כמה שרוצים - כל מה שהוא/היא עשו או עושים. מבחן ההתאמות בודק את כל הסימונים.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {occupationTagsFor(form.gender).map((t) => (
-              <button
-                key={t}
-                onClick={() => toggleOccupation(t)}
-                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
-                  occupations.includes(t) ? "border-[#844442] bg-[#844442] text-white" : "border-[#CCBDAB] bg-white text-[#3A2E26]"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
 
         <Field label="עישון">
           <select value={form.smoking} onChange={(e) => set({ smoking: e.target.value })} className="input-crm">
@@ -531,6 +525,28 @@ export default function AddCandidatePage() {
                 }
                 className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
                   lifestyle.includes(t) ? "border-[#844442] bg-[#844442] text-white" : "border-[#CCBDAB] bg-white text-[#3A2E26]"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* "המסלול שלי" - כל הדרכים שהאדם עבר. יושב כאן למטה ליד התכונות,
+            והוא זה שמזין את מבחן ההתאמות. */}
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A2E26]">המסלול שלי</p>
+          <p className="mb-2 text-[11px] leading-relaxed text-[#A2937F]">
+            כל הדרכים והמסגרות שהוא/היא עברו בחיים. אפשר לסמן כמה שרוצים - מבחן ההתאמות בודק את כל הסימונים.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {occupationTagsFor(form.gender).map((t) => (
+              <button
+                key={t}
+                onClick={() => toggleOccupation(t)}
+                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
+                  occupations.includes(t) ? "border-[#844442] bg-[#844442] text-white" : "border-[#CCBDAB] bg-white text-[#3A2E26]"
                 }`}
               >
                 {t}

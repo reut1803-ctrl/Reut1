@@ -2,7 +2,7 @@
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
 import { occupationsOf } from "@/lib/crm/mockData";
 export default function CandidateExportTemplate({ candidate, forwardedRef, photoDataUrl }) {
-  const eduLabel = occupationsOf(candidate).join(" · ");
+  const routeTags = occupationsOf(candidate);
   const firstName = candidate.name?.split(" ")[0] || "";
 
   return (
@@ -40,7 +40,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef, photo
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "16px" }}>
         <tbody>
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
-          <Row label="עיסוק ורקע" value={eduLabel} />
+          <Row label="עיסוק נוכחי" value={candidate.currentOccupation} />
         </tbody>
       </table>
 
@@ -48,6 +48,13 @@ export default function CandidateExportTemplate({ candidate, forwardedRef, photo
         <div style={{ marginTop: "28px" }}>
           <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#844442" }}>קצת על {firstName}</h3>
           <p style={{ fontSize: "15px", lineHeight: 1.7, whiteSpace: "pre-line", margin: 0 }}>{candidate.bio}</p>
+        </div>
+      )}
+
+      {routeTags.length > 0 && (
+        <div style={{ marginTop: "22px" }}>
+          <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#844442" }}>המסלול שלי</h3>
+          <p style={{ fontSize: "15px", margin: 0 }}>{routeTags.join(" · ")}</p>
         </div>
       )}
 
