@@ -26,6 +26,7 @@ const EMPTY_FORM = {
   religiousLevel: religiousLevelsFor("male")[0],
   education: EDUCATION_OPTIONS[0],
   yeshivaLevel: YESHIVA_LEVELS[0],
+  currentOccupation: "",
   occupations: [],
   smoking: smokingOptionsFor("male")[0],
   phone: "",
@@ -224,6 +225,7 @@ export default function AddCandidatePage() {
         religiousLevel: form.religiousLevel,
         education: form.education,
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
+        currentOccupation: form.currentOccupation.trim(),
         occupations: form.occupations || [],
         smoking: form.smoking,
         tag: form.tag || null,
@@ -413,8 +415,18 @@ export default function AddCandidatePage() {
           </select>
         </Field>
 
+        <Field label="עיסוק נוכחי">
+          <input
+            type="text"
+            value={form.currentOccupation}
+            onChange={(e) => set({ currentOccupation: e.target.value })}
+            placeholder="מה הוא/היא עושים היום? לדוגמה: מהנדס תוכנה"
+            className="input-crm"
+          />
+        </Field>
+
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">עיסוק (אפשר לסמן כמה)</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">המסלול שלי (אפשר לסמן כמה)</p>
           <div className="flex flex-wrap gap-2">
             {OCCUPATION_OPTIONS.map((o) => {
               const active = form.occupations?.includes(o);
@@ -432,7 +444,7 @@ export default function AddCandidatePage() {
               );
             })}
           </div>
-          <p className="mt-1 text-[11px] text-[#B5AEB0]">כל מה שהוא/היא עשו או עושים - צבא, לימודים, עבודה, תארים.</p>
+          <p className="mt-1 text-[11px] text-[#B5AEB0]">כל הדרכים שעברו בחיים - ישיבה, צבא, שירות, לימודים, תארים.</p>
         </div>
 
         <Field label="עישון">

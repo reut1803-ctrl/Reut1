@@ -1,6 +1,6 @@
 "use client";
 
-import { X, MapPin, GraduationCap, Sparkles, Globe } from "lucide-react";
+import { X, MapPin, Briefcase, Route, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
@@ -62,7 +62,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 
           <div className="mt-4 space-y-2.5">
             <DetailRow icon={Sparkles} label="רמת תורניות" value={candidate.religiousLevel} />
-            <DetailRow icon={GraduationCap} label="עיסוק" value={occupations.join(" · ")} />
+            <DetailRow icon={Briefcase} label="עיסוק נוכחי" value={candidate.currentOccupation} />
             <DetailRow icon={Globe} label="עדה" value={candidate.eda} />
           </div>
 
@@ -70,6 +70,21 @@ export default function ProfileDetailModal({ candidate, onClose }) {
             <div className="mt-4">
               <p className="mb-1 text-[12px] font-semibold text-[#3A3335]">קצת עליי</p>
               <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#8A8285]">{candidate.bio}</p>
+            </div>
+          )}
+
+          {occupations.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#3A3335]">
+                <Route size={13} className="text-[#8C4A55]" /> המסלול שלי
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {occupations.map((o) => (
+                  <span key={o} className="rounded-full bg-[#F6F5F4] px-2.5 py-1 text-[11px] font-semibold text-[#3A3335]">
+                    {o}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

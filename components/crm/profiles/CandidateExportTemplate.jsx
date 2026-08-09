@@ -3,7 +3,7 @@ import { normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
 export default function CandidateExportTemplate({ candidate, forwardedRef }) {
-  const eduLabel = candidateOccupations(candidate).join(" · ");
+  const pathLabel = candidateOccupations(candidate).join(" · ");
   const firstName = candidate.name?.split(" ")[0] || "";
 
   return (
@@ -39,7 +39,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "16px" }}>
         <tbody>
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
-          <Row label="עיסוק" value={eduLabel} />
+          <Row label="עיסוק נוכחי" value={candidate.currentOccupation} />
           {candidate.tag && <Row label="תווית" value={normalizeTagName(candidate.tag)} />}
         </tbody>
       </table>
@@ -48,6 +48,13 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
         <div style={{ marginTop: "28px" }}>
           <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#8C4A55" }}>קצת על {firstName}</h3>
           <p style={{ fontSize: "15px", lineHeight: 1.7, whiteSpace: "pre-line", margin: 0 }}>{candidate.bio}</p>
+        </div>
+      )}
+
+      {pathLabel && (
+        <div style={{ marginTop: "22px" }}>
+          <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#8C4A55" }}>המסלול שלי</h3>
+          <p style={{ fontSize: "15px", margin: 0 }}>{pathLabel}</p>
         </div>
       )}
 

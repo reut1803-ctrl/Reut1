@@ -53,6 +53,7 @@ function EditCandidateForm() {
       religiousLevel: c.religiousLevel,
       education: c.education,
       yeshivaLevel: c.yeshivaLevel || YESHIVA_LEVELS[0],
+      currentOccupation: c.currentOccupation || "",
       occupations: candidateOccupations(c),
       smoking: c.smoking,
       tag: normalizeTagName(c.tag) || "",
@@ -198,6 +199,7 @@ function EditCandidateForm() {
         religiousLevel: form.religiousLevel,
         education: form.education,
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
+        currentOccupation: (form.currentOccupation || "").trim(),
         occupations: form.occupations || [],
         smoking: form.smoking,
         tag: form.tag || null,
@@ -358,8 +360,18 @@ function EditCandidateForm() {
           </select>
         </Field>
 
+        <Field label="עיסוק נוכחי">
+          <input
+            type="text"
+            value={form.currentOccupation}
+            onChange={(e) => set({ currentOccupation: e.target.value })}
+            placeholder="מה הוא/היא עושים היום?"
+            className="input-crm"
+          />
+        </Field>
+
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">עיסוק (אפשר לסמן כמה)</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">המסלול שלי (אפשר לסמן כמה)</p>
           <div className="flex flex-wrap gap-2">
             {OCCUPATION_OPTIONS.map((o) => {
               const active = form.occupations?.includes(o);
