@@ -40,7 +40,6 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
         <tbody>
           <Row label="רמת תורניות" value={candidate.religiousLevel} />
           <Row label="עיסוק נוכחי" value={candidate.currentOccupation} />
-          {candidate.tag && <Row label="תווית" value={normalizeTagName(candidate.tag)} />}
         </tbody>
       </table>
 
@@ -55,6 +54,13 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
         <div style={{ marginTop: "22px" }}>
           <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#8C4A55" }}>המסלול שלי</h3>
           <p style={{ fontSize: "15px", margin: 0 }}>{pathLabel}</p>
+        </div>
+      )}
+
+      {candidate.tag && (
+        <div style={{ marginTop: "22px" }}>
+          <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#8C4A55" }}>תווית</h3>
+          <p style={{ fontSize: "15px", margin: 0 }}>{normalizeTagName(candidate.tag)}</p>
         </div>
       )}
 

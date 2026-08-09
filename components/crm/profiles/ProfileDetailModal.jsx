@@ -58,12 +58,16 @@ export default function ProfileDetailModal({ candidate, onClose }) {
                 <MapPin size={11} /> {candidate.city}
               </span>
             )}
+            {candidate.eda && (
+              <span className="tag-chip-detail flex items-center gap-1">
+                <Globe size={11} /> {candidate.eda}
+              </span>
+            )}
           </div>
 
           <div className="mt-4 space-y-2.5">
             <DetailRow icon={Sparkles} label="רמת תורניות" value={candidate.religiousLevel} />
             <DetailRow icon={Briefcase} label="עיסוק נוכחי" value={candidate.currentOccupation} />
-            <DetailRow icon={Globe} label="עדה" value={candidate.eda} />
           </div>
 
           {candidate.bio && (
