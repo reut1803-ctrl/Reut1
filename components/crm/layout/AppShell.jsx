@@ -28,6 +28,8 @@ export default function AppShell({ children }) {
   // מציגים את מסך "אין הרשאה" רק אחרי שרשימת ההרשאות נבדקה מול השרת,
   // כדי שאיש/אשת צוות מאושר/ת לא יראה/תראה אותו להרף עין בזמן הטעינה.
   if (allowlistLoaded && role === "unauthorized") return <AccessDeniedGate />;
+  // כשלא הצלחנו לאמת מול השרת - מציגים הסבר ואפשרות לנסות שוב, ולא "אין הרשאה"
+  if (allowlistLoaded && role === "unverified") return <AccessDeniedGate unverified />;
 
   return (
     <div className="flex h-dvh flex-col bg-[#F6F5F4] text-[#3A3335]" dir="rtl">
