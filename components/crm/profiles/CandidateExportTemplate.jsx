@@ -1,6 +1,6 @@
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
-import { occupationsOf } from "@/lib/crm/mockData";
+import { occupationsOf, locationOf } from "@/lib/crm/mockData";
 export default function CandidateExportTemplate({ candidate, forwardedRef, photoDataUrl }) {
   const routeTags = occupationsOf(candidate);
   const firstName = candidate.name?.split(" ")[0] || "";
@@ -33,7 +33,8 @@ export default function CandidateExportTemplate({ candidate, forwardedRef, photo
 
       <h1 style={{ textAlign: "center", fontSize: "30px", margin: "0 0 6px", color: "#844442" }}>{candidate.name}</h1>
       <p style={{ textAlign: "center", fontSize: "15px", color: "#7C6E60", margin: "0 0 28px" }}>
-        {candidate.age} | {candidate.height} ס״מ | {candidate.region}
+        {candidate.age} | {candidate.height} ס״מ
+        {locationOf(candidate) ? ` | ${locationOf(candidate)}` : ""}
         {candidate.eda ? ` | ${candidate.eda}` : ""}
       </p>
 

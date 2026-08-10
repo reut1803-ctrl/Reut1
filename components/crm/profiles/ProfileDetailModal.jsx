@@ -4,7 +4,7 @@ import MediaImage from "@/components/crm/ui/MediaImage";
 import { X, MapPin, Briefcase, Sparkles, Route } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
-import { occupationsOf } from "@/lib/crm/mockData";
+import { occupationsOf, locationOf } from "@/lib/crm/mockData";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   useBackToClose(true, onClose);
@@ -53,12 +53,12 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span className="tag-chip-detail">{candidate.age}</span>
             <span className="tag-chip-detail">{candidate.height} ס״מ</span>
-            {candidate.eda && <span className="tag-chip-detail">{candidate.eda}</span>}
-            {candidate.city && (
+            {locationOf(candidate) && (
               <span className="tag-chip-detail flex items-center gap-1">
-                <MapPin size={11} /> {candidate.city}
+                <MapPin size={11} /> {locationOf(candidate)}
               </span>
             )}
+            {candidate.eda && <span className="tag-chip-detail">{candidate.eda}</span>}
           </div>
 
           <div className="mt-4 space-y-2.5">

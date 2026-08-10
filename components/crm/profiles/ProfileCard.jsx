@@ -27,6 +27,7 @@ import { getGradientClass } from "@/components/crm/ui/gradients";
 import { viewerActionText } from "@/lib/crm/genderText";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { getAvailabilityColors } from "@/lib/crm/availability";
+import { locationOf } from "@/lib/crm/mockData";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
@@ -294,8 +295,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
         <div data-tour="tour-card-info" className="absolute bottom-3 right-3 flex flex-wrap gap-1.5">
           <span className="tag-chip-crm">{candidate.age}</span>
           <span className="tag-chip-crm">{candidate.height} ס״מ</span>
+          {locationOf(candidate) && <span className="tag-chip-crm">{locationOf(candidate)}</span>}
           {candidate.eda && <span className="tag-chip-crm">{candidate.eda}</span>}
-          {candidate.city && <span className="tag-chip-crm">{candidate.city}</span>}
         </div>
       </div>
 
