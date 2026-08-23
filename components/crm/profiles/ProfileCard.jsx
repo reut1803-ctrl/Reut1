@@ -310,12 +310,23 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <div className="mt-4 rounded-2xl bg-[#F6F5F4] p-3">
             <p className="mb-2 text-[12px] font-semibold text-[#3A3335]">התקדמות בהתאמות ({proposals.length})</p>
             <div className="space-y-2.5">
-              {proposals.map((p) => (
-                <div key={p.id}>
-                  <p className="mb-1 text-[11px] font-semibold text-[#8C4A55]">{p.status}</p>
-                  <StageFunnel status={p.status} compact />
-                </div>
-              ))}
+              {proposals.map((p) => {
+                // שם הצד השני, כדי שגם רשומת היסטוריה שירדה מהפרק תהיה קריאה כאן
+                const partner =
+                  p.maleId === candidate.id
+                    ? p.femaleName || p.externalFemale?.name
+                    : p.maleName || p.externalMale?.name;
+                return (
+                  <div key={p.id}>
+                    <p className="mb-1 text-[11px] font-semibold text-[#8C4A55]">
+                      {partner ? `עם ${partner} · ` : ""}
+                      {p.status}
+                      {p.isHistory ? " (היסטוריה)" : ""}
+                    </p>
+                    <StageFunnel status={p.status} compact />
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

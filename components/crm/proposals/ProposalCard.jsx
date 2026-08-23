@@ -184,7 +184,10 @@ export default function ProposalCard({ proposal }) {
     if (stage === proposal.status) return;
     await updateProposalStatus(proposal.id, stage, note);
     setNote("");
-    showToast(`הסטטוס עודכן ל"${stage}"`);
+    // "ירד מהפרק" מוציא את ההצעה מהלוח הפעיל. מסבירים לאן היא הלכה,
+    // כדי שהיעלמות הכרטיסייה מהמסך לא תיראה כמו מחיקה.
+    if (stage === PROPOSAL_DROPPED) showToast("ההצעה ירדה מהפרק ועברה להיסטוריה שבתחתית העמוד");
+    else showToast(`הסטטוס עודכן ל"${stage}"`);
   };
 
   return (
