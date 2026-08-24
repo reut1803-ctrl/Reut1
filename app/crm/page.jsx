@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
+import { useCrmStore, AGE_BOUNDS, HEIGHT_BOUNDS } from "@/lib/crm/store";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
@@ -40,7 +40,8 @@ function ProfilesFeed() {
     if (!c) return;
     handledSavedId.current = savedId;
     setBoard(c.gender);
-    setTab(c.isNew ? "new" : "previous");
+    // תמיד לתצוגת כל המאגר, כדי שהכרטיס שנשמר בוודאות ייראה
+    setTab("all");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, candidates_]);
 
@@ -58,7 +59,7 @@ function ProfilesFeed() {
     const c = findCandidateById(openId);
     if (!c) return;
     setBoard(c.gender);
-    setTab(c.isNew ? "new" : "previous");
+    setTab("all");
     setFilters({ search: c.name });
     setSearchFromLink(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -66,24 +67,34 @@ function ProfilesFeed() {
 
   const boardCandidates = useMemo(() => allCandidates(board), [board, candidates_]);
 
+  // טווח שנמצא על שני הגבולות המלאים פירושו "לא סיננתי כלום", ולכן הוא אינו
+  // מסתיר דבר - גם לא כרטיס עם ערך חריג שנופל מחוץ למחוון. בלי הבדיקה הזו
+  // מועמדת בגיל 17 או בגובה 138 הייתה נעלמת מהמאגר בלי שאיש ביקש זאת.
+  const isFullRange = ([min, max], [lo, hi]) => min <= lo && max >= hi;
+
   // כרטיס שאין לו גיל או גובה עדיין חייב להופיע. בעבר טווח הסינון הסתיר אותו
   // לגמרי (ערך ריק נחשב כאפס), והוא נעלם מהמסך אף שנשמר במאגר.
-  const inRange = (value, [min, max]) => {
+  const inRange = (value, range, bounds) => {
+    if (isFullRange(range, bounds)) return true;
     if (value === null || value === undefined || value === "") return true;
     const n = Number(value);
-    return !Number.isFinite(n) || (n >= min && n <= max);
+    return !Number.isFinite(n) || (n >= range[0] && n <= range[1]);
   };
 
-  // "קודמות" היא המשלימה המלאה של "חדשות", כדי שאף כרטיס לא ייפול בין הלשוניות
+  // "כל המאגר" היא ברירת המחדל ואינה מחלקת כלום. "קודמות" היא המשלימה המלאה
+  // של "חדשות", כדי שאף כרטיס לא ייפול בין הלשוניות.
   const tabCandidates = useMemo(
-    () => boardCandidates.filter((c) => (tab === "new" ? !!c.isNew : !c.isNew)),
+    () =>
+      tab === "all"
+        ? boardCandidates
+        : boardCandidates.filter((c) => (tab === "new" ? !!c.isNew : !c.isNew)),
     [boardCandidates, tab]
   );
 
   const candidates = useMemo(() => {
     return tabCandidates.filter((c) => {
-      if (!inRange(c.age, filters.ageRange)) return false;
-      if (!inRange(c.height, filters.heightRange)) return false;
+      if (!inRange(c.age, filters.ageRange, AGE_BOUNDS)) return false;
+      if (!inRange(c.height, filters.heightRange, HEIGHT_BOUNDS)) return false;
       if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
       if (filters.region !== "הכל" && c.region !== filters.region) return false;
       if (filters.search && !String(c.name || "").includes(filters.search.trim())) return false;
@@ -95,11 +106,16 @@ function ProfilesFeed() {
   const hiddenByFilters = tabCandidates.length - candidates.length;
   const otherTabCount = boardCandidates.length - tabCandidates.length;
 
+  // "הצג הכל" מחזיר את המסך למצב שאינו מסתיר דבר: כל המאגר, בלי סינון ובלי חיפוש
   const handleClearAll = () => {
     resetFilters();
     setFilters({ search: "" });
     setSearchFromLink(false);
+    setTab("all");
   };
+
+  // סך הכל כרטיסים שאינם על המסך כרגע - גם בגלל סינון וגם בגלל הלשונית
+  const hiddenTotal = hiddenByFilters + (tab === "all" ? 0 : otherTabCount);
 
   return (
     <div className="px-4 py-4">
@@ -120,22 +136,21 @@ function ProfilesFeed() {
 
       <div className="mt-4 flex items-center gap-2">
         <div data-tour="tour-tabs" className="flex flex-1 rounded-2xl bg-white p-1 shadow-sm">
-          <button
-            onClick={() => setTab("new")}
-            className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition ${
-              tab === "new" ? "bg-[#F0E2DE] text-[#5E2F2D]" : "text-[#7C6E60]"
-            }`}
-          >
-            הצעות חדשות
-          </button>
-          <button
-            onClick={() => setTab("previous")}
-            className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition ${
-              tab === "previous" ? "bg-[#F0E2DE] text-[#5E2F2D]" : "text-[#7C6E60]"
-            }`}
-          >
-            הצעות קודמות
-          </button>
+          {[
+            { key: "all", label: `כל המאגר (${boardCandidates.length})` },
+            { key: "new", label: "חדשות" },
+            { key: "previous", label: "קודמות" },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex-1 rounded-xl px-1 py-2 text-[12px] font-bold transition ${
+                tab === t.key ? "bg-[#F0E2DE] text-[#5E2F2D]" : "text-[#7C6E60]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
         <button
           data-tour="tour-filter"
@@ -169,11 +184,9 @@ function ProfilesFeed() {
           <p className="text-sm leading-relaxed text-[#7C6E60]">
             {boardCandidates.length === 0
               ? "אין עדיין מועמדים במאגר הזה"
-              : `לא נמצאו התאמות לסינון שבחרת. ${hiddenByFilters} מועמדים בלשונית הזו מוסתרים בגלל הסינון${
-                  otherTabCount > 0 ? `, ועוד ${otherTabCount} נמצאים בלשונית השנייה` : ""
-                }.`}
+              : `לא נמצאו התאמות לסינון שבחרת. ${hiddenTotal} מועמדים במאגר הזה אינם מוצגים כרגע.`}
           </p>
-          {hiddenByFilters > 0 && (
+          {hiddenTotal > 0 && (
             <button
               onClick={handleClearAll}
               className="mt-3 rounded-2xl border-2 border-[#844442] bg-white px-4 py-2 text-[13px] font-semibold text-[#844442] transition active:scale-95"
@@ -186,14 +199,15 @@ function ProfilesFeed() {
         <>
           {/* חיווי ברור כשיש כרטיסים שהסינון או הלשונית מסתירים,
               כדי שכרטיס שנשמר לא ייראה כאילו נעלם מהמערכת */}
-          {hiddenByFilters > 0 && (
+          {hiddenTotal > 0 && (
             <button
               onClick={handleClearAll}
               className="mt-3 flex w-full items-center justify-between gap-2 rounded-2xl bg-[#E8DCCB] px-3 py-2 text-right"
             >
-              <span className="shrink-0 text-[12px] font-bold text-[#844442]">ניקוי סינון</span>
+              <span className="shrink-0 text-[12px] font-bold text-[#844442]">הצגת הכל</span>
               <span className="text-[12px] text-[#7C6E60]">
-                {hiddenByFilters} מועמדים נוספים מוסתרים כרגע בגלל הסינון
+                {hiddenTotal} מועמדים נוספים אינם מוצגים כרגע
+                {tab === "all" ? " בגלל הסינון" : " בגלל הסינון או הלשונית"}
               </span>
             </button>
           )}
