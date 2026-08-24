@@ -56,6 +56,8 @@ export default function DashboardPage() {
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("staff");
+  const [adding, setAdding] = useState(false);
+  const [addResult, setAddResult] = useState(null);
   const [goalViewsDraft, setGoalViewsDraft] = useState(weeklyGoals.profileViews);
   const [goalPlaysDraft, setGoalPlaysDraft] = useState(weeklyGoals.audioPlays);
 
@@ -63,15 +65,33 @@ export default function DashboardPage() {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין למנהלת בלבד</p>;
   }
 
-  const handleAddAllowlist = () => {
-    if (!newEmail.trim()) return;
-    addAllowlistEntry({
-      email: newEmail.trim().toLowerCase(),
-      name: newName.trim() || newEmail.trim(),
-      role: newRole,
-    });
-    setNewEmail("");
-    setNewName("");
+  // חשוב: בעבר ההוספה נשלחה בלי לחכות לתשובה ובלי לבדוק אם היא נכשלה. אם השרת
+  // דחה את הכתיבה, השדות פשוט התרוקנו והכל נראה תקין - בזמן שאיש הצוות לא נוסף
+  // בפועל ולא הצליח להיכנס. כאן ממתינים לתשובה ומדווחים בבירור מה קרה.
+  const handleAddAllowlist = async () => {
+    const email = newEmail.trim().toLowerCase();
+    if (!email) return;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setAddResult({ ok: false, text: "הכתובת אינה נראית ככתובת מייל תקינה. בדקי אותה שוב." });
+      return;
+    }
+    setAdding(true);
+    setAddResult(null);
+    try {
+      await addAllowlistEntry({ email, name: newName.trim() || email, role: newRole });
+      setNewEmail("");
+      setNewName("");
+      setAddResult({ ok: true, text: `${email} נוסף/ה בהצלחה. אפשר לשלוח לו/ה את הקישור לאתר.` });
+    } catch (err) {
+      setAddResult({
+        ok: false,
+        text:
+          err?.code === "permission-denied"
+            ? "השרת דחה את ההוספה. אין לחשבון שלך הרשאת מנהלת בשרת עצמו - כדאי שנבדוק את זה יחד."
+            : "ההוספה לא נשמרה בגלל תקלת תקשורת. נסי שוב בעוד רגע, ובדקי שהרשומה אכן מופיעה ברשימה למעלה.",
+      });
+    }
+    setAdding(false);
   };
 
   const handleSaveGoals = () => {
@@ -155,9 +175,24 @@ export default function DashboardPage() {
             <option value="staff">צוות</option>
             <option value="admin">מנהלת</option>
           </select>
-          <Button variant="primary" className="w-full" onClick={handleAddAllowlist}>
-            <UserPlus size={16} /> הוספת הרשאה
+          <Button variant="primary" className="w-full" onClick={handleAddAllowlist} disabled={adding}>
+            <UserPlus size={16} /> {adding ? "שומרת..." : "הוספת הרשאה"}
           </Button>
+
+          {addResult && (
+            <p
+              className={`rounded-xl px-3 py-2 text-[11px] leading-relaxed ${
+                addResult.ok ? "bg-[#E8F6EF] text-[#178A57]" : "bg-[#FBEDED] text-[#C24545]"
+              }`}
+            >
+              {addResult.text}
+            </p>
+          )}
+
+          <p className="text-[11px] leading-relaxed text-[#8A8285]">
+            אחרי ההוספה, ודאי שהשם מופיע ברשימה שלמעלה. הכתובת חייבת להיות בדיוק אותה כתובת גוגל
+            שאיתה הוא/היא נכנס/ת - אות באות.
+          </p>
         </div>
       </div>
 
