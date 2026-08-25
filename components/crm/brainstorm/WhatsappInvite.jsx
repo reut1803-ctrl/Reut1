@@ -17,6 +17,7 @@ export default function WhatsappInvite({ round, onClose }) {
   const message = buildInviteMessage({
     candidateName: round?.candidateName,
     question: round?.question,
+    secondQuestion: round?.secondQuestion,
     link,
   });
 

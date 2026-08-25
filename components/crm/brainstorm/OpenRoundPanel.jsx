@@ -20,6 +20,7 @@ export default function OpenRoundPanel({ onOpened }) {
   const [candidateId, setCandidateId] = useState("");
   const [questionKey, setQuestionKey] = useState("");
   const [customQuestion, setCustomQuestion] = useState("");
+  const [secondQuestion, setSecondQuestion] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -38,11 +39,12 @@ export default function OpenRoundPanel({ onOpened }) {
     setSaving(true);
     setError("");
     try {
-      const round = await openRound({ candidateId, question });
+      const round = await openRound({ candidateId, question, secondQuestion });
       if (!round) throw new Error("empty");
       setCandidateId("");
       setCustomQuestion("");
       setQuestionKey("");
+      setSecondQuestion("");
       setShowAll(false);
       showToast("הסבב מוכן. עכשיו אפשר לשגר אותו לצוות");
       onOpened?.(round);
@@ -136,6 +138,22 @@ export default function OpenRoundPanel({ onOpened }) {
             className="mt-2 w-full resize-none rounded-2xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#8C4A55]"
           />
         )}
+      </div>
+
+      {/* צעד 3 - לא חובה, אבל זה מה שמאפשר לכל הצוות להשתתף */}
+      <div className={`mt-4 ${candidateId ? "" : "pointer-events-none opacity-40"}`}>
+        {step(3, "זווית נוספת לצוות (לא חובה)", !!secondQuestion.trim())}
+        <p className="mb-2 text-[11.5px] leading-relaxed text-[#8A8285]">
+          שאלה רחבה שגם מי שלא מכיר/ה את ההיסטוריה יוכל/תוכל לענות עליה. למשל: לאילו כיוונים חדשים
+          כדאי לכוון את החיפוש?
+        </p>
+        <textarea
+          value={secondQuestion}
+          onChange={(e) => setSecondQuestion(e.target.value)}
+          rows={2}
+          placeholder="כיווני חיפוש, זווית פתוחה לכולם..."
+          className="w-full resize-none rounded-2xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#8C4A55]"
+        />
       </div>
 
       {error && (

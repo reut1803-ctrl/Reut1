@@ -12,6 +12,8 @@ import {
   RotateCcw,
   Rocket,
   Settings2,
+  Compass,
+  PenLine,
   Sparkles,
   Tag,
   Trash2,
@@ -26,6 +28,8 @@ import {
   relatedPairs,
   topLikedIds,
   paletteFromRoster,
+  participationOf,
+  initialsOf,
 } from "@/lib/crm/brainstorm";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import NoteCard from "@/components/crm/brainstorm/NoteCard";
@@ -50,6 +54,7 @@ function RoundBoard({ round }) {
   const showToast = useCrmStore((s) => s.showToast);
   const authAllowlist = useCrmStore((s) => s.authAllowlist);
   const launchRound = useCrmStore((s) => s.launchBrainstormRound);
+  const setSecondQuestion = useCrmStore((s) => s.setBrainstormSecondQuestion);
 
   // צבע קבוע ושונה לכל איש/אשת צוות, לפי המקום ברשימת ההרשאות
   const roster = useMemo(
@@ -67,6 +72,9 @@ function RoundBoard({ round }) {
   const [showInvite, setShowInvite] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [peekId, setPeekId] = useState(null);
+  const [editingAngle, setEditingAngle] = useState(false);
+  const [angleDraft, setAngleDraft] = useState(round.secondQuestion || "");
+  const [savingAngle, setSavingAngle] = useState(false);
   const boardRef = useRef(null);
 
   const closed = isRoundClosed(round);
@@ -88,13 +96,8 @@ function RoundBoard({ round }) {
     [authAllowlist]
   );
   const gold = useMemo(() => topLikedIds(notes), [notes]);
-  const participants = useMemo(() => {
-    const map = new Map();
-    notes.forEach((n) => {
-      if (!map.has(n.authorEmail)) map.set(n.authorEmail, n.authorName || n.authorEmail);
-    });
-    return [...map.entries()];
-  }, [notes]);
+  // מי מהצוות כבר כתב ומי עדיין לא - כולל מי שטרם נכנס
+  const participation = useMemo(() => participationOf(authAllowlist, notes), [authAllowlist, notes]);
 
   const handleLaunch = async () => {
     setLaunching(true);
@@ -111,6 +114,18 @@ function RoundBoard({ round }) {
       );
     }
     setLaunching(false);
+  };
+
+  const handleSaveAngle = async () => {
+    setSavingAngle(true);
+    try {
+      await setSecondQuestion(round.id, angleDraft);
+      setEditingAngle(false);
+      showToast("הזווית הנוספת פורסמה לצוות");
+    } catch {
+      showToast("הפרסום נכשל, נסי שוב");
+    }
+    setSavingAngle(false);
   };
 
   const handleSaveSummary = async () => {
@@ -158,6 +173,75 @@ function RoundBoard({ round }) {
         <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-[#3A3335]">{round.question}</p>
       </div>
 
+      {/* הזווית הנוספת: שאלה רחבה שגם מי שלא מכיר/ה את ההיסטוריה יכול/ה לענות עליה.
+          זה מה שמאפשר לכל הצוות להשתתף, ולא רק למי שהיה מעורב בעבר. */}
+      {round.secondQuestion && !editingAngle && (
+        <div className="mt-2 rounded-2xl border border-[#A8D5C2] bg-[#DFEEE8]/70 p-3">
+          <div className="flex items-start justify-between gap-2">
+            <p className="flex items-center gap-1.5 text-[10px] font-bold text-[#2F7A5C]">
+              <Compass size={12} /> זווית נוספת · פתוח לכולם
+            </p>
+            {isAdmin && !closed && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAngleDraft(round.secondQuestion || "");
+                  setEditingAngle(true);
+                }}
+                aria-label="עריכת הזווית הנוספת"
+                className="shrink-0 rounded-full p-1 text-[#2F7A5C] transition hover:bg-white/70"
+              >
+                <PenLine size={13} />
+              </button>
+            )}
+          </div>
+          <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-[#3A3335]">{round.secondQuestion}</p>
+          <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#4E7A69]">
+            גם מי שלא מכיר/ה את הרקע מוזמן/ת לענות דווקא על זו.
+          </p>
+        </div>
+      )}
+
+      {/* הוספה או עריכה של הזווית הנוספת תוך כדי סבב פעיל */}
+      {isAdmin && !closed && (editingAngle || !round.secondQuestion) && (
+        <div className="mt-2 rounded-2xl border border-dashed border-[#A8D5C2] bg-white/70 p-3">
+          <p className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#2F7A5C]">
+            <Compass size={13} /> {round.secondQuestion ? "עריכת הזווית הנוספת" : "הוספת זווית נוספת לצוות"}
+          </p>
+          {!round.secondQuestion && !editingAngle && (
+            <p className="mt-1 text-[11px] leading-relaxed text-[#8A8285]">
+              שאלה רחבה שכל אחד/ת יכול/ה לענות עליה, גם בלי להכיר את ההיסטוריה.
+            </p>
+          )}
+          <textarea
+            value={angleDraft}
+            onChange={(e) => setAngleDraft(e.target.value)}
+            rows={2}
+            placeholder="לאילו כיוונים חדשים כדאי לכוון את החיפוש עכשיו?"
+            className="mt-2 w-full resize-none rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-[13px] leading-relaxed outline-none focus:border-[#2F7A5C]"
+          />
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={handleSaveAngle}
+              disabled={savingAngle || !angleDraft.trim()}
+              className="flex-1 rounded-xl bg-[#20A66B] py-2 text-[12.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
+            >
+              {savingAngle ? "שומרת..." : "פרסום הזווית לצוות"}
+            </button>
+            {editingAngle && (
+              <button
+                type="button"
+                onClick={() => setEditingAngle(false)}
+                className="rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#3A3335]"
+              >
+                ביטול
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* טיוטה: הסבב מוכן אך עדיין לא גלוי לאיש. השעון מתחיל רק בשיגור. */}
       {draft ? (
         <div className="mt-3 rounded-2xl border border-dashed border-[#C98894] bg-white/70 p-3">
@@ -187,33 +271,71 @@ function RoundBoard({ round }) {
         </div>
       )}
 
-      {/* פס אחד שקט: מי השתתף, ומה חוזר על עצמו בדברי הצוות */}
-      {(participants.length > 0 || keywords.length > 0) && (
-        <div className="mt-3 space-y-2">
-          {participants.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-              {participants.map(([email, name]) => (
-                <span key={email} className="flex items-center gap-1 text-[10.5px] font-semibold text-[#8A8285]">
-                  <span className="h-2 w-2 rounded-full" style={{ background: paletteOf(email).dot }} />
-                  {name}
-                </span>
-              ))}
-            </div>
-          )}
-          {keywords.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Tag size={12} className="text-[#B5AEB0]" />
-              {keywords.map((k) => (
+      {/* כפתור בולט לעדכון הצוות. במקום הכי גלוי, כי בלי הודעה אף אחד לא נכנס. */}
+      {isAdmin && !draft && (
+        <button
+          type="button"
+          onClick={() => setShowInvite(true)}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#20A66B] py-3 text-[13.5px] font-bold text-white shadow-[0_8px_20px_rgba(32,166,107,0.25)] transition active:scale-[0.98]"
+        >
+          <MessageCircle size={17} /> הודע לצוות בוואטסאפ
+        </button>
+      )}
+
+      {/* חיווי השתתפות: עיגול לכל איש/אשת צוות. צבעוני = כבר כתב/ה, אפור = טרם. */}
+      {!draft && participation.total > 0 && (
+        <div className="mt-3 rounded-2xl bg-white/60 p-3">
+          <p className="mb-2 flex items-center gap-1.5 text-[10.5px] font-bold text-[#8A8285]">
+            <Users size={12} /> {participation.joinedCount} מתוך {participation.total} כבר השתתפו
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {participation.people.map((person) => {
+              const palette = paletteOf(person.email);
+              return (
                 <span
-                  key={k.stem}
-                  className="rounded-full bg-[#F6E4E6] px-2.5 py-1 font-bold text-[#6E3540]"
-                  style={{ fontSize: `${Math.min(15, 10.5 + k.count * 0.9)}px` }}
+                  key={person.email}
+                  title={`${person.name} - ${person.joined ? "השתתף/ה" : "טרם השתתף/ה"}`}
+                  className="flex flex-col items-center gap-0.5"
                 >
-                  {k.word}
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-bold transition"
+                    style={
+                      person.joined
+                        ? { background: palette.dot, color: "#fff", boxShadow: `0 0 0 2px ${palette.border}` }
+                        : { background: "#EFEDEB", color: "#B5AEB0", border: "1px dashed #D8D2D0" }
+                    }
+                  >
+                    {initialsOf(person.name, person.email)}
+                  </span>
+                  <span
+                    className={`max-w-[52px] truncate text-[9px] ${
+                      person.joined ? "font-semibold text-[#3A3335]" : "text-[#B5AEB0]"
+                    }`}
+                  >
+                    {person.name.split(/\s+/)[0]}
+                  </span>
                 </span>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* מילות המפתח שעולות מהצוות */}
+      {keywords.length > 0 && (
+        <div className="mt-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Tag size={12} className="text-[#B5AEB0]" />
+            {keywords.map((k) => (
+              <span
+                key={k.stem}
+                className="rounded-full bg-[#F6E4E6] px-2.5 py-1 font-bold text-[#6E3540]"
+                style={{ fontSize: `${Math.min(15, 10.5 + k.count * 0.9)}px` }}
+              >
+                {k.word}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -292,13 +414,6 @@ function RoundBoard({ round }) {
           {showTools && (
             <div className="mt-3 space-y-2.5">
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowInvite(true)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#20A66B] py-2.5 text-[12px] font-semibold text-white transition active:scale-[0.98]"
-                >
-                  <MessageCircle size={14} /> תזכורת לצוות
-                </button>
                 {closed ? (
                   <button
                     type="button"
