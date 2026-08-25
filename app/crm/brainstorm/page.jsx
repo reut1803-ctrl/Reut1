@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ChevronDown,
+  FileEdit,
   Lightbulb,
   Lock,
   MessageCircle,
   RotateCcw,
-  Send,
+  Rocket,
   Sparkles,
   Tag,
   Trash2,
@@ -16,8 +17,10 @@ import {
 } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import {
+  buildThreads,
   extractKeywords,
   isRoundClosed,
+  isRoundDraft,
   relatedPairs,
   topLikedIds,
   paletteFromRoster,
@@ -28,6 +31,7 @@ import MindMapLines from "@/components/crm/brainstorm/MindMapLines";
 import RoundTimer from "@/components/crm/brainstorm/RoundTimer";
 import OpenRoundPanel from "@/components/crm/brainstorm/OpenRoundPanel";
 import WhatsappInvite from "@/components/crm/brainstorm/WhatsappInvite";
+import Composer from "@/components/crm/brainstorm/Composer";
 
 const hebrewDate = (iso) => {
   const d = new Date(iso || 0);
@@ -39,13 +43,13 @@ const hebrewDate = (iso) => {
 function RoundBoard({ round }) {
   const role = useCrmStore((s) => s.role);
   const notes = useCrmStore((s) => s.notesForRound(round.id));
-  const addNote = useCrmStore((s) => s.addBrainstormNote);
   const closeRound = useCrmStore((s) => s.closeBrainstormRound);
   const reopenRound = useCrmStore((s) => s.reopenBrainstormRound);
   const saveSummary = useCrmStore((s) => s.saveBrainstormSummary);
   const deleteRound = useCrmStore((s) => s.deleteBrainstormRound);
   const showToast = useCrmStore((s) => s.showToast);
   const authAllowlist = useCrmStore((s) => s.authAllowlist);
+  const launchRound = useCrmStore((s) => s.launchBrainstormRound);
 
   // צבע קבוע ושונה לכל איש/אשת צוות, לפי המקום ברשימת ההרשאות
   const roster = useMemo(
@@ -54,9 +58,9 @@ function RoundBoard({ round }) {
   );
   const paletteOf = (email) => paletteFromRoster(email, roster);
 
-  const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
+  const [launching, setLaunching] = useState(false);
+  const [launchError, setLaunchError] = useState("");
   const [summaryDraft, setSummaryDraft] = useState(round.summary || "");
   const [savingSummary, setSavingSummary] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -64,10 +68,21 @@ function RoundBoard({ round }) {
   const boardRef = useRef(null);
 
   const closed = isRoundClosed(round);
+  const draft = isRoundDraft(round);
   const isAdmin = role === "admin";
 
   const keywords = useMemo(() => extractKeywords(notes.map((n) => n.text)), [notes]);
-  const pairs = useMemo(() => relatedPairs(notes, keywords), [notes, keywords]);
+  const threads = useMemo(() => buildThreads(notes), [notes]);
+  // הקווים המחברים נמתחים רק בין הכרטיסיות הראשיות, כדי שהלוח לא יתמלא בקווים
+  const pairs = useMemo(
+    () => relatedPairs(threads.map((t) => t.note), keywords),
+    [threads, keywords]
+  );
+  // שמות הצוות, לצורך הדגשת התיוגים בתוך הטקסט
+  const mentionNames = useMemo(
+    () => authAllowlist.map((e) => e.name).filter(Boolean),
+    [authAllowlist]
+  );
   const gold = useMemo(() => topLikedIds(notes), [notes]);
   const participants = useMemo(() => {
     const map = new Map();
@@ -77,22 +92,21 @@ function RoundBoard({ round }) {
     return [...map.entries()];
   }, [notes]);
 
-  const handleSend = async () => {
-    const body = draft.trim();
-    if (!body || closed || sending) return;
-    setSending(true);
-    setError("");
+  const handleLaunch = async () => {
+    setLaunching(true);
+    setLaunchError("");
     try {
-      await addNote(round.id, body);
-      setDraft("");
+      await launchRound(round.id);
+      showToast("הסבב שוגר. עכשיו הצוות רואה אותו והשעון התחיל");
+      setShowInvite(true);
     } catch (err) {
-      setError(
+      setLaunchError(
         err?.code === "permission-denied"
-          ? "השרת דחה את השמירה. ייתכן שכללי האבטחה החדשים עוד לא פורסמו."
-          : "השמירה נכשלה בגלל תקלת תקשורת. הטקסט נשאר כאן - נסו לשלוח שוב."
+          ? "השרת דחה את השיגור. ייתכן שכללי האבטחה החדשים עוד לא פורסמו."
+          : "השיגור נכשל בגלל תקלת תקשורת. נסי שוב בעוד רגע."
       );
     }
-    setSending(false);
+    setLaunching(false);
   };
 
   const handleSaveSummary = async () => {
@@ -136,9 +150,34 @@ function RoundBoard({ round }) {
         <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-[#3A3335]">{round.question}</p>
       </div>
 
-      <div className="mt-3">
-        <RoundTimer round={round} />
-      </div>
+      {/* טיוטה: הסבב מוכן אך עדיין לא גלוי לאיש. השעון מתחיל רק בשיגור. */}
+      {draft ? (
+        <div className="mt-3 rounded-2xl border border-dashed border-[#C98894] bg-white/70 p-3">
+          <p className="flex items-center gap-1.5 text-[12px] font-bold text-[#8C4A55]">
+            <FileEdit size={14} /> טיוטה - עדיין לא שוגר לצוות
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-[#8A8285]">
+            כרגע רק את רואה את הסבב הזה. שלושת הימים יתחילו לרוץ מרגע השיגור, ולא מרגע ההכנה.
+          </p>
+          {launchError && (
+            <p className="mt-2 rounded-xl bg-[#FBEDED] px-3 py-2 text-[11px] leading-relaxed text-[#C24545]">
+              {launchError}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleLaunch}
+            disabled={launching}
+            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#8C4A55] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+          >
+            <Rocket size={15} /> {launching ? "משגרת..." : "שיגור לצוות והתחלת הספירה"}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3">
+          <RoundTimer round={round} />
+        </div>
+      )}
 
       {/* ענן מילות המפתח - השפה המשותפת שהצוות מייצר */}
       {keywords.length > 0 && (
@@ -181,51 +220,62 @@ function RoundBoard({ round }) {
         <MindMapLines containerRef={boardRef} pairs={pairs} />
         {notes.length === 0 ? (
           <p className="rounded-2xl bg-white/60 px-3 py-6 text-center text-[12px] leading-relaxed text-[#8A8285]">
-            עוד לא נכתב כאן כלום. הכרטיסייה הראשונה היא תמיד הכי חשובה - היא פותחת את הכיוון לכולם.
+            {draft
+              ? "הסבב מוכן. ברגע שתשגרי אותו, הצוות יוכל להתחיל לכתוב כאן."
+              : "עוד לא נכתב כאן כלום. הכרטיסייה הראשונה היא תמיד הכי חשובה - היא פותחת את הכיוון לכולם."}
           </p>
         ) : (
           <div className="relative z-10 space-y-3">
-            {notes.map((note) => (
-              <NoteCard key={note.id} note={note} gold={gold.has(note.id)} locked={closed} palette={paletteOf(note.authorEmail)} />
+            {threads.map(({ note, replies }) => (
+              <div key={note.id}>
+                <NoteCard
+                  note={note}
+                  gold={gold.has(note.id)}
+                  locked={closed}
+                  palette={paletteOf(note.authorEmail)}
+                  mentionNames={mentionNames}
+                  onReply={closed || draft ? null : setReplyTo}
+                />
+                {replies.length > 0 && (
+                  <div className="mt-2 mr-4 space-y-2 border-r-2 border-[#EAE5E3] pr-3">
+                    {replies.map((reply) => (
+                      <NoteCard
+                        key={reply.id}
+                        note={reply}
+                        isReply
+                        gold={gold.has(reply.id)}
+                        locked={closed}
+                        palette={paletteOf(reply.authorEmail)}
+                        mentionNames={mentionNames}
+                        onReply={closed || draft ? null : setReplyTo}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
       </div>
 
       {/* תיבת הכתיבה */}
-      {closed ? (
+      {draft ? null : closed ? (
         <div className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#EFEDEB] px-3 py-3 text-[12px] font-semibold text-[#6B6467]">
           <Lock size={14} /> הסבב נעול. אפשר לקרוא הכל, אך לא להוסיף.
         </div>
       ) : (
-        <div className="mt-4">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={3}
-            placeholder="מה את/ה חושב/ת? כתבו בחופשיות - כאן בונים יחד את התמונה."
-            className="w-full resize-none rounded-2xl border border-[#EAE5E3] bg-white/90 px-3 py-2.5 text-[13.5px] leading-relaxed outline-none focus:border-[#8C4A55]"
-          />
-          {error && (
-            <p className="mt-1.5 rounded-xl bg-[#FBEDED] px-3 py-2 text-[11px] leading-relaxed text-[#C24545]">
-              {error}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!draft.trim() || sending}
-            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#8C4A55] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
-          >
-            <Send size={15} /> {sending ? "שולחת..." : "הוספה ללוח"}
-          </button>
-        </div>
+        <Composer
+          roundId={round.id}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+          onSent={() => setReplyTo(null)}
+        />
       )}
 
       {/* אזור המנהלת: עדכון הצוות, סגירה, סיכום ומחיקה */}
       {isAdmin && (
         <div className="mt-4 space-y-2.5 border-t border-white/70 pt-3">
-          <div className="flex gap-2">
+          <div className={`flex gap-2 ${draft ? "hidden" : ""}`}>
             <button
               type="button"
               onClick={() => setShowInvite(true)}
@@ -304,6 +354,13 @@ function RoundBoard({ round }) {
 export default function BrainstormPage() {
   const role = useCrmStore((s) => s.role);
   const rounds = useCrmStore((s) => s.visibleRounds());
+  const markSeen = useCrmStore((s) => s.markBrainstormSeen);
+
+  // מרגע הכניסה לזירה, התיוגים שממתינים נחשבים כנראו והסימון בתפריט מתאפס
+  useEffect(() => {
+    markSeen();
+  }, [markSeen]);
+
   const brainstormLoaded = useCrmStore((s) => s.brainstormLoaded);
   const brainstormError = useCrmStore((s) => s.brainstormError);
   const [showArchive, setShowArchive] = useState(false);

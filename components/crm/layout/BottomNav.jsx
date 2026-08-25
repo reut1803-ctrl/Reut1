@@ -25,11 +25,17 @@ export default function BottomNav() {
   const role = useCrmStore((s) => s.role);
   const currentStaffEmail = useCrmStore((s) => s.currentStaffEmail);
   const pendingTasksCount = useCrmStore((s) => s.pendingPushedTasksCount(currentStaffEmail));
+  // כמה כרטיסיות תייגו אותי בזירה ועדיין לא נכנסתי לראות
+  const mentionCount = useCrmStore((s) => s.myUnseenMentions().length);
   let tabs = TABS;
   if (role === "staff") tabs = [...TABS, ...STAFF_TABS];
   if (role === "admin") tabs = [...TABS, ...STAFF_TABS, ...ADMIN_TABS];
 
-  const badgeCount = { favorites: favCount, tasks: role === "staff" ? pendingTasksCount : 0 };
+  const badgeCount = {
+    favorites: favCount,
+    tasks: role === "staff" ? pendingTasksCount : 0,
+    brainstorm: mentionCount,
+  };
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EAE5E3] bg-white/95 backdrop-blur safe-bottom">
