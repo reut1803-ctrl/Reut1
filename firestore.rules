@@ -58,6 +58,21 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // זירת סיעור המוחות: סבב דיון של הצוות על מועמד/ת אחד/ת.
+    // רק המנהלת פותחת, סוגרת, מסכמת ומוחקת סבב. הצוות קורא ומשתתף.
+    match /brainstormRounds/{id} {
+      allow read: if isStaff();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // כרטיסיות הדיון. כל אשת צוות כותבת ומסמנת לייקים.
+    // מחיקה: המנהלת, או הכותב/ת של הכרטיסייה עצמה.
+    match /brainstormNotes/{id} {
+      allow read, create: if isStaff();
+      allow update: if isStaff();
+      allow delete: if isAdmin() || (isStaff() && resource.data.get('authorEmail', '') == myEmail());
+    }
+
     // משימות: המנהלת רואה הכל. אשת צוות רואה אך ורק משימות שמשויכות אליה,
     // ולכן היא חייבת לשלוח שאילתה מסוננת לפי assigneeId (כפי שהאפליקציה עושה).
     function isMyTask() {

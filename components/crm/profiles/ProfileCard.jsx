@@ -15,6 +15,7 @@ import {
   Music,
   Link2,
   Trash2,
+  Lightbulb,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -39,6 +40,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const expandedId = useCrmStore((s) => s.expandedStaffAreaId);
   const toggleStaffArea = useCrmStore((s) => s.toggleStaffArea);
   const proposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
+  const brainstormSummary = useCrmStore((s) => s.brainstormSummaryFor(candidate.id));
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const showToast = useCrmStore((s) => s.showToast);
@@ -262,6 +264,18 @@ export default function ProfileCard({ candidate, onReadMore }) {
       </div>
 
       <div className="p-4">
+        {/* מצפן הצוות: סיכום המנהלת מסבב סיעור המוחות האחרון על המועמד/ת */}
+        {brainstormSummary && (
+          <div className="mb-3 rounded-2xl border border-[#F0D3A0] bg-[#FFF8E7] p-3">
+            <p className="flex items-center gap-1.5 text-[10px] font-bold text-[#946200]">
+              <Lightbulb size={12} /> מסקנת הצוות מסיעור המוחות
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed text-[#3A3335]">
+              {brainstormSummary.summary}
+            </p>
+          </div>
+        )}
+
         <h3 className="text-lg font-bold text-[#3A3335]">{candidate.name}</h3>
         <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8A8285]">{candidate.bio}</p>
 

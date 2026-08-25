@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Sparkles, Users, HeartHandshake, ListChecks, BarChart3 } from "lucide-react";
+import { Heart, Sparkles, Users, HeartHandshake, ListChecks, BarChart3, Lightbulb } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 
 const TABS = [
@@ -13,6 +13,7 @@ const TABS = [
 
 const STAFF_TABS = [
   { href: "/crm/proposals", label: "שידוכים", icon: HeartHandshake, key: "proposals" },
+  { href: "/crm/brainstorm", label: "סיעור", icon: Lightbulb, key: "brainstorm" },
   { href: "/crm/tasks", label: "משימות", icon: ListChecks, key: "tasks" },
 ];
 
@@ -42,17 +43,17 @@ export default function BottomNav() {
               key={tab.key}
               href={tab.href}
               data-tour={`tour-nav-${tab.key}`}
-              className="relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-semibold transition"
+              className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition"
             >
               <span className="relative">
-                <Icon size={22} className={active ? "text-[#8C4A55]" : "text-[#B5AEB0]"} strokeWidth={active ? 2.5 : 2} />
+                <Icon size={20} className={active ? "text-[#8C4A55]" : "text-[#B5AEB0]"} strokeWidth={active ? 2.5 : 2} />
                 {count > 0 && (
                   <span className="absolute -top-1.5 -left-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#20A66B] px-1 text-[10px] font-bold text-white">
                     {count}
                   </span>
                 )}
               </span>
-              <span className={active ? "text-[#8C4A55]" : "text-[#B5AEB0]"}>{tab.label}</span>
+              <span className={`whitespace-nowrap ${active ? "text-[#8C4A55]" : "text-[#B5AEB0]"}`}>{tab.label}</span>
               {active && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-[#8C4A55]" />}
             </Link>
           );

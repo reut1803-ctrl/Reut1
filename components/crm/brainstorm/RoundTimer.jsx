@@ -1,0 +1,62 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Hourglass, Lock } from "lucide-react";
+import { timeLeft, isRoundClosed } from "@/lib/crm/brainstorm";
+
+// שעון החול של הסבב: סופר לאחור שלושה ימים מרגע הפתיחה.
+// כשהזמן נגמר, הלוח ננעל להוספת תגובות והשעון מציג זאת במפורש.
+export default function RoundTimer({ round }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const closed = isRoundClosed(round, now);
+  const left = timeLeft(round?.closesAt, now);
+  const total = 3 * 24 * 60 * 60 * 1000;
+  const pct = closed ? 0 : Math.max(0, Math.min(100, Math.round((left.ms / total) * 100)));
+  // ביום האחרון השעון עובר לגוון מתריע, כדי שיהיה ברור שנשאר מעט זמן
+  const urgent = !closed && left.ms < 24 * 60 * 60 * 1000;
+
+  if (closed) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-2xl bg-[#EFEDEB] px-3 py-2.5 text-[12px] font-bold text-[#6B6467]">
+        <Lock size={14} /> הסבב נסגר. אפשר לקרוא, אך לא להוסיף תגובות חדשות.
+      </div>
+    );
+  }
+
+  const cell = (value, label) => (
+    <div className="flex flex-col items-center">
+      <span className="text-[19px] font-bold leading-none tabular-nums">{String(value).padStart(2, "0")}</span>
+      <span className="mt-0.5 text-[9px] font-semibold opacity-70">{label}</span>
+    </div>
+  );
+
+  return (
+    <div
+      className={`rounded-2xl px-3 py-2.5 ${urgent ? "bg-[#FBEDED] text-[#C24545]" : "bg-white/70 text-[#6E3540]"} backdrop-blur`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-[11px] font-bold">
+          <Hourglass size={13} /> {urgent ? "נשאר פחות מיום" : "זמן שנותר לסבב"}
+        </span>
+        <div className="flex items-center gap-3">
+          {cell(left.days, "ימים")}
+          {cell(left.hours, "שעות")}
+          {cell(left.minutes, "דקות")}
+          {cell(left.seconds, "שניות")}
+        </div>
+      </div>
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
+        <div
+          className={`h-full rounded-full transition-all duration-1000 ${urgent ? "bg-[#C24545]" : "bg-[#8C4A55]"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}

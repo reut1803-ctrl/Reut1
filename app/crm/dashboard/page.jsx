@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope } from "lucide-react";
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
+import { whatsappNumber } from "@/lib/crm/brainstorm";
 import Button from "@/components/crm/ui/Button";
 
 function metricColor(ratio) {
@@ -26,6 +27,55 @@ function MetricBar({ label, value, goal }) {
       <div className="h-2 w-full overflow-hidden rounded-full bg-[#F0EBE9]">
         <div className={`h-full rounded-full transition-all ${metricColor(ratio)}`} style={{ width: `${Math.max(pct, value > 0 ? 4 : 0)}%` }} />
       </div>
+    </div>
+  );
+}
+
+// רשומות שנוספו לפני שהטלפון הפך לשדה חובה. אפשר להשלים את המספר כאן,
+// כדי שאיש/אשת הצוות יקבל/תקבל עדכון בוואטסאפ על סבב סיעור מוחות חדש.
+function MissingPhoneRow({ entry }) {
+  const setAllowlistPhone = useCrmStore((s) => s.setAllowlistPhone);
+  const [value, setValue] = useState(entry.phone || "");
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const valid = !!whatsappNumber(value);
+
+  const save = async () => {
+    if (!valid || saving) return;
+    setSaving(true);
+    setFailed(false);
+    try {
+      await setAllowlistPhone(allowlistEmail(entry), value.trim());
+    } catch {
+      setFailed(true);
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="mt-2 rounded-lg bg-[#FFF8E7] px-2.5 py-2">
+      <p className="text-[11px] leading-relaxed text-[#946200]">
+        חסר מספר טלפון. בלעדיו אי אפשר לעדכן בוואטסאפ על סבב סיעור מוחות חדש.
+      </p>
+      <div className="mt-1.5 flex gap-1.5">
+        <input
+          type="tel"
+          dir="ltr"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="050-1234567"
+          className="min-w-0 flex-1 rounded-lg border border-[#EAE5E3] bg-white px-2.5 py-1.5 text-left text-[12px] outline-none focus:border-[#8C4A55]"
+        />
+        <button
+          onClick={save}
+          disabled={!valid || saving}
+          className="shrink-0 rounded-lg bg-[#8C4A55] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-40"
+        >
+          {saving ? "שומרת" : "שמירה"}
+        </button>
+      </div>
+      {failed && <p className="mt-1 text-[10px] text-[#C24545]">השמירה נכשלה, נסי שוב.</p>}
     </div>
   );
 }
@@ -56,6 +106,7 @@ export default function DashboardPage() {
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("staff");
+  const [newPhone, setNewPhone] = useState("");
   const [adding, setAdding] = useState(false);
   const [addResult, setAddResult] = useState(null);
   const [goalViewsDraft, setGoalViewsDraft] = useState(weeklyGoals.profileViews);
@@ -75,12 +126,19 @@ export default function DashboardPage() {
       setAddResult({ ok: false, text: "הכתובת אינה נראית ככתובת מייל תקינה. בדקי אותה שוב." });
       return;
     }
+    // הטלפון הוא שדה חובה: בלעדיו אי אפשר לעדכן את איש/אשת הצוות בוואטסאפ
+    // כשנפתח סבב סיעור מוחות חדש.
+    if (!whatsappNumber(newPhone)) {
+      setAddResult({ ok: false, text: "צריך מספר טלפון נייד תקין (למשל 050-1234567). בלעדיו אי אפשר לשלוח עדכונים בוואטסאפ." });
+      return;
+    }
     setAdding(true);
     setAddResult(null);
     try {
-      await addAllowlistEntry({ email, name: newName.trim() || email, role: newRole });
+      await addAllowlistEntry({ email, name: newName.trim() || email, role: newRole, phone: newPhone.trim() });
       setNewEmail("");
       setNewName("");
+      setNewPhone("");
       setAddResult({ ok: true, text: `${email} נוסף/ה בהצלחה. אפשר לשלוח לו/ה את הקישור לאתר.` });
     } catch (err) {
       setAddResult({
@@ -129,11 +187,15 @@ export default function DashboardPage() {
                   <p dir="ltr" className="text-left text-[11px] text-[#8A8285]">
                     {allowlistEmail(entry)} · {entry.role === "admin" ? "מנהלת" : "צוות"}
                   </p>
+                  {entry.phone && (
+                    <p dir="ltr" className="text-left text-[11px] text-[#8A8285]">{entry.phone}</p>
+                  )}
                 </div>
                 <button onClick={() => removeAllowlistEntry(entry.id)} aria-label="הסרה" className="rounded-full p-1.5 hover:bg-white">
                   <Trash2 size={14} className="text-[#C24545]" />
                 </button>
               </div>
+              {!whatsappNumber(entry.phone) && <MissingPhoneRow entry={entry} />}
               {isBrokenAllowlistEntry(entry) && (
                 <div className="mt-2 rounded-lg bg-[#FBEDED] px-2.5 py-2">
                   <p className="text-[11px] leading-relaxed text-[#C24545]">
@@ -166,6 +228,14 @@ export default function DashboardPage() {
             onChange={(e) => setNewName(e.target.value)}
             placeholder="שם תצוגה"
             className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-sm outline-none focus:border-[#8C4A55]"
+          />
+          <input
+            type="tel"
+            dir="ltr"
+            value={newPhone}
+            onChange={(e) => setNewPhone(e.target.value)}
+            placeholder="050-1234567 (חובה)"
+            className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2 text-left text-sm outline-none focus:border-[#8C4A55]"
           />
           <select
             value={newRole}
