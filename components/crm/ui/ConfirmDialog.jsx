@@ -1,9 +1,12 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
+import Overlay from "@/components/crm/ui/Overlay";
 
 export default function ConfirmDialog({ message, onConfirm, onCancel }) {
   return (
+    <Overlay>
+
     <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
       <div className="relative w-full max-w-xs rounded-3xl bg-white p-5 text-center shadow-2xl">
@@ -24,5 +27,6 @@ export default function ConfirmDialog({ message, onConfirm, onCancel }) {
         </div>
       </div>
     </div>
+    </Overlay>
   );
 }

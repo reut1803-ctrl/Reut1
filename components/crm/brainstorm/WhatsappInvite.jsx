@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Copy, MessageCircle, PhoneOff, X } from "lucide-react";
 import { useCrmStore, allowlistEmail } from "@/lib/crm/store";
 import { buildInviteMessage, whatsappNumber } from "@/lib/crm/brainstorm";
+import Overlay from "@/components/crm/ui/Overlay";
 
 // שליחת ההזמנה לצוות בוואטסאפ. הודעה אחת מוכנה מראש, וכפתור לכל איש/אשת צוות
 // שפותח את וואטסאפ עם ההודעה כבר כתובה - נשאר רק ללחוץ "שלח".
@@ -35,6 +36,8 @@ export default function WhatsappInvite({ round, onClose }) {
   };
 
   return (
+    <Overlay>
+
     <div className="fixed inset-0 z-[210] flex items-end justify-center sm:items-center" dir="rtl">
       <div className="absolute inset-0 bg-black/45" onClick={onClose} />
       <div className="relative max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl sm:rounded-3xl">
@@ -132,5 +135,6 @@ export default function WhatsappInvite({ round, onClose }) {
         </button>
       </div>
     </div>
+    </Overlay>
   );
 }

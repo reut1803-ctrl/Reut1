@@ -5,15 +5,16 @@ import { AtSign, CornerDownLeft, Heart, Reply, Trash2 } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { paletteFor, likeCount, mentionsMe } from "@/lib/crm/brainstorm";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
+import { toHebrewDate, toClock } from "@/lib/crm/hebrewDate";
 
+// חותמת הזמן של הכרטיסייה: תאריך עברי קצר ושעה אמיתית.
+// ערך חסר מחזיר מחרוזת ריקה, ולא 1.1.1970.
 const hebrewTime = (iso) => {
-  const d = new Date(iso || 0);
-  if (Number.isNaN(d.getTime())) return "";
-  return (
-    d.toLocaleDateString("he-IL", { day: "numeric", month: "numeric" }) +
-    " · " +
-    d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
-  );
+  if (!iso) return "";
+  const heb = toHebrewDate(iso, { withYear: false });
+  const clock = toClock(iso);
+  if (!clock) return "";
+  return heb ? `${heb} · ${clock}` : clock;
 };
 
 const escapeForRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

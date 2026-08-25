@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
   ChevronDown,
   FileEdit,
+  Eye,
   KeyRound,
   Lightbulb,
   Lock,
@@ -34,11 +34,9 @@ import RoundTimer from "@/components/crm/brainstorm/RoundTimer";
 import OpenRoundPanel from "@/components/crm/brainstorm/OpenRoundPanel";
 import WhatsappInvite from "@/components/crm/brainstorm/WhatsappInvite";
 import Composer from "@/components/crm/brainstorm/Composer";
+import CandidatePeek from "@/components/crm/brainstorm/CandidatePeek";
+import { fullDateLine } from "@/lib/crm/hebrewDate";
 
-const hebrewDate = (iso) => {
-  const d = new Date(iso || 0);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("he-IL");
-};
 
 // לוח הדיון של סבב אחד: השאלה, השעון, ענן מילות המפתח, הכרטיסיות הצפות
 // עם הקווים המחברים ביניהן, ותיבת הכתיבה.
@@ -68,11 +66,14 @@ function RoundBoard({ round }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showTools, setShowTools] = useState(false);
+  const [peekId, setPeekId] = useState(null);
   const boardRef = useRef(null);
 
   const closed = isRoundClosed(round);
   const draft = isRoundDraft(round);
   const isAdmin = role === "admin";
+  // התאריך האמיתי שנשמר בסבב, בעברית ובלועזית. סבב שעדיין טיוטה מציג את מועד ההכנה.
+  const startedAtLine = fullDateLine(draft ? round.createdAt : round.openedAt || round.createdAt);
 
   const keywords = useMemo(() => extractKeywords(notes.map((n) => n.text)), [notes]);
   const threads = useMemo(() => buildThreads(notes), [notes]);
@@ -132,17 +133,21 @@ function RoundBoard({ round }) {
           <h2 className="truncate text-[18px] font-bold text-[#3A3335]">
             {round.candidateName || "מועמד/ת"}
           </h2>
-          <p className="mt-0.5 text-[10px] text-[#B5AEB0]">
-            נפתח ע״י {round.openedBy} · {hebrewDate(round.openedAt)}
+          {/* טיוטה עדיין לא "נפתחה", ולכן מוצג תאריך ההכנה שלה.
+              ערך חסר מחזיר מחרוזת ריקה - ולא 1.1.1970. */}
+          <p className="mt-0.5 text-[10px] leading-relaxed text-[#B5AEB0]">
+            {draft ? "הוכן" : "נפתח"} ע״י {round.openedBy}
+            {startedAtLine ? ` · ${startedAtLine}` : ""}
           </p>
         </div>
         {round.candidateId && (
-          <Link
-            href={`/crm?open=${round.candidateId}`}
-            className="shrink-0 rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-[#8C4A55] shadow-sm"
+          <button
+            type="button"
+            onClick={() => setPeekId(round.candidateId)}
+            className="flex shrink-0 items-center gap-1 rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-[#8C4A55] shadow-sm transition active:scale-95"
           >
-            לכרטיס
-          </Link>
+            <Eye size={13} /> הצצה לכרטיס
+          </button>
         )}
       </div>
 
@@ -362,6 +367,8 @@ function RoundBoard({ round }) {
       )}
 
       {showInvite && <WhatsappInvite round={round} onClose={() => setShowInvite(false)} />}
+
+      {peekId && <CandidatePeek candidateId={peekId} onClose={() => setPeekId(null)} />}
     </div>
   );
 }
