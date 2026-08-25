@@ -5,11 +5,13 @@ import Link from "next/link";
 import {
   ChevronDown,
   FileEdit,
+  KeyRound,
   Lightbulb,
   Lock,
   MessageCircle,
   RotateCcw,
   Rocket,
+  Settings2,
   Sparkles,
   Tag,
   Trash2,
@@ -65,6 +67,7 @@ function RoundBoard({ round }) {
   const [savingSummary, setSavingSummary] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [showTools, setShowTools] = useState(false);
   const boardRef = useRef(null);
 
   const closed = isRoundClosed(round);
@@ -156,8 +159,8 @@ function RoundBoard({ round }) {
           <p className="flex items-center gap-1.5 text-[12px] font-bold text-[#8C4A55]">
             <FileEdit size={14} /> טיוטה - עדיין לא שוגר לצוות
           </p>
-          <p className="mt-1 text-[11px] leading-relaxed text-[#8A8285]">
-            כרגע רק את רואה את הסבב הזה. שלושת הימים יתחילו לרוץ מרגע השיגור, ולא מרגע ההכנה.
+          <p className="mt-1 text-[11.5px] leading-relaxed text-[#8A8285]">
+            רק את רואה אותו כרגע. שלושת הימים יתחילו מרגע השיגור.
           </p>
           {launchError && (
             <p className="mt-2 rounded-xl bg-[#FBEDED] px-3 py-2 text-[11px] leading-relaxed text-[#C24545]">
@@ -179,39 +182,33 @@ function RoundBoard({ round }) {
         </div>
       )}
 
-      {/* ענן מילות המפתח - השפה המשותפת שהצוות מייצר */}
-      {keywords.length > 0 && (
-        <div className="mt-3 rounded-2xl bg-white/60 p-3">
-          <p className="flex items-center gap-1.5 text-[10px] font-bold text-[#8A8285]">
-            <Tag size={12} /> מילות המפתח שעולות מהצוות
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {keywords.map((k, i) => (
-              <span
-                key={k.stem}
-                className="rounded-full bg-[#F6E4E6] px-2.5 py-1 font-bold text-[#6E3540]"
-                style={{ fontSize: `${Math.min(15, 10.5 + k.count * 0.9)}px`, opacity: 1 - i * 0.05 }}
-              >
-                {k.word}
-                <span className="mr-1 text-[9px] font-normal opacity-60">{k.count}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* מי כבר השתתף, בצבע הקבוע של כל אחד */}
-      {participants.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1 text-[10px] font-semibold text-[#8A8285]">
-            <Users size={12} /> השתתפו:
-          </span>
-          {participants.map(([email, name]) => (
-            <span key={email} className="flex items-center gap-1 text-[10px] font-semibold text-[#3A3335]">
-              <span className="h-2 w-2 rounded-full" style={{ background: paletteOf(email).dot }} />
-              {name}
-            </span>
-          ))}
+      {/* פס אחד שקט: מי השתתף, ומה חוזר על עצמו בדברי הצוות */}
+      {(participants.length > 0 || keywords.length > 0) && (
+        <div className="mt-3 space-y-2">
+          {participants.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              {participants.map(([email, name]) => (
+                <span key={email} className="flex items-center gap-1 text-[10.5px] font-semibold text-[#8A8285]">
+                  <span className="h-2 w-2 rounded-full" style={{ background: paletteOf(email).dot }} />
+                  {name}
+                </span>
+              ))}
+            </div>
+          )}
+          {keywords.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Tag size={12} className="text-[#B5AEB0]" />
+              {keywords.map((k) => (
+                <span
+                  key={k.stem}
+                  className="rounded-full bg-[#F6E4E6] px-2.5 py-1 font-bold text-[#6E3540]"
+                  style={{ fontSize: `${Math.min(15, 10.5 + k.count * 0.9)}px` }}
+                >
+                  {k.word}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -272,64 +269,82 @@ function RoundBoard({ round }) {
         />
       )}
 
-      {/* אזור המנהלת: עדכון הצוות, סגירה, סיכום ומחיקה */}
-      {isAdmin && (
-        <div className="mt-4 space-y-2.5 border-t border-white/70 pt-3">
-          <div className={`flex gap-2 ${draft ? "hidden" : ""}`}>
-            <button
-              type="button"
-              onClick={() => setShowInvite(true)}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#20A66B] py-2.5 text-[12px] font-semibold text-white transition active:scale-[0.98]"
-            >
-              <MessageCircle size={14} /> עדכון הצוות
-            </button>
-            {closed ? (
-              <button
-                type="button"
-                onClick={() => reopenRound(round.id)}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EAE5E3] bg-white py-2.5 text-[12px] font-semibold text-[#3A3335] transition active:scale-[0.98]"
-              >
-                <RotateCcw size={14} /> פתיחה לעוד 3 ימים
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => closeRound(round.id)}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EAE5E3] bg-white py-2.5 text-[12px] font-semibold text-[#3A3335] transition active:scale-[0.98]"
-              >
-                <Lock size={14} /> סגירת הסבב
-              </button>
-            )}
-          </div>
-
-          <div className="rounded-2xl bg-white/80 p-3">
-            <p className="text-[12px] font-bold text-[#3A3335]">סיכום המנהלת</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#8A8285]">
-              מה המסקנה מהדיון? הסיכום הזה יופיע בקביעות בראש כרטיס המועמד/ת, כמצפן לצוות.
-            </p>
-            <textarea
-              value={summaryDraft}
-              onChange={(e) => setSummaryDraft(e.target.value)}
-              rows={3}
-              placeholder="השורה התחתונה מהדיון..."
-              className="mt-2 w-full resize-none rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-[13px] leading-relaxed outline-none focus:border-[#8C4A55]"
-            />
-            <button
-              type="button"
-              onClick={handleSaveSummary}
-              disabled={savingSummary}
-              className="mt-2 w-full rounded-xl bg-[#8C4A55] py-2 text-[12px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
-            >
-              {savingSummary ? "שומרת..." : "שמירת הסיכום"}
-            </button>
-          </div>
-
+      {/* כלי המנהלת - מקופלים, כדי שהלוח עצמו יישאר נקי לקריאה */}
+      {isAdmin && !draft && (
+        <div className="mt-4 border-t border-white/70 pt-3">
           <button
             type="button"
-            onClick={() => setConfirmingDelete(true)}
-            className="flex w-full items-center justify-center gap-1.5 rounded-2xl py-2 text-[11px] font-semibold text-[#C24545]"
+            onClick={() => setShowTools((v) => !v)}
+            className="flex w-full items-center justify-between text-right"
           >
-            <Trash2 size={13} /> מחיקת הסבב כולו
+            <span className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#8C4A55]">
+              <Settings2 size={14} /> כלי מנהלת
+              {round.summary ? <span className="text-[10px] font-normal text-[#8A8285]">· יש סיכום</span> : null}
+            </span>
+            <ChevronDown size={17} className={`text-[#8A8285] transition ${showTools ? "rotate-180" : ""}`} />
+          </button>
+
+          {showTools && (
+            <div className="mt-3 space-y-2.5">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowInvite(true)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#20A66B] py-2.5 text-[12px] font-semibold text-white transition active:scale-[0.98]"
+                >
+                  <MessageCircle size={14} /> תזכורת לצוות
+                </button>
+                {closed ? (
+                  <button
+                    type="button"
+                    onClick={() => reopenRound(round.id)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EAE5E3] bg-white py-2.5 text-[12px] font-semibold text-[#3A3335] transition active:scale-[0.98]"
+                  >
+                    <RotateCcw size={14} /> עוד 3 ימים
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => closeRound(round.id)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EAE5E3] bg-white py-2.5 text-[12px] font-semibold text-[#3A3335] transition active:scale-[0.98]"
+                  >
+                    <Lock size={14} /> סגירה עכשיו
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-2xl py-2 text-[11px] font-semibold text-[#C24545]"
+              >
+                <Trash2 size={13} /> מחיקת הסבב
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* הסיכום - נשאר גלוי תמיד למנהלת, כי זה הצעד האחרון והחשוב של הסבב */}
+      {isAdmin && !draft && (
+        <div className="mt-3 rounded-2xl bg-[#FFF8E7]/80 p-3">
+          <p className="text-[12.5px] font-bold text-[#946200]">
+            {closed ? "השורה התחתונה מהדיון" : "השורה התחתונה מהדיון (אפשר כבר עכשיו)"}
+          </p>
+          <textarea
+            value={summaryDraft}
+            onChange={(e) => setSummaryDraft(e.target.value)}
+            rows={3}
+            placeholder="מה המסקנה? זה יופיע בראש כרטיס המועמד/ת."
+            className="mt-2 w-full resize-none rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-[13px] leading-relaxed outline-none focus:border-[#8C4A55]"
+          />
+          <button
+            type="button"
+            onClick={handleSaveSummary}
+            disabled={savingSummary || !summaryDraft.trim()}
+            className="mt-2 w-full rounded-xl bg-[#8C4A55] py-2 text-[12.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
+          >
+            {savingSummary ? "שומרת..." : "שמירת הסיכום"}
           </button>
         </div>
       )}
@@ -389,20 +404,26 @@ export default function BrainstormPage() {
         מרחב אחד לחשוב יחד על מועמד/ת אחד/ת, שלושה ימים, שאלה אחת עמוקה.
       </p>
 
-      {brainstormError && (
-        <div className="mt-4 rounded-2xl bg-[#FBEDED] p-3">
-          <p className="text-[12px] font-bold text-[#C24545]">הזירה עדיין לא פעילה</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-[#8A8285]">
-            השרת חוסם כרגע את הגישה לזירה. זה קורה עד שכללי האבטחה החדשים מתפרסמים. כל שאר המערכת
-            ממשיכה לעבוד כרגיל.
+      {brainstormError ? (
+        <div className="mt-4 rounded-3xl border border-[#F0D3A0] bg-[#FFF8E7] p-4">
+          <p className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#946200]">
+            <KeyRound size={15} /> נשאר צעד אחד להפעלת הזירה
+          </p>
+          <p className="mt-2 text-[12px] leading-relaxed text-[#3A3335]">
+            הזירה בנויה ומוכנה, אבל מסד הנתונים עדיין לא יודע להכניס אליה אף אחד. זו הרשאה שצריך
+            לאשר פעם אחת בלבד בחשבון ה-Firebase, ורק בעלת החשבון יכולה לעשות זאת.
+          </p>
+          <p className="mt-2 text-[11.5px] leading-relaxed text-[#8A8285]">
+            אחרי האישור החד-פעמי הזה הזירה תעבוד לתמיד, ולא נצטרך לחזור לזה שוב. בינתיים כל שאר
+            המערכת ממשיכה לעבוד כרגיל.
           </p>
         </div>
-      )}
-
-      {role === "admin" && (
-        <div className="mt-4">
-          <OpenRoundPanel onOpened={(round) => setInviteRound(round)} />
-        </div>
+      ) : (
+        role === "admin" && (
+          <div className="mt-4">
+            <OpenRoundPanel onOpened={(round) => setInviteRound(round)} />
+          </div>
+        )
       )}
 
       <div className="mt-5 space-y-4">

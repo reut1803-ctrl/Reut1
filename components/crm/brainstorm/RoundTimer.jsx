@@ -10,7 +10,7 @@ export default function RoundTimer({ round }) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(id);
   }, []);
 
@@ -24,33 +24,26 @@ export default function RoundTimer({ round }) {
   if (closed) {
     return (
       <div className="flex items-center justify-center gap-2 rounded-2xl bg-[#EFEDEB] px-3 py-2.5 text-[12px] font-bold text-[#6B6467]">
-        <Lock size={14} /> הסבב נסגר. אפשר לקרוא, אך לא להוסיף תגובות חדשות.
+        <Lock size={14} /> הסבב נסגר. אפשר לקרוא הכל, אך לא להוסיף.
       </div>
     );
   }
 
-  const cell = (value, label) => (
-    <div className="flex flex-col items-center">
-      <span className="text-[19px] font-bold leading-none tabular-nums">{String(value).padStart(2, "0")}</span>
-      <span className="mt-0.5 text-[9px] font-semibold opacity-70">{label}</span>
-    </div>
-  );
+  // מנוסח כמשפט אחד קריא במקום ארבעה מונים מתקתקים. על פני שלושה ימים,
+  // שניות שרצות הן רעש - מה שחשוב זה כמה זמן נשאר בגדול.
+  const text = left.days > 0
+    ? `נשארו ${left.days} ימים ו-${left.hours} שעות`
+    : left.hours > 0
+    ? `נשארו ${left.hours} שעות ו-${left.minutes} דקות`
+    : `נשארו ${left.minutes} דקות`;
 
   return (
     <div
       className={`rounded-2xl px-3 py-2.5 ${urgent ? "bg-[#FBEDED] text-[#C24545]" : "bg-white/70 text-[#6E3540]"} backdrop-blur`}
     >
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-[11px] font-bold">
-          <Hourglass size={13} /> {urgent ? "נשאר פחות מיום" : "זמן שנותר לסבב"}
-        </span>
-        <div className="flex items-center gap-3">
-          {cell(left.days, "ימים")}
-          {cell(left.hours, "שעות")}
-          {cell(left.minutes, "דקות")}
-          {cell(left.seconds, "שניות")}
-        </div>
-      </div>
+      <span className="flex items-center gap-1.5 text-[12.5px] font-bold">
+        <Hourglass size={14} /> {text}
+      </span>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${urgent ? "bg-[#C24545]" : "bg-[#8C4A55]"}`}

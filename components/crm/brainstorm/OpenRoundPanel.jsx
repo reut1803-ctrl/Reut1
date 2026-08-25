@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Lightbulb, Plus, Sparkles } from "lucide-react";
+import { Check, ChevronDown, PenLine, Plus } from "lucide-react";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import { useCrmStore } from "@/lib/crm/store";
 import { QUESTION_BANK } from "@/lib/crm/brainstorm";
 
 const CUSTOM = "__custom__";
+// כמה שאלות מוצגות מיד. השאר נפתחות בלחיצה, כדי שהמסך הראשון יישאר קצר.
+const VISIBLE = 4;
 
-// פתיחת סבב חדש - למנהלת בלבד. בוחרים מועמד/ת, בוחרים שאלה ממאגר שאלות
-// העומק (או כותבים שאלה משלנו), ופותחים.
+// פתיחת סבב חדש - למנהלת בלבד. שני צעדים ממוספרים: על מי מדברים, ומה שואלים.
 export default function OpenRoundPanel({ onOpened }) {
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const candidates_ = useCrmStore((s) => s.candidates);
@@ -17,8 +18,9 @@ export default function OpenRoundPanel({ onOpened }) {
   const showToast = useCrmStore((s) => s.showToast);
 
   const [candidateId, setCandidateId] = useState("");
-  const [questionKey, setQuestionKey] = useState(QUESTION_BANK[0]);
+  const [questionKey, setQuestionKey] = useState("");
   const [customQuestion, setCustomQuestion] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,6 +31,7 @@ export default function OpenRoundPanel({ onOpened }) {
 
   const question = questionKey === CUSTOM ? customQuestion.trim() : questionKey;
   const canOpen = !!candidateId && !!question && !saving;
+  const shown = showAll ? QUESTION_BANK : QUESTION_BANK.slice(0, VISIBLE);
 
   const handleOpen = async () => {
     if (!canOpen) return;
@@ -39,49 +42,58 @@ export default function OpenRoundPanel({ onOpened }) {
       if (!round) throw new Error("empty");
       setCandidateId("");
       setCustomQuestion("");
-      setQuestionKey(QUESTION_BANK[0]);
-      showToast("הסבב נפתח. אפשר לעדכן את הצוות בוואטסאפ");
+      setQuestionKey("");
+      setShowAll(false);
+      showToast("הסבב מוכן. עכשיו אפשר לשגר אותו לצוות");
       onOpened?.(round);
     } catch (err) {
       setError(
         err?.code === "permission-denied"
-          ? "השרת דחה את פתיחת הסבב. ייתכן שכללי האבטחה החדשים עוד לא פורסמו."
+          ? "השרת חוסם את הזירה. כללי האבטחה של הזירה עדיין לא פורסמו ב-Firebase."
           : "פתיחת הסבב נכשלה בגלל תקלת תקשורת. נסי שוב בעוד רגע."
       );
     }
     setSaving(false);
   };
 
+  const step = (num, title, done) => (
+    <div className="mb-2 flex items-center gap-2">
+      <span
+        className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+          done ? "bg-[#20A66B] text-white" : "bg-[#8C4A55] text-white"
+        }`}
+      >
+        {done ? <Check size={11} /> : num}
+      </span>
+      <span className="text-[13px] font-bold text-[#3A3335]">{title}</span>
+    </div>
+  );
+
   return (
-    <div className="rounded-3xl border border-[#EAE5E3] bg-white/80 p-4 shadow-[0_8px_26px_rgba(58,51,53,0.07)] backdrop-blur">
-      <p className="flex items-center gap-1.5 text-[14px] font-bold text-[#3A3335]">
-        <Sparkles size={16} className="text-[#8C4A55]" /> פתיחת סבב חדש
-      </p>
-      <p className="mt-1 text-[11px] leading-relaxed text-[#8A8285]">
-        בוחרים מועמד/ת ושאלה אחת. הצוות יקבל שלושה ימים לחשוב יחד, ובסוף תכתבי סיכום שילווה את
-        הכרטיס.
-      </p>
+    <div className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_8px_26px_rgba(58,51,53,0.07)]">
+      <p className="mb-3 text-[15px] font-bold text-[#3A3335]">פתיחת סבב חדש</p>
 
-      <div className="mt-3">
-        <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">על מי מדברים?</p>
-        <SearchableSelect
-          value={candidateId}
-          onChange={(v) => setCandidateId(v || "")}
-          placeholder="בחירת מועמד/ת..."
-          emptyText="לא נמצא/ה מועמד/ת בשם הזה"
-          options={people.map((c) => ({ value: c.id, label: c.name }))}
-        />
-      </div>
+      {/* צעד 1 */}
+      {step(1, "על מי מדברים?", !!candidateId)}
+      <SearchableSelect
+        value={candidateId}
+        onChange={(v) => setCandidateId(v || "")}
+        placeholder="בחירת מועמד/ת..."
+        emptyText="לא נמצא/ה מועמד/ת בשם הזה"
+        options={people.map((c) => ({ value: c.id, label: c.name }))}
+      />
 
-      <div className="mt-3">
-        <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">שאלת העומק לסבב</p>
+      {/* צעד 2 - נפתח רק אחרי שנבחר/ה מועמד/ת, כדי שלא יהיה עומס במסך אחד */}
+      <div className={`mt-4 ${candidateId ? "" : "pointer-events-none opacity-40"}`}>
+        {step(2, "מה שואלים את הצוות?", !!question)}
+
         <div className="space-y-1.5">
-          {QUESTION_BANK.map((q) => (
+          {shown.map((q) => (
             <button
               key={q}
               type="button"
               onClick={() => setQuestionKey(q)}
-              className={`block w-full rounded-2xl border px-3 py-2.5 text-right text-[12px] leading-relaxed transition ${
+              className={`block w-full rounded-2xl border px-3 py-2.5 text-right text-[12.5px] leading-relaxed transition ${
                 questionKey === q
                   ? "border-[#8C4A55] bg-[#F6E4E6] font-semibold text-[#6E3540]"
                   : "border-[#EAE5E3] bg-white text-[#3A3335]"
@@ -90,42 +102,53 @@ export default function OpenRoundPanel({ onOpened }) {
               {q}
             </button>
           ))}
+        </div>
+
+        {!showAll && QUESTION_BANK.length > VISIBLE && (
           <button
             type="button"
-            onClick={() => setQuestionKey(CUSTOM)}
-            className={`block w-full rounded-2xl border px-3 py-2.5 text-right text-[12px] transition ${
-              questionKey === CUSTOM
-                ? "border-[#8C4A55] bg-[#F6E4E6] font-semibold text-[#6E3540]"
-                : "border-dashed border-[#C98894] bg-white text-[#8C4A55]"
-            }`}
+            onClick={() => setShowAll(true)}
+            className="mt-1.5 flex w-full items-center justify-center gap-1 py-1.5 text-[12px] font-semibold text-[#8C4A55]"
           >
-            שאלה משלי...
+            <ChevronDown size={14} /> עוד {QUESTION_BANK.length - VISIBLE} שאלות
           </button>
-        </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setQuestionKey(CUSTOM)}
+          className={`mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-2xl border px-3 py-2.5 text-[12.5px] transition ${
+            questionKey === CUSTOM
+              ? "border-[#8C4A55] bg-[#F6E4E6] font-semibold text-[#6E3540]"
+              : "border-dashed border-[#C98894] bg-white text-[#8C4A55]"
+          }`}
+        >
+          <PenLine size={14} /> לכתוב שאלה משלי
+        </button>
 
         {questionKey === CUSTOM && (
           <textarea
             value={customQuestion}
             onChange={(e) => setCustomQuestion(e.target.value)}
             rows={2}
-            placeholder="כתבי כאן את השאלה שתעמוד במרכז הסבב"
+            autoFocus
+            placeholder="השאלה שתעמוד במרכז הסבב..."
             className="mt-2 w-full resize-none rounded-2xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#8C4A55]"
           />
         )}
       </div>
 
       {error && (
-        <p className="mt-2.5 rounded-xl bg-[#FBEDED] px-3 py-2 text-[11px] leading-relaxed text-[#C24545]">{error}</p>
+        <p className="mt-3 rounded-xl bg-[#FBEDED] px-3 py-2 text-[11.5px] leading-relaxed text-[#C24545]">{error}</p>
       )}
 
       <button
         type="button"
         onClick={handleOpen}
         disabled={!canOpen}
-        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#8C4A55] py-3 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+        className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#8C4A55] py-3 text-[13.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
       >
-        {saving ? <Lightbulb size={16} /> : <Plus size={16} />}
-        {saving ? "פותחת..." : "פתיחת הסבב"}
+        <Plus size={16} /> {saving ? "מכינה..." : "הכנת הסבב"}
       </button>
     </div>
   );
