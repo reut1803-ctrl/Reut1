@@ -51,11 +51,18 @@ service cloud.firestore {
     // מאגר המועמדים. הצוות קורא, מוסיף ומעדכן. מחיקה שמורה למנהלת בלבד.
     // אין לצמצם את create ל-isAdmin: הצוות חייב להיות מסוגל להזין מועמדים
     // חדשים בעצמו, וזו דרישה מפורשת של רעות.
+    //
+    // כרטיס חסוי: מסמך שבו confidential == true נקרא על ידי המנהלת בלבד.
+    // הכלל הזה נאכף בשרת, ולא רק במסך - איש/אשת צוות אינו/ה יכול/ה למשוך
+    // אותו בשום דרך, גם לא ישירות מול מסד הנתונים.
+    function notConfidential() {
+      return resource.data.get('confidential', false) == false;
+    }
     match /candidates/{candidateId} {
-      allow get: if isStaff() && notBlockedFromMe();
-      allow list: if isStaff();
+      allow get: if isAdmin() || (isStaff() && notConfidential() && notBlockedFromMe());
+      allow list: if isAdmin() || (isStaff() && notConfidential());
       allow create: if isStaff();
-      allow update: if isStaff() && notBlockedFromMe();
+      allow update: if isAdmin() || (isStaff() && notConfidential() && notBlockedFromMe());
       allow delete: if isAdmin();
     }
 

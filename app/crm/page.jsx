@@ -94,6 +94,13 @@ function ProfilesFeed() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, candidatesLoaded, candidates_]);
 
+  // השלמה חד-פעמית של שדה "חסוי" לכרטיסים ותיקים. רצה רק אצל המנהלת ובשקט,
+  // ומכינה את המאגר לאכיפה בשרת בלי שהצוות יאבד כרטיסים ותיקים.
+  useEffect(() => {
+    if (role !== "admin" || !candidatesLoaded) return;
+    useCrmStore.getState().backfillConfidentialFlag();
+  }, [role, candidatesLoaded, candidates_]);
+
   // "קודמות" מוגדרת כ"כל מי שאינו חדש" - משלימה מתמטית, כדי שכרטיס לא ייפול בין הלשוניות
   const inTab = (c, which) => (which === "new" ? !!c.isNew : !c.isNew);
 
