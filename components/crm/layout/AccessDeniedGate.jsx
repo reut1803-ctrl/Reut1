@@ -11,6 +11,7 @@ import { useCrmStore } from "@/lib/crm/store";
 export default function AccessDeniedGate({ unverified = false }) {
   const googleUser = useCrmStore((s) => s.googleUser);
   const signOutGoogle = useCrmStore((s) => s.signOutGoogle);
+  const retryAllowlistCheck = useCrmStore((s) => s.retryAllowlistCheck);
   const errorCode = useCrmStore((s) => s.allowlistErrorCode);
   const [copied, setCopied] = useState(false);
   const [siteAddress, setSiteAddress] = useState("");
@@ -49,7 +50,7 @@ export default function AccessDeniedGate({ unverified = false }) {
 
         {unverified && (
           <button
-            onClick={() => window.location.reload()}
+            onClick={retryAllowlistCheck}
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#8C4A55] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98]"
           >
             <RefreshCw size={15} /> ניסיון נוסף
