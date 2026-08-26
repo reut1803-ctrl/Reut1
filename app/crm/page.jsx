@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
@@ -32,6 +32,8 @@ function ProfilesFeed() {
   const tab = useCrmStore((s) => s.feedTab);
   const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
+  const [focusedId, setFocusedId] = useState(null);
+  const focusedOnceRef = useRef(null);
 
   // אחרי הוספת מועמד/ת חדש/ה: מנקים כל סינון פעיל ועוברים למאגר וללשונית הנכונים,
   // כדי שהכרטיס החדש ייראה מיד בראש הרשימה ולא "ייבלע" בסינון קודם שנשאר ברקע.
@@ -61,6 +63,36 @@ function ProfilesFeed() {
     setAutoSearch(c.name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // אחרי שמירת עריכה חוזרים למאגר עם מזהה הכרטיס שנערך, וגוללים ישירות אליו
+  // במקום לקפוץ לראש הרשימה. הכרטיס גם מקבל הדגשה קצרה כדי שיהיה קל למצוא אותו.
+  useEffect(() => {
+    const editedId = searchParams.get("edited");
+    if (!editedId || !candidatesLoaded) return;
+    // מתמקדים בכרטיס פעם אחת בלבד. בלי זה, כל החלפת לשונית או עדכון מהשרת
+    // הייתה מושכת את המסך בחזרה לאותו כרטיס.
+    if (focusedOnceRef.current === editedId) return;
+    focusedOnceRef.current = editedId;
+    let cancelled = false;
+    // הרשימה נבנית אחרי שהנתונים מגיעים, ולכן מחפשים את הכרטיס עד שהוא קיים במסך
+    const deadline = Date.now() + 2000;
+    const focus = () => {
+      if (cancelled) return;
+      const el = document.querySelector(`[data-candidate-card="${editedId}"]`);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "auto" });
+        setFocusedId(editedId);
+        setTimeout(() => !cancelled && setFocusedId(null), 2200);
+        return;
+      }
+      if (Date.now() < deadline) requestAnimationFrame(focus);
+    };
+    requestAnimationFrame(focus);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, candidatesLoaded, candidates_]);
 
   // "קודמות" מוגדרת כ"כל מי שאינו חדש" - משלימה מתמטית, כדי שכרטיס לא ייפול בין הלשוניות
   const inTab = (c, which) => (which === "new" ? !!c.isNew : !c.isNew);
@@ -226,7 +258,16 @@ function ProfilesFeed() {
           )}
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {candidates.map((c) => (
-              <ProfileCard key={c.id} candidate={c} />
+              // העוגן מאפשר לחזור בדיוק לכרטיס הזה אחרי עריכה, בלי לקפוץ לראש הרשימה
+              <div
+                key={c.id}
+                data-candidate-card={c.id}
+                className={`rounded-3xl transition-shadow duration-500 ${
+                  c.id === focusedId ? "ring-2 ring-[#8C4A55] ring-offset-2 ring-offset-[#F6F5F4]" : ""
+                }`}
+              >
+                <ProfileCard candidate={c} />
+              </div>
             ))}
           </div>
         </>
