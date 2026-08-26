@@ -261,7 +261,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-[#CCBDAB] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+    // מזהה קבוע לכל כרטיס, כדי שהמאגר יוכל לגלול בחזרה בדיוק אליו אחרי עריכה
+    <div
+      id={`candidate-card-${candidate.id}`}
+      className="overflow-hidden rounded-3xl border border-[#CCBDAB] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]"
+    >
       <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
         {candidate.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

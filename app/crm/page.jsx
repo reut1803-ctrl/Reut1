@@ -29,6 +29,8 @@ function ProfilesFeed() {
   const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
   const handledSavedId = useRef(null);
+  // הכרטיס שהרגע נשמר - נגלול אליו ונסמן אותו לרגע קצר
+  const [justSavedId, setJustSavedId] = useState(null);
 
   // אחרי הוספה או עריכה של כרטיס - עוברים ללוח הנכון (בנים/בנות) וללשונית שבה הוא יושב,
   // כדי שהכרטיס שהרגע נשמר ייראה מיד בראש הרשימה ולא "ייעלם" בלוח השני.
@@ -42,8 +44,44 @@ function ProfilesFeed() {
     setBoard(c.gender);
     // תמיד לתצוגת כל המאגר, כדי שהכרטיס שנשמר בוודאות ייראה
     setTab("all");
+    setJustSavedId(savedId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, candidates_]);
+
+  // גלילה חזרה אל הכרטיס שהרגע נערך, במקום קפיצה לראש העמוד.
+  // מסך העריכה הוא עמוד נפרד, ולכן חזרה ממנו תמיד נוחתת למעלה - כאן אנחנו
+  // מחזירים את המשתמשת בדיוק לנקודה שבה הייתה ברשימה.
+  //
+  // הכרטיס לא בהכרח קיים ב-DOM ברגע הזה: הרשימה מגיעה מהשרת ועשויה להתעדכן
+  // מיד אחרי הטעינה, ולכן מנסים שוב כמה פריימים עד שהוא מופיע.
+  useEffect(() => {
+    if (!justSavedId) return;
+    let cancelled = false;
+    let attempts = 0;
+    let timer = null;
+
+    const tryScroll = () => {
+      if (cancelled) return;
+      const el = document.getElementById(`candidate-card-${justSavedId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        // ההדגשה נשארת רגע ואז נעלמת, כדי שיהיה ברור איזה כרטיס עודכן
+        timer = setTimeout(() => {
+          if (!cancelled) setJustSavedId(null);
+        }, 2200);
+        return;
+      }
+      // עד כשתי שניות של המתנה - רשת איטית עלולה להחזיר את הרשימה באיחור
+      if (attempts++ < 120) requestAnimationFrame(tryScroll);
+      else setJustSavedId(null);
+    };
+    requestAnimationFrame(tryScroll);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [justSavedId, candidates_, tab, board]);
 
   useEffect(() => {
     const openId = searchParams.get("openCandidate");
@@ -213,7 +251,14 @@ function ProfilesFeed() {
           )}
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {candidates.map((c) => (
-              <ProfileCard key={c.id} candidate={c} />
+              <div
+                key={c.id}
+                className={`rounded-3xl transition-shadow duration-500 ${
+                  justSavedId === c.id ? "ring-4 ring-[#844442] ring-offset-2 ring-offset-[#F5EFE6]" : ""
+                }`}
+              >
+                <ProfileCard candidate={c} />
+              </div>
             ))}
           </div>
         </>
