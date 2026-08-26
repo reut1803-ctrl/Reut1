@@ -2,6 +2,7 @@
 
 import { X, MapPin, Briefcase, Route, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
+import { candidateInitials } from "@/lib/crm/initials";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
 
@@ -14,7 +15,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
     <div className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
-        <div className={`relative aspect-[4/3] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
+        <div className={`relative aspect-[4/3] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient ?? candidate.name)}`}>
           {photos.length > 0 ? (
             <div className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [&::-webkit-scrollbar]:hidden">
               {photos.map((url, i) => (
@@ -30,7 +31,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
-                {candidate.initials}
+                {candidateInitials(candidate.name)}
               </span>
             </div>
           )}

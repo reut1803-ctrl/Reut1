@@ -13,6 +13,17 @@ export const CANDIDATE_GRADIENTS = [
   "from-lime-400 to-green-300",
 ];
 
-export function getGradientClass(index) {
-  return CANDIDATE_GRADIENTS[index % CANDIDATE_GRADIENTS.length];
+// כרטיסים ותיקים, וכאלה שנוצרו מחוץ לטופס הראשי, נשמרו בלי שדה gradient.
+// אז החישוב הישן החזיר "כלום", הרקע נשאר לבן, וכרטיס בלי תמונה נראה כמו
+// ריבוע ריק לגמרי. כאן לעולם לא מוחזר ערך ריק: ערך חסר נגזר מהטקסט שהועבר
+// (בדרך כלל השם), כך שלכל מועמד/ת יש גוון קבוע משלו/ה.
+export function getGradientClass(value) {
+  const n = Number(value);
+  if (Number.isFinite(n) && n >= 0) {
+    return CANDIDATE_GRADIENTS[Math.floor(n) % CANDIDATE_GRADIENTS.length];
+  }
+  const key = String(value ?? "");
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) hash = (hash * 31 + key.charCodeAt(i)) % 100000;
+  return CANDIDATE_GRADIENTS[hash % CANDIDATE_GRADIENTS.length];
 }

@@ -26,7 +26,7 @@ import {
   isRoundClosed,
   isRoundDraft,
   relatedPairs,
-  topLikedIds,
+  topLikedId,
   paletteFromRoster,
   participationOf,
   initialsOf,
@@ -95,7 +95,8 @@ function RoundBoard({ round }) {
     () => authAllowlist.map((e) => e.name).filter(Boolean),
     [authAllowlist]
   );
-  const gold = useMemo(() => topLikedIds(notes), [notes]);
+  // תווית אחת בלבד לכל סבב, ורק כשיש הסכמה אמיתית של הצוות
+  const goldId = useMemo(() => topLikedId(notes), [notes]);
   // מי מהצוות כבר כתב ומי עדיין לא - כולל מי שטרם נכנס
   const participation = useMemo(() => participationOf(authAllowlist, notes), [authAllowlist, notes]);
 
@@ -354,7 +355,7 @@ function RoundBoard({ round }) {
               <div key={note.id}>
                 <NoteCard
                   note={note}
-                  gold={gold.has(note.id)}
+                  gold={goldId === note.id}
                   locked={closed}
                   palette={paletteOf(note.authorEmail)}
                   mentionNames={mentionNames}
@@ -367,7 +368,7 @@ function RoundBoard({ round }) {
                         key={reply.id}
                         note={reply}
                         isReply
-                        gold={gold.has(reply.id)}
+                        gold={goldId === reply.id}
                         locked={closed}
                         palette={paletteOf(reply.authorEmail)}
                         mentionNames={mentionNames}
