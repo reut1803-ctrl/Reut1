@@ -195,7 +195,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const isExpanded = expandedId === candidate.id;
   const firstName = candidate.name.split(" ")[0];
 
-  const shareText = buildProfileShareText(candidate, { includePhone: canSeeFullProfile });
+  // טלפון לעולם אינו נכלל בטקסט המיוצא - ראו lib/crm/shareText.js
+  const shareText = buildProfileShareText(candidate);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(shareText);

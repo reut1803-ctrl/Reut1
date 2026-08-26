@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { Phone, MessageCircle, MessageSquare, ChevronLeft, UserCheck } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { waDigits } from "@/components/crm/profiles/ProfileCard";
+import { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 
 // "המועמדים שלי" - רשימה אישית לכל אשת צוות, של המועמדים שהיא הנציגה
 // המלווה שלהם. מנהלת רואה את כל המשויכים, מקובצים לפי נציגה.
@@ -63,35 +64,44 @@ export default function MyCandidatesPage() {
                   </div>
                 </div>
 
-                {c.phone && (
-                  <div className="mt-2 flex items-center justify-end gap-2 border-t border-[#E8DCCB] pt-2">
-                    <a
-                      href={`sms:${c.phone}`}
-                      aria-label={`שליחת הודעה ל${c.name}`}
-                      title="הודעת SMS"
-                      className="text-[#7C6E60] transition active:scale-90"
-                    >
-                      <MessageSquare size={17} />
-                    </a>
-                    <a
-                      href={`https://wa.me/${waDigits(c.phone)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`וואטסאפ ל${c.name}`}
-                      title="וואטסאפ"
-                      className="text-[#62826B] transition active:scale-90"
-                    >
-                      <MessageCircle size={17} />
-                    </a>
-                    <a
-                      href={`tel:${c.phone}`}
-                      dir="ltr"
-                      className="flex items-center gap-1 text-[13px] font-semibold text-[#3A2E26]"
-                    >
-                      <Phone size={13} className="text-[#844442]" />
-                      {c.phone}
-                    </a>
+                {/* יצירת קשר ישירה בקליק אחד: חיוג ווואטסאפ ככפתורים מלאים,
+                    כדי שהשגריר/ה לא יצטרך/תצטרך לחפש את המספר במקום אחר. */}
+                {c.phone ? (
+                  <div className="mt-2 border-t border-[#E8DCCB] pt-2">
+                    <p dir="ltr" className="mb-2 text-right text-[12px] font-semibold text-[#7C6E60]">
+                      {prettyPhone(c.phone)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`tel:${c.phone}`}
+                        aria-label={`חיוג ל${c.name}`}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#844442] px-3 py-2.5 text-[13px] font-semibold text-white transition active:scale-95"
+                      >
+                        <Phone size={15} /> חיוג
+                      </a>
+                      <a
+                        href={`https://wa.me/${waDigits(c.phone)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`וואטסאפ ל${c.name}`}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#62826B] px-3 py-2.5 text-[13px] font-semibold text-white transition active:scale-95"
+                      >
+                        <MessageCircle size={15} /> וואטסאפ
+                      </a>
+                      <a
+                        href={`sms:${c.phone}`}
+                        aria-label={`הודעת SMS ל${c.name}`}
+                        title="הודעת SMS"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#CCBDAB] bg-white text-[#7C6E60] transition active:scale-95"
+                      >
+                        <MessageSquare size={16} />
+                      </a>
+                    </div>
                   </div>
+                ) : (
+                  <p className="mt-2 border-t border-[#E8DCCB] pt-2 text-[11px] text-[#A2937F]">
+                    לא הוזן טלפון בכרטיס הזה
+                  </p>
                 )}
               </div>
             );

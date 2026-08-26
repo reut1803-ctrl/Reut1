@@ -1,8 +1,11 @@
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
 import { occupationsOf, locationOf } from "@/lib/crm/mockData";
+import { stripPhoneNumbers } from "@/lib/crm/shareText";
 export default function CandidateExportTemplate({ candidate, forwardedRef, photoDataUrl }) {
   const routeTags = occupationsOf(candidate);
+  // דיסקרטיות: מספר טלפון שנכתב בתוך התיאור לא ייצא לקובץ
+  const safeBio = stripPhoneNumbers(candidate.bio);
   const firstName = candidate.name?.split(" ")[0] || "";
 
   return (
@@ -45,10 +48,10 @@ export default function CandidateExportTemplate({ candidate, forwardedRef, photo
         </tbody>
       </table>
 
-      {candidate.bio && (
+      {safeBio && (
         <div style={{ marginTop: "28px" }}>
           <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#844442" }}>קצת על {firstName}</h3>
-          <p style={{ fontSize: "15px", lineHeight: 1.7, whiteSpace: "pre-line", margin: 0 }}>{candidate.bio}</p>
+          <p style={{ fontSize: "15px", lineHeight: 1.7, whiteSpace: "pre-line", margin: 0 }}>{safeBio}</p>
         </div>
       )}
 
