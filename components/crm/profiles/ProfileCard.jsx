@@ -75,10 +75,10 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // מוצג רק לצוות ולמנהלת, ובעיצוב עדין - זו תזכורת, לא אזהרה.
   const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
   // מפת הפעילות כוללת גם הצעות שידוך וסבבי סיעור מוחות, ולא רק עריכות כרטיס
-  const activityIndex = useCrmStore((s) => s.activityIndex);
+  const attentionData = useCrmStore((s) => s.attentionData);
   const now = Date.now() + serverOffsetMs;
-  const untouchedDays = daysSinceActivity(candidate, now, activityIndex);
-  const showAttention = (role === "staff" || role === "admin") && needsAttention(candidate, now, activityIndex);
+  const untouchedDays = daysSinceActivity(candidate, now, attentionData);
+  const showAttention = (role === "staff" || role === "admin") && needsAttention(candidate, now, attentionData);
   // "הזרקור היומי": שליטה ידנית מהירה, ישירות על הכרטיס ברשימה, למנהלת בלבד.
   const [spotlightSaving, setSpotlightSaving] = useState(false);
   const inSpotlight = candidate.spotlight === true;

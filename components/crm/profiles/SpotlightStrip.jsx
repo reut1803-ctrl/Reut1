@@ -9,7 +9,7 @@ import { daysSinceActivity } from "@/lib/crm/attention";
 // גם ברשימה הרגילה שמתחת; זו תזכורת, לא הוצאה מהמאגר.
 // לחיצה על כרטיס בזרקור גוללת אל אותו כרטיס ברשימה שמתחת ומדגישה אותו,
 // בלי שום ניווט ובלי רענון.
-export default function SpotlightStrip({ candidates, now, activityIndex, onSelect }) {
+export default function SpotlightStrip({ candidates, now, attentionData, onSelect }) {
   if (!candidates || candidates.length === 0) return null;
 
   return (
@@ -23,7 +23,7 @@ export default function SpotlightStrip({ candidates, now, activityIndex, onSelec
 
         <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1">
           {candidates.map((c) => {
-            const days = daysSinceActivity(c, now, activityIndex);
+            const days = daysSinceActivity(c, now, attentionData);
             return (
               <button
                 key={c.id}

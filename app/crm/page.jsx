@@ -34,7 +34,7 @@ function ProfilesFeed() {
   // נרשמים להיסט שעון השרת עצמו (ולא רק לפונקציה), כדי שהמסך יתעדכן
   // ברגע שההיסט נמדד ולא יישאר עם חישוב זמן על שעון מכשיר שגוי.
   const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
-  const activityIndex = useCrmStore((s) => s.activityIndex);
+  const attentionData = useCrmStore((s) => s.attentionData);
   const tab = useCrmStore((s) => s.feedTab);
   const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
@@ -142,9 +142,9 @@ function ProfilesFeed() {
   // כרטיס בזרקור נמצא תמיד גם ברשימה הרגילה - הזרקור אינו מוציא אף אחד ממנה.
   const spotlightNow = Date.now() + serverOffsetMs;
   const spotlight = useMemo(
-    () => (role === "staff" || role === "admin" ? pickSpotlight(candidates, spotlightNow, activityIndex) : []),
+    () => (role === "staff" || role === "admin" ? pickSpotlight(candidates, spotlightNow, attentionData) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [candidates, role, serverOffsetMs, activityIndex]
+    [candidates, role, serverOffsetMs, attentionData]
   );
 
   // גלילה אל הכרטיס המלא ברשימה שמתחת, בלי ניווט ובלי רענון
@@ -233,7 +233,7 @@ function ProfilesFeed() {
         <SpotlightStrip
           candidates={spotlight}
           now={spotlightNow}
-          activityIndex={activityIndex}
+          attentionData={attentionData}
           onSelect={jumpToCard}
         />
       )}

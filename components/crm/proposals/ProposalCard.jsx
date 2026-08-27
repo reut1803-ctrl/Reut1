@@ -1,9 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Clock, Copy, Check, Download, Phone, Sparkles, Trash2, UserCheck, X } from "lucide-react";
+import {
+  AlertTriangle,
+  BellRing,
+  ChevronDown,
+  Clock,
+  Copy,
+  Check,
+  Download,
+  MessageCircle,
+  MessageSquare,
+  Phone,
+  Sparkles,
+  Trash2,
+  UserCheck,
+  X,
+} from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { buildProfileShareText } from "@/lib/crm/shareText";
+import { whatsappNumber } from "@/lib/crm/brainstorm";
+import { daysSinceStatusChange, isProposalStuck, wasNudged } from "@/lib/crm/attention";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
@@ -41,6 +58,44 @@ async function downloadPhoto(url, fileName) {
   }
 }
 
+// סרגל תקשורת מהיר: חיוג, וואטסאפ ו-SMS ישירות מהכרטיס, בלי להעתיק מספר
+// ובלי לצאת מהמערכת. כל הקישורים נפתחים באפליקציה החיצונית של המכשיר,
+// ולכן המסך שמאחור אינו נטען מחדש ומיקום הגלילה נשמר.
+function QuickContactBar({ phone, name }) {
+  const clean = String(phone || "").replace(/[^\d+]/g, "");
+  if (!clean) {
+    return <p className="mt-0.5 text-[11px] text-[#B5AEB0]">לא הוזן מספר טלפון</p>;
+  }
+  const wa = whatsappNumber(phone);
+  const item =
+    "flex flex-1 items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[10px] font-semibold transition active:scale-95";
+
+  return (
+    <div className="mt-1.5">
+      <p dir="ltr" className="mb-1 text-right text-[11px] text-[#B5AEB0]">{clean}</p>
+      <div className="flex gap-1.5">
+        <a href={`tel:${clean}`} aria-label={`חיוג ל${name}`} className={`${item} text-[#3A3335]`}>
+          <Phone size={12} /> חיוג
+        </a>
+        {wa && (
+          <a
+            href={`https://wa.me/${wa}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`וואטסאפ ל${name}`}
+            className={`${item} text-[#20A66B]`}
+          >
+            <MessageCircle size={12} /> וואטסאפ
+          </a>
+        )}
+        <a href={`sms:${clean}`} aria-label={`הודעה ל${name}`} className={`${item} text-[#8C4A55]`}>
+          <MessageSquare size={12} /> SMS
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
@@ -69,9 +124,7 @@ function ContactCard({ candidate }) {
   return (
     <div className="rounded-2xl bg-[#F6F5F4] p-3">
       <p className="text-[13px] font-bold text-[#3A3335]">{candidate.name}</p>
-      <p dir="ltr" className="mt-0.5 flex items-center gap-1 text-[12px] text-[#8A8285]">
-        <Phone size={12} /> {candidate.phone}
-      </p>
+      <QuickContactBar phone={candidate.phone} name={candidate.name} />
       <button
         onClick={handleCopy}
         className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4]"
@@ -146,10 +199,16 @@ export default function ProposalCard({ proposal }) {
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidateExistsInDb = useCrmStore((s) => s.candidateExistsInDb);
   const candidatesLoaded = useCrmStore((s) => s.candidatesLoaded);
+  const nudgeProposal = useCrmStore((s) => s.nudgeProposal);
+  const authAllowlist = useCrmStore((s) => s.authAllowlist);
+  const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // חותמת הנדנוד נכתבת בשרת ולכן חוזרת אלינו רגע אחרי הלחיצה. עד שהיא מגיעה,
+  // הסימון המקומי הזה כבר מעמעם את הכפתור - כדי שלא תישלח לחיצה כפולה.
+  const [nudgedNow, setNudgedNow] = useState(false);
 
   const male = findCandidateById(proposal.maleId);
   const female = findCandidateById(proposal.femaleId);
@@ -190,6 +249,29 @@ export default function ProposalCard({ proposal }) {
     else showToast(`הסטטוס עודכן ל"${stage}"`);
   };
 
+  // --- חיווי "תקוע" ונדנוד ---
+  // הצעה שלא זזה שבוע ומעלה. הצעה שירדה מהפרק אינה "תקועה" - היא נגמרה.
+  const now = Date.now() + serverOffsetMs;
+  const stuckDays = daysSinceStatusChange(proposal, now);
+  const stuck = proposal.status !== PROPOSAL_DROPPED && isProposalStuck(proposal, now);
+  const alreadyNudged = nudgedNow || wasNudged(proposal);
+
+  // מציאת איש/אשת הצוות שמטפל/ת בהצעה. קודם לפי המייל (מדויק), ורק אם הוא
+  // חסר - לפי השם. הצעות ותיקות נשמרו לפני שהמייל נשמר בשיוך.
+  const assigneeKey = String(proposal.assigneeEmail || "").trim().toLowerCase();
+  const assigneeName = String(proposal.assignee || "").trim();
+  const assigneeEntry = assigneeKey
+    ? authAllowlist.find((e) => String(e.email || e.id || "").trim().toLowerCase() === assigneeKey)
+    : assigneeName
+      ? authAllowlist.find((e) => String(e.name || "").trim() === assigneeName)
+      : null;
+  const assigneeWhatsapp = whatsappNumber(assigneeEntry?.phone);
+  const nudgeText = encodeURIComponent(
+    `היי! שמתי לב שההצעה מתעכבת. מה קורה עם זה?\n(ההצעה: ${maleName} ⚭ ${femaleName})`
+  );
+  // הנדנוד מוצג למנהלת בלבד, רק על הצעה תקועה, ורק כשיש למי לשלוח אותו
+  const canNudge = role === "admin" && stuck && !!proposal.assignee;
+
   return (
     <div className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <div className="flex items-center justify-between">
@@ -212,14 +294,53 @@ export default function ProposalCard({ proposal }) {
         </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-between">
-        {proposal.assignee ? (
-          <span className="flex items-center gap-1.5 rounded-full bg-[#F6E4E6] px-2.5 py-1 text-[11px] font-bold text-[#6E3540]">
-            <UserCheck size={12} /> מטופל/ת ע״י {proposal.assignee}
-          </span>
-        ) : (
-          <span className="text-[11px] font-semibold text-[#B5AEB0]">טרם שויך לאיש צוות</span>
-        )}
+      {/* חיווי תקיעות: הצעה שלא שינתה שלב שבוע ומעלה */}
+      {stuck && (
+        <div className="mt-2 flex items-center gap-1.5 rounded-xl border border-[#F0C9A0] bg-[#FFF3E4] px-2.5 py-1.5">
+          <AlertTriangle size={13} className="shrink-0 text-[#B45309]" />
+          <p className="text-[11px] font-bold text-[#B45309]">תקוע {stuckDays} ימים ללא שינוי סטטוס</p>
+        </div>
+      )}
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {proposal.assignee ? (
+            <span className="flex items-center gap-1.5 rounded-full bg-[#F6E4E6] px-2.5 py-1 text-[11px] font-bold text-[#6E3540]">
+              <UserCheck size={12} /> מטופל/ת ע״י {proposal.assignee}
+            </span>
+          ) : (
+            <span className="text-[11px] font-semibold text-[#B5AEB0]">טרם שויך לאיש צוות</span>
+          )}
+
+          {/* כפתור הנדנוד יושב כאן בלבד - בשורת הכותרת, ליד תגית השיוך */}
+          {canNudge &&
+            (alreadyNudged ? (
+              <span className="flex items-center gap-1 rounded-full bg-[#EFEDEB] px-2.5 py-1 text-[11px] font-semibold text-[#B5AEB0]">
+                <BellRing size={12} /> נדנוד נשלח
+              </span>
+            ) : assigneeWhatsapp ? (
+              <a
+                href={`https://wa.me/${assigneeWhatsapp}?text=${nudgeText}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  setNudgedNow(true);
+                  nudgeProposal(proposal.id);
+                }}
+                className="flex items-center gap-1 rounded-full bg-[#20A66B] px-2.5 py-1 text-[11px] font-bold text-white transition active:scale-95"
+              >
+                <BellRing size={12} /> נדנוד ל{proposal.assignee}
+              </a>
+            ) : (
+              <span
+                title="אין מספר טלפון ברשומת ההרשאות של איש/אשת הצוות"
+                className="flex items-center gap-1 rounded-full bg-[#EFEDEB] px-2.5 py-1 text-[11px] font-semibold text-[#B5AEB0]"
+              >
+                <BellRing size={12} /> חסר טלפון לנדנוד
+              </span>
+            ))}
+        </div>
+
         {proposal.assignee ? (
           <button
             onClick={() => assignProposal(proposal.id, null)}
