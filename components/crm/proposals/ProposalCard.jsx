@@ -69,9 +69,11 @@ function QuickContactBar({ phone, name }) {
     return <p className="mt-1 text-[11px] text-[#B5AEB0]">לא הוזן מספר טלפון</p>;
   }
   const wa = whatsappNumber(phone);
-  // רקע לבן ונייטרלי: הצבע מגיע מהסמל עצמו, בדיוק כמו במסך הבית של הטלפון
+  // רקעים פסטליים רכים, בלי מסגרות קשיחות, כדי שהכפתורים ישבו בהרמוניה
+  // בתוך פלטת הבורדו-ניוד של המערכת. הצורה של כל סמל נשארת המוכרת -
+  // רק הגוון מרוכך, כך שהוא לא "זורח" מול שאר המסך.
   const item =
-    "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl border border-[#EAE5E3] bg-white py-2 transition active:scale-95";
+    "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-2.5 transition active:scale-95";
 
   return (
     <div className="mt-1.5">
@@ -80,9 +82,13 @@ function QuickContactBar({ phone, name }) {
           הסמל יושב מעל הכיתוב, ולכן אין שאלה של כיווניות בתוך הכפתור -
           גם "SMS" באותיות לועזיות נשאר במקומו. */}
       <div className="flex gap-1.5">
-        <a href={`tel:${clean}`} aria-label={`חיוג ל${name}`} className={item}>
-          <PhoneCallIcon size={22} />
-          <span className="text-[10px] font-bold text-[#3A3335]">חיוג</span>
+        <a
+          href={`tel:${clean}`}
+          aria-label={`חיוג ל${name}`}
+          className={`${item} bg-[#E9EEF4]`}
+        >
+          <PhoneCallIcon size={22} color="#6E8CAE" />
+          <span className="text-[10px] font-bold text-[#4C617A]">חיוג</span>
         </a>
         {wa && (
           <a
@@ -90,15 +96,19 @@ function QuickContactBar({ phone, name }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`וואטסאפ ל${name}`}
-            className={item}
+            className={`${item} bg-[#E5F0E8]`}
           >
-            <WhatsappIcon size={22} />
-            <span className="text-[10px] font-bold text-[#3A3335]">וואטסאפ</span>
+            <WhatsappIcon size={22} color="#5EA37C" />
+            <span className="text-[10px] font-bold text-[#3F7757]">וואטסאפ</span>
           </a>
         )}
-        <a href={`sms:${clean}`} aria-label={`הודעת SMS ל${name}`} className={item}>
-          <SmsIcon size={22} />
-          <span dir="ltr" className="text-[10px] font-bold text-[#3A3335]">SMS</span>
+        <a
+          href={`sms:${clean}`}
+          aria-label={`הודעת SMS ל${name}`}
+          className={`${item} bg-[#F5EEE1]`}
+        >
+          <SmsIcon size={22} color="#C6A461" />
+          <span dir="ltr" className="text-[10px] font-bold text-[#8A6E36]">SMS</span>
         </a>
       </div>
     </div>
