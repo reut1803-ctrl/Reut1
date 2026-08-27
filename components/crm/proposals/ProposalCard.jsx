@@ -69,20 +69,20 @@ function QuickContactBar({ phone, name }) {
     return <p className="mt-1 text-[11px] text-[#B5AEB0]">לא הוזן מספר טלפון</p>;
   }
   const wa = whatsappNumber(phone);
+  // רקע לבן ונייטרלי: הצבע מגיע מהסמל עצמו, בדיוק כמו במסך הבית של הטלפון
   const item =
-    "flex flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl border py-2 transition active:scale-95";
+    "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl border border-[#EAE5E3] bg-white py-2 transition active:scale-95";
 
   return (
     <div className="mt-1.5">
       <p dir="ltr" className="mb-1.5 text-right text-[11px] tracking-wide text-[#B5AEB0]">{clean}</p>
+      {/* הסדר מימין לשמאל: חיוג, וואטסאפ, SMS.
+          הסמל יושב מעל הכיתוב, ולכן אין שאלה של כיווניות בתוך הכפתור -
+          גם "SMS" באותיות לועזיות נשאר במקומו. */}
       <div className="flex gap-1.5">
-        <a
-          href={`tel:${clean}`}
-          aria-label={`חיוג ל${name}`}
-          className={`${item} border-[#DCE7F5] bg-[#F2F7FD] text-[#2A6BB0]`}
-        >
-          <PhoneCallIcon size={19} />
-          <span className="text-[10px] font-bold">חיוג</span>
+        <a href={`tel:${clean}`} aria-label={`חיוג ל${name}`} className={item}>
+          <PhoneCallIcon size={22} />
+          <span className="text-[10px] font-bold text-[#3A3335]">חיוג</span>
         </a>
         {wa && (
           <a
@@ -90,19 +90,15 @@ function QuickContactBar({ phone, name }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`וואטסאפ ל${name}`}
-            className={`${item} border-[#BFE9D2] bg-[#EAF9F1] text-[#25D366]`}
+            className={item}
           >
-            <WhatsappIcon size={19} />
-            <span className="text-[10px] font-bold text-[#128C4B]">וואטסאפ</span>
+            <WhatsappIcon size={22} />
+            <span className="text-[10px] font-bold text-[#3A3335]">וואטסאפ</span>
           </a>
         )}
-        <a
-          href={`sms:${clean}`}
-          aria-label={`הודעת SMS ל${name}`}
-          className={`${item} border-[#EADFC4] bg-[#FDF8EC] text-[#B08A2A]`}
-        >
-          <SmsIcon size={19} />
-          <span dir="ltr" className="text-[10px] font-bold">SMS</span>
+        <a href={`sms:${clean}`} aria-label={`הודעת SMS ל${name}`} className={item}>
+          <SmsIcon size={22} />
+          <span dir="ltr" className="text-[10px] font-bold text-[#3A3335]">SMS</span>
         </a>
       </div>
     </div>
