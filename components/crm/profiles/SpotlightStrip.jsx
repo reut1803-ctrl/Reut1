@@ -3,13 +3,13 @@
 import { Sun, ChevronLeft } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
-import { daysSinceTouch } from "@/lib/crm/attention";
+import { daysSinceActivity } from "@/lib/crm/attention";
 
 // "הזרקור היומי" - מקטע נפרד מעל הרשימה. הכרטיסים שמופיעים כאן נשארים
 // גם ברשימה הרגילה שמתחת; זו תזכורת, לא הוצאה מהמאגר.
 // לחיצה על כרטיס בזרקור גוללת אל אותו כרטיס ברשימה שמתחת ומדגישה אותו,
 // בלי שום ניווט ובלי רענון.
-export default function SpotlightStrip({ candidates, now, onSelect }) {
+export default function SpotlightStrip({ candidates, now, activityIndex, onSelect }) {
   if (!candidates || candidates.length === 0) return null;
 
   return (
@@ -23,7 +23,7 @@ export default function SpotlightStrip({ candidates, now, onSelect }) {
 
         <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1">
           {candidates.map((c) => {
-            const days = daysSinceTouch(c, now);
+            const days = daysSinceActivity(c, now, activityIndex);
             return (
               <button
                 key={c.id}

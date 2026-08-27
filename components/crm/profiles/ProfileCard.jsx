@@ -34,7 +34,7 @@ import { CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
-import { daysSinceTouch, needsAttention } from "@/lib/crm/attention";
+import { daysSinceActivity, needsAttention } from "@/lib/crm/attention";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -74,9 +74,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // חיווי "דורש התייחסות": מבוסס על חותמת זמן של השרת בלבד (ראו lib/crm/attention.js).
   // מוצג רק לצוות ולמנהלת, ובעיצוב עדין - זו תזכורת, לא אזהרה.
   const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
+  // מפת הפעילות כוללת גם הצעות שידוך וסבבי סיעור מוחות, ולא רק עריכות כרטיס
+  const activityIndex = useCrmStore((s) => s.activityIndex);
   const now = Date.now() + serverOffsetMs;
-  const untouchedDays = daysSinceTouch(candidate, now);
-  const showAttention = (role === "staff" || role === "admin") && needsAttention(candidate, now);
+  const untouchedDays = daysSinceActivity(candidate, now, activityIndex);
+  const showAttention = (role === "staff" || role === "admin") && needsAttention(candidate, now, activityIndex);
   // "הזרקור היומי": שליטה ידנית מהירה, ישירות על הכרטיס ברשימה, למנהלת בלבד.
   const [spotlightSaving, setSpotlightSaving] = useState(false);
   const inSpotlight = candidate.spotlight === true;
