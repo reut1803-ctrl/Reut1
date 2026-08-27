@@ -146,6 +146,8 @@ export default function StaffTour() {
 
   const [run, setRun] = useState(false);
   const [steps, setSteps] = useState([]);
+  // כפתור ההדרכה שקוף למחצה עד שנוגעים בו
+  const [helpAwake, setHelpAwake] = useState(false);
 
   const email = role === "staff" ? currentUser()?.email : null;
   const storageKey = email ? `${TOUR_SEEN_PREFIX}${email}` : null;
@@ -186,12 +188,20 @@ export default function StaffTour() {
 
   return (
     <>
+      {/* כפתור ההדרכה מוצמד לקצה הימני של המסך ושקוף למחצה במנוחה, כדי שלא
+          יסתיר אף חלק מכרטיסי המועמדים בזמן גלילה. נגיעה מחזירה אותו לאטימות מלאה.
+          הוא יושב בקצה הנגדי לכפתורי הנגישות והוואטסאפ, כדי שלא ייווצר ערמה אחת. */}
       <button
         onClick={startTour}
+        onPointerEnter={() => setHelpAwake(true)}
+        onPointerLeave={() => setHelpAwake(false)}
+        onTouchStart={() => setHelpAwake(true)}
         aria-label={role === "admin" ? "הפעלת סיור הדרכה - תצוגת צוות" : "הפעלת סיור הדרכה"}
-        className="safe-bottom fixed bottom-28 left-20 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#8C4A55] text-white shadow-lg transition active:scale-90"
+        className={`safe-bottom fixed bottom-28 right-0 z-20 flex h-10 w-9 items-center justify-center rounded-l-2xl rounded-r-none bg-[#8C4A55] pl-0.5 text-white shadow-lg transition-opacity duration-300 active:scale-90 ${
+          helpAwake ? "opacity-100" : "opacity-30"
+        }`}
       >
-        <HelpCircle size={20} />
+        <HelpCircle size={19} />
       </button>
 
       <Joyride

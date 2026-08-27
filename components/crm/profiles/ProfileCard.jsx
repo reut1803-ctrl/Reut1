@@ -17,6 +17,7 @@ import {
   Trash2,
   Lightbulb,
   Clock3,
+  Star,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -76,6 +77,24 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const now = Date.now() + serverOffsetMs;
   const untouchedDays = daysSinceTouch(candidate, now);
   const showAttention = (role === "staff" || role === "admin") && needsAttention(candidate, now);
+  // "הזרקור היומי": שליטה ידנית מהירה, ישירות על הכרטיס ברשימה, למנהלת בלבד.
+  const [spotlightSaving, setSpotlightSaving] = useState(false);
+  const inSpotlight = candidate.spotlight === true;
+  const handleToggleSpotlight = async () => {
+    if (spotlightSaving) return;
+    setSpotlightSaving(true);
+    try {
+      // touch: false בכוונה - סימון לזרקור אינו "טיפול" במועמד/ת. אם הוא היה
+      // נספר כטיפול, כל סימון היה מאפס את מונה הימים ומוציא את הכרטיס
+      // מהבחירה האוטומטית של 14 הימים.
+      await updateCandidate(candidate.id, { spotlight: !inSpotlight }, { touch: false });
+      showToast(inSpotlight ? "הוסר מהזרקור היומי" : "נוסף לזרקור היומי");
+    } catch {
+      showToast("לא הצלחנו לעדכן את הזרקור");
+    } finally {
+      setSpotlightSaving(false);
+    }
+  };
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
   const candidateTag = CANDIDATE_TAGS.find((t) => t.name === normalizeTagName(candidate.tag));
@@ -256,14 +275,32 @@ export default function ProfileCard({ candidate, onReadMore }) {
           )}
         </div>
 
-        <button
-          data-tour="tour-favorite-heart"
-          onClick={() => toggleFavorite(candidate.id)}
-          aria-label="הוספה למועדפים"
-          className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow transition active:scale-90"
-        >
-          <Heart size={18} className={isFavorite ? "fill-[#8C4A55] text-[#8C4A55]" : "text-[#8A8285]"} />
-        </button>
+        <div className="absolute left-3 top-3 flex items-center gap-1.5">
+          <button
+            data-tour="tour-favorite-heart"
+            onClick={() => toggleFavorite(candidate.id)}
+            aria-label="הוספה למועדפים"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow transition active:scale-90"
+          >
+            <Heart size={18} className={isFavorite ? "fill-[#8C4A55] text-[#8C4A55]" : "text-[#8A8285]"} />
+          </button>
+
+          {role === "admin" && (
+            <button
+              onClick={handleToggleSpotlight}
+              disabled={spotlightSaving}
+              title={inSpotlight ? "הסרה מהזרקור היומי" : "הוספה לזרקור היומי"}
+              aria-label={inSpotlight ? "הסרה מהזרקור היומי" : "הוספה לזרקור היומי"}
+              aria-pressed={inSpotlight}
+              className={`flex h-9 items-center gap-1 rounded-full px-2.5 shadow transition active:scale-90 disabled:opacity-60 ${
+                inSpotlight ? "bg-[#D9B45F] text-white" : "bg-white/90 text-[#946200]"
+              }`}
+            >
+              <Star size={16} className={inSpotlight ? "fill-white" : ""} />
+              <span className="text-[11px] font-bold">{inSpotlight ? "בזרקור" : "לזרקור"}</span>
+            </button>
+          )}
+        </div>
 
         <div data-tour="tour-card-info" className="absolute bottom-3 right-3 flex flex-wrap gap-1.5">
           <span className="tag-chip-crm">{candidate.age}</span>

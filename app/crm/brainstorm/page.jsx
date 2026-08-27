@@ -83,7 +83,16 @@ function RoundBoard({ round }) {
   // התאריך האמיתי שנשמר בסבב, בעברית ובלועזית. סבב שעדיין טיוטה מציג את מועד ההכנה.
   const startedAtLine = fullDateLine(draft ? round.createdAt : round.openedAt || round.createdAt);
 
-  const keywords = useMemo(() => extractKeywords(notes.map((n) => n.text)), [notes]);
+  // שם המועמד/ת ושמות הצוות אינם מילות מפתח - הם חוזרים בכל כרטיסייה
+  // ורק מציפים את הלוח בלי להוסיף שום מידע על כיוון החשיבה.
+  const keywordExclude = useMemo(
+    () => [round.candidateName, ...authAllowlist.map((e) => e.name)].filter(Boolean),
+    [round.candidateName, authAllowlist]
+  );
+  const keywords = useMemo(
+    () => extractKeywords(notes.map((n) => n.text), { exclude: keywordExclude }),
+    [notes, keywordExclude]
+  );
   const threads = useMemo(() => buildThreads(notes), [notes]);
   // הקווים המחברים נמתחים רק בין הכרטיסיות הראשיות, כדי שהלוח לא יתמלא בקווים
   const pairs = useMemo(
