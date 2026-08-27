@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, OCCUPATION_OPTIONS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, occupationsFor, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -428,7 +428,7 @@ export default function AddCandidatePage() {
         <div>
           <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">המסלול שלי (אפשר לסמן כמה)</p>
           <div className="flex flex-wrap gap-2">
-            {OCCUPATION_OPTIONS.map((o) => {
+            {occupationsFor(form.gender, form.occupations).map((o) => {
               const active = form.occupations?.includes(o);
               return (
                 <button

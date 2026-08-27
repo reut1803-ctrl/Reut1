@@ -19,7 +19,7 @@ import {
   Clock3,
   Star,
 } from "lucide-react";
-import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
+import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
@@ -34,7 +34,7 @@ import { CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
-import { daysSinceActivity, needsAttention } from "@/lib/crm/attention";
+import { daysSinceActivity, needsAttention, isProposalRowVisible, droppedHoursLeft } from "@/lib/crm/attention";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -43,7 +43,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const toggleFavorite = useCrmStore((s) => s.toggleFavorite);
   const expandedId = useCrmStore((s) => s.expandedStaffAreaId);
   const toggleStaffArea = useCrmStore((s) => s.toggleStaffArea);
-  const proposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
+  const allProposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
   const brainstormSummary = useCrmStore((s) => s.brainstormSummaryFor(candidate.id));
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
@@ -79,6 +79,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const now = Date.now() + serverOffsetMs;
   const untouchedDays = daysSinceActivity(candidate, now, attentionData);
   const showAttention = (role === "staff" || role === "admin") && needsAttention(candidate, now, attentionData);
+
+  // הצעה שירדה מהפרק מוצגת כאן יומיים בלבד ואז נעלמת, כדי שהכרטיס יישאר נקי.
+  // ההצעה עצמה נשמרת במסד הנתונים, והתראת הכפילות ממשיכה לעבוד גם אחרי שהיא
+  // כבר אינה מוצגת - ראו droppedProposalFor בחנות הנתונים.
+  const proposals = allProposals.filter((p) => isProposalRowVisible(p, now, PROPOSAL_DROPPED));
   // "הזרקור היומי": שליטה ידנית מהירה, ישירות על הכרטיס ברשימה, למנהלת בלבד.
   const [spotlightSaving, setSpotlightSaving] = useState(false);
   const inSpotlight = candidate.spotlight === true;
@@ -392,6 +397,12 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       {partner ? `עם ${partner} · ` : ""}
                       {p.status}
                       {p.isHistory ? " (היסטוריה)" : ""}
+                      {p.status === PROPOSAL_DROPPED && (
+                        <span className="font-normal text-[#B5AEB0]">
+                          {" "}
+                          · יוסתר בעוד {droppedHoursLeft(p, now, PROPOSAL_DROPPED)} שעות
+                        </span>
+                      )}
                     </p>
                     <StageFunnel status={p.status} compact />
                   </div>

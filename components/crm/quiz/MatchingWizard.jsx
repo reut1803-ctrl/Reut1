@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { useCrmStore, AGE_LIMITS, HEIGHT_LIMITS } from "@/lib/crm/store";
-import { REGIONS, OCCUPATION_OPTIONS, CANDIDATE_TAGS, religiousLevelsFor, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
+import { REGIONS, occupationsFor, CANDIDATE_TAGS, religiousLevelsFor, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import Button from "@/components/crm/ui/Button";
 
@@ -26,6 +26,9 @@ export default function MatchingWizard() {
   const completeQuiz = useCrmStore((s) => s.completeQuiz);
   const religiousLevels = religiousLevelsFor(board);
   const smokingOptions = smokingOptionsFor(board);
+  // רשימת המסלולים לפי המאגר הנצפה. מה שכבר סומן ממשיך להופיע גם אם
+  // עוברים מאגר, כדי שבחירה קיימת לא תיעלם מהמסך.
+  const occupationOptions = occupationsFor(board, answers.occupations);
 
   const isLast = step === STEP_TITLES.length - 1;
 
@@ -117,7 +120,7 @@ export default function MatchingWizard() {
               אפשר לסמן כמה שרוצים. מה שלא תסמני פשוט לא ייבדק.
             </p>
             <div className="flex flex-wrap justify-center gap-2">
-              {OCCUPATION_OPTIONS.map((o) => (
+              {occupationOptions.map((o) => (
                 <Chip key={o} active={answers.occupations?.includes(o)} onClick={() => toggleOccupation(o)}>
                   {o}
                 </Chip>
