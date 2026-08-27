@@ -5,6 +5,10 @@ import "./globals.css";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://reut1-ocoq.vercel.app";
 const SHARE_IMAGE = "/brand/hands.jpg";
 
+// הכיתוב שמופיע בתצוגה המקדימה של הקישור בוואטסאפ
+const SHARE_TITLE = "חיבורים משמחים";
+const SHARE_DESCRIPTION = "מאגר שידוכים רעות פריד והצוות";
+
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: "מערכת שידוכים",
@@ -19,15 +23,15 @@ export const metadata = {
     type: "website",
     locale: "he_IL",
     url: SITE_URL,
-    siteName: "מערכת שידוכים",
-    title: "מערכת שידוכים",
-    description: "שאלון היכרות ומערכת ניהול מועמדים",
-    images: [{ url: SHARE_IMAGE, width: 720, height: 899, alt: "מערכת שידוכים" }],
+    siteName: SHARE_TITLE,
+    title: SHARE_TITLE,
+    description: SHARE_DESCRIPTION,
+    images: [{ url: SHARE_IMAGE, width: 720, height: 899, alt: SHARE_TITLE }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "מערכת שידוכים",
-    description: "שאלון היכרות ומערכת ניהול מועמדים",
+    title: SHARE_TITLE,
+    description: SHARE_DESCRIPTION,
     images: [SHARE_IMAGE],
   },
 };
