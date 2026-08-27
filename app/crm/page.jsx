@@ -12,6 +12,8 @@ import FilterSheet from "@/components/crm/profiles/FilterSheet";
 import TipsCarousel from "@/components/crm/profiles/TipsCarousel";
 import TagsSidebar from "@/components/crm/profiles/TagsSidebar";
 import StaffTour from "@/components/crm/tour/StaffTour";
+import SpotlightStrip from "@/components/crm/profiles/SpotlightStrip";
+import { pickSpotlight } from "@/lib/crm/attention";
 
 function ProfilesFeed() {
   const searchParams = useSearchParams();
@@ -29,6 +31,9 @@ function ProfilesFeed() {
   const candidates_ = useCrmStore((s) => s.candidates);
   const candidatesLoaded = useCrmStore((s) => s.candidatesLoaded);
   const candidatesError = useCrmStore((s) => s.candidatesError);
+  // נרשמים להיסט שעון השרת עצמו (ולא רק לפונקציה), כדי שהמסך יתעדכן
+  // ברגע שההיסט נמדד ולא יישאר עם חישוב זמן על שעון מכשיר שגוי.
+  const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
   const tab = useCrmStore((s) => s.feedTab);
   const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
@@ -132,6 +137,24 @@ function ProfilesFeed() {
     [visibleInBoard, tab, filters]
   );
 
+  // כרטיסי "הזרקור היומי". נבחרים מתוך אותה רשימה שמוצגת מטה בדיוק, ולכן כל
+  // כרטיס בזרקור נמצא תמיד גם ברשימה הרגילה - הזרקור אינו מוציא אף אחד ממנה.
+  const spotlightNow = Date.now() + serverOffsetMs;
+  const spotlight = useMemo(
+    () => (role === "staff" || role === "admin" ? pickSpotlight(candidates, spotlightNow) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [candidates, role, serverOffsetMs]
+  );
+
+  // גלילה אל הכרטיס המלא ברשימה שמתחת, בלי ניווט ובלי רענון
+  const jumpToCard = (id) => {
+    const el = document.querySelector(`[data-candidate-card="${id}"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    setFocusedId(id);
+    setTimeout(() => setFocusedId((cur) => (cur === id ? null : cur)), 2200);
+  };
+
   // כמה כרטיסים יש בלשונית הנוכחית לפני הסינון, וכמה מוסתרים בגללו
   const totalInTab = useMemo(() => visibleInBoard.filter((c) => inTab(c, tab)).length, [visibleInBoard, tab]);
   const hiddenByFilters = totalInTab - candidates.length;
@@ -204,6 +227,10 @@ function ProfilesFeed() {
           </Link>
         )}
       </div>
+
+      {spotlight.length > 0 && (
+        <SpotlightStrip candidates={spotlight} now={spotlightNow} onSelect={jumpToCard} />
+      )}
 
       {candidatesError ? (
         <p className="mt-16 text-center text-sm leading-relaxed text-[#C24545]">

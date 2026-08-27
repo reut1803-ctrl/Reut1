@@ -16,6 +16,7 @@ import {
   Link2,
   Trash2,
   Lightbulb,
+  Clock3,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -32,6 +33,7 @@ import { CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+import { daysSinceTouch, needsAttention } from "@/lib/crm/attention";
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -67,6 +69,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [uploadingField, setUploadingField] = useState(null);
   const [uploadStatus, setUploadStatus] = useState("");
   const [recordStatus, setRecordStatus] = useState("");
+
+  // חיווי "דורש התייחסות": מבוסס על חותמת זמן של השרת בלבד (ראו lib/crm/attention.js).
+  // מוצג רק לצוות ולמנהלת, ובעיצוב עדין - זו תזכורת, לא אזהרה.
+  const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
+  const now = Date.now() + serverOffsetMs;
+  const untouchedDays = daysSinceTouch(candidate, now);
+  const showAttention = (role === "staff" || role === "admin") && needsAttention(candidate, now);
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
   const candidateTag = CANDIDATE_TAGS.find((t) => t.name === normalizeTagName(candidate.tag));
@@ -277,7 +286,14 @@ export default function ProfileCard({ candidate, onReadMore }) {
           </div>
         )}
 
-        <h3 className="text-lg font-bold text-[#3A3335]">{candidate.name}</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-lg font-bold text-[#3A3335]">{candidate.name}</h3>
+          {showAttention && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#F6E4E6] px-2 py-0.5 text-[10px] font-semibold text-[#8C4A55]">
+              <Clock3 size={11} /> דורש התייחסות · {untouchedDays} ימים
+            </span>
+          )}
+        </div>
         <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8A8285]">{candidate.bio}</p>
 
         <div className="mt-4 flex flex-col gap-2">

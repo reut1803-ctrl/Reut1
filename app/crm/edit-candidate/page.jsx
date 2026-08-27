@@ -63,6 +63,7 @@ function EditCandidateForm() {
       complexityNotes: c.complexityNotes || "",
       referenceContacts: c.referenceContacts || "",
       confidential: c.confidential || false,
+      spotlight: c.spotlight === true,
     });
     setTraits(c.traits || []);
     setPhotos(c.photoUrls?.length > 0 ? c.photoUrls : c.photoUrl ? [c.photoUrl] : []);
@@ -211,6 +212,7 @@ function EditCandidateForm() {
         complexityNotes: form.complexityNotes.trim(),
         referenceContacts: form.referenceContacts.trim(),
         confidential: !!form.confidential,
+        spotlight: !!form.spotlight,
         pdfUrl,
         introAudioUrl,
       });
@@ -475,6 +477,24 @@ function EditCandidateForm() {
             className="h-5 w-5 shrink-0 accent-[#C24545]"
           />
           <span className="text-[13px] font-bold text-[#C24545]">כרטיס חסוי (גלוי למנהלת בלבד)</span>
+        </label>
+
+        {/* "הזרקור היומי" - סימון ידני של המנהלת. כשיש סימון ידני אחד או יותר,
+            הוא גובר על הבחירה האוטומטית (כרטיסים שלא טופלו 14 יום ומעלה). */}
+        <label className="flex items-start gap-2.5 rounded-2xl border border-[#E7CE93] bg-[#FFFCF5] px-4 py-3">
+          <input
+            type="checkbox"
+            checked={!!form.spotlight}
+            onChange={(e) => set({ spotlight: e.target.checked })}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-[#D9B45F]"
+          />
+          <span className="text-[13px] leading-relaxed">
+            <span className="font-bold text-[#946200]">הצגה ב"הזרקור היומי"</span>
+            <br />
+            <span className="text-[11px] text-[#8A8285]">
+              הכרטיס יופיע במקטע הזהב מעל המאגר, ויישאר כרגיל גם ברשימה עצמה
+            </span>
+          </span>
         </label>
 
         <div className="grid grid-cols-2 gap-3">
