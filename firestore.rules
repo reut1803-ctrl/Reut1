@@ -148,6 +148,36 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // ----------------------------------------------------------------
+    //  טופס ההרשמה החיצוני (/register) - שני אוספים חדשים.
+    //  לא נגעתי בשום אוסף קיים.
+    // ----------------------------------------------------------------
+
+    // מפתח חיפוש לפי שם. מסמך אחד לכל שם, שהמזהה שלו נגזר מהשם עצמו.
+    // get בלבד פתוח לציבור: אפשר לבדוק שם מדויק אחד, ואי אפשר לסרוק
+    // או לשלוף את רשימת השמות. הרשימה עצמה שמורה לצוות.
+    match /nameIndex/{key} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // פניות שהגיעו מהטופס החיצוני. כל אחד יכול להפקיד פנייה, ואיש אינו
+    // יכול לקרוא אותן חוץ מהצוות. הפנייה אינה נכנסת ישירות למאגר המועמדים:
+    // המערכת הפנימית היא שממירה אותה לכרטיס, ולכן candidates נשאר סגור
+    // לחלוטין לכתיבה מבחוץ.
+    match /intakeSubmissions/{id} {
+      allow create: if request.resource.data.get('status', '') == 'pending'
+        && request.resource.data.get('name', '') is string
+        && request.resource.data.name.size() > 1
+        && request.resource.data.name.size() < 120
+        && request.resource.data.get('phone', '') is string
+        && request.resource.data.phone.size() < 40;
+      allow get, list: if isStaff();
+      allow update, delete: if isAdmin();
+    }
+
     match /userPrefs/{email} {
       allow read, write: if request.auth != null && myEmail() == email;
     }

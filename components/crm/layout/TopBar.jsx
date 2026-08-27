@@ -19,9 +19,13 @@ export default function TopBar() {
     <>
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#EAE5E3] bg-white/90 px-4 py-3 backdrop-blur safe-top">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#8C4A55] text-sm font-bold text-white">
-            מ
-          </div>
+          {/* סמל המערכת. אותה תמונה משמשת גם בתצוגה המקדימה של קישור בוואטסאפ */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/hands.jpg"
+            alt="מערכת שידוכים"
+            className="h-9 w-9 shrink-0 rounded-2xl object-cover"
+          />
           <div>
             <p className="text-[13px] leading-none text-[#8A8285]">שלום,</p>
             <p className="text-sm font-bold leading-tight text-[#3A3335]">{user.name}</p>

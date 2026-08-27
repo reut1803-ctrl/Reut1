@@ -35,6 +35,7 @@ function ProfilesFeed() {
   // ברגע שההיסט נמדד ולא יישאר עם חישוב זמן על שעון מכשיר שגוי.
   const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
   const attentionData = useCrmStore((s) => s.attentionData);
+  const intake_ = useCrmStore((s) => s.intakeSubmissions);
   const tab = useCrmStore((s) => s.feedTab);
   const setTab = useCrmStore((s) => s.setFeedTab);
   const [showFilters, setShowFilters] = useState(false);
@@ -104,8 +105,12 @@ function ProfilesFeed() {
   // ומכינה את המאגר לאכיפה בשרת בלי שהצוות יאבד כרטיסים ותיקים.
   useEffect(() => {
     if (role !== "admin" || !candidatesLoaded) return;
-    useCrmStore.getState().backfillConfidentialFlag();
-  }, [role, candidatesLoaded, candidates_]);
+    const store = useCrmStore.getState();
+    store.backfillConfidentialFlag();
+    // מפתח החיפוש לטופס ההרשמה החיצוני, ופניות שהגיעו ממנו וממתינות להמרה
+    store.backfillNameIndex();
+    store.convertPendingIntake();
+  }, [role, candidatesLoaded, candidates_, intake_]);
 
   // "קודמות" מוגדרת כ"כל מי שאינו חדש" - משלימה מתמטית, כדי שכרטיס לא ייפול בין הלשוניות
   const inTab = (c, which) => (which === "new" ? !!c.isNew : !c.isNew);

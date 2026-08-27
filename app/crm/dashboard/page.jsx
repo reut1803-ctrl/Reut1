@@ -5,6 +5,8 @@ import Link from "next/link";
 import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope } from "lucide-react";
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
 import { whatsappNumber } from "@/lib/crm/brainstorm";
+import { weekKey, weeklyMetrics } from "@/lib/crm/week";
+import { Link2 as LinkIcon, Copy, ExternalLink } from "lucide-react";
 import Button from "@/components/crm/ui/Button";
 
 function metricColor(ratio) {
@@ -20,7 +22,8 @@ function MetricBar({ label, value, goal }) {
     <div>
       <div className="mb-1 flex items-center justify-between text-[12px]">
         <span className="text-[#8A8285]">{label}</span>
-        <span className="font-bold text-[#3A3335]">
+        {/* תמיד נקרא כ"בוצע מתוך יעד", גם בתוך עמוד בעברית */}
+        <span dir="ltr" className="font-bold text-[#3A3335]">
           {value} / {goal}
         </span>
       </div>
@@ -83,6 +86,21 @@ function MissingPhoneRow({ entry }) {
 export default function DashboardPage() {
   const role = useCrmStore((s) => s.role);
   const telemetry = useCrmStore((s) => s.telemetry);
+  // מפתח השבוע הנוכחי (מיום ראשון). לפיו נבחרים המדדים שמוצגים.
+  const currentWeek = weekKey();
+  // כתובת טופס ההרשמה החיצוני, להעתקה ולשליחה למועמדים
+  const pendingIntake = useCrmStore((s) => s.pendingIntakeCount());
+  const [registerCopied, setRegisterCopied] = useState(false);
+  const registerUrl = typeof window === "undefined" ? "/register" : `${window.location.origin}/register`;
+  const handleCopyRegisterLink = async () => {
+    try {
+      await navigator.clipboard.writeText(registerUrl);
+      setRegisterCopied(true);
+      setTimeout(() => setRegisterCopied(false), 2500);
+    } catch {
+      setRegisterCopied(false);
+    }
+  };
   const termsText = useCrmStore((s) => s.termsText);
   const setTermsText = useCrmStore((s) => s.setTermsText);
   const termsAccepted = useCrmStore((s) => s.termsAccepted);
@@ -329,16 +347,54 @@ export default function DashboardPage() {
         </Button>
       </div>
 
+      {/* טופס ההרשמה החיצוני. הקישור מוצג כאן בלבד - זה העמוד שנשלח למועמדים. */}
+      <h2 className="mt-8 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
+        <LinkIcon size={17} /> טופס הרשמה למועמדים
+      </h2>
+      <div className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+        <p className="text-[13px] leading-relaxed text-[#8A8285]">
+          עמוד פתוח, בלי צורך בהתחברות. מי שכבר במאגר יכול לעדכן משם את סטטוס הפניות שלו,
+          ומי שאינו במאגר ממלא טופס מלא - והפרטים נכנסים אלייך אוטומטית כרטיס חדש.
+        </p>
+        <p dir="ltr" className="mt-3 break-all rounded-2xl bg-[#F6F5F4] px-3 py-2 text-right text-[12px] text-[#3A3335]">
+          {registerUrl}
+        </p>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={handleCopyRegisterLink}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#8C4A55] py-2.5 text-[13px] font-bold text-white transition active:scale-95"
+          >
+            {registerCopied ? <Check size={15} /> : <Copy size={15} />}
+            {registerCopied ? "הקישור הועתק" : "העתקת הקישור"}
+          </button>
+          <a
+            href="/register"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EAE5E3] bg-white py-2.5 text-[13px] font-bold text-[#3A3335] transition active:scale-95"
+          >
+            <ExternalLink size={15} /> פתיחה
+          </a>
+        </div>
+        {pendingIntake > 0 && (
+          <p className="mt-3 rounded-2xl bg-[#FFF8E7] px-3 py-2 text-[12px] font-semibold text-[#946200]">
+            {pendingIntake} פניות חדשות מהטופס ממתינות - הן נכנסות למאגר אוטומטית כשנכנסים למסך הפרופילים
+          </p>
+        )}
+      </div>
+
       <h2 className="mt-6 mb-3 text-[15px] font-bold text-[#3A3335]">מעורבות צוות (השבוע)</h2>
+      <p className="-mt-2 mb-3 text-[11px] text-[#8A8285]">נספר מיום ראשון האחרון ומתאפס בכל שבוע</p>
       <div className="space-y-3">
         {staffList.map((s) => {
-          const t = telemetry[s.email] || {};
+          // רק מה שנצבר בשבוע הנוכחי. רשומה משבוע קודם מוצגת כאפס.
+          const week = weeklyMetrics(telemetry[s.email], currentWeek);
           return (
             <div key={s.email} className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
               <p className="mb-3 text-sm font-bold text-[#3A3335]">{s.name}</p>
               <div className="space-y-2.5">
-                <MetricBar label="צפיות בכרטיסי מועמדים" value={t.profileViews || 0} goal={weeklyGoals.profileViews} />
-                <MetricBar label="השמעות הקלטות היכרות" value={t.audioPlays || 0} goal={weeklyGoals.audioPlays} />
+                <MetricBar label="צפיות בכרטיסי מועמדים" value={week.profileViews} goal={weeklyGoals.profileViews} />
+                <MetricBar label="השמעות הקלטות היכרות" value={week.audioPlays} goal={weeklyGoals.audioPlays} />
               </div>
             </div>
           );
