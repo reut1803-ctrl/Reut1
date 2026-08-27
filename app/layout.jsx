@@ -14,9 +14,20 @@ export const metadata = {
   title: "מערכת שידוכים",
   description: "שאלון היכרות ומערכת ניהול מועמדים",
   manifest: "/manifest.json",
+  // ?v=2 מכריח את הדפדפן למשוך את האייקון החדש. בלי זה הטלפון ממשיך
+  // להציג את האייקון הישן ששמור אצלו מההתקנה הקודמת.
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    icon: [
+      { url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png?v=2", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/icons/icon-192.png?v=2",
+    apple: [{ url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: SHARE_TITLE,
+    statusBarStyle: "default",
   },
   // התצוגה המקדימה של הקישור בוואטסאפ ובכל רשת אחרת
   openGraph: {
