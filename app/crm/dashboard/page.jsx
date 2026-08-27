@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const currentWeek = weekKey();
   // כתובת טופס ההרשמה החיצוני, להעתקה ולשליחה למועמדים
   const pendingIntake = useCrmStore((s) => s.pendingIntakeCount());
+  const nameIndexState = useCrmStore((s) => s.nameIndexState);
   const [registerCopied, setRegisterCopied] = useState(false);
   const registerUrl = typeof window === "undefined" ? "/register" : `${window.location.origin}/register`;
   const handleCopyRegisterLink = async () => {
@@ -376,6 +377,19 @@ export default function DashboardPage() {
             <ExternalLink size={15} /> פתיחה
           </a>
         </div>
+        {/* מצב הבדיקה לפי שם. בלי החיווי הזה אי אפשר לדעת אם החיפוש בטופס
+            החיצוני עובד, כי הכישלון קורה אצל המועמד/ת ולא כאן. */}
+        {nameIndexState === "denied" ? (
+          <p className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-[12px] font-semibold leading-relaxed text-[#C24545]">
+            הבדיקה לפי שם בטופס עדיין חסומה. צריך לפרסם את כללי האבטחה המעודכנים
+            ב-Firebase, ואז להיכנס למסך הפרופילים פעם אחת - והרשימה תיבנה לבד.
+          </p>
+        ) : nameIndexState === "done" ? (
+          <p className="mt-3 rounded-2xl bg-[#E9F6EF] px-3 py-2 text-[12px] font-semibold text-[#20A66B]">
+            הבדיקה לפי שם פעילה. מי שכבר במאגר יימצא בטופס ויוכל לעדכן את הסטטוס שלו.
+          </p>
+        ) : null}
+
         {pendingIntake > 0 && (
           <p className="mt-3 rounded-2xl bg-[#FFF8E7] px-3 py-2 text-[12px] font-semibold text-[#946200]">
             {pendingIntake} פניות חדשות מהטופס ממתינות - הן נכנסות למאגר אוטומטית כשנכנסים למסך הפרופילים

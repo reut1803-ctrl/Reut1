@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { Search, Check, Camera, Loader2, ArrowRight, Heart, X } from "lucide-react";
 import { crmDb } from "@/lib/crm/firebaseClient";
-import { nameKey } from "@/lib/crm/nameKey";
+import { nameKeys } from "@/lib/crm/nameKey";
 import {
   REGIONS,
   CANDIDATE_TAGS,
@@ -89,6 +89,8 @@ export default function RegisterPage() {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  // קוד התקלה מוצג בקטן, כדי שאפשר יהיה לשלוח צילום מסך אחד ולדעת מיד מה קרה
+  const [errorCode, setErrorCode] = useState("");
   const [match, setMatch] = useState(null); // { id, name, availabilityStatus }
   const [savingStatus, setSavingStatus] = useState(false);
   const [statusSaved, setStatusSaved] = useState(false);
@@ -107,8 +109,9 @@ export default function RegisterPage() {
 
   // --- שלב א': בדיקה מול המאגר ---
   const handleSearch = async () => {
-    const key = nameKey(query);
-    if (!key) {
+    // מנסים את כל צורות המפתח של השם: כפי שהוקלד, וגם בלי תלות בסדר המילים.
+    const keys = nameKeys(query);
+    if (keys.length === 0) {
       setSearchError("צריך להקליד שם מלא");
       return;
     }
@@ -116,22 +119,46 @@ export default function RegisterPage() {
     setSearchError("");
     setMatch(null);
     try {
-      const indexSnap = await getDoc(doc(crmDb, "nameIndex", key));
-      if (!indexSnap.exists()) {
-        // אין רשומה כזו - ממשיכים ישירות לטופס, עם השם שכבר הוקלד
+      let found = null;
+      let lastError = null;
+      for (const key of keys) {
+        try {
+          const snap = await getDoc(doc(crmDb, "nameIndex", key));
+          if (snap.exists()) {
+            found = snap.data();
+            break;
+          }
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      // אף מפתח לא נבדק בהצלחה - זו תקלה, לא "לא נמצא"
+      if (!found && lastError) throw lastError;
+
+      if (!found) {
+        // באמת אין רשומה כזו - ממשיכים ישירות לטופס, עם השם שכבר הוקלד
         set({ name: query.trim() });
         setStep("form");
         return;
       }
-      const candidateId = indexSnap.data().candidateId;
+
+      const candidateId = found.candidateId;
       const statusSnap = await getDoc(doc(crmDb, "candidateStatus", candidateId));
       setMatch({
         id: candidateId,
-        name: statusSnap.data()?.name || indexSnap.data().name || query.trim(),
+        name: statusSnap.data()?.name || found.name || query.trim(),
         availabilityStatus: statusSnap.data()?.availabilityStatus || AVAILABILITY[0],
       });
-    } catch {
-      setSearchError("לא הצלחנו לבדוק כרגע. נסו שוב בעוד רגע, או המשיכו למילוי הטופס.");
+    } catch (err) {
+      // הבחנה בין שתי תקלות שונות לגמרי: חסימה בשרת מול תקלת רשת.
+      // בלי ההבחנה הזו שתיהן נראו אותו דבר, ולא היה אפשר לדעת מה לתקן.
+      setSearchError(
+        err?.code === "permission-denied"
+          ? "הבדיקה מול המאגר עדיין לא נפתחה. אפשר להמשיך למילוי הטופס, ואנחנו נשמח לקבל את הפרטים."
+          : "לא הצלחנו לבדוק כרגע - כנראה תקלת רשת. אפשר לנסות שוב, או להמשיך למילוי הטופס."
+      );
+      setErrorCode(err?.code || "unknown");
     } finally {
       setSearching(false);
     }
@@ -250,6 +277,7 @@ export default function RegisterPage() {
                     setQuery(e.target.value);
                     setMatch(null);
                     setSearchError("");
+                    setErrorCode("");
                   }}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   placeholder="שם פרטי ושם משפחה"
@@ -257,7 +285,14 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {searchError && <p className="mt-2 text-[12px] leading-relaxed text-[#C24545]">{searchError}</p>}
+              {searchError && (
+                <div className="mt-2">
+                  <p className="text-[12px] leading-relaxed text-[#C24545]">{searchError}</p>
+                  {errorCode && (
+                    <p dir="ltr" className="mt-0.5 text-left text-[10px] text-[#C9C2C4]">{errorCode}</p>
+                  )}
+                </div>
+              )}
 
               <button
                 onClick={handleSearch}
