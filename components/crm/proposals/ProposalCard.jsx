@@ -9,9 +9,6 @@ import {
   Copy,
   Check,
   Download,
-  MessageCircle,
-  MessageSquare,
-  Phone,
   Sparkles,
   Trash2,
   UserCheck,
@@ -21,6 +18,8 @@ import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store"
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { whatsappNumber } from "@/lib/crm/brainstorm";
 import { daysSinceStatusChange, isProposalStuck, wasNudged } from "@/lib/crm/attention";
+import { WhatsappIcon, PhoneCallIcon, SmsIcon } from "@/components/crm/ui/BrandIcons";
+import { findStaffEntry } from "@/lib/crm/staff";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
@@ -61,21 +60,29 @@ async function downloadPhoto(url, fileName) {
 // סרגל תקשורת מהיר: חיוג, וואטסאפ ו-SMS ישירות מהכרטיס, בלי להעתיק מספר
 // ובלי לצאת מהמערכת. כל הקישורים נפתחים באפליקציה החיצונית של המכשיר,
 // ולכן המסך שמאחור אינו נטען מחדש ומיקום הגלילה נשמר.
+//
+// העיצוב: הסמל למעלה והכיתוב מתחתיו. כך אין שאלה של סדר מימין לשמאל -
+// גם "SMS" באותיות לועזיות יושב במקומו הנכון - וכל כפתור נקרא במבט אחד.
 function QuickContactBar({ phone, name }) {
   const clean = String(phone || "").replace(/[^\d+]/g, "");
   if (!clean) {
-    return <p className="mt-0.5 text-[11px] text-[#B5AEB0]">לא הוזן מספר טלפון</p>;
+    return <p className="mt-1 text-[11px] text-[#B5AEB0]">לא הוזן מספר טלפון</p>;
   }
   const wa = whatsappNumber(phone);
   const item =
-    "flex flex-1 items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[10px] font-semibold transition active:scale-95";
+    "flex flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl border py-2 transition active:scale-95";
 
   return (
     <div className="mt-1.5">
-      <p dir="ltr" className="mb-1 text-right text-[11px] text-[#B5AEB0]">{clean}</p>
+      <p dir="ltr" className="mb-1.5 text-right text-[11px] tracking-wide text-[#B5AEB0]">{clean}</p>
       <div className="flex gap-1.5">
-        <a href={`tel:${clean}`} aria-label={`חיוג ל${name}`} className={`${item} text-[#3A3335]`}>
-          <Phone size={12} /> חיוג
+        <a
+          href={`tel:${clean}`}
+          aria-label={`חיוג ל${name}`}
+          className={`${item} border-[#DCE7F5] bg-[#F2F7FD] text-[#2A6BB0]`}
+        >
+          <PhoneCallIcon size={19} />
+          <span className="text-[10px] font-bold">חיוג</span>
         </a>
         {wa && (
           <a
@@ -83,13 +90,19 @@ function QuickContactBar({ phone, name }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`וואטסאפ ל${name}`}
-            className={`${item} text-[#20A66B]`}
+            className={`${item} border-[#BFE9D2] bg-[#EAF9F1] text-[#25D366]`}
           >
-            <MessageCircle size={12} /> וואטסאפ
+            <WhatsappIcon size={19} />
+            <span className="text-[10px] font-bold text-[#128C4B]">וואטסאפ</span>
           </a>
         )}
-        <a href={`sms:${clean}`} aria-label={`הודעה ל${name}`} className={`${item} text-[#8C4A55]`}>
-          <MessageSquare size={12} /> SMS
+        <a
+          href={`sms:${clean}`}
+          aria-label={`הודעת SMS ל${name}`}
+          className={`${item} border-[#EADFC4] bg-[#FDF8EC] text-[#B08A2A]`}
+        >
+          <SmsIcon size={19} />
+          <span dir="ltr" className="text-[10px] font-bold">SMS</span>
         </a>
       </div>
     </div>
@@ -201,6 +214,7 @@ export default function ProposalCard({ proposal }) {
   const candidatesLoaded = useCrmStore((s) => s.candidatesLoaded);
   const nudgeProposal = useCrmStore((s) => s.nudgeProposal);
   const authAllowlist = useCrmStore((s) => s.authAllowlist);
+  const setAllowlistPhone = useCrmStore((s) => s.setAllowlistPhone);
   const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
@@ -209,6 +223,9 @@ export default function ProposalCard({ proposal }) {
   // חותמת הנדנוד נכתבת בשרת ולכן חוזרת אלינו רגע אחרי הלחיצה. עד שהיא מגיעה,
   // הסימון המקומי הזה כבר מעמעם את הכפתור - כדי שלא תישלח לחיצה כפולה.
   const [nudgedNow, setNudgedNow] = useState(false);
+  // מילוי מספר טלפון חסר לאיש/אשת הצוות, ישירות מכאן
+  const [phoneDraft, setPhoneDraft] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
 
   const male = findCandidateById(proposal.maleId);
   const female = findCandidateById(proposal.femaleId);
@@ -256,16 +273,27 @@ export default function ProposalCard({ proposal }) {
   const stuck = proposal.status !== PROPOSAL_DROPPED && isProposalStuck(proposal, now);
   const alreadyNudged = nudgedNow || wasNudged(proposal);
 
-  // מציאת איש/אשת הצוות שמטפל/ת בהצעה. קודם לפי המייל (מדויק), ורק אם הוא
-  // חסר - לפי השם. הצעות ותיקות נשמרו לפני שהמייל נשמר בשיוך.
-  const assigneeKey = String(proposal.assigneeEmail || "").trim().toLowerCase();
-  const assigneeName = String(proposal.assignee || "").trim();
-  const assigneeEntry = assigneeKey
-    ? authAllowlist.find((e) => String(e.email || e.id || "").trim().toLowerCase() === assigneeKey)
-    : assigneeName
-      ? authAllowlist.find((e) => String(e.name || "").trim() === assigneeName)
-      : null;
+  // מציאת רשומת איש/אשת הצוות שמטפל/ת בהצעה, ברשימת ההרשאות.
+  // השם שנשמר בשיוך הוא שם החשבון בגוגל, והוא לא תמיד זהה לשם שברשימה
+  // ("דבורה" מול "דבורה כהן"), ולכן מנסים כמה דרכים לפי סדר הדיוק:
+  // המייל, שם מלא זהה, שם ללא רגישות לאותיות, ולבסוף שם פרטי.
+  const assigneeEntry = findStaffEntry(authAllowlist, proposal.assigneeEmail, proposal.assignee);
   const assigneeWhatsapp = whatsappNumber(assigneeEntry?.phone);
+
+  const handleSavePhone = async () => {
+    const value = phoneDraft.trim();
+    if (!value || !assigneeEntry || savingPhone) return;
+    setSavingPhone(true);
+    try {
+      await setAllowlistPhone(assigneeEntry.email || assigneeEntry.id, value);
+      setPhoneDraft("");
+      showToast(`המספר נשמר בכרטיס הצוות של ${assigneeEntry.name || proposal.assignee}`);
+    } catch {
+      showToast("שמירת המספר נכשלה");
+    } finally {
+      setSavingPhone(false);
+    }
+  };
   const nudgeText = encodeURIComponent(
     `היי! שמתי לב שההצעה מתעכבת. מה קורה עם זה?\n(ההצעה: ${maleName} ⚭ ${femaleName})`
   );
@@ -316,7 +344,7 @@ export default function ProposalCard({ proposal }) {
           {canNudge &&
             (alreadyNudged ? (
               <span className="flex items-center gap-1 rounded-full bg-[#EFEDEB] px-2.5 py-1 text-[11px] font-semibold text-[#B5AEB0]">
-                <BellRing size={12} /> נדנוד נשלח
+                <Check size={12} /> נדנוד נשלח
               </span>
             ) : assigneeWhatsapp ? (
               <a
@@ -331,12 +359,33 @@ export default function ProposalCard({ proposal }) {
               >
                 <BellRing size={12} /> נדנוד ל{proposal.assignee}
               </a>
+            ) : assigneeEntry ? (
+              // הרשומה נמצאה אבל אין בה מספר. במקום להיתקע - ממלאים אותו כאן
+              // פעם אחת, הוא נשמר בכרטיס הצוות, וכפתור הנדנוד מופיע מיד.
+              <span className="flex items-center gap-1 rounded-full bg-[#FFF3E4] py-0.5 pr-2.5 pl-0.5 text-[11px] font-semibold text-[#B45309]">
+                <BellRing size={12} className="shrink-0" />
+                <input
+                  value={phoneDraft}
+                  onChange={(e) => setPhoneDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSavePhone()}
+                  placeholder={`טלפון של ${assigneeEntry.name || proposal.assignee}`}
+                  inputMode="tel"
+                  className="w-32 bg-transparent text-[11px] outline-none placeholder:text-[#C79A55]"
+                />
+                <button
+                  onClick={handleSavePhone}
+                  disabled={!phoneDraft.trim() || savingPhone}
+                  className="rounded-full bg-[#B45309] px-2.5 py-1 text-[10px] font-bold text-white transition active:scale-95 disabled:opacity-40"
+                >
+                  {savingPhone ? "שומר..." : "שמירה"}
+                </button>
+              </span>
             ) : (
               <span
-                title="אין מספר טלפון ברשומת ההרשאות של איש/אשת הצוות"
+                title="לא נמצאה רשומה תואמת ברשימת ההרשאות. אפשר לתקן את השם בלוח הבקרה."
                 className="flex items-center gap-1 rounded-full bg-[#EFEDEB] px-2.5 py-1 text-[11px] font-semibold text-[#B5AEB0]"
               >
-                <BellRing size={12} /> חסר טלפון לנדנוד
+                <BellRing size={12} /> לא זוהה איש הצוות
               </span>
             ))}
         </div>
