@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import {
+  Clock,
   Heart,
   Mic,
   PenLine,
@@ -21,7 +22,8 @@ import {
   Trash2,
   Plus,
 } from "lucide-react";
-import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
+import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/store";
+import { isProposalRowVisible, droppedNoticeText } from "@/lib/crm/attention";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { viewerActionText } from "@/lib/crm/genderText";
@@ -46,7 +48,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const toggleFavorite = useCrmStore((s) => s.toggleFavorite);
   const expandedId = useCrmStore((s) => s.expandedStaffAreaId);
   const toggleStaffArea = useCrmStore((s) => s.toggleStaffArea);
-  const proposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
+  const allProposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
+  // חלון 48 השעות מחושב בכל טעינת מסך מול חותמת היומי, ולא נשמר בשום שדה -
+  // כך המצב לעולם אינו יוצא מסנכרון. ההצעה עצמה נשארת במסד הנתונים תמיד.
+  const nowMs = Date.now();
+  const proposals = allProposals.filter((p) => isProposalRowVisible(p, nowMs, PROPOSAL_DROPPED));
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const showToast = useCrmStore((s) => s.showToast);
@@ -408,12 +414,23 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <div className="mt-4 rounded-2xl bg-[#E8DCCB] p-3">
             <p className="mb-2 text-[12px] font-semibold text-[#3A2E26]">התקדמות בהתאמות ({proposals.length})</p>
             <div className="space-y-2.5">
-              {proposals.map((p) => (
-                <div key={p.id}>
-                  <p className="mb-1 text-[11px] font-semibold text-[#844442]">{p.status}</p>
-                  <StageFunnel status={p.status} compact />
-                </div>
-              ))}
+              {proposals.map((p) => {
+                const notice =
+                  p.status === PROPOSAL_DROPPED ? droppedNoticeText(p, nowMs, PROPOSAL_DROPPED) : "";
+                return (
+                  <div key={p.id}>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold text-[#844442]">{p.status}</p>
+                      {notice && (
+                        <span className="flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#7C6E60]">
+                          <Clock size={10} /> {notice}
+                        </span>
+                      )}
+                    </div>
+                    <StageFunnel status={p.status} compact />
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

@@ -2,12 +2,13 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Heart } from "lucide-react";
+import { Heart, AlertTriangle } from "lucide-react";
 import Button from "@/components/crm/ui/Button";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import ExternalCandidatePanel from "@/components/crm/proposals/ExternalCandidatePanel";
+import { isProposalRowVisible, pastProposalsForPair, toMillis } from "@/lib/crm/attention";
 import ProposalCard from "@/components/crm/proposals/ProposalCard";
-import { useCrmStore } from "@/lib/crm/store";
+import { useCrmStore, PROPOSAL_DROPPED } from "@/lib/crm/store";
 
 function PreselectFromQuery() {
   const searchParams = useSearchParams();
@@ -59,6 +60,20 @@ export default function ProposalsPage() {
 
   const sideReady = (sel, ext) => (sel === EXTERNAL ? !!ext?.name.trim() : !!sel);
   const canCreate = sideReady(selection.male, externalMale) && sideReady(selection.female, externalFemale);
+
+  // חלון 48 השעות מחושב בזמן התצוגה מול היומן, ולא נשמר בשום שדה.
+  // הצעה שירדה מהפרק נשארת ברשימה 48 שעות ואז יורדת ממנה - אך נשמרת
+  // במסד הנתונים לתמיד, וזה מה שמאפשר את התראת הכפילות שמתחת.
+  const nowMs = Date.now();
+  const visibleProposals = proposals.filter((p) => isProposalRowVisible(p, nowMs, PROPOSAL_DROPPED));
+  const archivedCount = proposals.length - visibleProposals.length;
+
+  // התראת כפילות: נבדקת מול כל ההיסטוריה, כולל הצעות שכבר אינן מוצגות
+  const pastForSelection =
+    selection.male && selection.female && selection.male !== EXTERNAL && selection.female !== EXTERNAL
+      ? pastProposalsForPair(proposals, selection.male, selection.female)
+      : [];
+  const pastDropped = pastForSelection.filter((p) => p.status === PROPOSAL_DROPPED);
 
   return (
     <div className="px-4 py-6">
@@ -130,16 +145,44 @@ export default function ProposalsPage() {
         <Heart size={16} /> הצע התאמה
       </Button>
 
+      {/* התראת כפילות - נשענת על ההיסטוריה המלאה במסד הנתונים, גם על הצעות
+          שכבר ירדו מהתצוגה. זו הסיבה שהצעות שירדו מהפרק לעולם אינן נמחקות. */}
+      {pastForSelection.length > 0 && (
+        <div className="mt-3 flex items-start gap-2 rounded-2xl border-2 border-[#D9A441] bg-[#FDF6E7] px-3.5 py-3">
+          <AlertTriangle size={17} className="mt-0.5 shrink-0 text-[#7A5A18]" />
+          <div className="text-[12px] leading-relaxed text-[#7A5A18]">
+            <p className="font-bold">שימו לב - ההתאמה הזו כבר עלתה בעבר</p>
+            <p className="mt-0.5">
+              {pastDropped.length > 0
+                ? `הצעה בין השניים האלה כבר הוצעה וירדה מהפרק (${new Date(
+                    toMillis(pastDropped[0].createdAt)
+                  ).toLocaleDateString("he-IL")}).`
+                : `קיימת כבר הצעה פעילה בין השניים האלה (${new Date(
+                    toMillis(pastForSelection[0].createdAt)
+                  ).toLocaleDateString("he-IL")}).`}
+              {" "}
+              אפשר להציע שוב, אבל כדאי לבדוק קודם מה קרה בפעם הקודמת.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8">
-        <h2 className="mb-3 text-[15px] font-bold text-[#3A2E26]">הצעות פעילות ({proposals.length})</h2>
-        {proposals.length === 0 ? (
+        <h2 className="mb-3 text-[15px] font-bold text-[#3A2E26]">הצעות פעילות ({visibleProposals.length})</h2>
+        {visibleProposals.length === 0 ? (
           <p className="text-center text-sm text-[#7C6E60]">עדיין לא הוצעו התאמות</p>
         ) : (
           <div className="space-y-3">
-            {proposals.map((p) => (
+            {visibleProposals.map((p) => (
               <ProposalCard key={p.id} proposal={p} />
             ))}
           </div>
+        )}
+        {archivedCount > 0 && (
+          <p className="mt-3 rounded-2xl bg-[#E8DCCB] px-3 py-2 text-center text-[11px] leading-relaxed text-[#7C6E60]">
+            ועוד {archivedCount} הצעות שירדו מהפרק לפני יותר מ-48 שעות. הן שמורות במערכת
+            ומשמשות להתראת כפילות, אך אינן מוצגות כאן כדי לשמור על מסך נקי.
+          </p>
         )}
       </div>
     </div>
