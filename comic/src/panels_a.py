@@ -54,13 +54,15 @@ def p1():
     o += rect(96, 424, 84, 34, CREAM, .95, rx=2) + ink('M 96 424 h 84 v 34 h -84 Z', 1.6, .6)
     o += ink('M 106 436 h 62 M 106 446 h 44', 1.4, .4)
     o += ink('M 200 448 l 34 -16', 4.0, .8)
+    for hx in (238, 362):
+        o += ell(hx, 450, 23, 15, SKIN)
+        o += ink(f'M {hx-12} 444 q 12 -7 24 0', 1.4, .7)
     return frame(o)
 
 
 # ---------------------------------------------------------------- PANEL 2
 def p2():
     o = rect(0, 0, W, H, '#EDE4D2', .9)
-    o += f'<ellipse cx="300" cy="360" rx="150" ry="230" fill="#E6DAC4" opacity=".8" filter="url(#soft2)"/>'
     # right: a young man on a bench, turned slightly away
     o += rect(352, 56, 200, 142, '#D8E4E0', .55, rx=6)
     o += ink('M 352 56 h 200 v 142 h -200 Z', 2.0, .55)
@@ -82,20 +84,22 @@ def p2():
 
 # ---------------------------------------------------------------- PANEL 3  (four quadrants)
 def q_reserve(ox, oy, w, h):
-    o = rect(ox, oy, w, h, '#E7DCC2', .9)
-    o += wash(f'M {ox} {oy+h*0.62} Q {ox+w*0.5} {oy+h*0.52} {ox+w} {oy+h*0.60} L {ox+w} {oy+h} L {ox} {oy+h} Z', '#C9BE9A', .8)
-    # house doorway right
-    o += rect(ox + w * 0.70, oy + h * 0.24, w * 0.28, h * 0.46, '#DFCDA8', .95, rx=3)
-    o += ink(f'M {ox+w*0.70} {oy+h*0.24} h {w*0.28} v {h*0.46}', 2.0, .8)
-    o += rect(ox + w * 0.76, oy + h * 0.32, w * 0.16, h * 0.38, '#8B6A46', .9, rx=2)
-    o += mini_person(ox + w * 0.84, oy + h * 0.70, h * 0.40, 'woman_scarf', LINEN, '#3F6B58', 'soft')
-    # soldier walking away, duffel
-    x = ox + w * 0.36
-    base = oy + h * 0.74
-    o += mini_person(x, base, h * 0.50, 'man', OLIVE, '#3B2A22', 'quiet')
-    o += wash(f'M {x-h*0.02} {base-h*0.42} l {h*0.20} {-h*0.05} l {h*0.03} {h*0.13} l {-h*0.20} {h*0.05} Z', '#5E6B3C', .95)
-    o += ink(f'M {x-h*0.02} {base-h*0.42} l {h*0.20} {-h*0.05}', 2.0, .8)
-    o += ink(f'M {ox+w*0.14} {oy+h*0.80} q 14 -8 28 0 q 14 8 28 0', 1.8, .4)
+    """Avraham leaving for reserve duty — in civilian clothes, kit bag in hand."""
+    o = rect(ox, oy, w, h, '#E7DCC2')
+    o += flat(f'M {ox} {oy+h*0.66} L {ox+w} {oy+h*0.66} L {ox+w} {oy+h} L {ox} {oy+h} Z', '#C9BE9A')
+    o += ink(f'M {ox} {oy+h*0.66} L {ox+w} {oy+h*0.66}', 1.6, .8)
+    # the doorway of the house, with Yael seeing him off
+    o += orect(ox + w * 0.66, oy + h * 0.16, w * 0.32, h * 0.56, '#E0CDA6')
+    o += orect(ox + w * 0.72, oy + h * 0.26, w * 0.20, h * 0.46, '#9A6B3E')
+    o += mini_person(ox + w * 0.82, oy + h * 0.70, h * 0.42, 'woman_scarf', LINEN, '#3F8F5E', 'soft')
+    # Avraham: civilian shirt and trousers, kit bag carried low in one hand
+    x = ox + w * 0.32
+    base = oy + h * 0.76
+    o += mini_person(x, base, h * 0.52, 'man', '#3B5BA5', '#2C2119', 'quiet')
+    bx, by = x - h * 0.20, base - h * 0.20
+    o += ink(f'M {x-h*0.11} {base-h*0.30} L {bx+h*0.03} {by-h*0.02}', 2.0, .9)
+    o += orect(bx - h * 0.11, by, h * 0.22, h * 0.13, '#8A5C2C', rx=3)
+    o += ink(f'M {bx-h*0.06} {by} q {h*0.06} {-h*0.05} {h*0.12} 0', 1.6, .8)
     return o
 
 
@@ -133,12 +137,11 @@ def q_father(ox, oy, w, h):
     o += ink(f'M {x-sw/2+4} {base-sh*2.0} v {sh*1.9} M {x+sw/2-4} {base-sh*2.0} v {sh*1.9}', 2.2, .85)
     o += ink(f'M {x-sw/2+4} {base-sh*3.4} v {sh*1.4} M {x+sw/2-4} {base-sh*3.4} v {sh*1.4}'
              f' M {x-sw/2+4} {base-sh*3.4} h {sw-8} M {x-sw/2+4} {base-sh*2.9} h {sw-8}', 2.2, .85)
-    # tallit draped over the chair back
-    o += wash(f'M {x-sw*0.44} {base-sh*3.5} q {sw*0.44} {-6} {sw*0.88} 0 l 0 {sh*2.3} '
-              f'q {-sw*0.44} 10 {-sw*0.88} 0 Z', '#F6F2E6', .95)
-    for i in range(3):
-        o += ink(f'M {x-sw*0.42} {base-sh*2.9+i*7} h {sw*0.84}', 1.6, .5)
-    o += ink(f'M {x-sw*0.44} {base-sh*3.5} q {sw*0.44} {-6} {sw*0.88} 0', 1.8, .7)
+    # a tallit folded over the chair back
+    o += wash(f'M {x-sw*0.30} {base-sh*3.5} q {sw*0.30} {-6} {sw*0.60} 0 l 0 {sh*1.9} '
+              f'q {-sw*0.30} 8 {-sw*0.60} 0 Z', '#F8F5EC')
+    for i in range(2):
+        o += ink(f'M {x-sw*0.28} {base-sh*2.7+i*8} h {sw*0.56}', 1.5, .7)
     # siddur on a small table + candle
     tx, ty = ox + w * 0.76, oy + h * 0.72
     o += rect(tx - 34, ty, 68, 8, '#9A7550', .95, rx=2)
@@ -186,11 +189,9 @@ def p3():
 # ---------------------------------------------------------------- PANEL 4
 def p4():
     o = rect(0, 0, W, H, '#EFE3C8', .92)
-    o += f'<ellipse cx="300" cy="270" rx="230" ry="180" fill="url(#glow)"/>'
     o += ink('M 300 0 v 52', 2.2, .8)
     o += wash('M 252 52 q 48 -32 96 0 Z', '#4E6B4A', .95)
     o += ink('M 252 52 q 48 -32 96 0 Z', 2.2, .85)
-    o += f'<ellipse cx="300" cy="96" rx="66" ry="42" fill="url(#glow)"/>'
     # the two of them, seated behind the table
     o += mini_person(430, 500, 214, 'woman_scarf', INDIGO, '#3F6B58', 'smile')
     x, r = 168, 35
@@ -211,7 +212,6 @@ def p4():
     o += (f'<g transform="rotate(-2 300 520)">' + rect(214, 492, 172, 60, '#FCF6E6', .98, rx=3)
           + ink('M 214 492 h 172 v 60 h -172 Z', 2.0, .8)
           + ink('M 272 540 v -22 l 28 -19 l 28 19 v 22 Z M 294 540 v -15 h 14 v 15', 2.2, .95) + '</g>')
-    o += f'<ellipse cx="300" cy="522" rx="52" ry="38" fill="url(#glowT)"/>'
     o += (f'<g transform="rotate(4 152 518)">' + rect(100, 494, 104, 48, '#FCF6E6', .95, rx=3)
           + ink('M 100 494 h 104 v 48 h -104 Z', 1.7, .6)
           + ink('M 112 510 h 78 M 112 522 h 62 M 112 534 h 70', 1.4, .38) + '</g>')
@@ -233,7 +233,6 @@ def p5():
     o += rect(0, 258, W, 8, '#B5A582', .8)
     # the circle
     ccx, ccy, R = 300, 430, 152
-    o += f'<circle cx="{ccx}" cy="{ccy}" r="{R+34}" fill="url(#glowT)"/>'
     pts = []
     for i in range(10):
         a = -math.pi / 2 + i * (2 * math.pi / 10)
@@ -243,12 +242,12 @@ def p5():
             x1, y1 = pts[i]
             x2, y2 = pts[(i + j) % 10]
             o += (f'<path d="M {x1:.0f} {y1:.0f} Q {ccx} {ccy} {x2:.0f} {y2:.0f}" fill="none" '
-                  f'stroke="{TEAL}" stroke-width="1.5" opacity=".22"/>')
+                  f'stroke="{TEAL_D}" stroke-width="2.2" opacity=".40"/>')
     for i, (x, y) in enumerate(pts):
         kinds = ['man', 'woman', 'man', 'woman', 'man', 'woman', 'man', 'woman', 'man', 'woman']
         cols = ['#2E4374', '#7A5570', '#4E6B4A', '#8C5A3C', '#3A5A6B', '#5E3A6E',
-                '#6E7A45', '#A0576B', '#2E4374', '#4E6B4A']
-        o += mini_person(x, y + 34, 74, kinds[i], cols[i], '#4A3526', 'soft')
+                '#8A5C2C', '#A0576B', '#2E4374', '#4E6B4A']
+        o += mini_person(x, y + 40, 88, kinds[i], cols[i], '#4A3526', 'soft')
     # the matchmaker in the middle
     o += mini_person(ccx, ccy + 46, 118, 'woman_scarf', '#5E3A6E', '#6E4A7E', 'smile')
     o += rect(ccx - 26, ccy + 4, 52, 34, '#FCF6E6', .98, rx=3)
@@ -261,7 +260,6 @@ def p6():
     o = rect(0, 0, W, 470, '#E8CDB6', .9)
     o += rect(0, 455, W, 205, '#D3B191', .85)
     o += ink('M 0 455 h 600', 2.2, .6)
-    o += f'<ellipse cx="300" cy="220" rx="260" ry="190" fill="url(#glow)"/>'
     # window with afternoon light
     o += rect(226, 62, 148, 150, '#D8E4E0', .8, rx=5)
     o += ink('M 226 62 h 148 v 150 h -148 Z M 300 62 v 150 M 226 137 h 148', 2.0, .65)

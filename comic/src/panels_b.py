@@ -7,7 +7,6 @@ import math
 # ---------------------------------------------------------------- PANEL 7
 def p7():
     o = rect(0, 0, W, H, '#ECE1C6', .92)
-    o += f'<ellipse cx="300" cy="300" rx="280" ry="220" fill="url(#glow)"/>'
     o += ink('M 300 0 v 40', 2.0, .7)
     o += wash('M 254 40 q 46 -30 92 0 Z', '#4E6B4A', .95) + ink('M 254 40 q 46 -30 92 0 Z', 2.0, .8)
     # people around the far side of the table
@@ -44,7 +43,6 @@ def p7():
 def p8():
     o = f'<rect width="{W}" height="{H}" fill="url(#dawn)"/>'
     o += f'<circle cx="472" cy="176" r="70" fill="#FFE9AE" opacity=".85" filter="url(#soft)"/>'
-    o += f'<circle cx="472" cy="176" r="170" fill="url(#glow)"/>'
     o += wash('M 0 372 Q 150 330 300 358 Q 450 386 600 344 L 600 660 L 0 660 Z', '#C9BE99', .8)
     o += wash('M 0 430 Q 160 404 320 428 Q 470 450 600 420 L 600 660 L 0 660 Z', '#B2A87F', .7)
     # the house under construction
@@ -58,14 +56,13 @@ def p8():
             o += ink(f'M {176+off+c_*62} {350+r_*30} v 30', 1.5, .35)
     o += rect(268, 388, 64, 82, '#8B5A34', .92, rx=3)
     o += ink('M 268 470 v -82 h 64 v 82', 2.4, .9)
-    o += f'<ellipse cx="300" cy="430" rx="86" ry="86" fill="url(#glow)"/>'
     # scaffolding + a raised beam
     o += ink('M 132 470 v -150 M 468 470 v -150 M 132 380 h 44 M 424 380 h 44', 2.4, .7)
     o += ink('M 150 260 L 300 214 L 450 260', 3.2, .85)
     o += wash('M 150 254 L 300 208 L 450 254 L 450 266 L 300 220 L 150 266 Z', '#9A7550', .95)
     # tiny builders raising it
     for x in [176, 246, 356, 424]:
-        o += mini_person(x, 470, 96, 'man', '#6E7A45', '#4A3526', 'soft')
+        o += mini_person(x, 470, 96, 'man', '#8A5C2C', '#4A3526', 'soft')
         o += ink(f'M {x-16} 424 L {x-8} 396 M {x+16} 424 L {x+8} 396', 2.2, .7)
     # a seedling in the foreground
     o += ink('M 528 620 v -54', 3.0, .9)
@@ -78,30 +75,25 @@ def p8():
 # ---------------------------------------------------------------- PANEL 9
 def p9():
     o = rect(0, 0, W, H, '#EFE4CB', .92)
-    o += f'<ellipse cx="300" cy="340" rx="270" ry="250" fill="url(#glow)"/>'
     # the community behind her, softened
     for i, x in enumerate([46, 122, 198, 402, 478, 554]):
         kind = ['woman', 'man', 'woman', 'man', 'woman', 'man'][i]
-        col = ['#9AA6A0', '#93A08E', '#A3A296', '#8FA09A', '#A6A093', '#96A292'][i]
-        o += (f'<g opacity=".55">' +
-              mini_person(x, 486, 170, kind, col, '#8C9484', 'soft') + '</g>')
+        col = ['#6B4A86', '#3B5BA5', '#C8452F', '#8A5C2C', '#2E8F90', '#43587F'][i]
+        o += (f'<g opacity=".92">' +
+              mini_person(x, 486, 170, kind, col, '#4A3526', 'soft') + '</g>')
     o += wash('M 0 486 Q 300 470 600 486 L 600 660 L 0 660 Z', '#DDD0AE', .6)
     # Yael, front and centre
     cx, cy = 292, 300
-    o += dress(cx, 352, 148, 120, LINEN, .92)
     o += wash(f'M {cx-82} 366 Q {cx} 348 {cx+82} 366 L {cx+108} 586 Q {cx} 604 {cx-108} 586 Z', INDIGO, .9)
     o += ink(f'M {cx-82} 368 Q {cx} 350 {cx+82} 368', 2.4, .8)
     o += ink(f'M {cx-34} 360 L {cx-28} 578 M {cx+34} 360 L {cx+28} 578', 1.8, .45)
-    # the arm reaching out, palm open
-    o += wash(f'M {cx+64} 364 Q {cx+152} 392 {cx+186} 456 L {cx+140} 500 '
-              f'Q {cx+114} 436 {cx+40} 414 Z', LINEN, .96)
-    o += ink(f'M {cx+64} 364 Q {cx+152} 392 {cx+186} 456', 2.4, .8)
-    o += ink(f'M {cx+40} 414 Q {cx+114} 436 {cx+140} 500', 2.2, .6)
-    o += ell(cx + 168, 502, 36, 31, SKIN, 1)
-    o += ink(f'M {cx+132} 502 a 36 31 0 1 1 72 0 a 36 31 0 1 1 -72 0', 2.3)
-    for k in range(4):
-        o += ink(f'M {cx+142+k*17} {486-k*2} q 6 -15 15 -4', 1.9, .55)
-    o += ink(f'M {cx+150} 512 q 18 10 36 -2', 1.7, .40)
+    # one hand raised, palm open towards the reader
+    o += wash(f'M {cx+70} 380 Q {cx+112} 372 {cx+120} 330 L {cx+86} 316 '
+              f'Q {cx+80} 348 {cx+52} 356 Z', LINEN)
+    o += (f'<path d="M {cx+82} 306 q -4 -30 12 -34 q 16 -4 18 12 q 4 -14 16 -10 '
+      f'q 12 4 8 20 q 6 16 -8 26 q -20 12 -36 2 q -10 -6 -10 -16 Z" fill="{SKIN}" '
+      f'stroke="{INK}" stroke-width="{OUT}" stroke-linejoin="round"/>')
+    o += ink(f'M {cx+96} 282 v 16 M {cx+112} 278 v 20', 1.4, .7)
     o += head(cx, cy, 45)
     o += scarf(cx, cy, 45, '#3F6B58', 'both', 94)
     o += face(cx, cy + 4, 1.32, 'smile')
@@ -117,7 +109,6 @@ def p10():
                          (430, 58, 2.8), (520, 118, 2.2), (560, 48, 2.4), (96, 168, 1.8),
                          (268, 150, 1.8), (476, 168, 2.0)]:
         o += f'<circle cx="{sx}" cy="{sy}" r="{sr}" fill="#FFF3D0" opacity=".9"/>'
-    o += f'<ellipse cx="300" cy="360" rx="300" ry="260" fill="url(#glow)"/>'
     o += wash('M 0 560 Q 300 540 600 560 L 600 660 L 0 660 Z', '#6B5A4A', .8)
     # chuppah poles and canopy
     for px in (96, 504):
@@ -135,8 +126,9 @@ def p10():
         dy = 34 * (1 - abs((x - 300) / 224.0) ** 2)
         o += ink(f'M {x} {230+dy:.0f} q 8 13 0 24 q -8 -11 0 -24', 1.8, .5)
     # bride (right) and groom (left), standing side by side, no contact
+    o += wash('M 336 322 Q 310 404 330 462 L 414 462 Q 434 404 408 322 Q 372 306 336 322 Z', '#FFFFFF')
     o += mini_person(372, 560, 250, 'woman', '#FBF7EC', '#4A3526', 'smile')
-    o += wash('M 372 328 q -56 -14 -62 40 q -6 56 62 58 q 68 -2 62 -58 q -6 -54 -62 -40 Z', '#FFFFFF', .35)
+    o += ink('M 336 322 Q 372 306 408 322', 2.0, .8)
     x = 228
     r = 38
     cy = 560 - 250 + r
@@ -151,9 +143,9 @@ def p10():
         o += ink(f'M {x+sx*46} {cy+r*1.3+66} l {sx*4} 24', 1.8, .5)
     # guests, in two separated clusters
     for gx in [30, 74]:
-        o += f'<g opacity=".55">' + mini_person(gx, 574, 132, 'man', '#4A5A66', '#4A5A66', 'soft') + '</g>'
+        o += mini_person(gx, 574, 132, 'man', '#43587F', '#3B2A22', 'soft')
     for gx in [528, 572]:
-        o += f'<g opacity=".55">' + mini_person(gx, 574, 132, 'woman', '#6B5A72', '#6B5A72', 'soft') + '</g>'
+        o += mini_person(gx, 574, 132, 'woman', '#6B4A86', '#4A3526', 'soft')
     return frame(o)
 
 
@@ -166,22 +158,22 @@ def p11():
     o += rect(300, 124, 280, 182, '#B9762F', .9, rx=4) + ink('M 300 124 h 280 v 182 h -280 Z', 2.4, .8)
     o += rect(66, 132, 52, 46, '#F3D9A0', .95, rx=3) + ink('M 66 132 h 52 v 46 h -52 Z', 1.8, .7)
     o += rect(348, 158, 58, 44, '#F3D9A0', .95, rx=3) + ink('M 348 158 h 58 v 44 h -58 Z', 1.8, .7)
-    # string lights
-    o += ink('M 0 78 Q 150 128 300 84 Q 450 40 600 92', 2.2, .8)
-    for i in range(13):
-        t = i / 12.0
+    # a string of bulbs across the yard
+    o += ink('M 0 64 Q 300 128 600 64', 2.0, .9)
+    for i in range(11):
+        t = i / 10.0
         x = 600 * t
-        y = 78 + 50 * math.sin(math.pi * t) * (1 if t < .5 else -1) + (44 * t if t > .5 else 0)
-        y = 78 + (50 * (1 - abs(2 * t - 1))) * (1 if t < 0.5 else 1) - (34 * t)
-        o += f'<circle cx="{x:.0f}" cy="{y:.0f}" r="6" fill="#FFDE9C"/>'
-        o += f'<circle cx="{x:.0f}" cy="{y:.0f}" r="20" fill="url(#glow)" opacity=".8"/>'
+        y = 64 + 64 * (t * (1 - t)) * 4 * 0.25 * 4
+        y = 64 + 4 * 16 * t * (1 - t)
+        o += (f'<circle cx="{x:.0f}" cy="{y+14:.0f}" r="9" fill="#FFD65A" stroke="{INK}" '
+              f'stroke-width="{OUT2}"/>')
+        o += ink(f'M {x:.0f} {y:.0f} v 6', 1.4, .9)
     o += wash('M 0 300 L 600 300 L 600 660 L 0 660 Z', '#7A5238', .85)
-    o += f'<ellipse cx="300" cy="470" rx="300" ry="180" fill="url(#glow)" opacity=".55"/>'
     # RIGHT cluster: young men.  LEFT cluster: young women.  A clear gap between them.
     o += rect(316, 470, 268, 18, '#8B6A46', .95, rx=3) + ink('M 316 470 h 268', 2.2, .8)
     o += rect(340, 488, 16, 60, '#7A5C3C', .9) + rect(544, 488, 16, 60, '#7A5C3C', .9)
     for x in [360, 434, 508]:
-        o += mini_person(x, 470, 152, 'man', ['#4A5A66', '#6E7A45', '#3A4A5A'][[360, 434, 508].index(x)], '#4A3526', 'smile')
+        o += mini_person(x, 470, 152, 'man', ['#4A5A66', '#8A5C2C', '#3A4A5A'][[360, 434, 508].index(x)], '#4A3526', 'smile')
     o += rect(16, 470, 250, 18, '#8B6A46', .95, rx=3) + ink('M 16 470 h 250', 2.2, .8)
     o += rect(40, 488, 16, 60, '#7A5C3C', .9) + rect(228, 488, 16, 60, '#7A5C3C', .9)
     for x in [76, 146, 216]:

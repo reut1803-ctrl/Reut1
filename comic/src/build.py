@@ -58,9 +58,9 @@ P.append((A.p3(),
 
 # 4
 P.append((A.p4(),
-    cap('אבל אנחנו עם של אריות ולביאות — שצומחים דווקא מתוך המשברים.', 'top:2.4%;right:3%', '70%') +
-    bub('אני רוצה מציאות<br>שבה אף אחד לא נשאר לבד.', 'top:17%;right:3.5%', 'bl', '46%') +
-    bub('רק... איך עושים<br>דבר כזה?', 'top:18%;left:3.5%', 'br', '38%', 'think')))
+    cap('אבל אנחנו עם של אריות ולביאות — שצומחים דווקא מתוך המשברים.', 'top:2.4%;right:3%', '84%') +
+    bub('אני רוצה מציאות<br>שבה אף אחד לא נשאר לבד.', 'top:22%;right:3.5%', 'bl', '46%') +
+    bub('רק... איך עושים<br>דבר כזה?', 'top:23%;left:3.5%', 'br', '38%', 'think')))
 
 # 5
 P.append((A.p5(),
@@ -87,7 +87,7 @@ P.append((B.p8(),
 # 9
 P.append((B.p9(),
     cap('כדי שהמהפכה הזאת באמת תקרה — נחוצים עוד כמה מאות שותפים.', 'top:2.4%;right:3%', '72%') +
-    bub('אם אכפת לכם מאח או אחות<br>שנושאים את הכאב הזה — תנו יד.', 'bottom:3%;left:3.5%', 'tr', '60%')))
+    bub('אכפת לכם מאח או אחות<br>שנושאים את הכאב? תנו יד.', 'bottom:3%;left:3.5%', 'tr', '52%')))
 
 # 10
 P.append((B.p10(),
@@ -95,16 +95,25 @@ P.append((B.p10(),
 
 # 11
 P.append((B.p11(),
-    cap('כי כשקהילה שלמה לוקחת אחריות — אף אחד כבר לא נשאר לבד.', 'top:2.4%;right:3%', '74%')))
+    cap('כי כשקהילה שלמה לוקחת אחריות — אף אחד כבר לא נשאר לבד.', 'bottom:3%;right:3%', '78%')))
 
 # 12 — the logo panel
 P12 = f'''<div class="logopanel">
-  <img class="logo" src="{LOGO}" alt="יש לך בית">
-  <div class="thanks">תודה על השותפות שלכם</div>
+  <div class="goldframe">
+    <svg class="orn" viewBox="0 0 300 200" preserveAspectRatio="none">
+      <rect x="5" y="5" width="290" height="190" fill="none" stroke="#C9992B" stroke-width="4"/>
+      <rect x="12" y="12" width="276" height="176" fill="none" stroke="#C9992B" stroke-width="1.6"/>
+      <path d="M 5 26 q 16 -16 32 -16 M 295 26 q -16 -16 -32 -16 M 5 174 q 16 16 32 16 M 295 174 q -16 16 -32 16"
+            fill="none" stroke="#C9992B" stroke-width="4"/>
+      <circle cx="37" cy="10" r="3.4" fill="#C9992B"/><circle cx="263" cy="10" r="3.4" fill="#C9992B"/>
+      <circle cx="37" cy="190" r="3.4" fill="#C9992B"/><circle cx="263" cy="190" r="3.4" fill="#C9992B"/>
+    </svg>
+    <img class="logo" src="{LOGO}" alt="יש לך בית">
+  </div>
+  <div class="banner">רוצים לקחת חלק? הצטרפו אלינו כאן:</div>
   <div class="bottomrow">
     <img class="qr" src="{QR}" alt="QR">
     <div class="linkcol">
-      <div class="linklab">להצטרפות ולשותפות:</div>
       <div class="link">givechak.co.il/Bayit?ref=rk</div>
       <div class="sign">יעל בנימין, מפתחת המיזם</div>
     </div>
@@ -123,64 +132,71 @@ HTML = f'''<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
 *{{box-sizing:border-box;margin:0;padding:0}}
 @page{{size:A4;margin:0}}
 html,body{{width:210mm;height:297mm;background:#fff}}
-body{{font-family:'FrankRuhl',serif;color:#17323A;-webkit-font-smoothing:antialiased}}
-.page{{position:relative;width:210mm;height:297mm;background:#FBF4E4;padding:6.5mm;overflow:hidden}}
-.grain{{position:absolute;inset:0;pointer-events:none;opacity:.10;mix-blend-mode:multiply;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/></filter><rect width='240' height='240' filter='url(%23n)' opacity='0.55'/></svg>");
-  z-index:9}}
-.vig{{position:absolute;inset:0;pointer-events:none;z-index:8;
-  background:radial-gradient(120% 90% at 50% 45%,rgba(0,0,0,0) 55%,rgba(90,70,40,.13) 100%)}}
+body{{font-family:'Heebo',sans-serif;color:#141414;-webkit-font-smoothing:antialiased}}
+.page{{position:relative;width:210mm;height:297mm;background:#FCF3DC;padding:6mm;overflow:hidden}}
+.halftone{{position:absolute;inset:0;pointer-events:none;z-index:9;opacity:.13;mix-blend-mode:multiply;
+  background-image:radial-gradient(#2A2A2A 26%,transparent 27%);background-size:.62mm .62mm}}
+.grain{{position:absolute;inset:0;pointer-events:none;opacity:.07;mix-blend-mode:multiply;z-index:10;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4'/></filter><rect width='240' height='240' filter='url(%23n)' opacity='0.5'/></svg>")}}
 .grid{{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);
-  gap:3.2mm;width:100%;height:100%;direction:rtl}}
-.panel{{position:relative;overflow:hidden;background:#F7EDD6;border:1.0mm solid #17323A;
-  border-radius:1.2mm;box-shadow:0 .5mm 1.2mm rgba(23,50,58,.22)}}
+  gap:3.4mm;width:100%;height:100%;direction:rtl}}
+.panel{{position:relative;overflow:hidden;background:#F6E7C1;border:1.25mm solid #141414;
+  border-radius:0;box-shadow:.6mm .6mm 0 rgba(20,20,20,.35)}}
 .art{{position:absolute;inset:0;width:100%;height:100%;display:block}}
 .num{{position:absolute;bottom:0;left:0;z-index:6;font-family:'Heebo',sans-serif;font-weight:700;
-  font-size:2.4mm;color:#FBF4E4;background:#17323A;padding:.5mm 1.4mm;border-top-right-radius:1.2mm}}
-.cap{{position:absolute;z-index:5;background:#FDF7E9;border:.35mm solid #17323A;border-radius:.8mm;
-  padding:1.1mm 1.6mm;font-family:'FrankRuhl',serif;font-weight:700;font-size:2.75mm;line-height:1.30;
-  color:#17323A;box-shadow:.4mm .4mm 0 rgba(23,50,58,.30)}}
+  font-size:2.3mm;color:#FCF3DC;background:#141414;padding:.4mm 1.3mm}}
+.cap{{position:absolute;z-index:5;background:#FBEFC0;border:.45mm solid #141414;border-radius:0;
+  padding:1.1mm 1.7mm;font-family:'Heebo',sans-serif;font-weight:700;font-size:2.75mm;line-height:1.32;
+  color:#141414;box-shadow:.5mm .5mm 0 rgba(20,20,20,.45)}}
 .cap.wide{{text-align:center}}
-.qcap{{position:absolute;z-index:5;background:rgba(253,247,233,.94);border:.3mm solid #17323A;
-  border-radius:.7mm;padding:.8mm 1.2mm;font-family:'FrankRuhl',serif;font-weight:700;
-  font-size:2.45mm;line-height:1.25;text-align:center;color:#17323A}}
-.bub{{position:absolute;z-index:5;background:#FFFDF6;border:.32mm solid #17323A;
-  border-radius:3mm;padding:1.5mm 2mm;font-family:'Heebo',sans-serif;font-weight:400;
-  font-size:2.55mm;line-height:1.32;text-align:center;color:#17323A;
-  box-shadow:.35mm .35mm 0 rgba(23,50,58,.22)}}
-.bub::after{{content:'';position:absolute;width:2.6mm;height:2.6mm;background:#FFFDF6;
-  border-right:.32mm solid #17323A;border-bottom:.32mm solid #17323A}}
-.bub.t-br::after{{bottom:-1.5mm;right:3mm;transform:rotate(35deg) skew(10deg)}}
-.bub.t-bl::after{{bottom:-1.5mm;left:3mm;transform:rotate(55deg) skew(-10deg)}}
-.bub.t-tr::after{{top:-1.5mm;right:3mm;transform:rotate(215deg) skew(10deg)}}
-.bub.t-tl::after{{top:-1.5mm;left:3mm;transform:rotate(235deg) skew(-10deg)}}
-.bub.think{{border-radius:4mm;border-style:dashed}}
-.bub.think::after{{display:none}}
-.bub.think::before{{content:'';position:absolute;bottom:-2.6mm;right:4mm;width:1.9mm;height:1.9mm;
-  border-radius:50%;background:#FFFDF6;border:.3mm solid #17323A;
-  box-shadow:-1.6mm 1.9mm 0 -.35mm #FFFDF6, -1.6mm 1.9mm 0 0 #17323A}}
-.tag{{position:absolute;z-index:5;font-family:'Suez',serif;font-size:2.6mm;color:#FBF4E4;
-  background:#1F7A7F;padding:.7mm 1.4mm;border-radius:.7mm;transform:rotate(-3deg);
-  box-shadow:.4mm .4mm 0 rgba(23,50,58,.35)}}
-.tag.alt{{background:#5E3A6E;transform:rotate(3deg)}}
+.qcap{{position:absolute;z-index:5;background:#FBEFC0;border:.42mm solid #141414;
+  padding:.8mm 1.3mm;font-family:'Heebo',sans-serif;font-weight:700;
+  font-size:2.5mm;line-height:1.26;text-align:center;color:#141414;
+  box-shadow:.4mm .4mm 0 rgba(20,20,20,.4)}}
+.bub{{position:absolute;z-index:5;background:#FFFFFF;border:.45mm solid #141414;
+  border-radius:50%/40%;padding:1.9mm 2.6mm;font-family:'Heebo',sans-serif;font-weight:700;
+  font-size:2.6mm;line-height:1.30;text-align:center;color:#141414}}
+.bub::before,.bub::after{{content:'';position:absolute;width:0;height:0;border-style:solid;
+  border-color:transparent}}
+.bub.t-br::before{{bottom:-3.1mm;right:3.2mm;border-width:3.1mm 2.3mm 0 2.3mm;border-top-color:#141414}}
+.bub.t-br::after{{bottom:-2.2mm;right:3.75mm;border-width:2.3mm 1.55mm 0 1.55mm;border-top-color:#FFFFFF}}
+.bub.t-bl::before{{bottom:-3.1mm;left:3.2mm;border-width:3.1mm 2.3mm 0 2.3mm;border-top-color:#141414}}
+.bub.t-bl::after{{bottom:-2.2mm;left:3.75mm;border-width:2.3mm 1.55mm 0 1.55mm;border-top-color:#FFFFFF}}
+.bub.t-tr::before{{top:-3.1mm;right:3.2mm;border-width:0 2.3mm 3.1mm 2.3mm;border-bottom-color:#141414}}
+.bub.t-tr::after{{top:-2.2mm;right:3.75mm;border-width:0 1.55mm 2.3mm 1.55mm;border-bottom-color:#FFFFFF}}
+.bub.t-tl::before{{top:-3.1mm;left:3.2mm;border-width:0 2.3mm 3.1mm 2.3mm;border-bottom-color:#141414}}
+.bub.t-tl::after{{top:-2.2mm;left:3.75mm;border-width:0 1.55mm 2.3mm 1.55mm;border-bottom-color:#FFFFFF}}
+.bub.think{{border-radius:46%/38%;border-style:dashed;border-width:.4mm}}
+.bub.think::before{{bottom:-2.4mm;right:4mm;width:1.8mm;height:1.8mm;border:.35mm solid #141414;
+  border-radius:50%;background:#FFF;border-color:#141414}}
+.bub.think::after{{bottom:-4.4mm;right:2.4mm;width:1.1mm;height:1.1mm;border:.32mm solid #141414;
+  border-radius:50%;background:#FFF;border-color:#141414}}
+.tag{{position:absolute;z-index:5;font-family:'Suez',serif;font-size:2.7mm;color:#FFFFFF;
+  background:#2E8F90;padding:.7mm 1.5mm;border:.4mm solid #141414;transform:rotate(-3deg);
+  box-shadow:.5mm .5mm 0 rgba(20,20,20,.5)}}
+.tag.alt{{background:#6B4A86;transform:rotate(3deg)}}
 /* panel 12 */
-.p12{{background:#FBF4E4;display:flex;align-items:center;justify-content:center}}
-.logopanel{{width:100%;height:100%;padding:2.6mm 2.4mm;display:flex;flex-direction:column;
+.p12{{background:#FBEFC0;display:flex;align-items:center;justify-content:center}}
+.logopanel{{width:100%;height:100%;padding:2.4mm 2.2mm;display:flex;flex-direction:column;
   align-items:center;justify-content:space-between;text-align:center}}
-.logo{{width:100%;border-radius:.8mm;border:.3mm solid rgba(23,50,58,.35)}}
-.thanks{{font-family:'Suez',serif;font-size:3.0mm;color:#5E3A6E;letter-spacing:.02em}}
+.goldframe{{position:relative;width:100%;padding:1.8mm;background:#FBF4E4;
+  border:.4mm solid #141414;box-shadow:.5mm .5mm 0 rgba(20,20,20,.4)}}
+.orn{{position:absolute;inset:0;width:100%;height:100%}}
+.logo{{position:relative;width:100%;display:block}}
+.banner{{width:100%;background:#6B4A86;color:#FBEFC0;border:.4mm solid #141414;
+  font-family:'Heebo',sans-serif;font-weight:700;font-size:2.6mm;line-height:1.25;
+  padding:1.1mm .8mm;box-shadow:.5mm .5mm 0 rgba(20,20,20,.4)}}
 .bottomrow{{display:flex;align-items:center;gap:2.2mm;width:100%;justify-content:space-between}}
-.qr{{width:15mm;height:15mm;border:.3mm solid #17323A;border-radius:.6mm;background:#FBF4E4}}
+.qr{{width:16mm;height:16mm;border:.45mm solid #141414;background:#FBF4E4}}
 .linkcol{{flex:1;text-align:right}}
-.linklab{{font-family:'Heebo',sans-serif;font-weight:700;font-size:2.3mm;color:#1F7A7F}}
-.link{{font-family:'Heebo',sans-serif;font-weight:700;font-size:2.5mm;color:#17323A;
-  direction:ltr;text-align:right;word-break:break-all;line-height:1.25}}
-.sign{{margin-top:.8mm;font-family:'FrankRuhl',serif;font-weight:700;font-size:2.4mm;color:#5E3A6E}}
+.link{{font-family:'Heebo',sans-serif;font-weight:700;font-size:2.65mm;color:#141414;
+  direction:ltr;text-align:right;word-break:break-all;line-height:1.22}}
+.sign{{margin-top:1mm;font-family:'Heebo',sans-serif;font-weight:700;font-size:2.4mm;color:#6B4A86}}
 </style></head><body>
 {defs()}
 <div class="page"><div class="grid">
 {panels_html}
-</div><div class="vig"></div><div class="grain"></div></div>
+</div><div class="halftone"></div><div class="grain"></div></div>
 </body></html>'''
 
 out = os.path.join(HERE, 'page.html')
