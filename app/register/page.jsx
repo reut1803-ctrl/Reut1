@@ -20,6 +20,11 @@ import {
 
 const AVAILABILITY = ["פנוי", "לא פנוי", "בהפסקה"];
 
+// הצהרת הפרטיות שהנרשם/ת מאשר/ת. הנוסח נשמר גם בתוך הפנייה עצמה,
+// כדי שיהיה תיעוד מדויק של מה שאושר ומתי.
+const PRIVACY_TEXT =
+  "ידוע לי שהפרטים שאני מוסר/ת נועדו אך ורק לצורך התאמות שידוך במסגרת המאגר, וכי המידע נשמר בדיסקרטיות מלאה ומונגש אך ורק לצוות המנהל את המאגר באחריות ובשמירה על פרטיותי.";
+
 const EMPTY = {
   gender: "male",
   name: "",
@@ -99,6 +104,8 @@ export default function RegisterPage() {
   const [photoUrl, setPhotoUrl] = useState(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
+  // אישור הצהרת הפרטיות. בלעדיו אי אפשר לשלוח את הטופס.
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const fileRef = useRef(null);
@@ -210,6 +217,7 @@ export default function RegisterPage() {
   if (!form.eda.trim()) missing.push("עדה");
   if (!form.tag) missing.push("שיוך");
   if (!photoUrl) missing.push("תמונה");
+  if (!agreedToTerms) missing.push("אישור הצהרת הפרטיות");
   const ready = missing.length === 0;
 
   const handleSubmit = async () => {
@@ -234,6 +242,10 @@ export default function RegisterPage() {
         complexityNotes: form.complexityNotes.trim(),
         referenceContacts: form.referenceContacts.trim(),
         photoUrl,
+        // תיעוד ההסכמה: מתי בדיוק אושרה, ומה בדיוק אושר
+        termsAccepted: true,
+        termsAcceptedAt: serverTimestamp(),
+        termsText: PRIVACY_TEXT,
         createdAt: serverTimestamp(),
       });
       setStep("done");
@@ -520,6 +532,20 @@ export default function RegisterPage() {
               <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
               {photoError && <p className="mt-2 text-[12px] leading-relaxed text-[#C24545]">{photoError}</p>}
             </div>
+
+            {/* אישור הצהרת הפרטיות - שדה חובה, ממש לפני השליחה */}
+            <label className="flex cursor-pointer items-start gap-3 rounded-3xl border border-[#EAE5E3] bg-white p-4">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[#8C4A55]"
+              />
+              <span className="text-[12px] leading-relaxed text-[#3A3335]">
+                {PRIVACY_TEXT}
+                <span className="text-[#C24545]"> *</span>
+              </span>
+            </label>
 
             {!ready && (
               <p className="rounded-2xl bg-[#FFF3E4] px-4 py-3 text-[12px] leading-relaxed text-[#B45309]">
