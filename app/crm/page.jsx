@@ -110,6 +110,7 @@ function ProfilesFeed() {
     // מפתח החיפוש לטופס ההרשמה החיצוני, ופניות שהגיעו ממנו וממתינות להמרה
     store.backfillNameIndex();
     store.convertPendingIntake();
+    store.hideUncontactedIntake();
   }, [role, candidatesLoaded, candidates_, intake_]);
 
   // "קודמות" מוגדרת כ"כל מי שאינו חדש" - משלימה מתמטית, כדי שכרטיס לא ייפול בין הלשוניות

@@ -213,7 +213,7 @@ export default function DashboardPage() {
             <p className="mt-0.5 text-[12px] leading-relaxed text-[#8A8285]">
               {converting
                 ? "נכנסות למאגר עכשיו..."
-                : "נכנסות למאגר אוטומטית תוך כמה שניות, ויסומנו על הכרטיס כהרשמה עצמית"}
+                : "נכנסות למאגר אוטומטית תוך כמה שניות, גלויות לך בלבד עד שתסמני שנוצר קשר"}
             </p>
           </div>
         </div>

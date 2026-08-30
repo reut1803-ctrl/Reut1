@@ -20,6 +20,7 @@ import {
   Star,
   Inbox,
   PhoneCall,
+  EyeOff,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -369,17 +370,22 @@ export default function ProfileCard({ candidate, onReadMore }) {
               <Inbox size={11} /> הגיע/ה מהטופס החיצוני
             </span>
           ) : (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-2xl border border-[#E7CE93] bg-[#FFFCF5] px-2.5 py-1.5">
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#946200]">
-                <Inbox size={12} /> הרשמה עצמית · ממתין/ה לשיחה ראשונה
-              </span>
-              <button
-                onClick={handleMarkContacted}
-                disabled={markingContacted}
-                className="mr-auto inline-flex items-center gap-1 rounded-full bg-[#946200] px-2.5 py-1 text-[10px] font-bold text-white transition active:scale-95 disabled:opacity-50"
-              >
-                <PhoneCall size={11} /> {markingContacted ? "שומר..." : "יצרתי קשר"}
-              </button>
+            <div className="mt-2 rounded-2xl border border-[#E7CE93] bg-[#FFFCF5] px-2.5 py-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#946200]">
+                  <Inbox size={12} /> הרשמה עצמית · ממתין/ה לשיחה ראשונה
+                </span>
+                <button
+                  onClick={handleMarkContacted}
+                  disabled={markingContacted}
+                  className="mr-auto inline-flex items-center gap-1 rounded-full bg-[#946200] px-2.5 py-1 text-[10px] font-bold text-white transition active:scale-95 disabled:opacity-50"
+                >
+                  <PhoneCall size={11} /> {markingContacted ? "שומר..." : "יצרתי קשר · פתיחה לצוות"}
+                </button>
+              </div>
+              <p className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-[#8A8285]">
+                <EyeOff size={11} /> הכרטיס גלוי לך בלבד. הצוות יראה אותו רק אחרי שתסמני שנוצר קשר.
+              </p>
             </div>
           ))}
         <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8A8285]">{candidate.bio}</p>
