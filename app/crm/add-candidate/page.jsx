@@ -232,7 +232,9 @@ export default function AddCandidatePage() {
         phone: form.phone.trim(),
         bio: form.bio.trim(),
         traits,
-        photoUrl: photos[0],
+        // בלי null כאן, כרטיס בלי תמונה שולח undefined - ו-Firestore מסרב
+        // לשמור את הכרטיס כולו, לא רק את התמונה.
+        photoUrl: photos[0] || null,
         photoUrls: photos,
         availabilityStatus: form.availabilityStatus,
         complexityNotes: form.complexityNotes.trim(),
