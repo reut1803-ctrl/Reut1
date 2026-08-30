@@ -174,7 +174,11 @@ service cloud.firestore {
         && request.resource.data.name.size() < 120
         && request.resource.data.get('phone', '') is string
         && request.resource.data.phone.size() < 40;
-      allow get, list: if isStaff();
+      // קריאה שמורה למנהלת בלבד. פנייה שממתינה לאישור מכילה טלפון, תמונה
+      // ומורכבויות של מי שעדיין לא דיברו איתו/ה, ולכן אינה נחשפת לצוות -
+      // גם לא ישירות מול מסד הנתונים. הצוות רואה רק את הכרטיס שנוצר אחרי
+      // שהמנהלת אישרה.
+      allow get, list: if isAdmin();
       allow update, delete: if isAdmin();
     }
 

@@ -6,7 +6,7 @@ import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserP
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
 import { whatsappNumber } from "@/lib/crm/brainstorm";
 import { weekKey, weeklyMetrics } from "@/lib/crm/week";
-import { Link2 as LinkIcon, Copy, ExternalLink } from "lucide-react";
+import { Link2 as LinkIcon, Copy, ExternalLink, Inbox, PhoneCall, MessageCircle } from "lucide-react";
 import Button from "@/components/crm/ui/Button";
 
 function metricColor(ratio) {
@@ -89,15 +89,13 @@ export default function DashboardPage() {
   // מפתח השבוע הנוכחי (מיום ראשון). לפיו נבחרים המדדים שמוצגים.
   const currentWeek = weekKey();
   // כתובת טופס ההרשמה החיצוני, להעתקה ולשליחה למועמדים
-  const pendingIntake = useCrmStore((s) => s.pendingIntakeCount());
   const nameIndexState = useCrmStore((s) => s.nameIndexState);
-  const intakeSubmissions = useCrmStore((s) => s.intakeSubmissions);
-  const converting = useCrmStore((s) => s._convertingIntake);
-  // ההמרה רצה גם מכאן, כדי שלא יהיה צורך לעבור למסך הפרופילים כדי שתקרה
-  useEffect(() => {
-    if (role !== "admin") return;
-    useCrmStore.getState().convertPendingIntake();
-  }, [role, intakeSubmissions]);
+  const pendingList = useCrmStore((s) => s.pendingIntake());
+  const approveIntake = useCrmStore((s) => s.approveIntakeSubmission);
+  const rejectIntake = useCrmStore((s) => s.rejectIntakeSubmission);
+  const approvingId = useCrmStore((s) => s._approvingIntake);
+  const [intakeError, setIntakeError] = useState("");
+  const [rejectingId, setRejectingId] = useState(null);
   const [registerCopied, setRegisterCopied] = useState(false);
   const registerUrl = typeof window === "undefined" ? "/register" : `${window.location.origin}/register`;
   const handleCopyRegisterLink = async () => {
@@ -200,23 +198,128 @@ export default function DashboardPage() {
       </h1>
       <p className="mt-1 text-[13px] text-[#8A8285]">מעורבות צוות, נהלים, טיפים ומעקב מיילים</p>
 
-      {/* פניות חדשות מהטופס החיצוני. יושב בראש הלוח כדי שלא יהיה צורך לחפש. */}
-      {pendingIntake > 0 && (
-        <div className="mt-4 flex items-center gap-3 rounded-3xl border border-[#E7CE93] bg-[#FFFCF5] p-4">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#D9B45F] text-[17px] font-bold text-white">
-            {pendingIntake}
-          </span>
-          <div className="min-w-0">
-            <p className="text-[14px] font-bold text-[#946200]">
-              {pendingIntake === 1 ? "פנייה חדשה מהטופס" : `${pendingIntake} פניות חדשות מהטופס`}
-            </p>
-            <p className="mt-0.5 text-[12px] leading-relaxed text-[#8A8285]">
-              {converting
-                ? "נכנסות למאגר עכשיו..."
-                : "נכנסות למאגר אוטומטית תוך כמה שניות, גלויות לך בלבד עד שתסמני שנוצר קשר"}
-            </p>
+      {/* פניות שממתינות לאישור. יושב בראש הלוח כדי שלא יהיה צורך לחפש.
+          הפנייה אינה הופכת לכרטיס מעצמה: כאן עוברים עליה, מתקשרים, ומאשרים. */}
+      {pendingList.length > 0 && (
+        <>
+          <h2 className="mt-6 mb-1 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
+            <Inbox size={17} /> פניות שממתינות לאישור ({pendingList.length})
+          </h2>
+          <p className="mb-3 text-[12px] leading-relaxed text-[#8A8285]">
+            הפרטים כאן גלויים לך בלבד. אחרי שיחת תיאום ציפיות, אישור יוצר את הכרטיס
+            במאגר וחושף אותו לצוות.
+          </p>
+
+          {intakeError && (
+            <p className="mb-3 rounded-2xl bg-red-50 px-3 py-2 text-[12px] text-[#C24545]">{intakeError}</p>
+          )}
+
+          <div className="space-y-3">
+            {pendingList.map((item) => {
+              const wa = whatsappNumber(item.phone);
+              const busy = approvingId === item.id || rejectingId === item.id;
+              return (
+                <div key={item.id} className="overflow-hidden rounded-3xl border border-[#E7CE93] bg-[#FFFCF5]">
+                  <div className="h-1 w-full bg-gradient-to-l from-[#E7CE93] via-[#D9B45F] to-[#E7CE93]" />
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      {item.photoUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={item.photoUrl} alt={item.name} className="h-20 w-16 shrink-0 rounded-xl object-cover" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-bold text-[#3A3335]">{item.name}</p>
+                        <p className="mt-0.5 text-[12px] text-[#8A8285]">
+                          {[item.gender === "female" ? "בחורה" : "בחור", item.age && `בת/בן ${item.age}`, item.height && `${item.height} ס״מ`, item.eda, item.tag]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                        <p className="mt-0.5 text-[12px] text-[#8A8285]">
+                          {[item.religiousLevel, item.city, item.region, item.currentOccupation].filter(Boolean).join(" · ")}
+                        </p>
+                        <p dir="ltr" className="mt-1 text-right text-[13px] font-bold text-[#3A3335]">{item.phone}</p>
+                      </div>
+                    </div>
+
+                    {/* יצירת קשר ישירה, לפני האישור */}
+                    <div className="mt-3 flex gap-2">
+                      <a
+                        href={`tel:${String(item.phone || "").replace(/[^\d+]/g, "")}`}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EAE5E3] bg-white py-2.5 text-[12px] font-bold text-[#3A3335]"
+                      >
+                        <PhoneCall size={14} /> חיוג
+                      </a>
+                      {wa && (
+                        <a
+                          href={`https://wa.me/${wa}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EAE5E3] bg-white py-2.5 text-[12px] font-bold text-[#178A57]"
+                        >
+                          <MessageCircle size={14} /> וואטסאפ
+                        </a>
+                      )}
+                    </div>
+
+                    {item.bio && (
+                      <div className="mt-3 rounded-2xl bg-white/70 p-3">
+                        <p className="mb-1 text-[10px] font-bold text-[#946200]">תיאור אישי</p>
+                        <p className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#3A3335]">{item.bio}</p>
+                      </div>
+                    )}
+                    {item.complexityNotes && (
+                      <div className="mt-2 rounded-2xl bg-white/70 p-3">
+                        <p className="mb-1 text-[10px] font-bold text-[#946200]">מורכבויות</p>
+                        <p className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#3A3335]">{item.complexityNotes}</p>
+                      </div>
+                    )}
+                    {item.referenceContacts && (
+                      <div className="mt-2 rounded-2xl bg-white/70 p-3">
+                        <p className="mb-1 text-[10px] font-bold text-[#946200]">מספרים לבירורים</p>
+                        <p className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#3A3335]">{item.referenceContacts}</p>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={async () => {
+                          setIntakeError("");
+                          try {
+                            await approveIntake(item.id);
+                          } catch (err) {
+                            setIntakeError(`האישור נכשל: ${err?.code || ""} ${err?.message || ""}`);
+                          }
+                        }}
+                        disabled={busy}
+                        className="flex flex-[2] items-center justify-center gap-1.5 rounded-2xl bg-[#20A66B] py-3 text-[13px] font-bold text-white transition active:scale-[0.98] disabled:opacity-50"
+                      >
+                        <Check size={15} />
+                        {approvingId === item.id ? "יוצר כרטיס..." : "אישור ויצירת כרטיס"}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setIntakeError("");
+                          setRejectingId(item.id);
+                          try {
+                            await rejectIntake(item.id);
+                          } catch (err) {
+                            setIntakeError(`הדחייה נכשלה: ${err?.code || ""} ${err?.message || ""}`);
+                          } finally {
+                            setRejectingId(null);
+                          }
+                        }}
+                        disabled={busy}
+                        className="flex flex-1 items-center justify-center rounded-2xl border border-[#EAE5E3] bg-white py-3 text-[13px] font-bold text-[#8A8285] transition active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {rejectingId === item.id ? "מסיר..." : "לא רלוונטי"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        </>
       )}
 
       <h2 className="mt-6 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">

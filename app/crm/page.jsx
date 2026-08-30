@@ -109,7 +109,8 @@ function ProfilesFeed() {
     store.backfillConfidentialFlag();
     // מפתח החיפוש לטופס ההרשמה החיצוני, ופניות שהגיעו ממנו וממתינות להמרה
     store.backfillNameIndex();
-    store.convertPendingIntake();
+    // כרטיסים ותיקים מהטופס שעדיין לא נוצר איתם קשר חוזרים למצב חסוי.
+    // פניות חדשות אינן הופכות לכרטיס מעצמן - ראו לוח הבקרה.
     store.hideUncontactedIntake();
   }, [role, candidatesLoaded, candidates_, intake_]);
 
