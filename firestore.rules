@@ -38,6 +38,12 @@ service cloud.firestore {
       return request.auth != null
         && get(/databases/$(database)/documents/staffAllowlist/$(myEmail())).data.role == "admin";
     }
+    // בעלת המערכת. האפליקציה מזהה אותה כמנהלת תמיד, גם אם רשומת ההרשאות
+    // שלה חסרה או פגומה, ואותה רשת ביטחון קיימת עכשיו גם בשרת - כדי שכלל
+    // שמוגבל למנהלת לא יוכל לחסום אותה מהנתונים של עצמה.
+    function isOwner() {
+      return request.auth != null && myEmail() == "reut1803@gmail.com";
+    }
     function notBlockedFromMe() {
       return isAdmin()
         || !(myEmail() in resource.data.get('blockedStaffEmails', []));
@@ -178,8 +184,8 @@ service cloud.firestore {
       // ומורכבויות של מי שעדיין לא דיברו איתו/ה, ולכן אינה נחשפת לצוות -
       // גם לא ישירות מול מסד הנתונים. הצוות רואה רק את הכרטיס שנוצר אחרי
       // שהמנהלת אישרה.
-      allow get, list: if isAdmin();
-      allow update, delete: if isAdmin();
+      allow get, list: if isAdmin() || isOwner();
+      allow update, delete: if isAdmin() || isOwner();
     }
 
     match /userPrefs/{email} {
