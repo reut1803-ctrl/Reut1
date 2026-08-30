@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope } from "lucide-react";
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
@@ -91,6 +91,13 @@ export default function DashboardPage() {
   // כתובת טופס ההרשמה החיצוני, להעתקה ולשליחה למועמדים
   const pendingIntake = useCrmStore((s) => s.pendingIntakeCount());
   const nameIndexState = useCrmStore((s) => s.nameIndexState);
+  const intakeSubmissions = useCrmStore((s) => s.intakeSubmissions);
+  const converting = useCrmStore((s) => s._convertingIntake);
+  // ההמרה רצה גם מכאן, כדי שלא יהיה צורך לעבור למסך הפרופילים כדי שתקרה
+  useEffect(() => {
+    if (role !== "admin") return;
+    useCrmStore.getState().convertPendingIntake();
+  }, [role, intakeSubmissions]);
   const [registerCopied, setRegisterCopied] = useState(false);
   const registerUrl = typeof window === "undefined" ? "/register" : `${window.location.origin}/register`;
   const handleCopyRegisterLink = async () => {
@@ -192,6 +199,25 @@ export default function DashboardPage() {
         <BarChart3 size={22} /> לוח בקרה
       </h1>
       <p className="mt-1 text-[13px] text-[#8A8285]">מעורבות צוות, נהלים, טיפים ומעקב מיילים</p>
+
+      {/* פניות חדשות מהטופס החיצוני. יושב בראש הלוח כדי שלא יהיה צורך לחפש. */}
+      {pendingIntake > 0 && (
+        <div className="mt-4 flex items-center gap-3 rounded-3xl border border-[#E7CE93] bg-[#FFFCF5] p-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#D9B45F] text-[17px] font-bold text-white">
+            {pendingIntake}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[14px] font-bold text-[#946200]">
+              {pendingIntake === 1 ? "פנייה חדשה מהטופס" : `${pendingIntake} פניות חדשות מהטופס`}
+            </p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-[#8A8285]">
+              {converting
+                ? "נכנסות למאגר עכשיו..."
+                : "נכנסות למאגר אוטומטית תוך כמה שניות, ויסומנו על הכרטיס כהרשמה עצמית"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <h2 className="mt-6 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#3A3335]">
         <KeyRound size={17} /> הרשאות כניסה (Google)
@@ -390,11 +416,7 @@ export default function DashboardPage() {
           </p>
         ) : null}
 
-        {pendingIntake > 0 && (
-          <p className="mt-3 rounded-2xl bg-[#FFF8E7] px-3 py-2 text-[12px] font-semibold text-[#946200]">
-            {pendingIntake} פניות חדשות מהטופס ממתינות - הן נכנסות למאגר אוטומטית כשנכנסים למסך הפרופילים
-          </p>
-        )}
+
       </div>
 
       <h2 className="mt-6 mb-3 text-[15px] font-bold text-[#3A3335]">מעורבות צוות (השבוע)</h2>

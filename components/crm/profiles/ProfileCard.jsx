@@ -18,6 +18,8 @@ import {
   Lightbulb,
   Clock3,
   Star,
+  Inbox,
+  PhoneCall,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -84,6 +86,27 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // ההצעה עצמה נשמרת במסד הנתונים, והתראת הכפילות ממשיכה לעבוד גם אחרי שהיא
   // כבר אינה מוצגת - ראו droppedProposalFor בחנות הנתונים.
   const proposals = allProposals.filter((p) => isProposalRowVisible(p, now, PROPOSAL_DROPPED));
+  // כרטיס שהגיע מטופס ההרשמה החיצוני. התווית גלויה למנהלת בלבד:
+  // כל עוד לא נוצר קשר ראשוני היא בולטת, ואחריו היא הופכת לציון עובדתי שקט.
+  const markIntakeContacted = useCrmStore((s) => s.markIntakeContacted);
+  const [markingContacted, setMarkingContacted] = useState(false);
+  const fromIntakeForm = candidate.source === "register-form";
+  const intakeContacted = !!candidate.intakeContactedAt;
+  const showIntakeTag = role === "admin" && fromIntakeForm;
+
+  const handleMarkContacted = async () => {
+    if (markingContacted) return;
+    setMarkingContacted(true);
+    try {
+      await markIntakeContacted(candidate.id);
+      showToast("סומן שנוצר קשר ראשוני");
+    } catch {
+      showToast("הסימון לא נשמר");
+    } finally {
+      setMarkingContacted(false);
+    }
+  };
+
   // "הזרקור היומי": שליטה ידנית מהירה, ישירות על הכרטיס ברשימה, למנהלת בלבד.
   const [spotlightSaving, setSpotlightSaving] = useState(false);
   const inSpotlight = candidate.spotlight === true;
@@ -338,6 +361,27 @@ export default function ProfileCard({ candidate, onReadMore }) {
             </span>
           )}
         </div>
+
+        {/* תווית מקור הכרטיס - למנהלת בלבד. הצוות אינו רואה אותה כלל. */}
+        {showIntakeTag &&
+          (intakeContacted ? (
+            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#F6F5F4] px-2 py-0.5 text-[10px] font-semibold text-[#B5AEB0]">
+              <Inbox size={11} /> הגיע/ה מהטופס החיצוני
+            </span>
+          ) : (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-2xl border border-[#E7CE93] bg-[#FFFCF5] px-2.5 py-1.5">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#946200]">
+                <Inbox size={12} /> הרשמה עצמית · ממתין/ה לשיחה ראשונה
+              </span>
+              <button
+                onClick={handleMarkContacted}
+                disabled={markingContacted}
+                className="mr-auto inline-flex items-center gap-1 rounded-full bg-[#946200] px-2.5 py-1 text-[10px] font-bold text-white transition active:scale-95 disabled:opacity-50"
+              >
+                <PhoneCall size={11} /> {markingContacted ? "שומר..." : "יצרתי קשר"}
+              </button>
+            </div>
+          ))}
         <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8A8285]">{candidate.bio}</p>
 
         <div className="mt-4 flex flex-col gap-2">
