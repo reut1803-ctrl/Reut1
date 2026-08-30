@@ -9,6 +9,7 @@ import {
   REGIONS,
   CANDIDATE_TAGS,
   religiousLevelsFor,
+  occupationsFor,
 } from "@/lib/crm/mockData";
 
 // עמוד ההרשמה החיצוני. פתוח לכל אחד, בלי התחברות ובלי גישה למאגר עצמו:
@@ -37,6 +38,7 @@ const EMPTY = {
   region: REGIONS[0],
   city: "",
   currentOccupation: "",
+  occupations: [],
   bio: "",
   complexityNotes: "",
   referenceContacts: "",
@@ -113,6 +115,17 @@ export default function RegisterPage() {
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
 
   const religiousOptions = useMemo(() => religiousLevelsFor(form.gender).filter((o) => o !== "הכל"), [form.gender]);
+  // רשימת המסלולים לפי המגדר שנבחר. מה שכבר סומן ממשיך להופיע גם אם
+  // מחליפים מגדר, כדי שבחירה קיימת לא תיעלם מהמסך.
+  const occupationOptions = useMemo(
+    () => occupationsFor(form.gender, form.occupations),
+    [form.gender, form.occupations]
+  );
+  const toggleOccupation = (o) =>
+    setForm((f) => {
+      const cur = f.occupations || [];
+      return { ...f, occupations: cur.includes(o) ? cur.filter((x) => x !== o) : [...cur, o] };
+    });
 
   // --- שלב א': בדיקה מול המאגר ---
   const handleSearch = async () => {
@@ -238,6 +251,7 @@ export default function RegisterPage() {
         region: form.region,
         city: form.city.trim(),
         currentOccupation: form.currentOccupation.trim(),
+        occupations: form.occupations || [],
         bio: form.bio.trim(),
         complexityNotes: form.complexityNotes.trim(),
         referenceContacts: form.referenceContacts.trim(),
@@ -467,6 +481,28 @@ export default function RegisterPage() {
                   placeholder="לימודים, עבודה, שירות..."
                   className={inputClass}
                 />
+              </Field>
+
+              <Field label="המסלול שלי" hint="כל הדרכים שעברתם בחיים - אפשר לסמן כמה">
+                <div className="flex flex-wrap gap-2">
+                  {occupationOptions.map((o) => {
+                    const active = form.occupations?.includes(o);
+                    return (
+                      <button
+                        key={o}
+                        type="button"
+                        onClick={() => toggleOccupation(o)}
+                        className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition active:scale-95 ${
+                          active
+                            ? "border-transparent bg-[#8C4A55] text-white"
+                            : "border-[#EAE5E3] bg-white text-[#3A3335]"
+                        }`}
+                      >
+                        {o}
+                      </button>
+                    );
+                  })}
+                </div>
               </Field>
             </div>
 
