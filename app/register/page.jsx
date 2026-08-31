@@ -17,7 +17,7 @@ import { crmDb } from "@/lib/crm/firebaseClient";
 import { nameKeys } from "@/lib/crm/nameKey";
 import { AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, occupationTagsFor } from "@/lib/crm/mockData";
-import { Search, Heart, Check, AlertCircle, Sparkles, Phone, Users, HandHeart } from "lucide-react";
+import { Search, Heart, Check, AlertCircle, Sparkles, Phone, Users, HandHeart, ExternalLink } from "lucide-react";
 
 // מגבלת זמן לחיפוש. Firestore אינו נכשל כשאין רשת - הוא ממתין וממשיך לנסות
 // בלי סוף, ובלי המגבלה הזו המבקר/ת היה/הייתה נתקע/ת על "בודקים..." לנצח.
@@ -534,8 +534,28 @@ function Costs() {
 
       <p className="mt-3 text-[13px] leading-relaxed text-[#7C6E60]">
         <span className="font-semibold text-[#3A2E26]">דרכי תשלום:</span> ביט, פייבוקס או העברה
-        בנקאית למספר <span dir="ltr" className="inline-block whitespace-nowrap font-semibold">054-385242</span>.
+        בנקאית למספר{" "}
+        <span dir="ltr" className="inline-block whitespace-nowrap font-semibold text-[#3A2E26]">
+          054-308-5242
+        </span>
+        .
       </p>
+
+      {/* קבוצת הפייבוקס - הדרך הנוחה והחינמית, ולכן היא מודגשת */}
+      <div className="mt-3 rounded-2xl border-2 border-[#62826B] bg-[#DDE6DF] p-3.5">
+        <p className="text-[13.5px] font-bold text-[#4A6552]">השימוש ב-PayBox חינם!</p>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-[#4A6552]">
+          מחכים לך בקבוצת <span className="font-semibold">״כניסה למאגר - גבעות וחוות״</span>
+        </p>
+        <a
+          href="https://links.payboxapp.com/jnLNxjUvE0b"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#62826B] px-4 py-3 text-[14px] font-semibold text-white transition active:scale-95"
+        >
+          <ExternalLink size={15} /> להצטרפות לקבוצה
+        </a>
+      </div>
 
       <p className="mt-3 text-[13px] leading-relaxed text-[#7C6E60]">
         <span className="font-semibold text-[#3A2E26]">מה מקבלים בתמורה?</span> דמי ההשתתפות נועדו
