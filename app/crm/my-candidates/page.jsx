@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { Phone, MessageCircle, MessageSquare, ChevronLeft, UserCheck } from "lucide-react";
-import { useCrmStore } from "@/lib/crm/store";
+import { useCrmStore, normalizeEmail } from "@/lib/crm/store";
 import { waDigits } from "@/components/crm/profiles/ProfileCard";
 import { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 
@@ -11,15 +11,19 @@ import { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 // המלווה שלהם. מנהלת רואה את כל המשויכים, מקובצים לפי נציגה.
 export default function MyCandidatesPage() {
   const role = useCrmStore((s) => s.role);
-  const currentStaffEmail = useCrmStore((s) => s.currentStaffEmail);
+  const googleUser = useCrmStore((s) => s.googleUser);
   const candidates = useCrmStore((s) => s.candidates);
-  const contactStaffFor = useCrmStore((s) => s.contactStaffFor);
 
-  const mine = useMemo(() => {
-    const assigned = candidates.filter((c) => c.contactStaffEmail);
-    if (role === "admin") return assigned;
-    return assigned.filter((c) => c.contactStaffEmail === currentStaffEmail);
-  }, [candidates, role, currentStaffEmail]);
+  // "שלי" פירושו שלי, גם למנהלת: המסך מציג אך ורק מועמדים ששויכו אליי אישית.
+  // המעקב הרחב על שיוכי כל הצוות נמצא בלוח הבקרה, ואין טעם לשכפל אותו כאן.
+  //
+  // ההשוואה נעשית מול המייל שאיתו נכנסתי, ולא מול currentStaffEmail: לחשבון
+  // מנהלת השדה הזה ריק בכוונה, ולכן סינון לפיו היה מרוקן את המסך לגמרי.
+  const myEmail = normalizeEmail(googleUser?.email);
+  const mine = useMemo(
+    () => candidates.filter((c) => c.contactStaffEmail && normalizeEmail(c.contactStaffEmail) === myEmail),
+    [candidates, myEmail]
+  );
 
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין לצוות בלבד</p>;
@@ -31,21 +35,18 @@ export default function MyCandidatesPage() {
         <UserCheck size={20} /> המועמדים שלי
       </h1>
       <p className="mt-1 text-[13px] text-[#7C6E60]">
-        {role === "admin"
-          ? `${mine.length} מועמדים משויכים לצוות`
-          : `${mine.length} מועמדים שאת/ה הנציג/ה המלווה שלהם`}
+        {mine.length} מועמדים שאת/ה הנציג/ה המלווה שלהם
       </p>
 
       {mine.length === 0 ? (
-        <p className="mt-16 text-center text-sm text-[#7C6E60]">
+        <p className="mt-16 text-center text-sm leading-relaxed text-[#7C6E60]">
           {role === "admin"
-            ? "עדיין לא שויכו מועמדים לנציגות. השיוך נעשה מתוך הכרטיס, באזור הפנימי לצוות."
+            ? "לא שויכו אלייך מועמדים באופן אישי. המעקב אחרי השיוכים של כל הצוות נמצא בלוח הבקרה."
             : "עדיין לא שויכו אלייך מועמדים. המנהלת משייכת נציג/ה מלווה מתוך הכרטיס."}
         </p>
       ) : (
         <div className="mt-4 space-y-2">
           {mine.map((c) => {
-            const staff = role === "admin" ? contactStaffFor(c) : null;
             return (
               <div
                 key={c.id}
@@ -60,7 +61,6 @@ export default function MyCandidatesPage() {
                   </Link>
                   <div className="min-w-0 text-right">
                     <p className="truncate text-[14px] font-bold text-[#3A2E26]">{c.name}</p>
-                    {staff && <p className="text-[11px] text-[#7C6E60]">נציג/ה: {staff.name}</p>}
                   </div>
                 </div>
 
