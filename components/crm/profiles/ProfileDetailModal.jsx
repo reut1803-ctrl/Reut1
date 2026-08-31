@@ -1,7 +1,7 @@
 "use client";
 
 import { X, MapPin, Briefcase, Route, Sparkles, Globe } from "lucide-react";
-import { getGradientClass } from "@/components/crm/ui/gradients";
+import { gradientColors } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
@@ -15,7 +15,13 @@ export default function ProfileDetailModal({ candidate, onClose }) {
     <div className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
-        <div className={`relative aspect-[4/3] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient ?? candidate.name)}`}>
+        <div
+          className="relative aspect-[4/3] w-full overflow-hidden"
+          style={(() => {
+            const [from, to] = gradientColors(candidate.gradient ?? candidate.name);
+            return { backgroundImage: `linear-gradient(to bottom right, ${from}, ${to})`, backgroundColor: from };
+          })()}
+        >
           {photos.length > 0 ? (
             <div className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [&::-webkit-scrollbar]:hidden">
               {photos.map((url, i) => (

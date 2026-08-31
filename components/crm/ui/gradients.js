@@ -27,3 +27,28 @@ export function getGradientClass(value) {
   for (let i = 0; i < key.length; i += 1) hash = (hash * 31 + key.charCodeAt(i)) % 100000;
   return CANDIDATE_GRADIENTS[hash % CANDIDATE_GRADIENTS.length];
 }
+
+// אותם גוונים, אבל כערכי צבע ממשיים ולא כשמות מחלקות.
+// צבע שנכתב ישירות על האלמנט אינו תלוי בקובץ סגנונות, ולכן אינו יכול
+// "להיעלם" ולהשאיר ריבוע לבן. זה מה שמשמש את כרטיסי המועמדים.
+export const CANDIDATE_GRADIENT_COLORS = [
+  ["#F87171", "#FDBA74"],
+  ["#38BDF8", "#A5B4FC"],
+  ["#34D399", "#5EEAD4"],
+  ["#FBBF24", "#FDE047"],
+  ["#E879F9", "#F9A8D4"],
+  ["#A78BFA", "#D8B4FE"],
+  ["#22D3EE", "#93C5FD"],
+  ["#A3E635", "#86EFAC"],
+];
+
+export function gradientColors(value) {
+  const n = Number(value);
+  if (Number.isFinite(n) && n >= 0) {
+    return CANDIDATE_GRADIENT_COLORS[Math.floor(n) % CANDIDATE_GRADIENT_COLORS.length];
+  }
+  const key = String(value ?? "");
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) hash = (hash * 31 + key.charCodeAt(i)) % 100000;
+  return CANDIDATE_GRADIENT_COLORS[hash % CANDIDATE_GRADIENT_COLORS.length];
+}
