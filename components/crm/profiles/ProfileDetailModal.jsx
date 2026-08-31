@@ -1,7 +1,7 @@
 "use client";
 
 import MediaImage from "@/components/crm/ui/MediaImage";
-import { X, MapPin, Briefcase, Sparkles, Route } from "lucide-react";
+import { X, MapPin, Briefcase, Sparkles, Route, Mail } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { occupationsOf, locationOf } from "@/lib/crm/mockData";
@@ -49,7 +49,14 @@ export default function ProfileDetailModal({ candidate, onClose }) {
         </div>
 
         <div className="p-5">
-          <h2 className="text-xl font-bold text-[#3A2E26]">{candidate.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="min-w-0 text-xl font-bold text-[#3A2E26]">{candidate.name}</h2>
+            {candidate.source === "register-form" && (
+              <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#FDF6E7] px-2 py-0.5 text-[10px] font-bold text-[#7A5A18]">
+                <Mail size={10} /> נרשם/ה דרך הטופס
+              </span>
+            )}
+          </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span className="tag-chip-detail">{candidate.age}</span>
             <span className="tag-chip-detail">{candidate.height} ס״מ</span>

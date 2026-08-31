@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import {
+  Mail,
   Clock,
   Heart,
   Mic,
@@ -312,7 +313,19 @@ export default function ProfileCard({ candidate, onReadMore }) {
       </div>
 
       <div className="p-4">
-        <h3 className="text-lg font-bold text-[#3A2E26]">{candidate.name}</h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className="min-w-0 text-lg font-bold text-[#3A2E26]">{candidate.name}</h3>
+          {/* סימון מקור: כרטיס שנפתח מטופס ההרשמה החיצוני. תגית עדינה בלבד,
+              כדי שיהיה ברור מאיפה הגיע/ה בלי להעמיס על הכרטיס. */}
+          {candidate.source === "register-form" && (
+            <span
+              title="נרשם/ה דרך טופס ההרשמה"
+              className="flex shrink-0 items-center gap-1 rounded-full bg-[#FDF6E7] px-2 py-0.5 text-[10px] font-bold text-[#7A5A18]"
+            >
+              <Mail size={10} /> מהטופס
+            </span>
+          )}
+        </div>
         <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#7C6E60]">{candidate.bio}</p>
 
         <div className="mt-4 flex flex-col gap-2">
