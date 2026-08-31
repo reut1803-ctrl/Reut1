@@ -18,7 +18,7 @@ export function staffContactText(name, phone) {
 }
 
 // העתקה ללוח. navigator.clipboard אינו זמין בכל דפדפני הנייד, ולכן יש גיבוי ישן.
-async function writeToClipboard(text) {
+export async function writeToClipboard(text) {
   try {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);

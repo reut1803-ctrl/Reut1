@@ -93,6 +93,34 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ---------------------------------------------------------------
+    //  טופס ההרשמה החיצוני (/register) - עמוד ציבורי בלי התחברות
+    // ---------------------------------------------------------------
+
+    // מפתח חיפוש לפי שם: מסמך אחד לכל שם, ובו שם ומזהה בלבד.
+    // get מותר לכולם - כדי שהעמוד הציבורי יוכל לבדוק שם מדויק אחד.
+    // list אסור לכל מי שאינו צוות, וזו ההגנה: אי אפשר לסרוק מכאן שמות.
+    match /nameIndex/{key} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // פניות מהטופס החיצוני. כל אחד יכול להפקיד פנייה, ואיש אינו יכול
+    // לקרוא אותן חוץ מהצוות. הפנייה אינה נכנסת ישירות למאגר המועמדים -
+    // המנהלת היא שמאשרת ויוצרת ממנה כרטיס.
+    match /intakeSubmissions/{id} {
+      allow create: if request.resource.data.get('status', '') == 'pending'
+        && request.resource.data.get('name', '') is string
+        && request.resource.data.name.size() > 1
+        && request.resource.data.name.size() < 120
+        && request.resource.data.get('phone', '') is string
+        && request.resource.data.phone.size() < 40;
+      allow get, list: if isStaff();
+      allow update, delete: if isAdmin();
+    }
+
     match /telemetry/{staffEmail} {
       allow read: if isStaff();
       allow write: if isStaff() && myEmail() == staffEmail;

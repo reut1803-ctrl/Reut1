@@ -8,6 +8,8 @@ import Button from "@/components/crm/ui/Button";
 import AssignmentReport from "@/components/crm/dashboard/AssignmentReport";
 import CopyStaffButton, { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 import ProfessionalsDirectory from "@/components/crm/dashboard/ProfessionalsDirectory";
+import IntakeInbox from "@/components/crm/dashboard/IntakeInbox";
+import RegisterLinkCard from "@/components/crm/dashboard/RegisterLinkCard";
 
 function metricColor(ratio) {
   if (ratio >= 1) return "bg-[#62826B]";
@@ -114,6 +116,10 @@ export default function DashboardPage() {
         <BarChart3 size={22} /> לוח בקרה
       </h1>
       <p className="mt-1 text-[13px] text-[#7C6E60]">שיוכים, מעורבות צוות, נהלים, טיפים ומעקב מיילים</p>
+
+      <IntakeInbox />
+
+      <RegisterLinkCard />
 
       <AssignmentReport />
 
