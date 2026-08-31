@@ -1,13 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Check, ImageDown, Mic, Pencil, Sparkles, Trash2, UserCheck, X } from "lucide-react";
+import { ChevronDown, Clock, Copy, Check, ImageDown, Mic, Pencil, Sparkles, Trash2, UserCheck, X, Phone, MessageCircle, MessageSquare } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
-import CandidatePhone from "@/components/crm/profiles/CandidatePhone";
+import CandidatePhone, { useCanSeeCandidatePhone } from "@/components/crm/profiles/CandidatePhone";
+import { waDigits } from "@/components/crm/profiles/ProfileCard";
 import { downloadMedia } from "@/lib/crm/mediaStore";
 
 function ExternalContactCard({ data }) {
@@ -74,9 +75,10 @@ function ContactCard({ candidate }) {
   const [referenceCopied, setReferenceCopied] = useState(false);
   const contactStaff = useCrmStore((s) => s.contactStaffFor(candidate));
   const showToast = useCrmStore((s) => s.showToast);
-  const waLink = contactStaff?.phone
-    ? `https://wa.me/${String(contactStaff.phone).replace(/[^0-9]/g, "").replace(/^0/, "972")}`
-    : null;
+  const waLink = contactStaff?.phone ? `https://wa.me/${waDigits(contactStaff.phone)}` : null;
+  // אותו כלל הרשאה בדיוק שקיים היום: מנהלת תמיד, ושגריר/ה רק על מי שמשויך/ת
+  // אליו/ה אישית. שאר הצוות ממשיך/ה להיות מופנה/ית לשגריר/ה המטפל/ת.
+  const canCallCandidate = useCanSeeCandidatePhone(candidate) && !!candidate.phone;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildProfileShareText(candidate));
@@ -123,6 +125,37 @@ function ContactCard({ candidate }) {
       <div className="mt-0.5">
         <CandidatePhone candidate={candidate} compact />
       </div>
+
+      {/* פנייה ישירה למועמד/ת - מוצגת רק למי שמורשה/ית לראות את המספר */}
+      {canCallCandidate && (
+        <div className="mt-1.5 flex gap-1.5">
+          <a
+            href={`tel:${candidate.phone}`}
+            aria-label={`חיוג ל${candidate.name}`}
+            className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-[#844442] py-2 text-[11px] font-semibold text-white transition active:scale-95"
+          >
+            <Phone size={13} /> חיוג
+          </a>
+          <a
+            href={`https://wa.me/${waDigits(candidate.phone)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`וואטסאפ ל${candidate.name}`}
+            className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-[#62826B] py-2 text-[11px] font-semibold text-white transition active:scale-95"
+          >
+            <MessageCircle size={13} /> וואטסאפ
+          </a>
+          <a
+            href={`sms:${candidate.phone}`}
+            aria-label={`הודעה ל${candidate.name}`}
+            title="הודעת SMS"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#CCBDAB] bg-white text-[#7C6E60] transition active:scale-95"
+          >
+            <MessageSquare size={14} />
+          </a>
+        </div>
+      )}
+
       <button
         onClick={handleCopy}
         className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
@@ -173,6 +206,13 @@ function ContactCard({ candidate }) {
                   className="rounded-lg bg-[#62826B] px-2 py-1 text-[11px] font-semibold text-white"
                 >
                   וואטסאפ
+                </a>
+                <a
+                  href={`sms:${contactStaff.phone}`}
+                  title="הודעת SMS"
+                  className="rounded-lg bg-[#E8DCCB] px-2 py-1 text-[11px] font-semibold text-[#3A2E26]"
+                >
+                  SMS
                 </a>
               </>
             )}

@@ -10,14 +10,19 @@ import { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 //   שגריר/ה מלווה    - רואה את המספר של מי שמשויך אליו/ה אישית.
 //   שאר הצוות        - במקום המספר מופנה/ית לשגריר/ה המטפל/ת, עם וואטסאפ ישיר.
 // כך נשמר סדר בארגון: כל פנייה למועמד/ת עוברת דרך מי שמכיר/ה אותו/ה.
-export default function CandidatePhone({ candidate, compact = false }) {
+// אותו כלל הרשאה בדיוק, זמין גם לרכיבים אחרים - כדי שלא ייווצרו שתי גרסאות
+// שונות של אותה החלטה. כל מי שמציג מספר של מועמד/ת חייב לעבור דרך כאן.
+export function useCanSeeCandidatePhone(candidate) {
   const role = useCrmStore((s) => s.role);
   const currentStaffEmail = useCrmStore((s) => s.currentStaffEmail);
-  const contactStaff = useCrmStore((s) => s.contactStaffFor(candidate));
-
   const norm = (v) => String(v || "").trim().toLowerCase();
   const isMine = !!candidate?.contactStaffEmail && norm(candidate.contactStaffEmail) === norm(currentStaffEmail);
-  const canSeeNumber = role === "admin" || isMine;
+  return role === "admin" || isMine;
+}
+
+export default function CandidatePhone({ candidate, compact = false }) {
+  const contactStaff = useCrmStore((s) => s.contactStaffFor(candidate));
+  const canSeeNumber = useCanSeeCandidatePhone(candidate);
 
   if (!candidate?.phone) return null;
 
