@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
-import CandidatePhoto from "@/components/crm/ui/CandidatePhoto";
+import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
 import { candidatePhoto } from "@/lib/crm/photos";
 import { viewerActionText } from "@/lib/crm/genderText";
@@ -281,7 +281,17 @@ export default function ProfileCard({ candidate, onReadMore }) {
 
   return (
     <div className="overflow-hidden rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-      <CandidatePhoto candidate={candidate} className="aspect-[4/5] w-full">
+      <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient ?? candidate.name)}`}>
+        {cardPhoto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cardPhoto} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+              {candidateInitials(candidate.name)}
+            </span>
+          </div>
+        )}
 
         <div className="absolute right-3 top-3 flex flex-col items-start gap-1.5">
           {candidate.isNew && (
@@ -333,7 +343,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           {candidate.eda && <span className="tag-chip-crm">{candidate.eda}</span>}
           {candidate.city && <span className="tag-chip-crm">{candidate.city}</span>}
         </div>
-      </CandidatePhoto>
+      </div>
 
       <div className="p-4">
         {/* מצפן הצוות: סיכום המנהלת מסבב סיעור המוחות האחרון על המועמד/ת */}

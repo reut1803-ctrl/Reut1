@@ -1,7 +1,7 @@
 "use client";
 
 import { Sun, ChevronLeft } from "lucide-react";
-import CandidatePhoto from "@/components/crm/ui/CandidatePhoto";
+import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
 import { candidatePhoto } from "@/lib/crm/photos";
 import { daysSinceActivity } from "@/lib/crm/attention";
@@ -33,7 +33,16 @@ export default function SpotlightStrip({ candidates, now, attentionData, onSelec
                 onClick={() => onSelect?.(c.id)}
                 className="flex w-[132px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[#EFDFBC] bg-white text-right shadow-sm transition active:scale-[0.97]"
               >
-                <CandidatePhoto candidate={c} className="h-20 w-full" />
+                <div className={`relative h-20 w-full bg-gradient-to-br ${getGradientClass(c.gradient ?? c.name)}`}>
+                  {photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photo} alt={c.name} className="absolute inset-0 h-full w-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-white drop-shadow">{candidateInitials(c.name)}</span>
+                    </div>
+                  )}
+                </div>
                 <div className="p-2.5">
                   <p className="truncate text-[13px] font-bold text-[#3A3335]">{c.name}</p>
                   <p className="mt-0.5 truncate text-[11px] text-[#8A8285]">
