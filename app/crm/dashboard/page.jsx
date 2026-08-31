@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope, Sheet } from "lucide-react";
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
+import { weekRangeLabel } from "@/lib/crm/week";
 import Button from "@/components/crm/ui/Button";
 import AssignmentReport from "@/components/crm/dashboard/AssignmentReport";
 import CopyStaffButton, { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
@@ -38,6 +39,7 @@ function MetricBar({ label, value, goal }) {
 export default function DashboardPage() {
   const role = useCrmStore((s) => s.role);
   const telemetry = useCrmStore((s) => s.telemetry);
+  const weeklyTelemetryFor = useCrmStore((s) => s.weeklyTelemetryFor);
   const termsText = useCrmStore((s) => s.termsText);
   const setTermsText = useCrmStore((s) => s.setTermsText);
   const termsAccepted = useCrmStore((s) => s.termsAccepted);
@@ -297,10 +299,14 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      <h2 className="mt-6 mb-3 text-[15px] font-bold text-[#3A2E26]">מעורבות צוות (השבוע)</h2>
+      <h2 className="mt-6 mb-1 text-[15px] font-bold text-[#3A2E26]">מעורבות צוות (השבוע)</h2>
+      {/* טווח התאריכים מוצג במפורש, כדי שיהיה ברור על איזה שבוע המספרים מדברים */}
+      <p className="mb-3 text-[12px] text-[#7C6E60]">
+        {weekRangeLabel()} · המונים מתאפסים לבד בכל יום ראשון
+      </p>
       <div className="space-y-3">
         {staffList.map((s) => {
-          const t = telemetry[s.email] || {};
+          const t = weeklyTelemetryFor(s.email);
           return (
             <div key={s.email} className="rounded-3xl border border-[#CCBDAB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
               <div className="mb-3 flex items-center gap-0.5">
@@ -308,8 +314,8 @@ export default function DashboardPage() {
                 <CopyStaffButton name={s.name} phone={s.phone} />
               </div>
               <div className="space-y-2.5">
-                <MetricBar label="צפיות בכרטיסי מועמדים" value={t.profileViews || 0} goal={weeklyGoals.profileViews} />
-                <MetricBar label="השמעות הקלטות היכרות" value={t.audioPlays || 0} goal={weeklyGoals.audioPlays} />
+                <MetricBar label="צפיות בכרטיסי מועמדים" value={t.profileViews} goal={weeklyGoals.profileViews} />
+                <MetricBar label="השמעות הקלטות היכרות" value={t.audioPlays} goal={weeklyGoals.audioPlays} />
               </div>
             </div>
           );
