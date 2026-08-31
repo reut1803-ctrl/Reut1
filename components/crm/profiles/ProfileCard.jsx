@@ -24,7 +24,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/store";
-import { isProposalRowVisible, droppedNoticeText } from "@/lib/crm/attention";
+import { isProposalRowVisible, droppedNoticeText, candidateAttention } from "@/lib/crm/attention";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { viewerActionText } from "@/lib/crm/genderText";
@@ -54,6 +54,9 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // כך המצב לעולם אינו יוצא מסנכרון. ההצעה עצמה נשארת במסד הנתונים תמיד.
   const nowMs = Date.now();
   const proposals = allProposals.filter((p) => isProposalRowVisible(p, nowMs, PROPOSAL_DROPPED));
+  // "דורש התייחסות": נחשב בזמן התצוגה מול הפעילות בפועל. מי שיש עליו/ה
+  // תהליך שידוך פתוח לעולם אינו/ה מסומן/ת - זה עניין של מסך השידוכים.
+  const attention = candidateAttention(candidate, allProposals, nowMs, PROPOSAL_DROPPED);
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const showToast = useCrmStore((s) => s.showToast);
@@ -313,10 +316,18 @@ export default function ProfileCard({ candidate, onReadMore }) {
       </div>
 
       <div className="p-4">
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <h3 className="min-w-0 text-lg font-bold text-[#3A2E26]">{candidate.name}</h3>
           {/* סימון מקור: כרטיס שנפתח מטופס ההרשמה החיצוני. תגית עדינה בלבד,
               כדי שיהיה ברור מאיפה הגיע/ה בלי להעמיס על הכרטיס. */}
+          {attention.needsAttention && (
+            <span
+              title={`לא היה טיפול בכרטיס הזה ${attention.days} ימים`}
+              className="flex shrink-0 items-center gap-1 rounded-full bg-[#F0E2DE] px-2 py-0.5 text-[10px] font-bold text-[#844442]"
+            >
+              <Clock size={10} /> דורש התייחסות · {attention.days} ימים
+            </span>
+          )}
           {candidate.source === "register-form" && (
             <span
               title="נרשם/ה דרך טופס ההרשמה"

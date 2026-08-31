@@ -7,6 +7,9 @@ import { useCrmStore } from "@/lib/crm/store";
 
 export default function FabButtons() {
   const [accessibilityOpen, setAccessibilityOpen] = useState(false);
+  // הכפתורים הצפים דוהים בזמן גלילה וחוזרים כשעוצרים, וגם במנוחה הם
+  // חצי-שקופים - כדי שלא ישתלטו על המסך ולא יסתירו תוכן.
+  const [scrolling, setScrolling] = useState(false);
   const [largeText, setLargeText] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
   const role = useCrmStore((s) => s.role);
@@ -26,6 +29,20 @@ export default function FabButtons() {
   };
 
   useEffect(() => {
+    let timer = null;
+    const onScroll = () => {
+      setScrolling(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setScrolling(false), 700);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
     document.documentElement.classList.toggle("a11y-large-text", largeText);
   }, [largeText]);
 
@@ -33,32 +50,37 @@ export default function FabButtons() {
     document.documentElement.classList.toggle("a11y-high-contrast", highContrast);
   }, [highContrast]);
 
+  // תפריט הנגישות פתוח = לא מעמעמים, כדי שאפשר יהיה לקרוא אותו בנוחות
+  const fade = accessibilityOpen ? "opacity-100" : scrolling ? "opacity-25" : "opacity-60";
+
   return (
-    <div className="safe-bottom fixed bottom-28 left-4 z-30 flex flex-col items-center gap-3">
+    <div
+      className={`safe-bottom fixed bottom-28 left-4 z-30 flex flex-col items-center gap-3 transition-opacity duration-300 hover:opacity-100 focus-within:opacity-100 ${fade}`}
+    >
       {(role === "staff" || role === "admin") && (
         <button
           aria-label="הפעלת סיור הדרכה"
           onClick={handleTour}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#844442] text-white shadow-lg transition active:scale-90"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-[#844442] text-white shadow-md transition active:scale-90 active:opacity-100"
         >
-          <HelpCircle size={22} />
+          <HelpCircle size={20} />
         </button>
       )}
       <button
         aria-label="פתיחת תפריט נגישות"
         onClick={() => setAccessibilityOpen((v) => !v)}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#3A2E26] text-white shadow-lg transition active:scale-90"
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-[#3A2E26] text-white shadow-md transition active:scale-90 active:opacity-100"
       >
-        <Accessibility size={22} />
+        <Accessibility size={20} />
       </button>
       <a
         href="https://wa.me/972543085242"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="פתיחת וואטסאפ"
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#62826B] text-white shadow-[0_10px_25px_rgba(32,166,107,0.4)] transition active:scale-90"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#62826B] text-white shadow-md transition active:scale-90 active:opacity-100"
       >
-        <MessageCircle size={26} />
+        <MessageCircle size={22} />
       </a>
 
       {accessibilityOpen && (
