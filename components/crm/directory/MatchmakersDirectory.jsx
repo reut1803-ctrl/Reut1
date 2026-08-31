@@ -11,6 +11,67 @@ export const DIRECTORY_CATEGORIES = ["תורני", "חוזר בתשובה", "ב�
 
 const emptyDraft = { name: "", category: DIRECTORY_CATEGORIES[0], phone: "", note: "" };
 
+
+// טופס איש קשר. משמש גם להוספה חדשה בראש הרשימה וגם לעריכה בתוך השורה
+// עצמה, כדי שהעריכה תיפתח בדיוק במקום שבו לחצו.
+function ContactForm({ draft, setDraft, onSave, onCancel, saving }) {
+  return (
+    <div>
+      <input
+        value={draft.name}
+        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+        placeholder="שם"
+        className="mb-2 w-full rounded-xl bg-[#F6F5F4] px-3 py-2 text-[13px] outline-none"
+      />
+      <input
+        value={draft.phone}
+        onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+        placeholder="טלפון"
+        inputMode="tel"
+        className="mb-2 w-full rounded-xl bg-[#F6F5F4] px-3 py-2 text-[13px] outline-none"
+      />
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        {DIRECTORY_CATEGORIES.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setDraft({ ...draft, category: c })}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+              draft.category === c ? "bg-[#F6E4E6] text-[#6E3540]" : "bg-[#F6F5F4] text-[#8A8285]"
+            }`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={draft.note}
+        onChange={(e) => setDraft({ ...draft, note: e.target.value })}
+        rows={2}
+        placeholder="הערה (אזור, התמחות, איך מכירים...)"
+        className="mb-2 w-full resize-none rounded-xl bg-[#F6F5F4] px-3 py-2 text-[13px] outline-none"
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving}
+          className="flex-1 rounded-xl bg-[#8C4A55] py-2 text-[13px] font-semibold text-white disabled:opacity-50"
+        >
+          {saving ? "שומר..." : "שמירה"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-xl border border-[#EAE5E3] bg-white px-4 py-2 text-[13px] font-semibold text-[#8A8285]"
+        >
+          ביטול
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MatchmakersDirectory({ onClose }) {
   const role = useCrmStore((s) => s.role);
   const matchmakers = useCrmStore((s) => s.matchmakers);
@@ -22,6 +83,7 @@ export default function MatchmakersDirectory({ onClose }) {
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [error, setError] = useState("");
 
   const isAdmin = role === "admin";
@@ -79,7 +141,10 @@ export default function MatchmakersDirectory({ onClose }) {
 
   const handleDelete = async (id) => {
     const next = (matchmakers || []).filter((m) => m.id !== id);
-    if (await persist(next)) showToast("איש הקשר הוסר מהאלפון");
+    if (await persist(next)) {
+      setConfirmDeleteId(null);
+      showToast("איש הקשר הוסר מהאלפון");
+    }
   };
 
   return (
@@ -148,59 +213,18 @@ export default function MatchmakersDirectory({ onClose }) {
               </button>
             )}
 
-            {draft && (
+            {draft && !draft.id && (
               <div className="mb-3 rounded-2xl border border-[#EAE5E3] bg-white p-3">
-                <input
-                  value={draft.name}
-                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  placeholder="שם"
-                  className="mb-2 w-full rounded-xl bg-[#F6F5F4] px-3 py-2 text-[13px] outline-none"
+                <ContactForm
+                  draft={draft}
+                  setDraft={setDraft}
+                  onSave={handleSaveDraft}
+                  onCancel={() => {
+                    setDraft(null);
+                    setError("");
+                  }}
+                  saving={saving}
                 />
-                <input
-                  value={draft.phone}
-                  onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
-                  placeholder="טלפון"
-                  inputMode="tel"
-                  className="mb-2 w-full rounded-xl bg-[#F6F5F4] px-3 py-2 text-[13px] outline-none"
-                />
-                <div className="mb-2 flex flex-wrap gap-1.5">
-                  {DIRECTORY_CATEGORIES.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setDraft({ ...draft, category: c })}
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                        draft.category === c ? "bg-[#F6E4E6] text-[#6E3540]" : "bg-[#F6F5F4] text-[#8A8285]"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-                <textarea
-                  value={draft.note}
-                  onChange={(e) => setDraft({ ...draft, note: e.target.value })}
-                  rows={2}
-                  placeholder="הערה (אזור, התמחות, איך מכירים...)"
-                  className="mb-2 w-full resize-none rounded-xl bg-[#F6F5F4] px-3 py-2 text-[13px] outline-none"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveDraft}
-                    disabled={saving}
-                    className="flex-1 rounded-xl bg-[#8C4A55] py-2 text-[13px] font-semibold text-white disabled:opacity-50"
-                  >
-                    {saving ? "שומר..." : "שמירה"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDraft(null);
-                      setError("");
-                    }}
-                    className="rounded-xl border border-[#EAE5E3] bg-white px-4 py-2 text-[13px] font-semibold text-[#8A8285]"
-                  >
-                    ביטול
-                  </button>
-                </div>
               </div>
             )}
 
@@ -220,6 +244,22 @@ export default function MatchmakersDirectory({ onClose }) {
                   const wa = whatsappNumber(m.phone);
                   return (
                     <li key={m.id} className="rounded-2xl border border-[#EAE5E3] bg-white p-3">
+                      {/* עריכה מתרחשת בתוך השורה עצמה. קודם הטופס נפתח בראש
+                          הרשימה - ומי שגלל למטה לחץ על העיפרון ולא ראה כלום,
+                          כי הטופס נפתח הרחק מחוץ למסך. */}
+                      {draft?.id === m.id ? (
+                        <ContactForm
+                          draft={draft}
+                          setDraft={setDraft}
+                          onSave={handleSaveDraft}
+                          onCancel={() => {
+                            setDraft(null);
+                            setError("");
+                          }}
+                          saving={saving}
+                        />
+                      ) : (
+                      <>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="truncate text-[14px] font-bold text-[#3A3335]">{m.name}</p>
@@ -234,14 +274,21 @@ export default function MatchmakersDirectory({ onClose }) {
                         {isAdmin && (
                           <div className="flex shrink-0 gap-1">
                             <button
-                              onClick={() => setDraft({ ...m })}
+                              onClick={() => {
+                                setError("");
+                                setConfirmDeleteId(null);
+                                setDraft({ ...m });
+                              }}
                               aria-label="עריכה"
                               className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F6F5F4] text-[#8A8285]"
                             >
                               <PenLine size={14} />
                             </button>
                             <button
-                              onClick={() => handleDelete(m.id)}
+                              onClick={() => {
+                                setError("");
+                                setConfirmDeleteId(m.id);
+                              }}
                               aria-label="מחיקה"
                               className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-[#C24545]"
                             >
@@ -272,6 +319,27 @@ export default function MatchmakersDirectory({ onClose }) {
                             <Phone size={14} /> חיוג
                           </a>
                         </div>
+                      )}
+                      {/* אישור מחיקה בתוך השורה, כדי שהמשוב יופיע איפה שנוגעים */}
+                      {confirmDeleteId === m.id && (
+                        <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2">
+                          <span className="text-[12px] font-semibold text-[#C24545]">למחוק את {m.name}?</span>
+                          <button
+                            onClick={() => handleDelete(m.id)}
+                            disabled={saving}
+                            className="mr-auto rounded-lg bg-[#C24545] px-3 py-1 text-[11px] font-bold text-white disabled:opacity-50"
+                          >
+                            {saving ? "מוחק..." : "מחיקה"}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="rounded-lg border border-[#EAE5E3] bg-white px-3 py-1 text-[11px] font-bold text-[#8A8285]"
+                          >
+                            ביטול
+                          </button>
+                        </div>
+                      )}
+                      </>
                       )}
                     </li>
                   );

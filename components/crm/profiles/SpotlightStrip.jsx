@@ -3,6 +3,7 @@
 import { Sun, ChevronLeft } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
+import { candidatePhoto } from "@/lib/crm/photos";
 import { daysSinceActivity } from "@/lib/crm/attention";
 
 // "הזרקור היומי" - מקטע נפרד מעל הרשימה. הכרטיסים שמופיעים כאן נשארים
@@ -24,6 +25,7 @@ export default function SpotlightStrip({ candidates, now, attentionData, onSelec
         <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1">
           {candidates.map((c) => {
             const days = daysSinceActivity(c, now, attentionData);
+            const photo = candidatePhoto(c);
             return (
               <button
                 key={c.id}
@@ -32,9 +34,9 @@ export default function SpotlightStrip({ candidates, now, attentionData, onSelec
                 className="flex w-[132px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[#EFDFBC] bg-white text-right shadow-sm transition active:scale-[0.97]"
               >
                 <div className={`relative h-20 w-full bg-gradient-to-br ${getGradientClass(c.gradient ?? c.name)}`}>
-                  {c.photoUrl ? (
+                  {photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={c.photoUrl} alt={c.name} className="absolute inset-0 h-full w-full object-cover" />
+                    <img src={photo} alt={c.name} className="absolute inset-0 h-full w-full object-cover" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-2xl font-bold text-white drop-shadow">{candidateInitials(c.name)}</span>
