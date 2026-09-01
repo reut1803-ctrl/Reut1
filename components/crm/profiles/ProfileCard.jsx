@@ -31,7 +31,7 @@ import { viewerActionText } from "@/lib/crm/genderText";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { getAvailabilityColors } from "@/lib/crm/availability";
 import { locationOf } from "@/lib/crm/mockData";
-import CandidateDirectContact from "@/components/crm/profiles/CandidateDirectContact";
+import CandidatePhone from "@/components/crm/profiles/CandidatePhone";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
@@ -471,62 +471,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
           </div>
         )}
 
-        {/* פנייה ישירה למועמד/ת. מוצגת לכל אנשי הצוות, לצד השגריר/ה המלווה
-            שמופיע/ה מתחתיה - שתי דרכי הפנייה זו לצד זו. */}
-        {candidate.phone && (
-          <div className="mt-3 rounded-2xl bg-[#E8DCCB] p-3">
-            <p className="mb-1.5 text-[11px] font-bold text-[#844442]">פנייה ישירה למועמד/ת</p>
-            <CandidateDirectContact candidate={candidate} />
-          </div>
-        )}
-
-        {contactStaff && (
-          <div
-            data-tour="tour-contact-staff"
-            className="mt-3 flex items-start gap-2 rounded-2xl border-2 border-[#844442] bg-[#F0E2DE] px-3 py-2"
-          >
-            <UserCheck size={15} className="mt-0.5 shrink-0 text-[#844442]" />
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-[#844442]">איש קשר בצוות לבירורים</p>
-              <div className="flex items-center gap-1.5">
-                <p className="text-[13px] font-bold text-[#3A2E26]">{contactStaff.name}</p>
-                {/* התייעצות מהירה עם הנציג/ה המטפל/ת - במקום קבוצת וואטסאפ חיצונית */}
-                {contactStaff.phone && (
-                  <a
-                    href={`https://wa.me/${waDigits(contactStaff.phone)}?text=${encodeURIComponent(
-                      `היי ${contactStaff.name}, רציתי להתייעץ איתך לגבי ${candidate.name} מהמאגר`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`התייעצות בוואטסאפ עם ${contactStaff.name}`}
-                    title={`התייעצות בוואטסאפ עם ${contactStaff.name}`}
-                    className="text-[#62826B] transition active:scale-90"
-                  >
-                    <MessageCircle size={15} />
-                  </a>
-                )}
-              </div>
-              {contactStaff.phone && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  <a
-                    href={`tel:${contactStaff.phone}`}
-                    className="rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-[#844442]"
-                  >
-                    חיוג
-                  </a>
-                  <a
-                    href={`https://wa.me/${waDigits(contactStaff.phone)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-lg bg-[#62826B] px-2 py-1 text-[11px] font-semibold text-white"
-                  >
-                    וואטסאפ
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* דרך הפנייה היחידה בכרטיס: השגריר/ה המלווה.
+            מספר הטלפון של המועמד/ת עצמו/ה אינו מוצג כאן בשום מצב.
+            הרכיב משותף לכרטיס המאגר ולכרטיס ההצעה, כדי ששניהם לא יוכלו
+            להיפרד ולהציג כללי חשיפה שונים. */}
+        <div data-tour="tour-contact-staff" className="mt-3">
+          <CandidatePhone candidate={candidate} />
+        </div>
 
         {canSeeFullProfile && (
           <div className="mt-4 border-t border-[#CCBDAB] pt-3">
