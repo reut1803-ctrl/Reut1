@@ -31,6 +31,7 @@ import { viewerActionText } from "@/lib/crm/genderText";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { getAvailabilityColors } from "@/lib/crm/availability";
 import { locationOf } from "@/lib/crm/mockData";
+import CandidateDirectContact from "@/components/crm/profiles/CandidateDirectContact";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
@@ -456,6 +457,15 @@ export default function ProfileCard({ candidate, onReadMore }) {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* פנייה ישירה למועמד/ת. מוצגת לכל אנשי הצוות, לצד השגריר/ה המלווה
+            שמופיע/ה מתחתיה - שתי דרכי הפנייה זו לצד זו. */}
+        {candidate.phone && (
+          <div className="mt-3 rounded-2xl bg-[#E8DCCB] p-3">
+            <p className="mb-1.5 text-[11px] font-bold text-[#844442]">פנייה ישירה למועמד/ת</p>
+            <CandidateDirectContact candidate={candidate} />
           </div>
         )}
 

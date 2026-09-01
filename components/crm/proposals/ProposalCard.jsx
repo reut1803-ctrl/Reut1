@@ -7,7 +7,7 @@ import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
-import CandidatePhone, { useCanSeeCandidatePhone } from "@/components/crm/profiles/CandidatePhone";
+import CandidatePhone from "@/components/crm/profiles/CandidatePhone";
 import { waDigits } from "@/components/crm/profiles/ProfileCard";
 import { downloadMedia } from "@/lib/crm/mediaStore";
 
@@ -76,9 +76,6 @@ function ContactCard({ candidate }) {
   const contactStaff = useCrmStore((s) => s.contactStaffFor(candidate));
   const showToast = useCrmStore((s) => s.showToast);
   const waLink = contactStaff?.phone ? `https://wa.me/${waDigits(contactStaff.phone)}` : null;
-  // אותו כלל הרשאה בדיוק שקיים היום: מנהלת תמיד, ושגריר/ה רק על מי שמשויך/ת
-  // אליו/ה אישית. שאר הצוות ממשיך/ה להיות מופנה/ית לשגריר/ה המטפל/ת.
-  const canCallCandidate = useCanSeeCandidatePhone(candidate) && !!candidate.phone;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(buildProfileShareText(candidate));
@@ -126,35 +123,6 @@ function ContactCard({ candidate }) {
         <CandidatePhone candidate={candidate} compact />
       </div>
 
-      {/* פנייה ישירה למועמד/ת - מוצגת רק למי שמורשה/ית לראות את המספר */}
-      {canCallCandidate && (
-        <div className="mt-1.5 flex gap-1.5">
-          <a
-            href={`tel:${candidate.phone}`}
-            aria-label={`חיוג ל${candidate.name}`}
-            className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-[#844442] py-2 text-[11px] font-semibold text-white transition active:scale-95"
-          >
-            <Phone size={13} /> חיוג
-          </a>
-          <a
-            href={`https://wa.me/${waDigits(candidate.phone)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`וואטסאפ ל${candidate.name}`}
-            className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-[#62826B] py-2 text-[11px] font-semibold text-white transition active:scale-95"
-          >
-            <MessageCircle size={13} /> וואטסאפ
-          </a>
-          <a
-            href={`sms:${candidate.phone}`}
-            aria-label={`הודעה ל${candidate.name}`}
-            title="הודעת SMS"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#CCBDAB] bg-white text-[#7C6E60] transition active:scale-95"
-          >
-            <MessageSquare size={14} />
-          </a>
-        </div>
-      )}
 
       <button
         onClick={handleCopy}
