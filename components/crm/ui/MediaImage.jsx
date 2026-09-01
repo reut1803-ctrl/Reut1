@@ -10,10 +10,15 @@ import { photoUrlVariants } from "@/lib/crm/sheetImport";
 // בנוסף: לתמונה שמגיעה מ-Google Drive יש כמה צורות כתובת, וגוגל חוסמת חלק מהן
 // לפי הקובץ ולפי הזמן. לכן אם הכתובת הראשונה נכשלת, מנסים אוטומטית את הצורות
 // החלופיות לפני שמוותרים - כך גם כרטיסים שיובאו בעבר עם כתובת ישנה נטענים.
-export default function MediaImage({ src, alt = "", className = "", ...rest }) {
+//
+// חוויית הטעינה: עד שהתמונה מוכנה מוצג משטח בהיר ורגוע בגוון הקרם של המערכת,
+// ולא צבע בולט. התמונה עצמה נכנסת בהבהרה עדינה ברגע שהיא באמת מוכנה, כדי
+// שמעבר בין מסכים לא ייראה כהבזק צבעוני.
+export default function MediaImage({ src, alt = "", className = "", fallback = null, ...rest }) {
   const { url, loading } = useMediaUrl(src);
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
   const imgRef = useRef(null);
 
   const variants = photoUrlVariants(url);
@@ -31,23 +36,30 @@ export default function MediaImage({ src, alt = "", className = "", ...rest }) {
   useEffect(() => {
     setAttempt(0);
     setFailed(false);
+    setReady(false);
   }, [url]);
 
-  // הטעינה מתחילה כבר בזמן הצגת ה-HTML, לפני ש-React מחבר את מטפל השגיאות,
-  // ולכן כישלון מוקדם עלול "להתפספס". כאן בודקים את המצב בפועל אחרי הרינדור.
+  // הטעינה מתחילה כבר בזמן הצגת ה-HTML, לפני ש-React מחבר את המטפלים,
+  // ולכן גם הצלחה וגם כישלון מוקדמים עלולים "להתפספס". כאן בודקים את
+  // המצב בפועל אחרי הרינדור: תמונה שכבר במטמון תסומן כמוכנה מיד, ותמונה
+  // שנכשלה תעבור לצורת הכתובת הבאה.
   useEffect(() => {
     const el = imgRef.current;
-    if (!el || !hasVariants || failed) return;
-    if (el.complete && el.naturalWidth === 0 && el.getAttribute("src") === current) {
-      goToNextVariant();
-    }
+    if (!el || failed) return;
+    if (!el.complete || el.getAttribute("src") !== current) return;
+    if (el.naturalWidth > 0) setReady(true);
+    else if (hasVariants) goToNextVariant();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, hasVariants, failed]);
 
-  if (loading) {
-    return <div className={`animate-pulse bg-[#CCBDAB] ${className}`} aria-label="טוען תמונה" />;
-  }
-  if (!url || failed) return null;
+  // משטח ההמתנה: קרם בהיר עם פעימה עדינה, בלי שום צבע בולט.
+  //
+  // הוא נצבע על התמונה עצמה ולא באלמנט נפרד - כך אין שום שינוי במבנה
+  // הדף, והמשטח נעלם מאליו ברגע שהתמונה נצבעת מעליו.
+  const wait = "animate-pulse bg-[#F5EFE6]";
+
+  if (loading) return <div className={`${wait} ${className}`} aria-label="טוען תמונה" />;
+  if (!url || failed) return fallback;
 
   const handleError = () => {
     if (hasVariants) goToNextVariant();
@@ -60,7 +72,8 @@ export default function MediaImage({ src, alt = "", className = "", ...rest }) {
       ref={imgRef}
       src={current}
       alt={alt}
-      className={className}
+      className={`${className} ${ready ? "" : wait}`}
+      onLoad={() => setReady(true)}
       onError={handleError}
       referrerPolicy="no-referrer"
       {...rest}

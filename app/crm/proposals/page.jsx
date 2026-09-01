@@ -6,8 +6,10 @@ import { Heart, AlertTriangle } from "lucide-react";
 import Button from "@/components/crm/ui/Button";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import ExternalCandidatePanel from "@/components/crm/proposals/ExternalCandidatePanel";
-import { isProposalRowVisible, pastProposalsForPair, toMillis } from "@/lib/crm/attention";
+import { isProposalRowVisible, lastDropInfo, pastProposalsForPair, toMillis } from "@/lib/crm/attention";
 import ProposalCard from "@/components/crm/proposals/ProposalCard";
+import DroppedArchive from "@/components/crm/proposals/DroppedArchive";
+import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { useCrmStore, PROPOSAL_DROPPED } from "@/lib/crm/store";
 
 function PreselectFromQuery() {
@@ -40,6 +42,8 @@ export default function ProposalsPage() {
   // הפרטים נשמרים בתוך ההצעה בלבד ולא נוצר מהם כרטיס במאגר.
   const [externalMale, setExternalMale] = useState(null);
   const [externalFemale, setExternalFemale] = useState(null);
+  // אישור לפני הקמה חוזרת של הצעה בין זוג שכבר נוסה בעבר
+  const [confirmingRepeat, setConfirmingRepeat] = useState(false);
 
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין לצוות בלבד</p>;
@@ -61,12 +65,22 @@ export default function ProposalsPage() {
   const sideReady = (sel, ext) => (sel === EXTERNAL ? !!ext?.name.trim() : !!sel);
   const canCreate = sideReady(selection.male, externalMale) && sideReady(selection.female, externalFemale);
 
+  const submitProposal = () => {
+    createProposal(selection.male, selection.female, rationale.trim(), {
+      male: selection.male === EXTERNAL ? externalMale : null,
+      female: selection.female === EXTERNAL ? externalFemale : null,
+    });
+    setRationale("");
+    setExternalMale(null);
+    setExternalFemale(null);
+  };
+
   // חלון 48 השעות מחושב בזמן התצוגה מול היומן, ולא נשמר בשום שדה.
   // הצעה שירדה מהפרק נשארת ברשימה 48 שעות ואז יורדת ממנה - אך נשמרת
   // במסד הנתונים לתמיד, וזה מה שמאפשר את התראת הכפילות שמתחת.
   const nowMs = Date.now();
   const visibleProposals = proposals.filter((p) => isProposalRowVisible(p, nowMs, PROPOSAL_DROPPED));
-  const archivedCount = proposals.length - visibleProposals.length;
+  const archivedProposals = proposals.filter((p) => !isProposalRowVisible(p, nowMs, PROPOSAL_DROPPED));
 
   // התראת כפילות: נבדקת מול כל ההיסטוריה, כולל הצעות שכבר אינן מוצגות
   const pastForSelection =
@@ -74,6 +88,7 @@ export default function ProposalsPage() {
       ? pastProposalsForPair(proposals, selection.male, selection.female)
       : [];
   const pastDropped = pastForSelection.filter((p) => p.status === PROPOSAL_DROPPED);
+  const pastRationale = pastDropped.length > 0 ? lastDropInfo(pastDropped[0], PROPOSAL_DROPPED)?.rationale || "" : "";
 
   return (
     <div className="px-4 py-6">
@@ -133,17 +148,29 @@ export default function ProposalsPage() {
         className="mt-3 w-full"
         disabled={!canCreate}
         onClick={() => {
-          createProposal(selection.male, selection.female, rationale.trim(), {
-            male: selection.male === EXTERNAL ? externalMale : null,
-            female: selection.female === EXTERNAL ? externalFemale : null,
-          });
-          setRationale("");
-          setExternalMale(null);
-          setExternalFemale(null);
+          // זוג שכבר נוסה בעבר לא מוקם בלחיצה אחת: המערכת מבקשת אישור
+          if (pastForSelection.length > 0) {
+            setConfirmingRepeat(true);
+            return;
+          }
+          submitProposal();
         }}
       >
         <Heart size={16} /> הצע התאמה
       </Button>
+
+      {confirmingRepeat && (
+        <ConfirmDialog
+          message="הצעה בין השניים האלה כבר עלתה בעבר. אפשר להמשיך ולהציע שוב - להקים את ההצעה?"
+          confirmLabel="להקים בכל זאת"
+          tone="primary"
+          onConfirm={() => {
+            setConfirmingRepeat(false);
+            submitProposal();
+          }}
+          onCancel={() => setConfirmingRepeat(false)}
+        />
+      )}
 
       {/* התראת כפילות - נשענת על ההיסטוריה המלאה במסד הנתונים, גם על הצעות
           שכבר ירדו מהתצוגה. זו הסיבה שהצעות שירדו מהפרק לעולם אינן נמחקות. */}
@@ -161,8 +188,13 @@ export default function ProposalsPage() {
                     toMillis(pastForSelection[0].createdAt)
                   ).toLocaleDateString("he-IL")}).`}
               {" "}
-              אפשר להציע שוב, אבל כדאי לבדוק קודם מה קרה בפעם הקודמת.
+              אפשר להמשיך ולהציע שוב, אבל המערכת תבקש אישור לפני ההקמה.
             </p>
+            {pastDropped.length > 0 && pastRationale && (
+              <p className="mt-1">
+                הרציונל שנכתב אז: <span className="font-semibold">{pastRationale}</span>
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -178,12 +210,7 @@ export default function ProposalsPage() {
             ))}
           </div>
         )}
-        {archivedCount > 0 && (
-          <p className="mt-3 rounded-2xl bg-[#E8DCCB] px-3 py-2 text-center text-[11px] leading-relaxed text-[#7C6E60]">
-            ועוד {archivedCount} הצעות שירדו מהפרק לפני יותר מ-48 שעות. הן שמורות במערכת
-            ומשמשות להתראת כפילות, אך אינן מוצגות כאן כדי לשמור על מסך נקי.
-          </p>
-        )}
+        <DroppedArchive proposals={archivedProposals} />
       </div>
     </div>
   );

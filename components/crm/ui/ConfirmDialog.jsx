@@ -2,7 +2,10 @@
 
 import { AlertTriangle } from "lucide-react";
 
-export default function ConfirmDialog({ message, onConfirm, onCancel }) {
+// confirmLabel / tone הם תוספת אופציונלית בלבד. בלעדיהם הדיאלוג נשאר
+// בדיוק כפי שהיה - אזהרת מחיקה אדומה - וכל השימושים הקיימים לא משתנים.
+export default function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel = "מחיקה", tone = "danger" }) {
+  const confirmClass = tone === "danger" ? "bg-[#C24545]" : "bg-[#844442]";
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
@@ -18,8 +21,8 @@ export default function ConfirmDialog({ message, onConfirm, onCancel }) {
           >
             ביטול
           </button>
-          <button onClick={onConfirm} className="flex-1 rounded-2xl bg-[#C24545] py-2.5 text-sm font-semibold text-white">
-            מחיקה
+          <button onClick={onConfirm} className={`flex-1 rounded-2xl ${confirmClass} py-2.5 text-sm font-semibold text-white`}>
+            {confirmLabel}
           </button>
         </div>
       </div>

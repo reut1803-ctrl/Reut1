@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Check, ImageDown, Mic, Pencil, Sparkles, Trash2, UserCheck, X, Phone, MessageCircle, MessageSquare } from "lucide-react";
+import { AlertTriangle, ChevronDown, Clock, Copy, Check, ImageDown, Mic, Pencil, Sparkles, Trash2, UserCheck, X, Phone, MessageCircle, MessageSquare } from "lucide-react";
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { buildProfileShareText } from "@/lib/crm/shareText";
@@ -10,6 +10,7 @@ import StageFunnel from "./StageFunnel";
 import CandidatePhone from "@/components/crm/profiles/CandidatePhone";
 import { waDigits } from "@/components/crm/profiles/ProfileCard";
 import { downloadMedia } from "@/lib/crm/mediaStore";
+import { wasDroppedBefore, lastDropInfo } from "@/lib/crm/attention";
 
 function ExternalContactCard({ data }) {
   const { url } = useMediaUrl(data.audioUrl);
@@ -241,6 +242,10 @@ export default function ProposalCard({ proposal }) {
   const maleName = male?.name || extMale?.name || "";
   const femaleName = female?.name || extFemale?.name || "";
 
+  // הצעה שחזרה ללוח אחרי שירדה מהפרק. נגזר מהיומן בזמן התצוגה בלבד.
+  const returned = wasDroppedBefore(proposal, PROPOSAL_DROPPED);
+  const dropInfo = returned ? lastDropInfo(proposal, PROPOSAL_DROPPED) : null;
+
   const handleDelete = async () => {
     await deleteProposal(proposal.id);
     showToast("ההתאמה נמחקה");
@@ -353,6 +358,34 @@ export default function ProposalCard({ proposal }) {
       <div className="relative mt-3">
         <StageFunnel status={proposal.status} />
       </div>
+
+      {/* שלט ההיסטוריה: מופיע רק כשההצעה כבר ירדה מהפרק בעבר וחזרה ללוח.
+          כל הפרטים נשלפים מיומן ההתקדמות בזמן התצוגה. */}
+      {dropInfo && (
+        <div className="mt-4 rounded-2xl border-2 border-[#D9A441] bg-[#FDF6E7] p-3">
+          <p className="flex items-center gap-1 text-[11px] font-bold text-[#7A5A18]">
+            <AlertTriangle size={13} /> שימו לב - ההצעה הזו כבר עלתה בעבר וירדה מהפרק
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-[#7A5A18]">
+            ירדה מהפרק בתאריך {new Date(dropInfo.dateMs).toLocaleDateString("he-IL")}
+            {dropInfo.author ? ` על ידי ${dropInfo.author}` : ""}
+            {dropInfo.times > 1 ? ` (בסך הכול ${dropInfo.times} פעמים)` : ""}.
+          </p>
+          {dropInfo.note && (
+            <p className="mt-1 text-[11px] leading-relaxed text-[#7A5A18]">
+              מה שנכתב אז: <span className="font-semibold">{dropInfo.note}</span>
+            </p>
+          )}
+          {dropInfo.rationale && (
+            <p className="mt-1 text-[11px] leading-relaxed text-[#7A5A18]">
+              הרציונל שנכתב אז: <span className="font-semibold">{dropInfo.rationale}</span>
+            </p>
+          )}
+          <p className="mt-1.5 text-[11px] leading-relaxed text-[#7A5A18]">
+            אפשר להמשיך ולקדם אותה, אבל כדאי לפתוח את יומן ההתקדמות ולראות מה קרה בפעם הקודמת.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 rounded-2xl bg-[#F5E7E2] p-3">
         <p className="mb-1 flex items-center gap-1 text-[11px] font-bold text-[#6B3A34]">

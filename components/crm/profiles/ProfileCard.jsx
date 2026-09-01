@@ -278,10 +278,21 @@ export default function ProfileCard({ candidate, onReadMore }) {
       id={`candidate-card-${candidate.id}`}
       className="overflow-hidden rounded-3xl border border-[#CCBDAB] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]"
     >
-      <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
+      {/* הרקע הצבעוני שמור אך ורק לכרטיס בלי תמונה, שבו הוא הרקע של ראשי
+          התיבות. כשיש תמונה הרקע לבן ונקי, כדי שמעבר בין לוחות לא ייצור
+          הבזק של צבע מתחת לתמונה שעדיין נטענת. */}
+      <div
+        className={`relative aspect-[4/5] w-full ${
+          candidate.photoUrl ? "bg-white" : `bg-gradient-to-br ${getGradientClass(candidate.gradient)}`
+        }`}
+      >
         {candidate.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <MediaImage src={candidate.photoUrl} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
+          <MediaImage
+            src={candidate.photoUrl}
+            alt={candidate.name}
+            className="absolute inset-0 h-full w-full object-cover"
+            fallback={<div className="absolute inset-0 bg-[#F5EFE6]" />}
+          />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
