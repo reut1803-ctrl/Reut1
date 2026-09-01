@@ -105,7 +105,13 @@ function ArchiveRow({ proposal }) {
 
 export default function DroppedArchive({ proposals }) {
   const [open, setOpen] = useState(false);
-  if (!proposals.length) return null;
+
+  // מהירידה האחרונה לישנה ביותר, כדי שמה שירד עכשיו יהיה ראשון ברשימה
+  const rows = [...proposals].sort(
+    (a, b) =>
+      (lastDropInfo(b, PROPOSAL_DROPPED)?.dateMs || toMillis(b.createdAt)) -
+      (lastDropInfo(a, PROPOSAL_DROPPED)?.dateMs || toMillis(a.createdAt))
+  );
 
   return (
     <div className="mt-6">
@@ -114,7 +120,7 @@ export default function DroppedArchive({ proposals }) {
         className="flex w-full items-center justify-between rounded-2xl border border-[#CCBDAB] bg-[#E8DCCB] px-3.5 py-3 text-right transition active:scale-[0.99]"
       >
         <span className="flex items-center gap-1.5 text-[13px] font-bold text-[#3A2E26]">
-          <Archive size={15} /> היסטוריית התאמות שירדו מהפרק ({proposals.length})
+          <Archive size={15} /> היסטוריית התאמות שירדו מהפרק ({rows.length})
         </span>
         <ChevronDown size={18} className={`shrink-0 text-[#7C6E60] transition ${open ? "rotate-180" : ""}`} />
       </button>
@@ -122,14 +128,17 @@ export default function DroppedArchive({ proposals }) {
       {open && (
         <>
           <p className="mt-2 px-1 text-[11px] leading-relaxed text-[#7C6E60]">
-            ההצעות האלה ירדו מהפרק לפני יותר מ-48 שעות ולכן אינן מוצגות בלוח הפעיל. הן שמורות
-            במערכת ומשמשות להתראת הכפילות. אפשר להחזיר כל אחת מהן ללוח בלחיצה על החץ המעגלי.
+            {rows.length === 0
+              ? "עדיין לא ירדה מהפרק אף הצעה. כשהצעה תרד, היא תעבור לכאן מיד ותיעלם מהלוח הפעיל שלמעלה."
+              : "ההצעות האלה ירדו מהפרק ולכן אינן מוצגות בלוח הפעיל. הן שמורות במערכת ומשמשות להתראת הכפילות. אפשר להחזיר כל אחת מהן ללוח בלחיצה על החץ המעגלי."}
           </p>
-          <ul className="mt-2 space-y-2">
-            {proposals.map((p) => (
-              <ArchiveRow key={p.id} proposal={p} />
-            ))}
-          </ul>
+          {rows.length > 0 && (
+            <ul className="mt-2 space-y-2">
+              {rows.map((p) => (
+                <ArchiveRow key={p.id} proposal={p} />
+              ))}
+            </ul>
+          )}
         </>
       )}
     </div>

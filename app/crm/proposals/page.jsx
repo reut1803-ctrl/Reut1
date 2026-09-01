@@ -6,7 +6,7 @@ import { Heart, AlertTriangle } from "lucide-react";
 import Button from "@/components/crm/ui/Button";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import ExternalCandidatePanel from "@/components/crm/proposals/ExternalCandidatePanel";
-import { isProposalRowVisible, lastDropInfo, pastProposalsForPair, toMillis } from "@/lib/crm/attention";
+import { isOnActiveBoard, lastDropInfo, pastProposalsForPair, toMillis } from "@/lib/crm/attention";
 import ProposalCard from "@/components/crm/proposals/ProposalCard";
 import DroppedArchive from "@/components/crm/proposals/DroppedArchive";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
@@ -75,12 +75,11 @@ export default function ProposalsPage() {
     setExternalFemale(null);
   };
 
-  // חלון 48 השעות מחושב בזמן התצוגה מול היומן, ולא נשמר בשום שדה.
-  // הצעה שירדה מהפרק נשארת ברשימה 48 שעות ואז יורדת ממנה - אך נשמרת
-  // במסד הנתונים לתמיד, וזה מה שמאפשר את התראת הכפילות שמתחת.
-  const nowMs = Date.now();
-  const visibleProposals = proposals.filter((p) => isProposalRowVisible(p, nowMs, PROPOSAL_DROPPED));
-  const archivedProposals = proposals.filter((p) => !isProposalRowVisible(p, nowMs, PROPOSAL_DROPPED));
+  // הצעה שירדה מהפרק יורדת מהלוח הפעיל מיד ועוברת להיסטוריה שבתחתית המסך.
+  // היא נשמרת במסד הנתונים לתמיד, וזה מה שמאפשר את התראת הכפילות שמתחת.
+  // חלון 48 השעות אינו כאן אלא בכרטיס המועמד/ת בלבד.
+  const visibleProposals = proposals.filter((p) => isOnActiveBoard(p, PROPOSAL_DROPPED));
+  const archivedProposals = proposals.filter((p) => !isOnActiveBoard(p, PROPOSAL_DROPPED));
 
   // התראת כפילות: נבדקת מול כל ההיסטוריה, כולל הצעות שכבר אינן מוצגות
   const pastForSelection =

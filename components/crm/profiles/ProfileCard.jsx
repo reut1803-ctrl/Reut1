@@ -24,7 +24,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/store";
-import { isProposalRowVisible, droppedNoticeText, candidateAttention } from "@/lib/crm/attention";
+import { showsInProfileProgress, droppedNoticeText, candidateAttention } from "@/lib/crm/attention";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { viewerActionText } from "@/lib/crm/genderText";
@@ -54,7 +54,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // חלון 48 השעות מחושב בכל טעינת מסך מול חותמת היומי, ולא נשמר בשום שדה -
   // כך המצב לעולם אינו יוצא מסנכרון. ההצעה עצמה נשארת במסד הנתונים תמיד.
   const nowMs = Date.now();
-  const proposals = allProposals.filter((p) => isProposalRowVisible(p, nowMs, PROPOSAL_DROPPED));
+  const proposals = allProposals.filter((p) => showsInProfileProgress(p, nowMs, PROPOSAL_DROPPED));
   // "דורש התייחסות": נחשב בזמן התצוגה מול הפעילות בפועל. מי שיש עליו/ה
   // תהליך שידוך פתוח לעולם אינו/ה מסומן/ת - זה עניין של מסך השידוכים.
   const attention = candidateAttention(candidate, allProposals, nowMs, PROPOSAL_DROPPED);
