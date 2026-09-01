@@ -20,39 +20,50 @@ export default function CandidateDirectContact({ candidate, compact = false }) {
 
   if (!isTeam || !candidate?.phone) return null;
 
-  const size = compact ? 13 : 15;
-  const pad = compact ? "py-2" : "py-2.5";
-  const text = compact ? "text-[11px]" : "text-[13px]";
+  // הכפתורים יושבים בשלוש עמודות שוות. בעמודה צרה (כרטיס ההצעה, שתי עמודות
+  // זו לצד זו) אין מקום למילה "וואטסאפ" - נמדד שהיא דורשת 42px והעמודה נותנת
+  // כ-30px - ולכן שם מוצגים אייקונים בלבד, עם שם נגיש לקורא מסך ו-title בריחוף.
+  // בכרטיס הרחב, שבו יש מקום, מוצגת גם המילה.
+  const btn = "flex min-w-0 items-center justify-center gap-1 rounded-xl px-1 font-semibold transition active:scale-95";
+  const shape = compact ? "h-9 flex-row" : "flex-col gap-0.5 py-1.5 text-[10px]";
+
+  const Label = ({ children }) => (compact ? null : <span className="truncate">{children}</span>);
 
   return (
-    <div>
+    <div className="min-w-0">
       <p dir="ltr" className={`mb-1.5 text-right font-bold text-[#3A2E26] ${compact ? "text-[12px]" : "text-[13px]"}`}>
         {prettyPhone(candidate.phone)}
       </p>
-      <div className="flex gap-1.5">
+
+      <div className="grid grid-cols-3 gap-1.5">
         <a
           href={`tel:${candidate.phone}`}
           aria-label={`חיוג ל${candidate.name}`}
-          className={`flex flex-1 items-center justify-center gap-1 rounded-xl bg-[#844442] px-2 ${pad} ${text} font-semibold text-white transition active:scale-95`}
+          title="חיוג"
+          className={`${btn} ${shape} bg-[#844442] text-white`}
         >
-          <Phone size={size - 2} /> חיוג
+          <Phone size={15} />
+          <Label>חיוג</Label>
         </a>
         <a
           href={`https://wa.me/${waDigits(candidate.phone)}`}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`וואטסאפ ל${candidate.name}`}
-          className={`flex flex-1 items-center justify-center gap-1 rounded-xl bg-[#62826B] px-2 ${pad} ${text} font-semibold text-white transition active:scale-95`}
+          title="וואטסאפ"
+          className={`${btn} ${shape} bg-[#62826B] text-white`}
         >
-          <MessageCircle size={size - 2} /> וואטסאפ
+          <MessageCircle size={15} />
+          <Label>וואטסאפ</Label>
         </a>
         <a
           href={`sms:${candidate.phone}`}
           aria-label={`הודעה ל${candidate.name}`}
           title="הודעת SMS"
-          className={`flex ${compact ? "h-8 w-8" : "h-10 w-10"} shrink-0 items-center justify-center rounded-xl border border-[#CCBDAB] bg-white text-[#7C6E60] transition active:scale-95`}
+          className={`${btn} ${shape} border border-[#CCBDAB] bg-white text-[#7C6E60]`}
         >
-          <MessageSquare size={size - 1} />
+          <MessageSquare size={15} />
+          <Label>SMS</Label>
         </a>
       </div>
     </div>
