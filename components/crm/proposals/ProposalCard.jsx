@@ -118,7 +118,8 @@ function ContactCard({ candidate }) {
     <div className="rounded-2xl bg-[#E8DCCB] p-3">
       <p className="text-[13px] font-bold text-[#3A2E26]">{candidate.name}</p>
       <div className="mt-0.5">
-        <CandidatePhone candidate={candidate} compact />
+        {/* מסך השידוכים: שני האזורים במקביל. ראו כלל החשיפה בראש CandidatePhone. */}
+        <CandidatePhone candidate={candidate} compact showDirect />
       </div>
 
 
