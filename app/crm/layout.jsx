@@ -1,9 +1,10 @@
 import AppShell from "@/components/crm/layout/AppShell";
-import { APP_NAME, APP_SUBTITLE, APP_DESCRIPTION } from "@/lib/appConfig";
+import { SHARE_TITLE } from "@/lib/appConfig";
 
+// זו הכתובת שמשתפים בפועל, והכותרת שלה גוברת על זו של שכבת השורש.
+// לכן היא חייבת להיות זהה לה - אחרת התצוגה המקדימה תראה משהו אחר.
 export const metadata = {
-  title: `${APP_NAME} - ${APP_SUBTITLE}`,
-  description: APP_DESCRIPTION,
+  title: SHARE_TITLE,
 };
 
 export default function CrmLayout({ children }) {

@@ -1,5 +1,5 @@
 import "./globals.css";
-import { APP_NAME, APP_SUBTITLE, APP_DESCRIPTION, SITE_URL_PAGES, SITE_URL_VERCEL } from "../lib/appConfig";
+import { APP_NAME, APP_SUBTITLE, SHARE_TITLE, SITE_URL_PAGES, SITE_URL_VERCEL } from "../lib/appConfig";
 
 // באתר הסטטי המערכת יושבת תחת /adama, ולכן נתיבים מוחלטים לאייקון ולמניפסט
 // חייבים לכלול את הקידומת - אחרת האייקון לא נטען ב"הוספה למסך הבית".
@@ -8,7 +8,7 @@ const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
 // כתובת האתר המלאה. תצוגה מקדימה של קישור (וואטסאפ, פייסבוק) דורשת כתובת
 // מוחלטת לתמונה - קישור יחסי פשוט לא ייטען שם. לכל בנייה הכתובת שלה.
 const siteUrl = base ? SITE_URL_PAGES : SITE_URL_VERCEL;
-const shareTitle = `${APP_NAME} - ${APP_SUBTITLE}`;
+const shareTitle = SHARE_TITLE;
 
 // כתובות מלאות ומפורשות לתמונות השיתוף. חשוב שיהיו מוחלטות ולא יחסיות:
 // כתובת יחסית נפתרה בעבר מול metadataBase שכבר מכיל את /adama, והנתיב
@@ -19,7 +19,7 @@ const shareSquare = `${siteUrl}/brand/share-square.jpg`;
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: shareTitle,
-  description: APP_DESCRIPTION,
+  // בלי תיאור: בתצוגה המקדימה של הקישור מופיעה הכותרת בלבד, לצד התמונה
   icons: {
     icon: `${base}/icons/icon-192.png`,
     apple: `${base}/icons/icon-192.png`,
@@ -30,7 +30,6 @@ export const metadata = {
     locale: "he_IL",
     siteName: APP_NAME,
     title: shareTitle,
-    description: APP_DESCRIPTION,
     url: `${siteUrl}/`,
     images: [
       { url: shareWide, width: 1200, height: 630, alt: APP_SUBTITLE },
@@ -40,7 +39,6 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     title: shareTitle,
-    description: APP_DESCRIPTION,
     images: [shareWide],
   },
 };
