@@ -29,6 +29,17 @@ export default function ProfileDetailModal({ candidate, onClose }) {
                   src={url}
                   alt={candidate.name}
                   className="h-full w-full shrink-0 snap-center object-cover"
+                  fallback={
+                    <div
+                      className={`flex h-full w-full shrink-0 snap-center items-center justify-center bg-gradient-to-br ${getGradientClass(
+                        candidate.gradient
+                      )}`}
+                    >
+                      <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+                        {candidate.initials}
+                      </span>
+                    </div>
+                  }
                 />
               ))}
             </div>

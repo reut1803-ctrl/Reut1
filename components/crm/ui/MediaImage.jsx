@@ -47,8 +47,16 @@ export default function MediaImage({ src, alt = "", className = "", fallback = n
     const el = imgRef.current;
     if (!el || failed) return;
     if (!el.complete || el.getAttribute("src") !== current) return;
-    if (el.naturalWidth > 0) setReady(true);
-    else if (hasVariants) goToNextVariant();
+    if (el.naturalWidth > 0) {
+      setReady(true);
+      return;
+    }
+    // הטעינה הסתיימה בכישלון. אם יש עוד צורות כתובת - מנסים את הבאה.
+    // אם אין, מסמנים כישלון כדי שתוצג חלופה. בלי השורה הזו תמונה שנכשלה
+    // מוקדם מדי (למשל כישלון ששמור במטמון) נשארה תקועה לנצח כמלבן ריק,
+    // כי מטפל השגיאות של React כלל לא הספיק להתחבר אליה.
+    if (hasVariants) goToNextVariant();
+    else setFailed(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, hasVariants, failed]);
 

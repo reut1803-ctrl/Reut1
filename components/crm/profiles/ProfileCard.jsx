@@ -43,6 +43,23 @@ import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 // המרת מספר ישראלי לפורמט שוואטסאפ מצפה לו
 export const waDigits = (phone) => String(phone || "").replace(/[^0-9]/g, "").replace(/^0/, "972");
 
+// ראשי תיבות על הרקע הצבעוני. משמש כחלופה כשתמונת הפרופיל אינה נטענת
+// (למשל קישור Google Drive שנחסם), כדי שהכרטיס ייראה כמו כרטיס תקין
+// בלי תמונה ולעולם לא יישאר מלבן ריק.
+function InitialsCover({ candidate }) {
+  return (
+    <div
+      className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${getGradientClass(
+        candidate.gradient
+      )}`}
+    >
+      <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+        {candidate.initials}
+      </span>
+    </div>
+  );
+}
+
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
   const board = useCrmStore((s) => s.board);
@@ -291,7 +308,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
             src={candidate.photoUrl}
             alt={candidate.name}
             className="absolute inset-0 h-full w-full object-cover"
-            fallback={<div className="absolute inset-0 bg-[#F5EFE6]" />}
+            fallback={<InitialsCover candidate={candidate} />}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
