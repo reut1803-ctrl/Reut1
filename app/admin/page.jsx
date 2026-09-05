@@ -126,7 +126,8 @@ export default function AdminPage() {
   if (!user) return <Login data={data} />;
 
   const isAdmin = user.role === "admin";
-  const isSupervisor = isAdmin && user.supervisor === true; // בקרה עליונה
+  // בקרה עליונה: המנהלת הראשית. רק מנהלת נוספת מסומנת במפורש supervisor:false אינה בקרה.
+  const isSupervisor = isAdmin && user.supervisor !== false;
   const isViewer = user.role === "viewer";
   const isRep = user.role === "rep";
   // "המועמדים שלי" - פעיל רק לנציג ורק כשהמתג דלוק.
