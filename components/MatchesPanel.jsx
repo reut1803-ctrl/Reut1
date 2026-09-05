@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Modal from "./Modal";
-import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep } from "../lib/store";
+import SearchSelect from "./SearchSelect";
+import { addMatch, updateMatch, deleteMatch, addMatchUpdate, addCandidate, displayRep } from "../lib/store";
 import { copyClean, downloadPdf, shareClean } from "../lib/export";
 
 // שלבי ההתקדמות של ההתאמה (מהוצע ועד אירוסין), ובסוף "ירד מהפרק" - שמעביר להיסטוריה.
 const ARCHIVED = "ירד מהפרק";
 const STAGES = ["הוצע", "בבדיקה", "הוחלפו פרטים", "נפגשו", "בהמשך / מתקדמים", "אירוסין", ARCHIVED];
+const STUCK_MS = 14 * 24 * 60 * 60 * 1000; // שבועיים - סף "הצעה תקועה"
 
 export default function MatchesPanel({ data, user, readOnly = false }) {
   const [adding, setAdding] = useState(false);
@@ -105,6 +107,34 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
     setAdding(false);
   }
 
+  // הוספת מועמד/ת "לא במאגר" (מהמעגל האישי) - נפתח כרטיס ייעודי, והוא נבחר להתאמה.
+  async function addExternal(gender, name) {
+    if (!name) return;
+    try {
+      const ref = await addCandidate({ fullName: name, gender, external: true, assignedRep: user.repId || "" });
+      if (gender === "male") setManId(ref.id); else setWomanId(ref.id);
+    } catch (e) { setFormError("הוספת המועמד/ת נכשלה. נסי שוב."); }
+  }
+
+  // ----- "הצעה תקועה" (פעמון): אותו סטטוס מעל שבועיים -----
+  function isStuck(m) {
+    if (m.status === ARCHIVED || m.status === "אירוסין") return false;
+    if (m.snoozedUntil && Date.now() < new Date(m.snoozedUntil).getTime()) return false;
+    const since = m.statusChangedAt || m.createdAt;
+    if (!since) return false;
+    return Date.now() - new Date(since).getTime() > STUCK_MS;
+  }
+  function daysStuck(m) {
+    const since = m.statusChangedAt || m.createdAt;
+    return since ? Math.floor((Date.now() - new Date(since).getTime()) / 86400000) : 0;
+  }
+  function nudgeSms(m, man, woman) {
+    const creator = repById(m.createdByRep);
+    const phone = (creator?.phone || "").replace(/[^0-9]/g, "");
+    const text = `היי ${creator?.name || ""}, ההצעה בין ${man?.fullName || ""} ל${woman?.fullName || ""} תקועה בסטטוס "${m.status}" כבר ${daysStuck(m)} ימים. אפשר לקדם אותה?`;
+    return phone ? `sms:${phone}?body=${encodeURIComponent(text)}` : "";
+  }
+
   // כל הנציגים המעורבים: נציג/ת הבחור, נציג/ת הבחורה, ויוזם/ת ההתאמה - ללא כפילויות.
   function involvedReps(m, man, woman) {
     const entries = [];
@@ -189,10 +219,20 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
         const canManageAssign = user.role === "admin" || (!readOnly && (m.handledBy ?? m.createdByRep) === user.repId);
         return (
           <div key={m.id} className="card space-y-3">
-            {/* כותרת + כיווץ */}
-            <div className="flex items-center justify-between">
+            {/* כותרת + פעמון "תקוע" + כיווץ */}
+            <div className="flex items-center justify-between gap-2">
               <p className="font-semibold text-ink">{man?.fullName || "—"} 🤝 {woman?.fullName || "—"}</p>
-              <button className="text-ink/40" onClick={() => setCollapsed((s) => ({ ...s, [m.id]: !isCollapsed }))}>{isCollapsed ? "▼" : "▲"}</button>
+              <div className="flex items-center gap-2">
+                {isStuck(m) && (
+                  <span className="flex items-center gap-1">
+                    {(() => { const href = nudgeSms(m, man, woman); return href
+                      ? <a className="animate-pulse rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700" href={href}>🔔 תקוע {daysStuck(m)} ימים · תזכורת</a>
+                      : <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700">🔔 תקוע {daysStuck(m)} ימים</span>; })()}
+                    {!readOnly && <button className="text-xs text-ink/40" title="השהיית התראה לשבוע" onClick={() => updateMatch(m.id, { snoozedUntil: new Date(Date.now() + 7 * 86400000).toISOString() })}>✕</button>}
+                  </span>
+                )}
+                <button className="text-ink/40" onClick={() => setCollapsed((s) => ({ ...s, [m.id]: !isCollapsed }))}>{isCollapsed ? "▼" : "▲"}</button>
+              </div>
             </div>
 
             {!isCollapsed && (
@@ -221,7 +261,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                       <button
                         key={s}
                         disabled={readOnly}
-                        onClick={() => { if (!isArch || confirm(`להעביר את ההצעה ל"ירד מהפרק"? היא תעבור להיסטוריה.`)) updateMatch(m.id, { status: s }); }}
+                        onClick={() => { if (!isArch || confirm(`להעביר את ההצעה ל"ירד מהפרק"? היא תעבור להיסטוריה.`)) updateMatch(m.id, { status: s, statusChangedAt: new Date().toISOString() }); }}
                         className="flex shrink-0 flex-col items-center gap-1"
                         style={{ width: "5rem" }}
                       >
@@ -346,20 +386,26 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="field-label">בחור</label>
-                <select className="field-input" value={manId} onChange={(e) => { setManId(e.target.value); setReWarn(null); }}>
-                  <option value="">בחירת בחור…</option>
-                  {men.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
-                </select>
+                <SearchSelect
+                  value={manId}
+                  placeholder="בחירת בחור…"
+                  options={men.map((c) => ({ id: c.id, label: c.fullName, external: c.external }))}
+                  onChange={(id) => { setManId(id); setReWarn(null); }}
+                  onAddExternal={(name) => { addExternal("male", name); setReWarn(null); }}
+                />
               </div>
               <div>
                 <label className="field-label">בחורה</label>
-                <select className="field-input" value={womanId} onChange={(e) => { setWomanId(e.target.value); setReWarn(null); }}>
-                  <option value="">בחירת בחורה…</option>
-                  {women.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
-                </select>
+                <SearchSelect
+                  value={womanId}
+                  placeholder="בחירת בחורה…"
+                  options={women.map((c) => ({ id: c.id, label: c.fullName, external: c.external }))}
+                  onChange={(id) => { setWomanId(id); setReWarn(null); }}
+                  onAddExternal={(name) => { addExternal("female", name); setReWarn(null); }}
+                />
               </div>
             </div>
             <div>

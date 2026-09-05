@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addRep, updateRep, deleteRep, updateAdminPassword, updateViewerPassword } from "../lib/store";
+import { addRep, updateRep, deleteRep, updateViewerPassword } from "../lib/store";
 
 // ניהול נציגים וסיסמאות - הרשאת מנהלת בלבד.
 export default function RepsManager({ data }) {
@@ -10,10 +10,7 @@ export default function RepsManager({ data }) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
-  const [adminPw, setAdminPw] = useState(data.adminPassword || "");
-  const [adminSaved, setAdminSaved] = useState(false);
-
-  const [viewerPw, setViewerPw] = useState(data.viewerPassword || "");
+  const [viewerPw, setViewerPw] = useState(""); // לא טוענים את הסיסמה הקיימת - שינוי בלבד
   const [viewerSaved, setViewerSaved] = useState(false);
 
   // הנציג/ה שרשימת "ניהול משותף" שלו/ה פתוחה כרגע (ברירת מחדל: מכווצת)
@@ -28,36 +25,22 @@ export default function RepsManager({ data }) {
     setPassword("");
   }
 
-  function saveAdminPw() {
-    if (!adminPw.trim()) return;
-    updateAdminPassword(adminPw.trim());
-    setAdminSaved(true);
-    setTimeout(() => setAdminSaved(false), 1500);
-  }
-
   function saveViewerPw() {
     if (!viewerPw.trim()) return;
     updateViewerPassword(viewerPw.trim());
+    setViewerPw("");
     setViewerSaved(true);
     setTimeout(() => setViewerSaved(false), 1500);
   }
 
   return (
     <div className="space-y-3">
-      {/* סיסמת מנהלת */}
-      <div className="card space-y-2">
-        <h2 className="text-lg font-bold text-roseDark">🔐 סיסמת מנהלת</h2>
-        <p className="text-xs text-ink/60">זו הסיסמה שאיתה נכנסים כמנהלת. אפשר לשנות אותה כאן.</p>
-        <input className="field-input" value={adminPw} onChange={(e) => setAdminPw(e.target.value)} placeholder="סיסמת מנהלת" />
-        <button className="btn-primary" onClick={saveAdminPw}>{adminSaved ? "נשמר!" : "שמירת סיסמה"}</button>
-      </div>
-
-      {/* סיסמת צפייה בלבד */}
+      {/* סיסמת צפייה בלבד - שינוי בלבד (הסיסמה הקיימת אינה מוצגת) */}
       <div className="card space-y-2">
         <h2 className="text-lg font-bold text-roseDark">👁️ סיסמת צפייה בלבד</h2>
-        <p className="text-xs text-ink/60">מי שנכנס עם סיסמה זו יוכל לצפות במועמדים בלבד — בלי לערוך, להוסיף או למחוק.</p>
-        <input className="field-input" value={viewerPw} onChange={(e) => setViewerPw(e.target.value)} placeholder="סיסמת צפייה" />
-        <button className="btn-primary" onClick={saveViewerPw}>{viewerSaved ? "נשמר!" : "שמירת סיסמה"}</button>
+        <p className="text-xs text-ink/60">מי שנכנס עם סיסמה זו יוכל לצפות במועמדים בלבד. להחלפה — הקלידו סיסמה חדשה (הקיימת אינה מוצגת מטעמי אבטחה).</p>
+        <input className="field-input" type="password" autoComplete="new-password" value={viewerPw} onChange={(e) => setViewerPw(e.target.value)} placeholder="סיסמת צפייה חדשה" />
+        <button className="btn-primary" disabled={!viewerPw.trim()} onClick={saveViewerPw}>{viewerSaved ? "נשמר!" : "עדכון סיסמת צפייה"}</button>
       </div>
 
       <h2 className="text-lg font-bold text-roseDark">👥 ניהול נציגים</h2>
