@@ -9,6 +9,7 @@ import MatchesPanel from "../../components/MatchesPanel";
 import TasksPanel from "../../components/TasksPanel";
 import QuestionsEditor from "../../components/QuestionsEditor";
 import RepsManager from "../../components/RepsManager";
+import AdminsManager from "../../components/AdminsManager";
 import EngagementPanel from "../../components/EngagementPanel";
 import SheetImport from "../../components/SheetImport";
 import LogViewer from "../../components/LogViewer";
@@ -37,7 +38,11 @@ function Login({ data }) {
     const pw = norm(password);
     if (!pw) return;
     if (pw === norm(data.adminPassword)) {
-      setCurrentUser({ role: "admin" });
+      setCurrentUser({ role: "admin", supervisor: true }); // מנהלת ראשית + בקרה עליונה
+      return;
+    }
+    if (data.admin2Password && pw === norm(data.admin2Password)) {
+      setCurrentUser({ role: "admin", supervisor: false }); // מנהלת נוספת - גישת ניהול מלאה
       return;
     }
     const rep = data.reps.find((r) => r.password && norm(r.password) === pw);
@@ -114,12 +119,19 @@ export default function AdminPage() {
   const [candView, setCandView] = useState("new");
   // מתג סינון מגדרי - חל אך ורק על "מועמדים קודמים". "all" | "male" | "female".
   const [genderFilter, setGenderFilter] = useState("all");
+  // "המועמדים שלי" - נציג רואה רק את המשויכים אליו (בלחיצה אחת).
+  const [mineOnly, setMineOnly] = useState(false);
 
   if (!data) return <main className="p-8 text-center text-ink/50">טוען…</main>;
   if (!user) return <Login data={data} />;
 
   const isAdmin = user.role === "admin";
+  const isSupervisor = isAdmin && user.supervisor === true; // בקרה עליונה
   const isViewer = user.role === "viewer";
+  const isRep = user.role === "rep";
+  // "המועמדים שלי" - פעיל רק לנציג ורק כשהמתג דלוק.
+  const mineActive = isRep && mineOnly;
+  const mineOk = (c) => !mineActive || managedByMe(c);
   const myRep = data.reps.find((r) => r.id === user.repId);
   // נציג בחופשה / קריאה בלבד - יכול לצפות אך לא לבצע פעולות
   const myReadOnly = !!myRep?.readOnly;
@@ -161,7 +173,7 @@ export default function AdminPage() {
 
   // 5 המועמדים האחרונים שהצטרפו (מבין אלה שהמשתמש/ת רשאי/ת לראות) - לפי מועד ההוספה.
   const viewableSorted = data.candidates
-    .filter((c) => canViewCandidate(c))
+    .filter((c) => canViewCandidate(c) && mineOk(c))
     .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
   const newIds = new Set(viewableSorted.slice(0, 5).map((c) => c.id));
   const newCands = viewableSorted.filter((c) => newIds.has(c.id) && matchSearch(c));
@@ -170,7 +182,7 @@ export default function AdminPage() {
   // בתצוגת "קודמים" מחריגים את 5 החדשים (הם מופיעים בלשונית "חדשים").
   const unassigned = data.candidates.filter((c) => {
     const dr = displayRep(c, data.reps);
-    return (!dr || !visibleRepIds.has(dr.id)) && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c);
+    return (!dr || !visibleRepIds.has(dr.id)) && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c);
   });
 
   async function handleAdd(form) {
@@ -194,7 +206,7 @@ export default function AdminPage() {
       <MazalTovPopup mazalTov={data.mazalTov} />
       <Header>
         <span className="text-sm text-ink/70">
-          {isAdmin ? "מנהלת" : isViewer ? "👁️ צפייה בלבד" : `${myRep?.name} · ${myRep?.institution}`}
+          {isAdmin ? (isSupervisor ? "מנהלת · בקרה 👑" : (data.admin2Name || "מנהלת")) : isViewer ? "👁️ צפייה בלבד" : `${myRep?.name} · ${myRep?.institution}`}
         </span>
         <button className="btn-soft !px-3 !py-1.5 text-sm" onClick={() => setCurrentUser(null)}>יציאה</button>
       </Header>
@@ -238,6 +250,12 @@ export default function AdminPage() {
                   className={`rounded-full px-3 py-1.5 font-medium transition ${genderFilter === "female" ? "bg-blush text-roseDark" : "text-ink/50"}`}
                 >בנות</button>
               </div>
+              {isRep && (
+                <button
+                  onClick={() => setMineOnly((v) => !v)}
+                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${mineOnly ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
+                >👤 {mineOnly ? "המועמדים שלי ✓" : "המועמדים שלי"}</button>
+              )}
               {!isViewer && !myReadOnly && (
                 <button data-tour="add" className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
               )}
@@ -284,7 +302,7 @@ export default function AdminPage() {
             )}
 
             {(candView === "previous" || term) && visibleReps.map((rep) => {
-              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c));
+              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c));
               if (term && cands.length === 0) return null;
               return (
                 <section key={rep.id} className="space-y-3">
@@ -347,6 +365,7 @@ export default function AdminPage() {
         {tab === "tasks" && <TasksPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "manage" && isAdmin && (
           <div className="space-y-8">
+            {isSupervisor && <AdminsManager data={data} />}
             <EngagementPanel data={data} />
             <div className="card space-y-2">
               <h2 className="text-lg font-bold text-roseDark">📥 ייבוא מרוכז</h2>
