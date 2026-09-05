@@ -219,17 +219,12 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
         const canManageAssign = user.role === "admin" || (!readOnly && (m.handledBy ?? m.createdByRep) === user.repId);
         return (
           <div key={m.id} className="card space-y-3">
-            {/* כותרת + פעמון "תקוע" + כיווץ */}
+            {/* כותרת + חיווי "תקוע" + כיווץ */}
             <div className="flex items-center justify-between gap-2">
               <p className="font-semibold text-ink">{man?.fullName || "—"} 🤝 {woman?.fullName || "—"}</p>
               <div className="flex items-center gap-2">
                 {isStuck(m) && (
-                  <span className="flex items-center gap-1">
-                    {(() => { const href = nudgeSms(m, man, woman); return href
-                      ? <a className="animate-pulse rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700" href={href}>🔔 תקוע {daysStuck(m)} ימים · תזכורת</a>
-                      : <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700">🔔 תקוע {daysStuck(m)} ימים</span>; })()}
-                    {!readOnly && <button className="text-xs text-ink/40" title="השהיית התראה לשבוע" onClick={() => updateMatch(m.id, { snoozedUntil: new Date(Date.now() + 7 * 86400000).toISOString() })}>✕</button>}
-                  </span>
+                  <span className="animate-pulse rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700">🔔 תקוע {daysStuck(m)} ימים</span>
                 )}
                 <button className="text-ink/40" onClick={() => setCollapsed((s) => ({ ...s, [m.id]: !isCollapsed }))}>{isCollapsed ? "▼" : "▲"}</button>
               </div>
@@ -271,6 +266,22 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                     );
                   })}
                 </div>
+
+                {/* התראת "הצעה תקועה" - עם כיבוי/איפוס אמיתי */}
+                {isStuck(m) && (
+                  <div className="rounded-2xl bg-red-50 p-3">
+                    <p className="mb-2 text-sm font-semibold text-red-700">🔔 ההצעה תקועה {daysStuck(m)} ימים באותו סטטוס.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {nudgeSms(m, man, woman) && (
+                        <a className="btn-soft !px-2.5 !py-1 text-xs" href={nudgeSms(m, man, woman)}>📩 תזכורת ליוזם (SMS)</a>
+                      )}
+                      {!readOnly && (
+                        <button className="btn-primary !px-2.5 !py-1 text-xs" onClick={() => updateMatch(m.id, { statusChangedAt: new Date().toISOString(), snoozedUntil: "" })}>✓ טיפלתי — כיבוי התראה</button>
+                      )}
+                    </div>
+                    <p className="mt-1 text-[11px] text-ink/50">הכיבוי מאפס את ספירת הימים. אם ההצעה תישאר תקועה שבועיים נוספים — התזכורת תחזור.</p>
+                  </div>
+                )}
 
                 {/* הרציונל (הניצוץ) */}
                 <div className="rounded-2xl bg-amber-50 p-3">
