@@ -5,8 +5,9 @@ import Modal from "./Modal";
 import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep } from "../lib/store";
 import { copyClean, downloadPdf, shareClean } from "../lib/export";
 
-// שלבי ההתקדמות של ההתאמה (מהוצע ועד אירוסין).
-const STAGES = ["הוצע", "בבדיקה", "הוחלפו פרטים", "נפגשו", "בהמשך / מתקדמים", "אירוסין"];
+// שלבי ההתקדמות של ההתאמה (מהוצע ועד אירוסין), ובסוף "ירד מהפרק" - שמעביר להיסטוריה.
+const ARCHIVED = "ירד מהפרק";
+const STAGES = ["הוצע", "בבדיקה", "הוחלפו פרטים", "נפגשו", "בהמשך / מתקדמים", "אירוסין", ARCHIVED];
 
 export default function MatchesPanel({ data, user, readOnly = false }) {
   const [adding, setAdding] = useState(false);
@@ -17,6 +18,8 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
   const [notice, setNotice] = useState("");
   const [updateText, setUpdateText] = useState({});
   const [collapsed, setCollapsed] = useState({});
+  const [reWarn, setReWarn] = useState(null); // התראת שימוש חוזר בהצעה שירדה בעבר
+  const [histOpen, setHistOpen] = useState(false);
 
   function flash(msg) {
     setNotice(msg);
@@ -67,7 +70,15 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
     return (man && managedByMe(man)) || (woman && managedByMe(woman));
   });
 
-  function create() {
+  // הצעות פעילות (ללא אלו שירדו מהפרק).
+  const activeMatches = visibleMatches.filter((m) => m.status !== ARCHIVED);
+  // היסטוריית ההתאמות - הצעות שירדו מהפרק, גלויות לכלל הנציגים (למעט מועמד מוסתר).
+  const historyMatches = data.matches.filter((m) => {
+    if (m.status !== ARCHIVED) return false;
+    return !hiddenFromMe(candById(m.manId)) && !hiddenFromMe(candById(m.womanId));
+  });
+
+  function create(force = false) {
     if (!manId || !womanId) {
       setFormError("יש לבחור גם בחור וגם בחורה.");
       return;
@@ -76,11 +87,21 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
       setFormError("חובה לפרט את הרציונל (הניצוץ) — למה ההצעה מתאימה ואילו תכונות משלימות.");
       return;
     }
+    // התראת שימוש חוזר: הצעה זהה שכבר ירדה מהפרק בעבר.
+    if (!force) {
+      const prior = data.matches.find((m) => m.manId === manId && m.womanId === womanId && m.status === ARCHIVED);
+      if (prior) {
+        const who = handlerName(prior) || "הנציג/ה המלווה";
+        setReWarn(`⚠️ הצעה זו כבר הוצעה בעבר וירדה מהפרק. מומלץ קודם לברר עם ${who} מה הייתה הסיבה, ולתעד אותה. אפשר להמשיך בכל זאת.`);
+        return;
+      }
+    }
     addMatch({ manId, womanId, rationale: rationale.trim(), status: STAGES[0], createdByRep: user.repId || "admin" });
     setManId("");
     setWomanId("");
     setRationale("");
     setFormError("");
+    setReWarn(null);
     setAdding(false);
   }
 
@@ -147,17 +168,17 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-roseDark">💞 הצעות פעילות ({visibleMatches.length})</h2>
-        {!readOnly && <button className="btn-soft" onClick={() => { setFormError(""); setAdding(true); }}>+ הצעת התאמה</button>}
+        <h2 className="text-lg font-bold text-roseDark">💞 הצעות פעילות ({activeMatches.length})</h2>
+        {!readOnly && <button className="btn-soft" onClick={() => { setFormError(""); setReWarn(null); setAdding(true); }}>+ הצעת התאמה</button>}
       </div>
 
       {notice && (
         <div className="rounded-2xl bg-rose/10 px-4 py-2 text-center text-sm font-semibold text-roseDark">{notice}</div>
       )}
 
-      {visibleMatches.length === 0 && <p className="text-sm text-ink/50">אין הצעות עדיין.</p>}
+      {activeMatches.length === 0 && <p className="text-sm text-ink/50">אין הצעות פעילות.</p>}
 
-      {visibleMatches.map((m) => {
+      {activeMatches.map((m) => {
         const man = candById(m.manId);
         const woman = candById(m.womanId);
         const entries = involvedReps(m, man, woman);
@@ -192,15 +213,19 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                 <div className="flex gap-1 overflow-x-auto pb-1">
                   {STAGES.map((s, i) => {
                     const active = i === curStage;
+                    const isArch = s === ARCHIVED;
+                    const circle = active
+                      ? (isArch ? "bg-red-600 text-white" : "bg-roseDark text-white")
+                      : (isArch ? "bg-red-100 text-red-700" : "bg-sand text-ink/50");
                     return (
                       <button
                         key={s}
                         disabled={readOnly}
-                        onClick={() => updateMatch(m.id, { status: s })}
+                        onClick={() => { if (!isArch || confirm(`להעביר את ההצעה ל"ירד מהפרק"? היא תעבור להיסטוריה.`)) updateMatch(m.id, { status: s }); }}
                         className="flex shrink-0 flex-col items-center gap-1"
                         style={{ width: "5rem" }}
                       >
-                        <span className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${active ? "bg-roseDark text-white" : "bg-sand text-ink/50"}`}>{i + 1}</span>
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${circle}`}>{isArch ? "✕" : i + 1}</span>
                         <span className={`text-center text-[11px] leading-tight ${active ? "font-bold text-roseDark" : "text-ink/50"}`}>{s}</span>
                       </button>
                     );
@@ -276,24 +301,62 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
         );
       })}
 
+      {/* היסטוריית ההתאמות - הצעות שירדו מהפרק, גלוי לכל הנציגים */}
+      {historyMatches.length > 0 && (
+        <div className="border-t border-sand pt-3">
+          <button className="flex w-full items-center justify-between text-right" onClick={() => setHistOpen((v) => !v)}>
+            <span className="text-base font-bold text-roseDark">📁 היסטוריית ההתאמות ({historyMatches.length})</span>
+            <span className="text-sm text-ink/50">{histOpen ? "▲" : "▼"}</span>
+          </button>
+          <p className="text-xs text-ink/50">הצעות שירדו מהפרק — גלוי ונגיש לכל הנציגים.</p>
+          {histOpen && historyMatches.map((m) => {
+            const man = candById(m.manId);
+            const woman = candById(m.womanId);
+            const last = m.updates && m.updates.length ? m.updates[m.updates.length - 1] : null;
+            return (
+              <div key={m.id} className="mt-2 rounded-2xl bg-sand/30 p-3">
+                <p className="font-semibold text-ink">{man?.fullName || "—"} 🤝 {woman?.fullName || "—"}</p>
+                {m.rationale && <p className="mt-1 text-xs text-ink/60">✨ {m.rationale}</p>}
+                {last && <p className="mt-1 text-xs text-ink/50">הערה אחרונה: {last.text} ({last.by})</p>}
+                {!readOnly && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={() => updateMatch(m.id, { status: STAGES[0] })}>↩️ החזרה לפעיל</button>
+                    {user.role === "admin" && <button className="btn-soft text-roseDark !px-2.5 !py-1 text-xs" onClick={() => { if (confirm("למחוק לצמיתות מההיסטוריה?")) deleteMatch(m.id); }}>🗑️</button>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {adding && (
-        <Modal title="הצעת התאמה" onClose={() => setAdding(false)}>
+        <Modal title="הצעת התאמה" onClose={() => { setAdding(false); setReWarn(null); }}>
           <div className="space-y-4">
             <p className="text-sm text-ink/60">בחרו בחור ובחורה והציעו התאמה ביניהם</p>
             {formError && (
               <div className="rounded-2xl bg-rose/10 px-4 py-3 text-sm font-medium text-roseDark">{formError}</div>
             )}
+            {reWarn && (
+              <div className="space-y-2 rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-800">
+                <p className="whitespace-pre-line">{reWarn}</p>
+                <div className="flex gap-2">
+                  <button className="btn-primary !px-3 !py-1.5 text-xs" onClick={() => create(true)}>המשך בכל זאת</button>
+                  <button className="btn-soft !px-3 !py-1.5 text-xs" onClick={() => setReWarn(null)}>ביטול</button>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="field-label">בחור</label>
-                <select className="field-input" value={manId} onChange={(e) => setManId(e.target.value)}>
+                <select className="field-input" value={manId} onChange={(e) => { setManId(e.target.value); setReWarn(null); }}>
                   <option value="">בחירת בחור…</option>
                   {men.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                 </select>
               </div>
               <div>
                 <label className="field-label">בחורה</label>
-                <select className="field-input" value={womanId} onChange={(e) => setWomanId(e.target.value)}>
+                <select className="field-input" value={womanId} onChange={(e) => { setWomanId(e.target.value); setReWarn(null); }}>
                   <option value="">בחירת בחורה…</option>
                   {women.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
                 </select>
@@ -308,7 +371,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                 placeholder="מה משלים בין הצדדים, למה נוצר החיבור…"
               />
             </div>
-            <button className="btn-primary w-full" onClick={create}>♡ הצע התאמה</button>
+            <button className="btn-primary w-full" onClick={() => create()}>♡ הצע התאמה</button>
           </div>
         </Modal>
       )}
