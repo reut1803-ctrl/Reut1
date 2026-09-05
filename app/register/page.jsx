@@ -17,7 +17,8 @@ import { crmDb } from "@/lib/crm/firebaseClient";
 import { nameKeys } from "@/lib/crm/nameKey";
 import { AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, occupationTagsFor } from "@/lib/crm/mockData";
-import { Search, Heart, Check, AlertCircle, Sparkles, Phone, Users, HandHeart, ExternalLink } from "lucide-react";
+import { Search, Heart, Check, AlertCircle, Sparkles, Phone, Users, HandHeart, ExternalLink, Camera, RefreshCw } from "lucide-react";
+import { compressToDataUrl } from "@/lib/crm/imageCompress";
 
 // מגבלת זמן לחיפוש. Firestore אינו נכשל כשאין רשת - הוא ממתין וממשיך לנסות
 // בלי סוף, ובלי המגבלה הזו המבקר/ת היה/הייתה נתקע/ת על "בודקים..." לנצח.
@@ -54,6 +55,9 @@ export default function RegisterPage() {
   const [form, setForm] = useState(EMPTY);
   const [occupations, setOccupations] = useState([]);
   const [consent, setConsent] = useState(false);
+  const [photo, setPhoto] = useState("");
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [done, setDone] = useState(false);
@@ -122,9 +126,26 @@ export default function RegisterPage() {
     }
   };
 
+  // התמונה נבחרת, מכווצת בדפדפן, ונשמרת בתוך מסמך הפנייה עצמו.
+  // הטופס פתוח בלי התחברות ולכן אינו יכול לכתוב לאוסף המדיה.
+  const handlePhoto = async (file) => {
+    if (!file) return;
+    setPhotoError("");
+    setPhotoBusy(true);
+    try {
+      setPhoto(await compressToDataUrl(file));
+    } catch (err) {
+      setPhoto("");
+      setPhotoError(err?.message || "לא הצלחנו לטעון את התמונה");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
   const missing = [];
   if (!form.name.trim()) missing.push("שם מלא");
   if (!form.phone.trim()) missing.push("טלפון");
+  if (!photo) missing.push("תמונה");
   if (!consent) missing.push("אישור התיבה בסוף הטופס");
 
   const handleSubmit = async () => {
@@ -151,6 +172,7 @@ export default function RegisterPage() {
         phone: form.phone.trim(),
         bio: form.bio.trim(),
         referenceContacts: form.referenceContacts.trim(),
+        photo,
         consentAccepted: true,
         source: "register-form",
         createdAt: new Date().toISOString(),
@@ -312,6 +334,60 @@ export default function RegisterPage() {
                   <input type="tel" dir="ltr" value={form.phone} onChange={(e) => set({ phone: e.target.value })}
                     placeholder="050-1234567" className="reg-input" />
                 </Field>
+
+                {/* תמונה - שדה חובה. התמונה מכווצת בדפדפן לפני השליחה. */}
+                <div>
+                  <p className="mb-1.5 text-[13px] font-semibold text-[#3A2E26]">
+                    תמונה <span className="font-bold text-[#C24545]">*</span>
+                  </p>
+                  <p className="mb-2 text-[11px] leading-relaxed text-[#A2937F]">
+                    תמונה אחת שלך, ברורה ועדכנית. היא מוצגת לצוות המאגר בלבד, בדיסקרטיות מלאה.
+                  </p>
+
+                  {photo ? (
+                    <div className="flex items-center gap-3 rounded-2xl border border-[#CCBDAB] bg-white p-2.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photo} alt="התמונה שנבחרה" className="h-20 w-20 shrink-0 rounded-xl object-cover" />
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1 text-[12px] font-bold text-[#4A6552]">
+                          <Check size={14} /> התמונה נבחרה
+                        </p>
+                        <label className="mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-xl border border-[#CCBDAB] px-2.5 py-1.5 text-[12px] font-semibold text-[#844442]">
+                          <RefreshCw size={13} /> החלפת תמונה
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handlePhoto(e.target.files?.[0])}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#CCBDAB] bg-white py-6 text-[13px] font-semibold text-[#844442]">
+                      {photoBusy ? (
+                        <>מכינים את התמונה...</>
+                      ) : (
+                        <>
+                          <Camera size={17} /> בחירת תמונה או צילום
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={photoBusy}
+                        onChange={(e) => handlePhoto(e.target.files?.[0])}
+                      />
+                    </label>
+                  )}
+
+                  {photoError && (
+                    <p className="mt-1.5 flex items-start gap-1 text-[12px] font-semibold text-[#C24545]">
+                      <AlertCircle size={14} className="mt-0.5 shrink-0" /> {photoError}
+                    </p>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-3 gap-2.5">
                   <Field label="גיל">

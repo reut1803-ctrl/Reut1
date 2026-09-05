@@ -116,7 +116,12 @@ service cloud.firestore {
         && request.resource.data.name.size() > 1
         && request.resource.data.name.size() < 120
         && request.resource.data.get('phone', '') is string
-        && request.resource.data.phone.size() < 40;
+        && request.resource.data.phone.size() < 40
+        // התמונה נשמרת מכווצת בתוך המסמך, כי הטופס הציבורי אינו מורשה
+        // לכתוב לאוסף המדיה. התקרה כאן היא הגנה מפני העלאה מנופחת.
+        // פנייה בלי תמונה ממשיכה לעבור, כדי שרשומות ותיקות לא יישברו.
+        && request.resource.data.get('photo', '') is string
+        && request.resource.data.get('photo', '').size() < 500000;
       allow get, list: if isStaff();
       allow update, delete: if isAdmin();
     }

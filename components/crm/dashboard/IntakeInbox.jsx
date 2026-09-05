@@ -98,6 +98,22 @@ export default function IntakeInbox() {
                 <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#FDF6E7] px-2.5 py-1 text-[10px] font-bold text-[#7A5A18]">
                   <Mail size={11} /> הגיע/ה מהטופס החיצוני
                 </span>
+                {/* התמונה שהמועמד/ת העלה/תה בטופס. מוצגת כאן כדי שאפשר יהיה
+                    לראות אותה לפני האישור. באישור היא נשמרת בכרטיס. */}
+                {item.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.photo}
+                    alt={item.name}
+                    className="h-16 w-16 shrink-0 rounded-2xl border border-[#CCBDAB] object-cover"
+                  />
+                ) : (
+                  <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-dashed border-[#CCBDAB] bg-[#F5EFE6] text-center text-[9px] leading-tight text-[#A2937F]">
+                    בלי
+                    <br />
+                    תמונה
+                  </span>
+                )}
                 <div className="min-w-0 text-right">
                   <p className="truncate text-[15px] font-bold text-[#3A2E26]">{item.name}</p>
                   <p className="mt-0.5 text-[12px] text-[#7C6E60]">
