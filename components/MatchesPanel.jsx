@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import SearchSelect from "./SearchSelect";
-import { addMatch, updateMatch, deleteMatch, addMatchUpdate, addCandidate, displayRep } from "../lib/store";
+import Recorder from "./Recorder";
+import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep } from "../lib/store";
 import { copyClean, downloadPdf, shareClean } from "../lib/export";
 
 // שלבי ההתקדמות של ההתאמה (מהוצע ועד אירוסין), ובסוף "ירד מהפרק" - שמעביר להיסטוריה.
@@ -22,6 +23,9 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
   const [collapsed, setCollapsed] = useState({});
   const [reWarn, setReWarn] = useState(null); // התראת שימוש חוזר בהצעה שירדה בעבר
   const [histOpen, setHistOpen] = useState(false);
+  // אדם "לא במאגר" (מהמעגל האישי) - נשמר רק בתוך ההתאמה. {name, details}
+  const [externalMan, setExternalMan] = useState(null);
+  const [externalWoman, setExternalWoman] = useState(null);
 
   function flash(msg) {
     setNotice(msg);
@@ -81,16 +85,18 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
   });
 
   function create(force = false) {
-    if (!manId || !womanId) {
-      setFormError("יש לבחור גם בחור וגם בחורה.");
+    const manOk = manId || (externalMan && externalMan.name.trim());
+    const womanOk = womanId || (externalWoman && externalWoman.name.trim());
+    if (!manOk || !womanOk) {
+      setFormError("יש לבחור/להזין גם בחור וגם בחורה.");
       return;
     }
     if (!rationale.trim()) {
       setFormError("חובה לפרט את הרציונל (הניצוץ) — למה ההצעה מתאימה ואילו תכונות משלימות.");
       return;
     }
-    // התראת שימוש חוזר: הצעה זהה שכבר ירדה מהפרק בעבר.
-    if (!force) {
+    // התראת שימוש חוזר: הצעה זהה (מועמדים מהמאגר) שכבר ירדה מהפרק בעבר.
+    if (!force && manId && womanId) {
       const prior = data.matches.find((m) => m.manId === manId && m.womanId === womanId && m.status === ARCHIVED);
       if (prior) {
         const who = handlerName(prior) || "הנציג/ה המלווה";
@@ -98,22 +104,16 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
         return;
       }
     }
-    addMatch({ manId, womanId, rationale: rationale.trim(), status: STAGES[0], createdByRep: user.repId || "admin" });
-    setManId("");
-    setWomanId("");
+    const payload = { manId: manId || "", womanId: womanId || "", rationale: rationale.trim(), status: STAGES[0], createdByRep: user.repId || "admin" };
+    if (!manId && externalMan) payload.externalMan = { name: externalMan.name.trim(), details: (externalMan.details || "").trim() };
+    if (!womanId && externalWoman) payload.externalWoman = { name: externalWoman.name.trim(), details: (externalWoman.details || "").trim() };
+    addMatch(payload);
+    setManId(""); setWomanId("");
+    setExternalMan(null); setExternalWoman(null);
     setRationale("");
     setFormError("");
     setReWarn(null);
     setAdding(false);
-  }
-
-  // הוספת מועמד/ת "לא במאגר" (מהמעגל האישי) - נפתח כרטיס ייעודי, והוא נבחר להתאמה.
-  async function addExternal(gender, name) {
-    if (!name) return;
-    try {
-      const ref = await addCandidate({ fullName: name, gender, external: true, assignedRep: user.repId || "" });
-      if (gender === "male") setManId(ref.id); else setWomanId(ref.id);
-    } catch (e) { setFormError("הוספת המועמד/ת נכשלה. נסי שוב."); }
   }
 
   // ----- "הצעה תקועה" (פעמון): אותו סטטוס מעל שבועיים -----
@@ -128,10 +128,10 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
     const since = m.statusChangedAt || m.createdAt;
     return since ? Math.floor((Date.now() - new Date(since).getTime()) / 86400000) : 0;
   }
-  function nudgeSms(m, man, woman) {
+  function nudgeSms(m, manLabel, womanLabel) {
     const creator = repById(m.createdByRep);
     const phone = (creator?.phone || "").replace(/[^0-9]/g, "");
-    const text = `היי ${creator?.name || ""}, ההצעה בין ${man?.fullName || ""} ל${woman?.fullName || ""} תקועה בסטטוס "${m.status}" כבר ${daysStuck(m)} ימים. אפשר לקדם אותה?`;
+    const text = `היי ${creator?.name || ""}, ההצעה בין ${manLabel || ""} ל${womanLabel || ""} תקועה בסטטוס "${m.status}" כבר ${daysStuck(m)} ימים. אפשר לקדם אותה?`;
     return phone ? `sms:${phone}?body=${encodeURIComponent(text)}` : "";
   }
 
@@ -159,9 +159,9 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
   }
 
   // כפתורי יצירת קשר לנציג/ה - וואטסאפ / SMS / שיחה, עם הודעה מוכנה.
-  function contactButtons(rep, man, woman) {
+  function contactButtons(rep, manLabel, womanLabel) {
     const phone = (rep.phone || "").replace(/[^0-9]/g, "");
-    const text = `היי ${rep.name}, בנוגע להתאמה אפשרית בין ${man?.fullName || ""} לבין ${woman?.fullName || ""} — נוכל לדבר על זה?`;
+    const text = `היי ${rep.name}, בנוגע להתאמה אפשרית בין ${manLabel || ""} לבין ${womanLabel || ""} — נוכל לדבר על זה?`;
     const enc = encodeURIComponent(text);
     return (
       <div className="flex flex-wrap gap-1.5">
@@ -195,6 +195,21 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
     );
   }
 
+  // כרטיס לאדם "לא במאגר" - הפרטים נשמרים בתוך ההתאמה בלבד, עם הקלטה קצרה אופציונלית.
+  function externalCard(m, side) {
+    const ext = side === "man" ? m.externalMan : m.externalWoman;
+    if (!ext) return null;
+    return (
+      <div className="flex-1 rounded-2xl border border-dashed border-rose/40 bg-blush/20 p-3">
+        <p className="font-bold text-ink">{ext.name} <span className="text-xs font-normal text-roseDark">· לא במאגר</span></p>
+        {ext.details && <p className="mt-1 whitespace-pre-wrap text-sm text-ink/70">{ext.details}</p>}
+        <div className="mt-2">
+          <Recorder candidateId={`ext_${m.id}_${side}`} repId={user.repId || "admin"} canRecord={!readOnly} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -211,6 +226,8 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
       {activeMatches.map((m) => {
         const man = candById(m.manId);
         const woman = candById(m.womanId);
+        const manLabel = man?.fullName || m.externalMan?.name || "—";
+        const womanLabel = woman?.fullName || m.externalWoman?.name || "—";
         const entries = involvedReps(m, man, woman);
         const others = entries.filter((e) => user.role === "admin" || e.rep.id !== user.repId);
         const isCollapsed = !!collapsed[m.id];
@@ -221,7 +238,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
           <div key={m.id} className="card space-y-3">
             {/* כותרת + חיווי "תקוע" + כיווץ */}
             <div className="flex items-center justify-between gap-2">
-              <p className="font-semibold text-ink">{man?.fullName || "—"} 🤝 {woman?.fullName || "—"}</p>
+              <p className="font-semibold text-ink">{manLabel} 🤝 {womanLabel}</p>
               <div className="flex items-center gap-2">
                 {isStuck(m) && (
                   <span className="animate-pulse rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700">🔔 תקוע {daysStuck(m)} ימים</span>
@@ -272,8 +289,8 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                   <div className="rounded-2xl bg-red-50 p-3">
                     <p className="mb-2 text-sm font-semibold text-red-700">🔔 ההצעה תקועה {daysStuck(m)} ימים באותו סטטוס.</p>
                     <div className="flex flex-wrap gap-2">
-                      {nudgeSms(m, man, woman) && (
-                        <a className="btn-soft !px-2.5 !py-1 text-xs" href={nudgeSms(m, man, woman)}>📩 תזכורת ליוזם (SMS)</a>
+                      {nudgeSms(m, manLabel, womanLabel) && (
+                        <a className="btn-soft !px-2.5 !py-1 text-xs" href={nudgeSms(m, manLabel, womanLabel)}>📩 תזכורת ליוזם (SMS)</a>
                       )}
                       {!readOnly && (
                         <button className="btn-primary !px-2.5 !py-1 text-xs" onClick={() => updateMatch(m.id, { statusChangedAt: new Date().toISOString(), snoozedUntil: "" })}>✓ טיפלתי — כיבוי התראה</button>
@@ -295,8 +312,8 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
 
                 {/* כרטיסי המועמדים */}
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  {candidateCard(man)}
-                  {candidateCard(woman)}
+                  {man ? candidateCard(man) : externalCard(m, "man")}
+                  {woman ? candidateCard(woman) : externalCard(m, "woman")}
                 </div>
 
                 {/* אנשי קשר - הנציגים האחרים בלבד, עם כפתורי חיוג */}
@@ -307,7 +324,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                     <div key={e.rep.id} className="rounded-2xl bg-blush/40 p-2.5">
                       <p className="text-sm font-semibold text-ink">{e.rep.name}</p>
                       <p className="mb-1 text-xs text-ink/50">{e.roles.join(" · ")}{e.rep.institution ? ` · ${e.rep.institution}` : ""}</p>
-                      {contactButtons(e.rep, man, woman)}
+                      {contactButtons(e.rep, manLabel, womanLabel)}
                     </div>
                   ))}
                 </div>
@@ -363,10 +380,12 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
           {histOpen && historyMatches.map((m) => {
             const man = candById(m.manId);
             const woman = candById(m.womanId);
+            const manLabel = man?.fullName || m.externalMan?.name || "—";
+            const womanLabel = woman?.fullName || m.externalWoman?.name || "—";
             const last = m.updates && m.updates.length ? m.updates[m.updates.length - 1] : null;
             return (
               <div key={m.id} className="mt-2 rounded-2xl bg-sand/30 p-3">
-                <p className="font-semibold text-ink">{man?.fullName || "—"} 🤝 {woman?.fullName || "—"}</p>
+                <p className="font-semibold text-ink">{manLabel} 🤝 {womanLabel}</p>
                 {m.rationale && <p className="mt-1 text-xs text-ink/60">✨ {m.rationale}</p>}
                 {last && <p className="mt-1 text-xs text-ink/50">הערה אחרונה: {last.text} ({last.by})</p>}
                 {!readOnly && (
@@ -400,23 +419,31 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="field-label">בחור</label>
-                <SearchSelect
-                  value={manId}
-                  placeholder="בחירת בחור…"
-                  options={men.map((c) => ({ id: c.id, label: c.fullName, external: c.external }))}
-                  onChange={(id) => { setManId(id); setReWarn(null); }}
-                  onAddExternal={(name) => { addExternal("male", name); setReWarn(null); }}
-                />
+                {externalMan ? (
+                  <ExternalForm title="פרטי הבחור החיצוני" value={externalMan} onChange={setExternalMan} onCancel={() => setExternalMan(null)} />
+                ) : (
+                  <SearchSelect
+                    value={manId}
+                    placeholder="בחירת בחור…"
+                    options={men.map((c) => ({ id: c.id, label: c.fullName, external: c.external }))}
+                    onChange={(id) => { setManId(id); setReWarn(null); }}
+                    onAddExternal={(name) => { setExternalMan({ name, details: "" }); setManId(""); setReWarn(null); }}
+                  />
+                )}
               </div>
               <div>
                 <label className="field-label">בחורה</label>
-                <SearchSelect
-                  value={womanId}
-                  placeholder="בחירת בחורה…"
-                  options={women.map((c) => ({ id: c.id, label: c.fullName, external: c.external }))}
-                  onChange={(id) => { setWomanId(id); setReWarn(null); }}
-                  onAddExternal={(name) => { addExternal("female", name); setReWarn(null); }}
-                />
+                {externalWoman ? (
+                  <ExternalForm title="פרטי הבחורה החיצונית" value={externalWoman} onChange={setExternalWoman} onCancel={() => setExternalWoman(null)} />
+                ) : (
+                  <SearchSelect
+                    value={womanId}
+                    placeholder="בחירת בחורה…"
+                    options={women.map((c) => ({ id: c.id, label: c.fullName, external: c.external }))}
+                    onChange={(id) => { setWomanId(id); setReWarn(null); }}
+                    onAddExternal={(name) => { setExternalWoman({ name, details: "" }); setWomanId(""); setReWarn(null); }}
+                  />
+                )}
               </div>
             </div>
             <div>
@@ -432,6 +459,22 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
           </div>
         </Modal>
       )}
+    </div>
+  );
+}
+
+// טופס לאדם "לא במאגר" - שם + פרטים חופשיים. נשמר רק בתוך ההתאמה.
+function ExternalForm({ title, value, onChange, onCancel }) {
+  return (
+    <div className="space-y-2 rounded-2xl border border-dashed border-rose/40 bg-blush/20 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-bold text-roseDark">{title}</p>
+        <button type="button" className="text-xs text-ink/50" onClick={onCancel}>✕ ביטול</button>
+      </div>
+      <p className="text-xs text-ink/60">אדם שאינו במאגר. הפרטים נשמרים רק בתוך ההתאמה הזו ולא נפתח כרטיס במאגר.</p>
+      <input className="field-input" value={value.name} onChange={(e) => onChange({ ...value, name: e.target.value })} placeholder="מי זה? (שם או זיהוי, למשל «בחור שפגשתי בשבת»)" />
+      <textarea className="field-input min-h-[80px]" value={value.details} onChange={(e) => onChange({ ...value, details: e.target.value })} placeholder="פרטים על האדם: גיל, רקע, אופי, ממי הגיע…" />
+      <p className="text-[11px] text-ink/50">אפשר להוסיף הקלטה קצרה על האדם בכרטיס ההתאמה לאחר היצירה.</p>
     </div>
   );
 }
