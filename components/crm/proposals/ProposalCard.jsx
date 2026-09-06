@@ -179,6 +179,7 @@ export default function ProposalCard({ proposal }) {
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [proposalCopied, setProposalCopied] = useState(false);
+  const [stageBusy, setStageBusy] = useState("");
   const rationaleRef = useRef(null);
 
   const male = proposal.maleId ? findCandidateById(proposal.maleId) : null;
@@ -193,6 +194,26 @@ export default function ProposalCard({ proposal }) {
   // הצעה שחזרה ללוח אחרי שירדה מהפרק. נגזר מהיומן בזמן התצוגה בלבד.
   const returned = wasDroppedBefore(proposal, PROPOSAL_DROPPED);
   const dropInfo = returned ? lastDropInfo(proposal, PROPOSAL_DROPPED) : null;
+
+  // לחיצה על עיגול שלב. שומרת מיד ב-Firestore, ומדווחת אם נכשלה -
+  // כדי שלא ייווצר מצב שהמסך מראה שלב אחד והשרת מחזיק אחר.
+  const handleStage = async (stage) => {
+    if (stageBusy || stage === proposal.status) return;
+    setStageBusy(stage);
+    try {
+      await updateProposalStatus(proposal.id, stage, note.trim());
+      setNote("");
+      showToast(
+        stage === PROPOSAL_DROPPED
+          ? "ההצעה ירדה מהפרק ועברה להיסטוריה שבתחתית המסך"
+          : `השלב עודכן ל"${stage}"`
+      );
+    } catch {
+      showToast("עדכון השלב נכשל, נסי שוב");
+    } finally {
+      setStageBusy("");
+    }
+  };
 
   const handleDelete = async () => {
     await deleteProposal(proposal.id);
@@ -303,8 +324,9 @@ export default function ProposalCard({ proposal }) {
         )}
       </div>
 
+      {/* עיגולי השלבים הם כפתורים: לחיצה מעדכנת את השלב מיד במסד הנתונים */}
       <div className="relative mt-3">
-        <StageFunnel status={proposal.status} />
+        <StageFunnel status={proposal.status} onSelect={handleStage} busyStage={stageBusy} />
       </div>
 
       {/* שלט ההיסטוריה: מופיע רק כשההצעה כבר ירדה מהפרק בעבר וחזרה ללוח.
