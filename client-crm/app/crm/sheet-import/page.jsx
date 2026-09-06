@@ -1,0 +1,485 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Sheet, RefreshCw, Download, Check, AlertTriangle, ChevronLeft, Link2 } from "lucide-react";
+import { useCrmStore } from "@/lib/crm/store";
+import {
+  toCsvUrl,
+  fetchSheetRows,
+  guessMapping,
+  rowKey,
+  rowToCandidate,
+  photoUrlVariants,
+  guessBioColumns,
+  FIELD_LABELS,
+} from "@/lib/crm/sheetImport";
+import { saveMedia, isMediaRef } from "@/lib/crm/mediaStore";
+
+// ייבוא מועמדים מגיליון Google. מסך למנהלת בלבד.
+export default function SheetImportPage() {
+  const role = useCrmStore((s) => s.role);
+  const sheetImport = useCrmStore((s) => s.sheetImport);
+  const setSheetImportConfig = useCrmStore((s) => s.setSheetImportConfig);
+  const candidates = useCrmStore((s) => s.candidates);
+  const addCandidate = useCrmStore((s) => s.addCandidate);
+  const updateCandidate = useCrmStore((s) => s.updateCandidate);
+  const showToast = useCrmStore((s) => s.showToast);
+
+  const [linkDraft, setLinkDraft] = useState("");
+  const [headers, setHeaders] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [mapping, setMapping] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [forcedGender, setForcedGender] = useState("");
+  const [repairing, setRepairing] = useState(false);
+  const [bioColumns, setBioColumns] = useState([]);
+
+  useEffect(() => {
+    setLinkDraft(sheetImport?.csvUrl || "");
+    if (sheetImport?.mapping && Object.keys(sheetImport.mapping).length) setMapping(sheetImport.mapping);
+    if (sheetImport?.forcedGender) setForcedGender(sheetImport.forcedGender);
+    if (Array.isArray(sheetImport?.bioColumns)) setBioColumns(sheetImport.bioColumns);
+  }, [sheetImport]);
+
+  // מפתחות השורות שכבר יובאו, כדי שאותה שורה לא תיפתח פעמיים ככרטיס
+  const importedKeys = useMemo(
+    () => new Set(candidates.map((c) => c.sheetRowKey).filter(Boolean)),
+    [candidates]
+  );
+
+  const newRows = useMemo(
+    () => rows.filter((r) => !importedKeys.has(rowKey(r, mapping))),
+    [rows, mapping, importedKeys]
+  );
+
+  if (role !== "admin") {
+    return <p className="px-4 py-10 text-center text-sm text-[#8C7B6B]">אזור זה זמין למנהלת בלבד</p>;
+  }
+
+  const load = async (rawUrl) => {
+    const csvUrl = toCsvUrl(rawUrl);
+    if (!csvUrl) {
+      setError("הקישור אינו נראה כמו קישור לגיליון Google");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const { headers: h, rows: r } = await fetchSheetRows(csvUrl);
+      setHeaders(h);
+      setRows(r);
+      const nextMapping = Object.keys(mapping).length ? mapping : guessMapping(h);
+      setMapping(nextMapping);
+      // בפעם הראשונה בוחרים אוטומטית את השאלות האישיות בלבד, בלי הטכניות
+      const savedBio = Array.isArray(sheetImport?.bioColumns) ? sheetImport.bioColumns : null;
+      const nextBio = savedBio && savedBio.length ? savedBio : guessBioColumns(h, nextMapping);
+      setBioColumns(nextBio);
+      await setSheetImportConfig({ csvUrl, mapping: nextMapping, bioColumns: nextBio });
+    } catch (e) {
+      setError(e?.message || "שאיבת הגיליון נכשלה");
+      setHeaders([]);
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // מורידים את התמונה מהקישור בגיליון ושומרים אותה בתוך המערכת עצמה.
+  // כך היא לא תלויה יותר בהרשאות של Google Drive ולא תיעלם בעתיד.
+  // אם הורדה נחסמת (הקובץ אינו משותף), נשמר הקישור הישיר כגיבוי.
+  const storePhotoLocally = async (value) => {
+    for (const candidateUrl of photoUrlVariants(value)) {
+      try {
+        const res = await fetch(candidateUrl, { mode: "cors" });
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        if (!blob.type.startsWith("image/")) continue;
+        return await saveMedia(blob);
+      } catch {
+        // ממשיכים לצורת הכתובת הבאה
+      }
+    }
+    return null;
+  };
+
+  const withStoredPhotos = async (data) => {
+    const sources = data.photoUrls?.length ? data.photoUrls : data.photoUrl ? [data.photoUrl] : [];
+    if (sources.length === 0) return { data, stored: 0, linked: 0 };
+    let stored = 0;
+    let linked = 0;
+    const saved = [];
+    for (const source of sources) {
+      if (isMediaRef(source)) {
+        saved.push(source);
+        continue;
+      }
+      const ref = await storePhotoLocally(source);
+      if (ref) {
+        saved.push(ref);
+        stored++;
+      } else {
+        saved.push(source);
+        linked++;
+      }
+    }
+    return { data: { ...data, photoUrls: saved, photoUrl: saved[0] || null }, stored, linked };
+  };
+
+  const chooseGender = async (value) => {
+    setForcedGender(value);
+    await setSheetImportConfig({ forcedGender: value });
+  };
+
+  // המרת שורה לכרטיס, תמיד עם הכותרות ועם בחירת המאגר
+  const toCandidate = (row) => rowToCandidate(row, mapping, { headers, forcedGender, bioColumns });
+
+  const toggleBioColumn = async (index) => {
+    const next = bioColumns.includes(index)
+      ? bioColumns.filter((i) => i !== index)
+      : [...bioColumns, index].sort((a, b) => a - b);
+    setBioColumns(next);
+    await setSheetImportConfig({ bioColumns: next });
+  };
+
+  const setAllBioColumns = async (all) => {
+    const next = all ? headers.map((_, i) => i) : [];
+    setBioColumns(next);
+    await setSheetImportConfig({ bioColumns: next });
+  };
+
+  const changeMapping = async (field, value) => {
+    const next = { ...mapping };
+    if (value === "") delete next[field];
+    else next[field] = Number(value);
+    setMapping(next);
+    await setSheetImportConfig({ mapping: next });
+  };
+
+  const runImport = async () => {
+    if (newRows.length === 0 || importing) return;
+    if (mapping.name === undefined) {
+      setError("חובה לבחור עמודה של שם מלא לפני הייבוא");
+      return;
+    }
+    if (!forcedGender && mapping.gender === undefined) {
+      setError("חובה לבחור אם השורות בגיליון הזה הן בנים או בנות");
+      return;
+    }
+    setImporting(true);
+    setError("");
+    let ok = 0;
+    let skipped = 0;
+    let photosStored = 0;
+    let photosLinked = 0;
+    for (let i = 0; i < newRows.length; i++) {
+      setProgress(`מייבאת ${i + 1} מתוך ${newRows.length}...`);
+      const parsed = toCandidate(newRows[i]);
+      if (!parsed.name) {
+        skipped++;
+        continue;
+      }
+      try {
+        const { data, stored, linked } = await withStoredPhotos(parsed);
+        photosStored += stored;
+        photosLinked += linked;
+        await addCandidate(data);
+        ok++;
+      } catch {
+        skipped++;
+      }
+    }
+    setProgress("");
+    setImporting(false);
+    showToast(
+      `יובאו ${ok} מועמדים${skipped ? `, ${skipped} דולגו` : ""}` +
+        (photosStored ? ` · ${photosStored} תמונות נשמרו במערכת` : "") +
+        (photosLinked ? ` · ${photosLinked} תמונות לא ניתנות להורדה` : "")
+    );
+  };
+
+  // עדכון כרטיסים שכבר יובאו מהגיליון: משלים את התיאור המלא ואת המאגר הנכון,
+  // בלי ליצור כרטיסים חדשים ובלי לגעת בכרטיסים שלא הגיעו מהגיליון.
+  const runRepair = async () => {
+    if (rows.length === 0 || repairing) return;
+    setRepairing(true);
+    setError("");
+    const byKey = new Map();
+    candidates.forEach((c) => {
+      if (c.sheetRowKey) byKey.set(c.sheetRowKey, c);
+    });
+
+    let updated = 0;
+    let photosStored = 0;
+    let photosLinked = 0;
+    for (let i = 0; i < rows.length; i++) {
+      setProgress(`מעדכנת ${i + 1} מתוך ${rows.length}...`);
+      const key = rowKey(rows[i], mapping);
+      const existing = byKey.get(key);
+      if (!existing) continue;
+      const fresh = toCandidate(rows[i]);
+      const patch = {};
+      if (fresh.bio && fresh.bio !== existing.bio) patch.bio = fresh.bio;
+
+      // תמונה: משלימים כרטיס בלי תמונה, וגם מחליפים קישור שנשמר בעבר
+      // בעותק ששמור בתוך המערכת ולכן תמיד נטען.
+      const hasStoredPhoto = isMediaRef(existing.photoUrl);
+      if (fresh.photoUrls?.length && !hasStoredPhoto) {
+        const { data, stored, linked } = await withStoredPhotos(fresh);
+        photosStored += stored;
+        photosLinked += linked;
+        if (data.photoUrl && data.photoUrl !== existing.photoUrl) {
+          patch.photoUrl = data.photoUrl;
+          patch.photoUrls = data.photoUrls;
+        }
+      }
+      if (forcedGender && existing.gender !== forcedGender) {
+        patch.gender = forcedGender;
+        patch.religiousLevel = fresh.religiousLevel;
+        patch.education = fresh.education;
+        patch.yeshivaLevel = fresh.yeshivaLevel;
+      }
+      if (Object.keys(patch).length === 0) continue;
+      try {
+        await updateCandidate(existing.id, patch);
+        updated++;
+      } catch {
+        // ממשיכים לשורה הבאה
+      }
+    }
+    setProgress("");
+    setRepairing(false);
+    showToast(
+      (updated ? `עודכנו ${updated} כרטיסים קיימים` : "לא נמצאו כרטיסים לעדכון") +
+        (photosStored ? ` · ${photosStored} תמונות נשמרו במערכת` : "") +
+        (photosLinked ? ` · ${photosLinked} תמונות לא ניתנות להורדה` : "")
+    );
+  };
+
+  const alreadyImported = rows.filter((r) => importedKeys.has(rowKey(r, mapping))).length;
+
+  return (
+    <div className="px-4 py-6">
+      <Link href="/crm/dashboard" className="flex items-center gap-1 text-[13px] font-semibold text-[#C06E5E]">
+        <ChevronLeft size={14} /> חזרה ללוח הבקרה
+      </Link>
+
+      <h1 className="mt-3 flex items-center gap-2 text-xl font-bold text-[#5A4A3C]">
+        <Sheet size={20} /> ייבוא מגיליון Google
+      </h1>
+      <p className="mt-1 text-[13px] leading-relaxed text-[#8C7B6B]">
+        שואב שורות חדשות מהגיליון שבו נאספות תשובות המועמדים, ופותח מהן כרטיסים במאגר.
+        שורה שכבר יובאה לא תיובא שוב.
+      </p>
+
+      <div className="mt-4 rounded-3xl border border-[#EADCCB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+        <p className="mb-1.5 flex items-center gap-1.5 text-[13px] font-semibold text-[#5A4A3C]">
+          <Link2 size={14} /> קישור לגיליון
+        </p>
+        <input
+          type="url"
+          dir="ltr"
+          value={linkDraft}
+          onChange={(e) => setLinkDraft(e.target.value)}
+          placeholder="https://docs.google.com/spreadsheets/..."
+          className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-left text-[13px] outline-none focus:border-[#C06E5E]"
+        />
+        <button
+          onClick={() => load(linkDraft)}
+          disabled={loading}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#C06E5E] px-4 py-2.5 text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
+        >
+          <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+          {loading ? "טוענת מהגיליון..." : "בדיקת הגיליון ורענון"}
+        </button>
+
+        <div className="mt-3 rounded-xl bg-[#FBF3EA] p-3">
+          <p className="text-[11px] font-bold text-[#5A4A3C]">איך מכינים את הגיליון (פעם אחת):</p>
+          <ol className="mt-1 list-inside list-decimal space-y-0.5 text-[11px] leading-relaxed text-[#8C7B6B]">
+            <li>פותחים את הגיליון ב-Google Sheets</li>
+            <li>בתפריט העליון: קובץ ← שיתוף ← פרסום באינטרנט</li>
+            <li>בוחרים את הגיליון הרצוי, ובפורמט בוחרים CSV</li>
+            <li>לוחצים פרסם, מעתיקים את הקישור שמתקבל ומדביקים כאן</li>
+          </ol>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mt-3 flex items-start gap-2 rounded-2xl bg-[#FBEDE9] p-3">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[#C4584C]" />
+          <p className="text-[12px] leading-relaxed text-[#C4584C]">{error}</p>
+        </div>
+      )}
+
+      {headers.length > 0 && (
+        <>
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">התאמת עמודות</h2>
+          <p className="mb-2 text-[11px] leading-relaxed text-[#8C7B6B]">
+            המערכת ניחשה לבד לפי הכותרות. אפשר לתקן כל שורה, והבחירה נשמרת לפעם הבאה.
+          </p>
+          <div className="space-y-1.5 rounded-3xl border border-[#EADCCB] bg-white p-4">
+            {Object.entries(FIELD_LABELS).map(([field, label]) => (
+              <div key={field} className="flex items-center justify-between gap-2">
+                <select
+                  value={mapping[field] === undefined ? "" : String(mapping[field])}
+                  onChange={(e) => changeMapping(field, e.target.value)}
+                  className="min-w-0 flex-1 rounded-xl border border-[#EADCCB] bg-white px-2 py-1.5 text-[12px] outline-none focus:border-[#C06E5E]"
+                >
+                  <option value="">-- אין עמודה --</option>
+                  {headers.map((h, i) => (
+                    <option key={i} value={i}>
+                      {h || `עמודה ${i + 1}`}
+                    </option>
+                  ))}
+                </select>
+                <span className="w-28 shrink-0 text-right text-[12px] font-semibold text-[#5A4A3C]">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">מה ייכנס לתיאור האישי?</h2>
+          <p className="mb-2 text-[11px] leading-relaxed text-[#8C7B6B]">
+            סמנו כמה עמודות שתרצו. התשובות ייכנסו לתיאור כטקסט רציף, בלי כותרות השאלות.
+            שאלות טכניות (טלפון, מייל, חותמת זמן) אינן מסומנות מראש.
+          </p>
+          <div className="rounded-3xl border border-[#EADCCB] bg-white p-4">
+            <div className="mb-2 flex gap-2">
+              <button
+                onClick={() => setAllBioColumns(true)}
+                className="rounded-xl border border-[#EADCCB] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#5A4A3C]"
+              >
+                סימון הכל
+              </button>
+              <button
+                onClick={() => setAllBioColumns(false)}
+                className="rounded-xl border border-[#EADCCB] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#5A4A3C]"
+              >
+                ניקוי הכל
+              </button>
+              <span className="flex-1 self-center text-left text-[11px] text-[#8C7B6B]">
+                {bioColumns.length} עמודות נבחרו
+              </span>
+            </div>
+            <div className="max-h-64 space-y-0.5 overflow-y-auto">
+              {headers.map((header, index) => (
+                <label
+                  key={index}
+                  className="flex cursor-pointer items-center justify-end gap-2 rounded-xl px-2 py-1.5 hover:bg-[#F7DFD8]"
+                >
+                  <span className="min-w-0 flex-1 break-words text-right text-[12px] leading-relaxed text-[#5A4A3C]">
+                    {header || `עמודה ${index + 1}`}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={bioColumns.includes(index)}
+                    onChange={() => toggleBioColumn(index)}
+                    className="h-4 w-4 shrink-0 accent-[#C06E5E]"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">לאיזה מאגר השורות שייכות?</h2>
+          <div className="rounded-3xl border border-[#EADCCB] bg-white p-4">
+            <div className="flex gap-2">
+              {[
+                { key: "female", label: "בנות" },
+                { key: "male", label: "בנים" },
+                ...(mapping.gender !== undefined ? [{ key: "", label: "לפי העמודה בגיליון" }] : []),
+              ].map((option) => (
+                <button
+                  key={option.key || "column"}
+                  onClick={() => chooseGender(option.key)}
+                  className={`flex-1 rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition ${
+                    forcedGender === option.key
+                      ? "border-[#C06E5E] bg-[#C06E5E] text-white"
+                      : "border-[#EADCCB] bg-white text-[#5A4A3C]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-[#8C7B6B]">
+              כל השורות בגיליון הזה ייכנסו למאגר שנבחר כאן. הבחירה נשמרת לפעם הבאה.
+            </p>
+          </div>
+
+          {alreadyImported > 0 && (
+            <>
+              <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">עדכון כרטיסים שכבר יובאו</h2>
+              <div className="rounded-3xl border border-[#EADCCB] bg-white p-4">
+                <p className="text-[12px] leading-relaxed text-[#8C7B6B]">
+                  {alreadyImported} שורות בגיליון כבר קיימות ככרטיסים במאגר. הכפתור משלים בהן את
+                  התיאור המלא (כל שאר השאלות והתשובות מהגיליון), מוריד את התמונות מהגיליון
+                  ושומר אותן בתוך המערכת, ומתקן את המאגר לפי הבחירה שלמעלה.
+                  לא נוצרים כרטיסים חדשים.
+                </p>
+                <button
+                  onClick={runRepair}
+                  disabled={repairing}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#C06E5E] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#C06E5E] transition active:scale-95 disabled:opacity-60"
+                >
+                  <RefreshCw size={15} className={repairing ? "animate-spin" : ""} />
+                  {repairing ? progress || "מעדכנת..." : `עדכון ${alreadyImported} הכרטיסים הקיימים`}
+                </button>
+              </div>
+            </>
+          )}
+
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">
+            שורות חדשות לייבוא ({newRows.length} מתוך {rows.length})
+          </h2>
+
+          {newRows.length === 0 ? (
+            <div className="flex items-center gap-2 rounded-2xl bg-[#E6EDDF] p-3">
+              <Check size={16} className="shrink-0 text-[#5F7355]" />
+              <p className="text-[12px] text-[#5F7355]">הכל מסונכרן - אין שורות חדשות בגיליון</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                {newRows.slice(0, 25).map((r, i) => {
+                  const preview = toCandidate(r);
+                  return (
+                    <div key={i} className="rounded-2xl border border-[#EADCCB] bg-white px-3 py-2">
+                      <p className="text-[13px] font-bold text-[#5A4A3C]">{preview.name || "(ללא שם - ידולג)"}</p>
+                      <p className="text-[11px] text-[#8C7B6B]">
+                        {[
+                          preview.gender === "female" ? "בחורה" : "בחור",
+                          preview.age ? `גיל ${preview.age}` : null,
+                          preview.height ? `${preview.height} ס״מ` : null,
+                          preview.city,
+                          preview.photoUrl ? "כולל תמונה" : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                  );
+                })}
+                {newRows.length > 25 && (
+                  <p className="py-1 text-center text-[11px] text-[#8C7B6B]">
+                    ועוד {newRows.length - 25} שורות...
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={runImport}
+                disabled={importing}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#62826B] px-4 py-3 text-[14px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
+              >
+                <Download size={16} /> {importing ? progress || "מייבאת..." : `ייבוא ${newRows.length} מועמדים למאגר`}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
