@@ -310,8 +310,8 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                   )}
                 </div>
 
-                {/* כרטיסי המועמדים */}
-                <div className="flex flex-col gap-2 sm:flex-row">
+                {/* כרטיסי המועמדים - זה לצד זה (רספונסיבי) להשוואה מיידית */}
+                <div className="grid grid-cols-2 items-start gap-2">
                   {man ? candidateCard(man) : externalCard(m, "man")}
                   {woman ? candidateCard(woman) : externalCard(m, "woman")}
                 </div>
