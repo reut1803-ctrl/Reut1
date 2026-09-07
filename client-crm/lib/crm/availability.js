@@ -1,6 +1,6 @@
 // קידוד צבעים לסטטוס פניות מועמד/ת
 export const AVAILABILITY_COLORS = {
-  "פנוי": { bg: "bg-[#8C9A78]", text: "text-white", dot: "bg-[#8C9A78]" },
+  "פנוי": { bg: "bg-[#2FA39B]", text: "text-white", dot: "bg-[#2FA39B]" },
   "לא פנוי": { bg: "bg-[#C4584C]", text: "text-white", dot: "bg-[#C4584C]" },
   "בהפסקה": { bg: "bg-[#C9A063]", text: "text-white", dot: "bg-[#C9A063]" },
 };

@@ -62,18 +62,18 @@ export default function OpenRoundPanel({ onOpened }) {
     <div className="mb-2 flex items-center gap-2">
       <span
         className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-          done ? "bg-[#8C9A78] text-white" : "bg-[#C06E5E] text-white"
+          done ? "bg-[#2FA39B] text-white" : "bg-[#2E8BA8] text-white"
         }`}
       >
         {done ? <Check size={11} /> : num}
       </span>
-      <span className="text-[13px] font-bold text-[#5A4A3C]">{title}</span>
+      <span className="text-[13px] font-bold text-[#23414E]">{title}</span>
     </div>
   );
 
   return (
-    <div className="rounded-3xl border border-[#EADCCB] bg-white p-4 shadow-[0_8px_26px_rgba(58,51,53,0.07)]">
-      <p className="mb-3 text-[15px] font-bold text-[#5A4A3C]">פתיחת סבב חדש</p>
+    <div className="rounded-3xl border border-[#CFE3EC] bg-white p-4 shadow-[0_8px_26px_rgba(58,51,53,0.07)]">
+      <p className="mb-3 text-[15px] font-bold text-[#23414E]">פתיחת סבב חדש</p>
 
       {/* צעד 1 */}
       {step(1, "על מי מדברים?", !!candidateId)}
@@ -97,8 +97,8 @@ export default function OpenRoundPanel({ onOpened }) {
               onClick={() => setQuestionKey(q)}
               className={`block w-full rounded-2xl border px-3 py-2.5 text-right text-[12.5px] leading-relaxed transition ${
                 questionKey === q
-                  ? "border-[#C06E5E] bg-[#F7DFD8] font-semibold text-[#A05243]"
-                  : "border-[#EADCCB] bg-white text-[#5A4A3C]"
+                  ? "border-[#2E8BA8] bg-[#DCEEF5] font-semibold text-[#1F6E88]"
+                  : "border-[#CFE3EC] bg-white text-[#23414E]"
               }`}
             >
               {q}
@@ -110,7 +110,7 @@ export default function OpenRoundPanel({ onOpened }) {
           <button
             type="button"
             onClick={() => setShowAll(true)}
-            className="mt-1.5 flex w-full items-center justify-center gap-1 py-1.5 text-[12px] font-semibold text-[#C06E5E]"
+            className="mt-1.5 flex w-full items-center justify-center gap-1 py-1.5 text-[12px] font-semibold text-[#2E8BA8]"
           >
             <ChevronDown size={14} /> עוד {QUESTION_BANK.length - VISIBLE} שאלות
           </button>
@@ -121,8 +121,8 @@ export default function OpenRoundPanel({ onOpened }) {
           onClick={() => setQuestionKey(CUSTOM)}
           className={`mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-2xl border px-3 py-2.5 text-[12.5px] transition ${
             questionKey === CUSTOM
-              ? "border-[#C06E5E] bg-[#F7DFD8] font-semibold text-[#A05243]"
-              : "border-dashed border-[#E2A396] bg-white text-[#C06E5E]"
+              ? "border-[#2E8BA8] bg-[#DCEEF5] font-semibold text-[#1F6E88]"
+              : "border-dashed border-[#74B9CE] bg-white text-[#2E8BA8]"
           }`}
         >
           <PenLine size={14} /> לכתוב שאלה משלי
@@ -135,7 +135,7 @@ export default function OpenRoundPanel({ onOpened }) {
             rows={2}
             autoFocus
             placeholder="השאלה שתעמוד במרכז הסבב..."
-            className="mt-2 w-full resize-none rounded-2xl border border-[#EADCCB] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#C06E5E]"
+            className="mt-2 w-full resize-none rounded-2xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#2E8BA8]"
           />
         )}
       </div>
@@ -143,7 +143,7 @@ export default function OpenRoundPanel({ onOpened }) {
       {/* צעד 3 - לא חובה, אבל זה מה שמאפשר לכל הצוות להשתתף */}
       <div className={`mt-4 ${candidateId ? "" : "pointer-events-none opacity-40"}`}>
         {step(3, "זווית נוספת לצוות (לא חובה)", !!secondQuestion.trim())}
-        <p className="mb-2 text-[11.5px] leading-relaxed text-[#8C7B6B]">
+        <p className="mb-2 text-[11.5px] leading-relaxed text-[#5E7A87]">
           שאלה רחבה שגם מי שלא מכיר/ה את ההיסטוריה יוכל/תוכל לענות עליה. למשל: לאילו כיוונים חדשים
           כדאי לכוון את החיפוש?
         </p>
@@ -152,19 +152,19 @@ export default function OpenRoundPanel({ onOpened }) {
           onChange={(e) => setSecondQuestion(e.target.value)}
           rows={2}
           placeholder="כיווני חיפוש, זווית פתוחה לכולם..."
-          className="w-full resize-none rounded-2xl border border-[#EADCCB] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#C06E5E]"
+          className="w-full resize-none rounded-2xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#2E8BA8]"
         />
       </div>
 
       {error && (
-        <p className="mt-3 rounded-xl bg-[#FBEDE9] px-3 py-2 text-[11.5px] leading-relaxed text-[#C4584C]">{error}</p>
+        <p className="mt-3 rounded-xl bg-[#E4F1F7] px-3 py-2 text-[11.5px] leading-relaxed text-[#C4584C]">{error}</p>
       )}
 
       <button
         type="button"
         onClick={handleOpen}
         disabled={!canOpen}
-        className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#C06E5E] py-3 text-[13.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
+        className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#2E8BA8] py-3 text-[13.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
       >
         <Plus size={16} /> {saving ? "מכינה..." : "הכנת הסבב"}
       </button>

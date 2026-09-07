@@ -7,8 +7,8 @@ export default function manifest() {
     description: APP_SUBTITLE,
     start_url: "/crm/",
     display: "standalone",
-    background_color: "#FBF3EA",
-    theme_color: "#DE8C7C",
+    background_color: "#F2F8FB",
+    theme_color: "#2E8BA8",
     dir: "rtl",
     lang: "he",
     icons: [

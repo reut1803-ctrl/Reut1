@@ -25,7 +25,7 @@ function StatusForm() {
   if (candidate === undefined) return null;
 
   if (!candidate) {
-    return <p className="text-sm text-[#8C7B6B]">הקישור לא נמצא. נא לוודא שהועתק במלואו.</p>;
+    return <p className="text-sm text-[#5E7A87]">הקישור לא נמצא. נא לוודא שהועתק במלואו.</p>;
   }
 
   const handleSelect = (status) => {
@@ -35,10 +35,10 @@ function StatusForm() {
   };
 
   return (
-    <div className="w-full max-w-sm rounded-3xl border border-[#EADCCB] bg-white p-6 text-center shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-      <p className="text-sm text-[#8C7B6B]">שלום {candidate.name.split(" ")[0]},</p>
-      <h1 className="mt-1 text-xl font-bold text-[#5A4A3C]">מה הסטטוס שלך כרגע?</h1>
-      <p className="mt-2 text-[13px] text-[#8C7B6B]">לחיצה על אחד הכפתורים תעדכן את הצוות מיידית</p>
+    <div className="w-full max-w-sm rounded-3xl border border-[#CFE3EC] bg-white p-6 text-center shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+      <p className="text-sm text-[#5E7A87]">שלום {candidate.name.split(" ")[0]},</p>
+      <h1 className="mt-1 text-xl font-bold text-[#23414E]">מה הסטטוס שלך כרגע?</h1>
+      <p className="mt-2 text-[13px] text-[#5E7A87]">לחיצה על אחד הכפתורים תעדכן את הצוות מיידית</p>
 
       <div className="mt-6 flex flex-col gap-2.5">
         {AVAILABILITY_STATUSES.map((status) => {
@@ -49,7 +49,7 @@ function StatusForm() {
               key={status}
               onClick={() => handleSelect(status)}
               className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-base font-bold transition active:scale-95 ${
-                active ? `${colors.bg} ${colors.text}` : "border border-[#EADCCB] bg-white text-[#5A4A3C]"
+                active ? `${colors.bg} ${colors.text}` : "border border-[#CFE3EC] bg-white text-[#23414E]"
               }`}
             >
               {active && <Check size={18} />}
@@ -59,14 +59,14 @@ function StatusForm() {
         })}
       </div>
 
-      {saved && <p className="mt-4 text-[13px] font-semibold text-[#8C9A78]">הסטטוס עודכן, תודה!</p>}
+      {saved && <p className="mt-4 text-[13px] font-semibold text-[#2FA39B]">הסטטוס עודכן, תודה!</p>}
     </div>
   );
 }
 
 export default function CandidateStatusPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#FBF3EA] px-6 py-12" dir="rtl">
+    <div className="flex min-h-screen flex-col items-center bg-[#F2F8FB] px-6 py-12" dir="rtl">
       <Suspense fallback={null}>
         <StatusForm />
       </Suspense>

@@ -18,7 +18,7 @@ export default function TopBar() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#EADCCB] bg-white/90 px-4 py-3 backdrop-blur safe-top">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#CFE3EC] bg-white/90 px-4 py-3 backdrop-blur safe-top">
         <div className="flex items-center gap-2.5">
           {/* הלוגו הרשמי של המיזם, משולב בראש כל מסך */}
           <img
@@ -35,14 +35,14 @@ export default function TopBar() {
         <div className="flex items-center gap-1">
           <button
             aria-label="ריענון"
-            className="rounded-full p-2 text-[#8C7B6B] transition hover:bg-[#FBF3EA] active:scale-90"
+            className="rounded-full p-2 text-[#5E7A87] transition hover:bg-[#F2F8FB] active:scale-90"
             onClick={() => window.location.reload()}
           >
             <RefreshCw size={20} />
           </button>
           <button
             aria-label="התראות"
-            className="relative rounded-full p-2 text-[#8C7B6B] transition hover:bg-[#FBF3EA] active:scale-90"
+            className="relative rounded-full p-2 text-[#5E7A87] transition hover:bg-[#F2F8FB] active:scale-90"
             onClick={() => setShowNotifications(true)}
           >
             <Bell size={20} />
@@ -54,7 +54,7 @@ export default function TopBar() {
           </button>
           <button
             aria-label="הגדרות"
-            className="rounded-full p-2 text-[#8C7B6B] transition hover:bg-[#FBF3EA] active:scale-90"
+            className="rounded-full p-2 text-[#5E7A87] transition hover:bg-[#F2F8FB] active:scale-90"
             onClick={() => setShowSettings(true)}
           >
             <Settings size={20} />
@@ -63,7 +63,7 @@ export default function TopBar() {
             <button
               onClick={signOutGoogle}
               aria-label="התנתקות"
-              className="rounded-full p-2 text-[#8C7B6B] transition hover:bg-[#FBF3EA] active:scale-90"
+              className="rounded-full p-2 text-[#5E7A87] transition hover:bg-[#F2F8FB] active:scale-90"
             >
               <LogOut size={20} />
             </button>

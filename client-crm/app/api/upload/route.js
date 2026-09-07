@@ -14,9 +14,10 @@ export const maxDuration = 60;
 // בדיקת בריאות: מאשרת שנתיב השרת קיים ופעיל, ובודקת אם השרת עצמו מצליח להגיע ל-Cloudinary.
 // משמשת את מסך "בדיקת מערכת" כדי לאבחן היכן בדיוק נתקעת העלאה.
 export async function GET() {
-  const result = { serverAlive: true, cloudinaryReachable: false, detail: "" };
+  const result = { serverAlive: true, configured: isUploadConfigured, cloudinaryReachable: false, detail: "" };
   if (!isUploadConfigured) {
-    result.detail = "אחסון הקבצים עדיין לא הוגדר. יש להזין CLOUDINARY_CLOUD_NAME ו-CLOUDINARY_UPLOAD_PRESET במשתני הסביבה.";
+    result.detail =
+      "אחסון הקבצים עדיין לא הוגדר. זהו שלב הגדרה שנותר, ולא תקלה: יש להזין את CLOUDINARY_CLOUD_NAME ואת CLOUDINARY_UPLOAD_PRESET במשתני הסביבה של האתר.";
     return Response.json(result);
   }
   try {
@@ -43,18 +44,21 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  if (!isUploadConfigured) {
-    return Response.json(
-      { error: "אחסון הקבצים עדיין לא הוגדר במערכת" },
-      { status: 503 }
-    );
-  }
   try {
     const incoming = await request.formData();
     const file = incoming.get("file");
 
+    // בקשה בלי קובץ נענית לפני בדיקת ההגדרות, כדי שבדיקת הנגישות לשרת
+    // תמשיך לעבוד גם לפני שהוגדר אחסון הקבצים.
     if (!file || typeof file === "string") {
       return Response.json({ error: "לא נשלח קובץ" }, { status: 400 });
+    }
+
+    if (!isUploadConfigured) {
+      return Response.json(
+        { error: "אחסון הקבצים עדיין לא הוגדר במערכת", notConfigured: true },
+        { status: 503 }
+      );
     }
 
     const outgoing = new FormData();

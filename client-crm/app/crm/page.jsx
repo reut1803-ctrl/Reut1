@@ -10,7 +10,8 @@ import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
 import TipsCarousel from "@/components/crm/profiles/TipsCarousel";
-import TagsSidebar from "@/components/crm/profiles/TagsSidebar";
+import TagFilterStrip from "@/components/crm/profiles/TagFilterStrip";
+import { matchesSearch } from "@/lib/crm/candidateSearch";
 import StaffTour from "@/components/crm/tour/StaffTour";
 
 function ProfilesFeed() {
@@ -31,6 +32,7 @@ function ProfilesFeed() {
   const candidatesError = useCrmStore((s) => s.candidatesError);
   const tab = useCrmStore((s) => s.feedTab);
   const setTab = useCrmStore((s) => s.setFeedTab);
+  const personalNotes = useCrmStore((s) => s.personalNotes);
   const [showFilters, setShowFilters] = useState(false);
 
   // אחרי הוספת מועמד/ת חדש/ה: מנקים כל סינון פעיל ועוברים למאגר וללשונית הנכונים,
@@ -82,7 +84,8 @@ function ProfilesFeed() {
     if (!inRange(c.height, filters.heightRange, HEIGHT_LIMITS)) return false;
     if (filters.religiousLevel !== "הכל" && c.religiousLevel !== filters.religiousLevel) return false;
     if (filters.region !== "הכל" && c.region !== filters.region) return false;
-    if (filters.search && !(c.name || "").includes(filters.search.trim())) return false;
+    // חיפוש חופשי על כל תוכן הכרטיס, כולל ההערות
+    if (filters.search && !matchesSearch(c, filters.search, personalNotes[c.id])) return false;
     if (filters.tag && normalizeTagName(c.tag) !== filters.tag) return false;
     return true;
   };
@@ -90,7 +93,7 @@ function ProfilesFeed() {
   const candidates = useMemo(
     () => visibleInBoard.filter((c) => inTab(c, tab) && passesFilters(c)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visibleInBoard, tab, filters]
+    [visibleInBoard, tab, filters, personalNotes]
   );
 
   // כמה כרטיסים יש בלשונית הנוכחית לפני הסינון, וכמה מוסתרים בגללו
@@ -100,7 +103,7 @@ function ProfilesFeed() {
   const matchesInOtherTab = useMemo(
     () => visibleInBoard.filter((c) => inTab(c, otherTab) && passesFilters(c)).length,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visibleInBoard, otherTab, filters]
+    [visibleInBoard, otherTab, filters, personalNotes]
   );
 
   return (
@@ -110,30 +113,33 @@ function ProfilesFeed() {
       <GenderToggle />
 
       <div data-tour="tour-search" className="relative mt-4">
-        <Search size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#C3B5A5]" />
+        <Search size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9FBAC7]" />
         <input
           type="text"
           value={filters.search}
           onChange={(e) => setFilters({ search: e.target.value })}
-          placeholder="חיפוש מועמד (שם, משפחה)..."
-          className="w-full rounded-2xl bg-white py-3 pr-10 pl-4 text-[14px] text-[#5A4A3C] shadow-sm outline-none placeholder:text-[#C3B5A5] focus:ring-2 focus:ring-[#C06E5E]/30"
+          placeholder="חיפוש חופשי: שם, יישוב, עיסוק, תחביב, הערה..."
+          className="w-full rounded-2xl bg-white py-3 pr-10 pl-4 text-[14px] text-[#23414E] shadow-sm outline-none placeholder:text-[#9FBAC7] focus:ring-2 focus:ring-[#2E8BA8]/30"
         />
         {searchAutoFilled && filters.search && (
-          <p className="mt-1 flex items-center gap-1.5 px-1 text-[11px] text-[#8C7B6B]">
+          <p className="mt-1 flex items-center gap-1.5 px-1 text-[11px] text-[#5E7A87]">
             החיפוש הזה מולא אוטומטית לפי הכרטיס שנפתח
-            <button onClick={clearAutoSearch} className="font-bold text-[#C06E5E] underline">
+            <button onClick={clearAutoSearch} className="font-bold text-[#2E8BA8] underline">
               ניקוי
             </button>
           </p>
         )}
       </div>
 
+      {/* רצועת סינון מהירה לפי קהילה - גלויה תמיד, לחיצה אחת */}
+      <TagFilterStrip />
+
       <div className="mt-4 flex items-center gap-2">
         <div data-tour="tour-tabs" className="flex flex-1 rounded-2xl bg-white p-1 shadow-sm">
           <button
             onClick={() => setTab("new")}
             className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition ${
-              tab === "new" ? "bg-[#F7DFD8] text-[#A05243]" : "text-[#8C7B6B]"
+              tab === "new" ? "bg-[#DCEEF5] text-[#1F6E88]" : "text-[#5E7A87]"
             }`}
           >
             הצעות חדשות
@@ -141,7 +147,7 @@ function ProfilesFeed() {
           <button
             onClick={() => setTab("previous")}
             className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition ${
-              tab === "previous" ? "bg-[#F7DFD8] text-[#A05243]" : "text-[#8C7B6B]"
+              tab === "previous" ? "bg-[#DCEEF5] text-[#1F6E88]" : "text-[#5E7A87]"
             }`}
           >
             הצעות קודמות
@@ -151,7 +157,7 @@ function ProfilesFeed() {
           data-tour="tour-filter"
           onClick={() => setShowFilters(true)}
           aria-label="סינון"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#C06E5E] shadow-sm transition active:scale-95"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#2E8BA8] shadow-sm transition active:scale-95"
         >
           <SlidersHorizontal size={18} />
         </button>
@@ -159,7 +165,7 @@ function ProfilesFeed() {
           <Link
             href="/crm/add-candidate"
             aria-label="הוספת מועמד/ת"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#C06E5E] text-white shadow-sm transition active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#2E8BA8] text-white shadow-sm transition active:scale-95"
           >
             <UserPlus size={18} />
           </Link>
@@ -173,9 +179,9 @@ function ProfilesFeed() {
           נסו לרענן את הדף, ואם זה חוזר - פנו למנהלת לבדיקת ההרשאות.
         </p>
       ) : !candidatesLoaded ? (
-        <p className="mt-16 text-center text-sm text-[#8C7B6B]">טוען את המאגר...</p>
+        <p className="mt-16 text-center text-sm text-[#5E7A87]">טוען את המאגר...</p>
       ) : candidates.length === 0 ? (
-        <div className="mt-16 text-center text-sm leading-relaxed text-[#8C7B6B]">
+        <div className="mt-16 text-center text-sm leading-relaxed text-[#5E7A87]">
           {hiddenByFilters > 0 || matchesInOtherTab > 0 ? (
             <>
               <p>
@@ -190,7 +196,7 @@ function ProfilesFeed() {
                 {matchesInOtherTab > 0 && (
                   <button
                     onClick={() => setTab(otherTab)}
-                    className="rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-[12px] font-semibold text-[#5A4A3C]"
+                    className="rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-[12px] font-semibold text-[#23414E]"
                   >
                     מעבר ללשונית השנייה
                   </button>
@@ -198,7 +204,7 @@ function ProfilesFeed() {
                 {hiddenByFilters > 0 && (
                   <button
                     onClick={clearAllFilters}
-                    className="rounded-xl bg-[#C06E5E] px-3 py-2 text-[12px] font-semibold text-white"
+                    className="rounded-xl bg-[#2E8BA8] px-3 py-2 text-[12px] font-semibold text-white"
                   >
                     ניקוי סינון
                   </button>
@@ -212,7 +218,7 @@ function ProfilesFeed() {
       ) : (
         <>
           {hiddenByFilters > 0 && (
-            <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-[#F0E3C0] bg-[#FDF6EC] px-3 py-2">
+            <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-[#D6EAF2] bg-[#EAF5FA] px-3 py-2">
               <p className="text-[12px] font-semibold text-[#8A6A32]">
                 {hiddenByFilters} מועמדים נוספים מוסתרים כרגע בגלל הסינון
               </p>
@@ -233,7 +239,6 @@ function ProfilesFeed() {
       )}
 
       {showFilters && <FilterSheet onClose={() => setShowFilters(false)} />}
-      <TagsSidebar />
       <StaffTour />
     </div>
   );

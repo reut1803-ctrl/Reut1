@@ -17,6 +17,8 @@ import {
   Trash2,
   Lightbulb,
   Plus,
+  UserRound,
+  StickyNote,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -32,6 +34,10 @@ import { CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+
+// המרת מספר ישראלי לפורמט שוואטסאפ מצפה לו
+export const waDigits = (phone) =>
+  String(phone || "").replace(/[^0-9]/g, "").replace(/^0/, "972");
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
@@ -59,7 +65,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // הערה פנימית: נשמרת פרטית לכל אשת צוות, ואיש מלבדה אינו רואה אותה
   const personalNote = useCrmStore((s) => s.personalNoteFor(candidate.id));
   const setPersonalNote = useCrmStore((s) => s.setPersonalNote);
+  const deleteCandidate = useCrmStore((s) => s.deleteCandidate);
+  const [pendingDeleteCandidate, setPendingDeleteCandidate] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const noteBoxRef = useRef(null);
   const [noteDraft, setNoteDraft] = useState(personalNote);
   const exportRef = useRef(null);
   const [complexityDraft, setComplexityDraft] = useState(candidate.complexityNotes || "");
@@ -179,6 +189,22 @@ export default function ProfileCard({ candidate, onReadMore }) {
     setPendingDeleteField(null);
   };
 
+  // מחיקת כרטיס היא פעולה בלתי הפיכה, ולכן היא עוברת תמיד דרך חלון אימות
+  // ולעולם אינה מתבצעת בלחיצה אחת.
+  const handleDeleteCandidate = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await deleteCandidate(candidate.id);
+      showToast(`הכרטיס של ${candidate.name} נמחק מהמאגר`);
+    } catch {
+      showToast("מחיקת הכרטיס נכשלה, נסי שוב");
+    } finally {
+      setDeleting(false);
+      setPendingDeleteCandidate(false);
+    }
+  };
+
   const handleSaveNote = async () => {
     await setPersonalNote(candidate.id, noteDraft);
     setNoteOpen(false);
@@ -227,22 +253,50 @@ export default function ProfileCard({ candidate, onReadMore }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-[#EADCCB] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+    <div className="overflow-hidden rounded-3xl border border-[#CFE3EC] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
         {candidate.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={candidate.photoUrl} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+          // אין תמונה: מצב מכוון וברור, ולא מסך ריק שנראה כמו תקלת טעינה
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
+            <UserRound size={64} strokeWidth={1.25} className="opacity-90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.2)]" />
+            <span className="text-3xl font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
               {candidate.initials}
             </span>
+            <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm">
+              ללא תמונה
+            </span>
+          </div>
+        )}
+
+        {/* חיווי עדין: יש בכרטיס הזה הערה פנימית או הקלטה, בלי להיכנס פנימה */}
+        {(personalNote || candidate.voiceNotes?.length > 0) && (
+          <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+            {personalNote && (
+              <span
+                title="יש הערה פנימית"
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[#2E8BA8] shadow backdrop-blur-sm"
+              >
+                <StickyNote size={14} />
+              </span>
+            )}
+            {candidate.voiceNotes?.length > 0 && (
+              <span
+                title={`${candidate.voiceNotes.length} הקלטות`}
+                className="flex h-7 items-center gap-1 rounded-full bg-white/90 px-2 text-[11px] font-bold text-[#2E8BA8] shadow backdrop-blur-sm"
+              >
+                <Mic size={13} />
+                {candidate.voiceNotes.length > 1 ? candidate.voiceNotes.length : ""}
+              </span>
+            )}
           </div>
         )}
 
         <div className="absolute right-3 top-3 flex flex-col items-start gap-1.5">
           {candidate.isNew && (
-            <span className="rounded-full bg-[#C06E5E] px-2.5 py-1 text-[11px] font-bold text-white shadow">חדש</span>
+            <span className="rounded-full bg-[#2E8BA8] px-2.5 py-1 text-[11px] font-bold text-white shadow">חדש</span>
           )}
           <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold shadow ${availability.bg} ${availability.text}`}>
             {candidate.availabilityStatus}
@@ -263,7 +317,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           aria-label="הוספה למועדפים"
           className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow transition active:scale-90"
         >
-          <Heart size={18} className={isFavorite ? "fill-[#C06E5E] text-[#C06E5E]" : "text-[#8C7B6B]"} />
+          <Heart size={18} className={isFavorite ? "fill-[#2E8BA8] text-[#2E8BA8]" : "text-[#5E7A87]"} />
         </button>
 
         <div data-tour="tour-card-info" className="absolute bottom-3 right-3 flex flex-wrap gap-1.5">
@@ -277,18 +331,18 @@ export default function ProfileCard({ candidate, onReadMore }) {
       <div className="p-4">
         {/* מצפן הצוות: סיכום המנהלת מסבב סיעור המוחות האחרון על המועמד/ת */}
         {brainstormSummary && (
-          <div className="mb-3 rounded-2xl border border-[#EFC9A8] bg-[#FDF6EC] p-3">
+          <div className="mb-3 rounded-2xl border border-[#9EDAE6] bg-[#EAF5FA] p-3">
             <p className="flex items-center gap-1.5 text-[10px] font-bold text-[#8A6A32]">
               <Lightbulb size={12} /> מסקנת הצוות מסיעור המוחות
             </p>
-            <p className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed text-[#5A4A3C]">
+            <p className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed text-[#23414E]">
               {brainstormSummary.summary}
             </p>
           </div>
         )}
 
-        <h3 className="text-lg font-bold text-[#5A4A3C]">{candidate.name}</h3>
-        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#8C7B6B]">{candidate.bio}</p>
+        <h3 className="text-lg font-bold text-[#23414E]">{candidate.name}</h3>
+        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#5E7A87]">{candidate.bio}</p>
 
         <div className="mt-4 flex flex-col gap-2">
           <Button
@@ -307,7 +361,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           {canSeeFullProfile && (
             <Link
               href={`/crm/proposals?select=${candidate.id}`}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#8C9A78] px-4 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(32,166,107,0.25)] transition active:scale-95 hover:bg-[#6F7D5C]"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#2FA39B] px-4 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(32,166,107,0.25)] transition active:scale-95 hover:bg-[#21867F]"
             >
               <HeartHandshake size={16} /> הצע/י התאמה עבור {firstName}
             </Link>
@@ -316,7 +370,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <div className="flex gap-2">
             <button
               onClick={handleCopy}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#8C9A78] bg-white px-3 py-3 text-sm font-semibold text-[#6F7D5C] transition active:scale-95 hover:bg-[#8C9A78]/5"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#2FA39B] bg-white px-3 py-3 text-sm font-semibold text-[#21867F] transition active:scale-95 hover:bg-[#2FA39B]/5"
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
               {copied ? "הועתק!" : "העתקת טקסט"}
@@ -324,7 +378,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
             <button
               onClick={handleDownload}
               disabled={generatingPdf}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#8C9A78] bg-white px-3 py-3 text-sm font-semibold text-[#6F7D5C] transition active:scale-95 hover:bg-[#8C9A78]/5 disabled:opacity-60"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#2FA39B] bg-white px-3 py-3 text-sm font-semibold text-[#21867F] transition active:scale-95 hover:bg-[#2FA39B]/5 disabled:opacity-60"
             >
               <Download size={16} /> {generatingPdf ? "מכינה PDF..." : "הורדת PDF"}
             </button>
@@ -334,22 +388,33 @@ export default function ProfileCard({ candidate, onReadMore }) {
               נשמרת במסמך הפרטי של אשת הצוות, ולכן גלויה אך ורק לה. */}
           {canSeeFullProfile &&
             (noteOpen ? (
-              <div className="rounded-2xl border border-dashed border-[#C06E5E] bg-[#F7DFD8] p-3">
-                <p className="mb-1.5 text-[12px] font-semibold text-[#A05243]">
+              <div
+                ref={noteBoxRef}
+                // scroll-mb מבטיח שכשהמקלדת נפתחת נשאר מרווח מתחת לתיבה,
+                // ולכן היא אינה נחתכת ואינה נדחסת אל מתחת למקלדת
+                className="scroll-mb-64 rounded-2xl border border-dashed border-[#2E8BA8] bg-[#DCEEF5] p-3.5"
+              >
+                <p className="mb-2 text-[12px] font-semibold text-[#1F6E88]">
                   הערה פנימית (רק את/ה רואה אותה)
                 </p>
                 <textarea
                   value={noteDraft}
                   onChange={(e) => setNoteDraft(e.target.value)}
-                  rows={3}
+                  rows={5}
                   autoFocus
+                  // בפתיחה ובכל מיקוד, התיבה נגללת אל מרכז המסך. כך היא נשארת
+                  // גלויה במלואה גם אחרי שהמקלדת של הנייד עולה ומכסה חצי מסך.
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
+                  }}
                   placeholder="מה חשוב לך לזכור על המועמד/ת הזה/זו..."
-                  className="w-full resize-none rounded-xl border border-[#EADCCB] bg-white px-2.5 py-2 text-[13px] leading-relaxed text-[#5A4A3C] outline-none focus:border-[#C06E5E]"
+                  className="w-full resize-y rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-[14px] leading-relaxed text-[#23414E] outline-none focus:border-[#2E8BA8] focus:ring-2 focus:ring-[#2E8BA8]/20"
                 />
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2.5 flex gap-2">
                   <button
                     onClick={handleSaveNote}
-                    className="flex-1 rounded-xl bg-[#C06E5E] py-2 text-[12px] font-semibold text-white transition active:scale-95"
+                    className="flex-1 rounded-xl bg-[#2E8BA8] py-2.5 text-[13px] font-semibold text-white transition active:scale-95"
                   >
                     שמירה
                   </button>
@@ -358,7 +423,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       setNoteDraft(personalNote);
                       setNoteOpen(false);
                     }}
-                    className="rounded-xl border border-[#EADCCB] bg-white px-4 py-2 text-[12px] font-semibold text-[#5A4A3C] transition active:scale-95"
+                    className="rounded-xl border border-[#CFE3EC] bg-white px-4 py-2 text-[12px] font-semibold text-[#23414E] transition active:scale-95"
                   >
                     ביטול
                   </button>
@@ -367,19 +432,19 @@ export default function ProfileCard({ candidate, onReadMore }) {
             ) : personalNote ? (
               <button
                 onClick={() => setNoteOpen(true)}
-                className="w-full rounded-2xl border border-dashed border-[#C06E5E] bg-[#F7DFD8] p-3 text-right transition active:scale-[0.99]"
+                className="w-full rounded-2xl border border-dashed border-[#2E8BA8] bg-[#DCEEF5] p-3 text-right transition active:scale-[0.99]"
               >
-                <span className="flex items-center gap-1 text-[11px] font-bold text-[#C06E5E]">
+                <span className="flex items-center gap-1 text-[11px] font-bold text-[#2E8BA8]">
                   <PenLine size={12} /> ההערה הפנימית שלי
                 </span>
-                <span className="mt-1 block whitespace-pre-line text-[13px] leading-relaxed text-[#5A4A3C]">
+                <span className="mt-1 block whitespace-pre-line text-[13px] leading-relaxed text-[#23414E]">
                   {personalNote}
                 </span>
               </button>
             ) : (
               <button
                 onClick={() => setNoteOpen(true)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[#EADCCB] bg-white py-2.5 text-[13px] font-semibold text-[#C06E5E] transition active:scale-95 hover:bg-[#F7DFD8]"
+                className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[#CFE3EC] bg-white py-2.5 text-[13px] font-semibold text-[#2E8BA8] transition active:scale-95 hover:bg-[#DCEEF5]"
               >
                 <Plus size={15} /> הוספת הערה פנימית
               </button>
@@ -387,8 +452,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
         </div>
 
         {proposals.length > 0 && (
-          <div className="mt-4 rounded-2xl bg-[#FBF3EA] p-3">
-            <p className="mb-2 text-[12px] font-semibold text-[#5A4A3C]">התקדמות בהתאמות ({proposals.length})</p>
+          <div className="mt-4 rounded-2xl bg-[#F2F8FB] p-3">
+            <p className="mb-2 text-[12px] font-semibold text-[#23414E]">התקדמות בהתאמות ({proposals.length})</p>
             <div className="space-y-2.5">
               {proposals.map((p) => {
                 // שם הצד השני, כדי שגם רשומת היסטוריה שירדה מהפרק תהיה קריאה כאן
@@ -398,7 +463,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     : p.maleName || p.externalMale?.name;
                 return (
                   <div key={p.id}>
-                    <p className="mb-1 text-[11px] font-semibold text-[#C06E5E]">
+                    <p className="mb-1 text-[11px] font-semibold text-[#2E8BA8]">
                       {partner ? `עם ${partner} · ` : ""}
                       {p.status}
                       {p.isHistory ? " (היסטוריה)" : ""}
@@ -412,11 +477,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
         )}
 
         {canSeeFullProfile && (
-          <div className="mt-4 border-t border-[#EADCCB] pt-3">
+          <div className="mt-4 border-t border-[#CFE3EC] pt-3">
             <button
               data-tour="tour-staff-toggle"
               onClick={() => toggleStaffArea(candidate.id)}
-              className="flex w-full items-center justify-between text-[13px] font-semibold text-[#C06E5E]"
+              className="flex w-full items-center justify-between text-[13px] font-semibold text-[#2E8BA8]"
             >
               <span>אזור פנימי לצוות</span>
               <ChevronDown size={16} className={`transition ${isExpanded ? "rotate-180" : ""}`} />
@@ -427,19 +492,30 @@ export default function ProfileCard({ candidate, onReadMore }) {
                 {role === "admin" && (
                   <Link
                     href={`/crm/edit-candidate?id=${candidate.id}`}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#C06E5E] bg-white px-4 py-2.5 text-sm font-semibold text-[#C06E5E] transition active:scale-95 hover:bg-[#F7DFD8]"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#2E8BA8] bg-white px-4 py-2.5 text-sm font-semibold text-[#2E8BA8] transition active:scale-95 hover:bg-[#DCEEF5]"
                   >
                     <PenLine size={15} /> עריכת פרטי הכרטיס
                   </Link>
                 )}
 
+                {role === "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setPendingDeleteCandidate(true)}
+                    disabled={deleting}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#C4584C] bg-white px-4 py-2.5 text-sm font-semibold text-[#C4584C] transition active:scale-95 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    <Trash2 size={15} /> {deleting ? "מוחקת..." : "מחיקת הכרטיס מהמאגר"}
+                  </button>
+                )}
+
                 {candidate.referenceContacts && (
-                  <div data-tour="tour-reference-contacts" className="rounded-2xl border-2 border-[#C06E5E] bg-[#F7DFD8] p-3">
-                    <p className="mb-1.5 text-[12px] font-bold text-[#C06E5E]">מספרים לבירורים</p>
-                    <p className="mb-2 whitespace-pre-wrap text-[13px] text-[#5A4A3C]">{candidate.referenceContacts}</p>
+                  <div data-tour="tour-reference-contacts" className="rounded-2xl border-2 border-[#2E8BA8] bg-[#DCEEF5] p-3">
+                    <p className="mb-1.5 text-[12px] font-bold text-[#2E8BA8]">מספרים לבירורים</p>
+                    <p className="mb-2 whitespace-pre-wrap text-[13px] text-[#23414E]">{candidate.referenceContacts}</p>
                     <button
                       onClick={handleCopyReferenceContacts}
-                      className="flex w-full items-center justify-center gap-1 rounded-xl bg-[#C06E5E] py-1.5 text-[12px] font-semibold text-white transition active:scale-95"
+                      className="flex w-full items-center justify-center gap-1 rounded-xl bg-[#2E8BA8] py-1.5 text-[12px] font-semibold text-white transition active:scale-95"
                     >
                       {referenceCopied ? <Check size={13} /> : <Copy size={13} />}
                       {referenceCopied ? "הועתק!" : "העתקה"}
@@ -447,14 +523,14 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   </div>
                 )}
 
-                <div data-tour="tour-voice-notes" className="rounded-2xl bg-[#FBF3EA] p-3">
+                <div data-tour="tour-voice-notes" className="rounded-2xl bg-[#F2F8FB] p-3">
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#5A4A3C]">
+                    <p className="flex items-center gap-1.5 text-[12px] font-semibold text-[#23414E]">
                       <Mic size={14} /> הקלטות שמע
                     </p>
                     <div className="flex items-center gap-1.5">
                       {!recording && (
-                        <label className="cursor-pointer rounded-full border border-[#C06E5E] bg-white px-2.5 py-1 text-[11px] font-bold text-[#C06E5E]">
+                        <label className="cursor-pointer rounded-full border border-[#2E8BA8] bg-white px-2.5 py-1 text-[11px] font-bold text-[#2E8BA8]">
                           {uploadingRecording ? recordStatus || "שומרת..." : "הוספת קובץ"}
                           <input
                             type="file"
@@ -469,7 +545,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                         onClick={recording ? stopRecording : startRecording}
                         disabled={uploadingRecording}
                         className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-60 ${
-                          recording ? "bg-red-500 text-white" : "bg-[#C06E5E] text-white"
+                          recording ? "bg-red-500 text-white" : "bg-[#2E8BA8] text-white"
                         }`}
                       >
                         {uploadingRecording && !recording
@@ -485,7 +561,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   {recording && <p className="mb-2 animate-pulse text-[11px] text-red-500">מקליטה כעת... (נעצרת אוטומטית אחרי 10 דקות)</p>}
                   {recordError && <p className="mb-2 text-[11px] text-red-500">{recordError}</p>}
                   {!candidate.voiceNotes || candidate.voiceNotes.length === 0 ? (
-                    <p className="text-[12px] text-[#C3B5A5]">אין הקלטות עדיין</p>
+                    <p className="text-[12px] text-[#9FBAC7]">אין הקלטות עדיין</p>
                   ) : (
                     <ul className="space-y-1.5">
                       {candidate.voiceNotes.map((vn) => {
@@ -493,13 +569,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
                         return (
                           <li key={vn.id} className="rounded-xl bg-white px-2.5 py-2 text-[12px] shadow-sm">
                             <div className="mb-1 flex items-center gap-2">
-                              <span className="font-medium text-[#5A4A3C]">{vn.author}</span>
-                              <span className="mr-auto text-[#C3B5A5]">{vn.date}</span>
+                              <span className="font-medium text-[#23414E]">{vn.author}</span>
+                              <span className="mr-auto text-[#9FBAC7]">{vn.date}</span>
                               {canDelete && (
                                 <button
                                   onClick={() => setPendingDeleteVoiceNoteId(vn.id)}
                                   aria-label="מחיקת הקלטה"
-                                  className="rounded-full p-1 hover:bg-[#FBF3EA]"
+                                  className="rounded-full p-1 hover:bg-[#F2F8FB]"
                                 >
                                   <Trash2 size={13} className="text-[#C4584C]" />
                                 </button>
@@ -513,15 +589,15 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   )}
                 </div>
 
-                <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                  <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">סטטוס פניות</p>
+                <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">סטטוס פניות</p>
                   <select
                     value={candidate.availabilityStatus}
                     onChange={(e) => {
                       setCandidateAvailability(candidate.id, e.target.value);
                       showToast("הסטטוס נשמר בהצלחה");
                     }}
-                    className="w-full rounded-xl border border-[#EADCCB] bg-white px-2.5 py-2 text-[13px] text-[#5A4A3C]"
+                    className="w-full rounded-xl border border-[#CFE3EC] bg-white px-2.5 py-2 text-[13px] text-[#23414E]"
                   >
                     {AVAILABILITY_STATUSES.map((s) => (
                       <option key={s} value={s}>
@@ -531,8 +607,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   </select>
                 </div>
 
-                <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                  <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">מורכבויות וייחודיות</p>
+                <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">מורכבויות וייחודיות</p>
                   <textarea
                     value={complexityDraft}
                     onChange={(e) => setComplexityDraft(e.target.value)}
@@ -544,13 +620,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     }}
                     rows={3}
                     placeholder="מה מיוחד או מורכב אצל המועמד/ת - לשימוש פנימי בלבד..."
-                    className="w-full resize-none rounded-xl border border-[#EADCCB] bg-white px-2.5 py-2 text-[13px] text-[#5A4A3C] outline-none focus:border-[#C06E5E]"
+                    className="w-full resize-none rounded-xl border border-[#CFE3EC] bg-white px-2.5 py-2 text-[13px] text-[#23414E] outline-none focus:border-[#2E8BA8]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#5A4A3C]">
+                  <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#23414E]">
                       <FileText size={13} /> כרטיס יבש (PDF)
                     </p>
                     {candidate.pdfUrl ? (
@@ -558,7 +634,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                         <MediaFileLink value={candidate.pdfUrl} />
                         {role === "admin" && (
                           <div className="flex gap-1.5">
-                            <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EADCCB] bg-white text-[11px] font-semibold text-[#C06E5E]">
+                            <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#CFE3EC] bg-white text-[11px] font-semibold text-[#2E8BA8]">
                               {uploadingField === "pdfUrl" ? uploadStatus || "מעלה..." : "החלפה"}
                               <input
                                 type="file"
@@ -580,8 +656,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       </>
                     ) : (
                       <>
-                        <p className="mb-1.5 text-[11px] text-[#C3B5A5]">לא הועלה קובץ</p>
-                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#EADCCB] bg-white py-1.5 text-center text-[11px] font-semibold text-[#C06E5E]">
+                        <p className="mb-1.5 text-[11px] text-[#9FBAC7]">לא הועלה קובץ</p>
+                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#CFE3EC] bg-white py-1.5 text-center text-[11px] font-semibold text-[#2E8BA8]">
                           {uploadingField === "pdfUrl" ? uploadStatus || "מעלה..." : "העלאת PDF"}
                           <input
                             type="file"
@@ -595,8 +671,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     )}
                   </div>
 
-                  <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#5A4A3C]">
+                  <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                    <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#23414E]">
                       <Music size={13} /> הקלטת היכרות
                     </p>
                     {candidate.introAudioUrl ? (
@@ -604,7 +680,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
                         <MediaAudio value={candidate.introAudioUrl} onPlay={trackAudioPlay} className="mb-1.5 h-8 w-full" />
                         {role === "admin" && (
                           <div className="flex gap-1.5">
-                          <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#EADCCB] bg-white text-[11px] font-semibold text-[#C06E5E]">
+                          <label className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#CFE3EC] bg-white text-[11px] font-semibold text-[#2E8BA8]">
                             {uploadingField === "introAudioUrl" ? uploadStatus || "מעלה..." : "החלפה"}
                             <input
                               type="file"
@@ -626,8 +702,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
                       </>
                     ) : (
                       <>
-                        <p className="mb-1.5 text-[11px] text-[#C3B5A5]">לא הועלתה הקלטה</p>
-                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#EADCCB] bg-white py-1.5 text-center text-[11px] font-semibold text-[#C06E5E]">
+                        <p className="mb-1.5 text-[11px] text-[#9FBAC7]">לא הועלתה הקלטה</p>
+                        <label className="block cursor-pointer rounded-xl border border-dashed border-[#CFE3EC] bg-white py-1.5 text-center text-[11px] font-semibold text-[#2E8BA8]">
                           {uploadingField === "introAudioUrl" ? uploadStatus || "מעלה..." : "העלאת אודיו"}
                           <input
                             type="file"
@@ -642,16 +718,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                  <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#5A4A3C]">
+                <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                  <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#23414E]">
                     <Link2 size={13} /> קישור אישי לעדכון סטטוס
                   </p>
-                  <p dir="ltr" className="truncate text-[11px] text-[#8C7B6B]">
+                  <p dir="ltr" className="truncate text-[11px] text-[#5E7A87]">
                     {personalLink}
                   </p>
                   <button
                     onClick={handleCopyLink}
-                    className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EADCCB] bg-white py-1.5 text-[11px] font-semibold text-[#C06E5E] transition active:scale-95"
+                    className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CFE3EC] bg-white py-1.5 text-[11px] font-semibold text-[#2E8BA8] transition active:scale-95"
                   >
                     {linkCopied ? <Check size={13} /> : <Copy size={13} />}
                     {linkCopied ? "הועתק!" : "העתקת קישור"}
@@ -695,23 +771,30 @@ export default function ProfileCard({ candidate, onReadMore }) {
           padding: 4px 10px;
           font-size: 11px;
           font-weight: 700;
-          color: #5A4A3C;
+          color: #23414E;
           box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
         }
         .handwritten-note-crm {
           transform: rotate(-1deg);
           border-radius: 12px;
-          border: 1px solid #fde68a;
-          background: #fffbeb;
+          border: 1px solid #9EDAE6;
+          background: #EAF5FA;
           padding: 10px 12px;
           font-size: 13px;
           font-style: italic;
           line-height: 1.4;
-          color: #78350f;
+          color: #1F6E88;
         }
       `}</style>
 
       {showDetail && <ProfileDetailModal candidate={candidate} onClose={() => setShowDetail(false)} />}
+      {pendingDeleteCandidate && (
+        <ConfirmDialog
+          message={`למחוק לצמיתות את הכרטיס של ${candidate.name}? הפעולה אינה הפיכה, וכל המידע בכרטיס יימחק.`}
+          onConfirm={handleDeleteCandidate}
+          onCancel={() => setPendingDeleteCandidate(false)}
+        />
+      )}
       {pendingDeleteVoiceNoteId && (
         <ConfirmDialog
           message="האם את בטוחה שברצונך למחוק הקלטה זו?"
@@ -738,21 +821,21 @@ export default function ProfileCard({ candidate, onReadMore }) {
 // נגן/קישור שמתמודד גם עם מדיה שנשמרה בחלקים ב-Firestore וגם עם כתובת רגילה
 function MediaAudio({ value, onPlay, className }) {
   const { url, error, loading } = useMediaUrl(value);
-  if (loading) return <p className="text-[11px] text-[#8C7B6B]">טוען הקלטה...</p>;
+  if (loading) return <p className="text-[11px] text-[#5E7A87]">טוען הקלטה...</p>;
   if (error) return <p className="text-[11px] text-red-500">{error}</p>;
   return <audio controls src={url} onPlay={onPlay} className={className} />;
 }
 
 function MediaFileLink({ value }) {
   const { url, error, loading } = useMediaUrl(value);
-  if (loading) return <p className="text-[11px] text-[#8C7B6B]">טוען קובץ...</p>;
+  if (loading) return <p className="text-[11px] text-[#5E7A87]">טוען קובץ...</p>;
   if (error) return <p className="text-[11px] text-red-500">{error}</p>;
   return (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="mb-1.5 block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#C06E5E] shadow-sm"
+      className="mb-1.5 block truncate rounded-xl bg-white px-2.5 py-2 text-[12px] font-semibold text-[#2E8BA8] shadow-sm"
     >
       צפייה בקובץ
     </a>

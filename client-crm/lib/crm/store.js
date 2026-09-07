@@ -14,7 +14,8 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { crmDb, crmAuth, googleProvider } from "./firebaseClient";
-import { DEFAULT_TERMS_TEXT, DEFAULT_DAILY_TIP } from "./mockData";
+import { DEFAULT_TERMS_TEXT, DEFAULT_DAILY_TIP, REGIONS } from "./mockData";
+import { nameKeys } from "./nameKey";
 import { ROUND_MS, unseenMentions } from "./brainstorm";
 import { BOOTSTRAP_ADMIN_EMAILS, isFirebaseConfigured } from "../appConfig";
 
@@ -185,6 +186,14 @@ export const useCrmStore = create((set, get) => ({
       snap.docs.forEach((d) => (map[d.id] = d.data()));
       set({ telemetry: map });
     });
+
+    // פניות מהטופס החיצוני. כישלון כאן אינו שקט: הוא נרשם ומוצג בלוח הבקרה,
+    // כי המשמעות היא שכללי האבטחה החדשים עדיין לא פורסמו.
+    onSnapshot(
+      collection(crmDb, "intakeSubmissions"),
+      (snap) => set({ intakeSubmissions: snap.docs.map(withId), intakeLoaded: true, intakeError: false }),
+      () => set({ intakeSubmissions: [], intakeLoaded: true, intakeError: true })
+    );
 
     onSnapshot(doc(crmDb, "settings", "app"), (d) => {
       const data = d.exists() ? d.data() : {};
@@ -602,7 +611,7 @@ export const useCrmStore = create((set, get) => ({
     get().proposals.filter((p) => p.maleId === candidateId || p.femaleId === candidateId),
 
   // --- זירת סיעור המוחות ---
-  // סבב = דיון של הצוות על מועמד/ת אחד/ת, סביב שאלה אחת, במשך שלושה ימים.
+  // סבב = דיון של הצוות על מועמד/ת אחד/ת, סביב שאלה אחת, במשך שבוע.
   // ההערות נשמרות באוסף נפרד (ולא בתוך מסמך הסבב) כדי ששישה אנשים שכותבים
   // באותו רגע לא ידרסו זה את ההערות של זה.
   brainstormRounds: [],
@@ -632,7 +641,7 @@ export const useCrmStore = create((set, get) => ({
       .sort((a, b) => new Date(b.summaryAt || b.openedAt || 0) - new Date(a.summaryAt || a.openedAt || 0));
     return withSummary[0] || null;
   },
-  // סבב נוצר תמיד כטיוטה: הוא אינו גלוי לצוות ושלושת הימים אינם מתחילים לרוץ,
+  // סבב נוצר תמיד כטיוטה: הוא אינו גלוי לצוות ושבוע הדיון אינו מתחיל לרוץ,
   // עד שהמנהלת לוחצת "שיגור לצוות". כך העיתוי נשאר לגמרי בשליטתה.
   openBrainstormRound: async ({ candidateId, question, secondQuestion = "" }) => {
     const candidate = get().findCandidateById(candidateId);
@@ -657,7 +666,7 @@ export const useCrmStore = create((set, get) => ({
     const ref = await addDoc(collection(crmDb, "brainstormRounds"), round);
     return { id: ref.id, ...round };
   },
-  // השיגור בפועל: מכאן הסבב גלוי לצוות ושעון שלושת הימים מתחיל.
+  // השיגור בפועל: מכאן הסבב גלוי לצוות ושעון השבוע מתחיל.
   launchBrainstormRound: async (roundId) => {
     const now = Date.now();
     const patch = {
@@ -678,7 +687,7 @@ export const useCrmStore = create((set, get) => ({
     await updateDoc(doc(crmDb, "brainstormRounds", roundId), { status: "closed" });
   },
   reopenBrainstormRound: async (roundId) => {
-    // פתיחה מחדש מאריכה את הסבב בשלושה ימים נוספים מעכשיו
+    // פתיחה מחדש מאריכה את הסבב בשבוע נוסף מעכשיו
     await updateDoc(doc(crmDb, "brainstormRounds", roundId), {
       status: "open",
       closesAt: new Date(Date.now() + ROUND_MS).toISOString(),
@@ -761,6 +770,7 @@ export const useCrmStore = create((set, get) => ({
   // (ללא התחברות) לא ייתן גישה לשאר פרטי הכרטיס החסויים - ראו כללי האבטחה ב-Firestore.
   candidates: [],
   candidatesLoaded: false,
+  candidatesError: false,
   candidateStatus: {},
   setCandidateAvailability: async (id, status) => {
     await setDoc(doc(crmDb, "candidateStatus", id), { availabilityStatus: status }, { merge: true });
@@ -794,6 +804,8 @@ export const useCrmStore = create((set, get) => ({
       name: data.name,
       availabilityStatus: data.availabilityStatus,
     });
+    // מפתח החיפוש לטופס החיצוני. כישלון כאן לא יפיל את הוספת המועמד/ת.
+    await get().indexCandidateName(ref.id, data.name);
 
     // מכסת "הצעות חדשות": עד 10 בו-זמנית לכל מאגר (בנים/בנות בנפרד). כל מי שמעבר
     // ל-10 העדכניים נדחף אוטומטית ל"הצעות קודמות" - כך גם כרטיסים ותיקים שנוצרו
@@ -811,8 +823,126 @@ export const useCrmStore = create((set, get) => ({
 
     return { id: ref.id, ...data };
   },
+  // --- פניות מטופס ההרשמה החיצוני ---
+  // הטופס הציבורי אינו כותב ישירות למאגר המועמדים אלא לאוסף נפרד.
+  // המנהלת מאשרת ויוצרת מהפנייה כרטיס, וכך המאגר נשאר סגור לכתיבה מבחוץ.
+  intakeSubmissions: [],
+  intakeLoaded: false,
+  intakeError: false,
+  pendingIntake: () =>
+    get()
+      .intakeSubmissions.filter((x) => (x.status || "pending") === "pending")
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)),
+
+  // אישור פנייה: יוצר כרטיס מלא במאגר ומסמן את הפנייה כטופלה.
+  approveIntake: async (item) => {
+    // התמונה מגיעה מהטופס כמחרוזת בתוך מסמך הפנייה, כי הטופס הציבורי אינו
+    // מורשה לכתוב לאוסף המדיה. כאן, בהרשאות של הצוות, היא נשמרת כמדיה רגילה.
+    // כישלון בשמירת התמונה לא יבטל את יצירת הכרטיס: עדיף כרטיס בלי תמונה
+    // על פנייה שנתקעת.
+    let photoRef = null;
+    if (typeof item.photo === "string" && item.photo.startsWith("data:")) {
+      try {
+        const { dataUrlToFile } = await import("./imageCompress");
+        const { saveMedia } = await import("./mediaStore");
+        photoRef = await saveMedia(dataUrlToFile(item.photo, `${item.name || "photo"}.jpg`));
+      } catch {
+        photoRef = null;
+      }
+    }
+
+    const candidate = await get().addCandidate({
+      gender: item.gender === "male" ? "male" : "female",
+      name: String(item.name || "").trim(),
+      age: item.age ?? null,
+      height: item.height ?? null,
+      eda: item.eda || "",
+      region: item.region || REGIONS[0],
+      city: item.city || "",
+      religiousLevel: item.religiousLevel || null,
+      currentOccupation: item.currentOccupation || "",
+      occupations: Array.isArray(item.occupations) ? item.occupations : [],
+      phone: item.phone || "",
+      bio: item.bio || "",
+      referenceContacts: item.referenceContacts || "",
+      photoUrl: photoRef,
+      photoUrls: photoRef ? [photoRef] : [],
+      // מקור הכרטיס נשמר, כדי שיהיה ברור שהוא הגיע מהטופס החיצוני
+      source: "register-form",
+    });
+    await updateDoc(doc(crmDb, "intakeSubmissions", item.id), {
+      status: "converted",
+      candidateId: candidate.id,
+      convertedAt: new Date().toISOString(),
+    });
+    return candidate;
+  },
+
+  rejectIntake: async (id) => {
+    await updateDoc(doc(crmDb, "intakeSubmissions", id), {
+      status: "rejected",
+      rejectedAt: new Date().toISOString(),
+    });
+  },
+
+  // --- מפתח חיפוש לפי שם, עבור הטופס החיצוני ---
+  // מסמך אחד לכל שם, שהמזהה שלו נגזר מהשם. כך העמוד הציבורי בודק שם מדויק
+  // אחד בלבד ואינו יכול לסרוק את המאגר. ראו lib/crm/nameKey.js.
+  indexCandidateName: async (candidateId, name) => {
+    const keys = nameKeys(name);
+    if (keys.length === 0 || !candidateId) return;
+    await Promise.all(
+      keys.map((key) =>
+        setDoc(doc(crmDb, "nameIndex", key), { candidateId, name: String(name).trim() }, { merge: true }).catch(
+          () => {}
+        )
+      )
+    );
+  },
+
+  // בנייה חד-פעמית של המפתח לכל הכרטיסים הוותיקים, כדי שגם מי שנרשם לפני
+  // שהטופס היה קיים יימצא בו. כתיבת בדיקה אחת קודמת לכל השאר: אם היא נחסמת,
+  // סימן שכללי האבטחה טרם פורסמו - ואז מדווחים על כך במפורש ולא נכשלים בשקט.
+  _nameIndexDone: false,
+  nameIndexState: "idle", // idle | running | done | denied
+  backfillNameIndex: async () => {
+    if (get().role !== "admin" || get()._nameIndexDone) return 0;
+    const list = get().candidates.filter((c) => nameKeys(c.name).length > 0);
+    if (list.length === 0) return 0;
+    set({ _nameIndexDone: true, nameIndexState: "running" });
+    try {
+      const first = list[0];
+      await setDoc(doc(crmDb, "nameIndex", nameKeys(first.name)[0]), {
+        candidateId: first.id,
+        name: String(first.name).trim(),
+      });
+    } catch {
+      set({ nameIndexState: "denied", _nameIndexDone: false });
+      return 0;
+    }
+    await Promise.all(list.map((c) => get().indexCandidateName(c.id, c.name)));
+    set({ nameIndexState: "done" });
+    return list.length;
+  },
+
+  // מחיקת כרטיס מועמד/ת. מותרת למנהלת בלבד, וכך גם נאכף בכללי האבטחה בשרת.
+  // נמחקת גם רשומת הסטטוס הציבורית - אחרת שם המועמד/ת היה נשאר נגיש דרך
+  // הקישור האישי גם אחרי המחיקה.
+  deleteCandidate: async (id) => {
+    await deleteDoc(doc(crmDb, "candidates", id));
+    try {
+      await deleteDoc(doc(crmDb, "candidateStatus", id));
+    } catch {
+      // רשומת הסטטוס אינה קיימת לכל כרטיס, ולכן כישלון כאן אינו שגיאה
+    }
+  },
+
   updateCandidate: async (id, partial) => {
     await updateDoc(doc(crmDb, "candidates", id), partial);
+    // שינוי שם מעדכן גם את מפתח החיפוש של הטופס החיצוני
+    if (partial && typeof partial.name === "string") {
+      await get().indexCandidateName(id, partial.name);
+    }
   },
   // מאזין ציבורי חד-פעמי לכרטיס סטטוס יחיד - לשימוש בעמוד הקישור האישי (ללא התחברות),
   // ולכן לא נוגע כלל באוסף candidates החסוי אלא רק בשם ובסטטוס הפניות שנשמרים בנפרד.

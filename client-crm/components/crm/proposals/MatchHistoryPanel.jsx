@@ -47,10 +47,10 @@ function ArchiveRow({ proposal }) {
   return (
     <li className="flex items-center justify-between gap-2 rounded-2xl bg-white px-3 py-2.5">
       <div className="min-w-0">
-        <p className="truncate text-[13px] font-semibold text-[#5A4A3C]">
+        <p className="truncate text-[13px] font-semibold text-[#23414E]">
           {maleName} ⚭ {femaleName}
         </p>
-        <p className="mt-0.5 text-[11px] text-[#C3B5A5]">
+        <p className="mt-0.5 text-[11px] text-[#9FBAC7]">
           {proposal.isHistory ? "היסטוריה שהוזנה ידנית" : "ירד מהפרק במערכת"}
           {hebrewDate(proposal.createdAt) && ` · ${hebrewDate(proposal.createdAt)}`}
         </p>
@@ -59,7 +59,7 @@ function ArchiveRow({ proposal }) {
         <button
           type="button"
           onClick={handleRestore}
-          className="rounded-full p-1.5 text-[#C06E5E] transition hover:bg-[#F7DFD8]"
+          className="rounded-full p-1.5 text-[#2E8BA8] transition hover:bg-[#DCEEF5]"
           aria-label="החזרה ללוח הפעיל"
           title="החזרה ללוח הפעיל"
         >
@@ -137,21 +137,21 @@ export default function MatchHistoryPanel() {
   };
 
   return (
-    <div className="mt-6 rounded-3xl border border-[#EADCCB] bg-[#FBF3EA] p-3">
+    <div className="mt-6 rounded-3xl border border-[#CFE3EC] bg-[#F2F8FB] p-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between text-right"
       >
-        <span className="flex items-center gap-1.5 text-[13px] font-bold text-[#5A4A3C]">
-          <Archive size={15} className="text-[#C06E5E]" />
+        <span className="flex items-center gap-1.5 text-[13px] font-bold text-[#23414E]">
+          <Archive size={15} className="text-[#2E8BA8]" />
           היסטוריית התאמות שירדו מהפרק ({dropped.length})
         </span>
-        <ChevronDown size={18} className={`shrink-0 text-[#8C7B6B] transition ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={18} className={`shrink-0 text-[#5E7A87] transition ${open ? "rotate-180" : ""}`} />
       </button>
 
       {!open && (
-        <p className="mt-1.5 text-[11px] leading-relaxed text-[#8C7B6B]">
+        <p className="mt-1.5 text-[11px] leading-relaxed text-[#5E7A87]">
           כל ההצעות שירדו מהפרק נשמרות כאן ואינן מוצגות בלוח הפעיל.
         </p>
       )}
@@ -159,16 +159,16 @@ export default function MatchHistoryPanel() {
       {open && (
         <div className="mt-3 space-y-4">
           {isAdmin && (
-            <div className="rounded-2xl border border-[#EADCCB] bg-white p-3">
-              <p className="text-[12px] font-bold text-[#5A4A3C]">הזנת התאמה מהעבר</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-[#8C7B6B]">
+            <div className="rounded-2xl border border-[#CFE3EC] bg-white p-3">
+              <p className="text-[12px] font-bold text-[#23414E]">הזנת התאמה מהעבר</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#5E7A87]">
                 זוגות שהוצעו עוד לפני שהמערכת קמה וירדו מהפרק. הרשומה נשמרת כהיסטוריה בלבד, לא נכנסת
                 ללוח הפעיל, ומרגע השמירה הצוות יקבל התראה אם ינסה להציע את הזוג הזה שוב.
               </p>
 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div>
-                  <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">בחור</p>
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">בחור</p>
                   <SearchableSelect
                     value={maleId}
                     onChange={(v) => setMaleId(v || "")}
@@ -178,7 +178,7 @@ export default function MatchHistoryPanel() {
                   />
                 </div>
                 <div>
-                  <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">בחורה</p>
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">בחורה</p>
                   <SearchableSelect
                     value={femaleId}
                     onChange={(v) => setFemaleId(v || "")}
@@ -194,11 +194,11 @@ export default function MatchHistoryPanel() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="מה קרה שם? (לא חובה)"
-                className="mt-2 w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#C06E5E]"
+                className="mt-2 w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#2E8BA8]"
               />
 
               {alreadyExists && (
-                <p className="mt-2 rounded-xl bg-[#FDF6EC] px-3 py-2 text-[11px] font-semibold text-[#8A6A32]">
+                <p className="mt-2 rounded-xl bg-[#EAF5FA] px-3 py-2 text-[11px] font-semibold text-[#8A6A32]">
                   הזוג הזה כבר רשום בהיסטוריה. אין צורך להזין אותו שוב.
                 </p>
               )}
@@ -207,7 +207,7 @@ export default function MatchHistoryPanel() {
                 type="button"
                 onClick={handleSave}
                 disabled={!canSave}
-                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#C06E5E] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#2E8BA8] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
               >
                 <Plus size={15} /> {saving ? "שומרת..." : "שמירה בהיסטוריה"}
               </button>
@@ -215,9 +215,9 @@ export default function MatchHistoryPanel() {
           )}
 
           <div>
-            <p className="mb-2 text-[12px] font-semibold text-[#5A4A3C]">הרשומות ששמורות בהיסטוריה</p>
+            <p className="mb-2 text-[12px] font-semibold text-[#23414E]">הרשומות ששמורות בהיסטוריה</p>
             {dropped.length === 0 ? (
-              <p className="rounded-2xl bg-white px-3 py-4 text-center text-[12px] text-[#8C7B6B]">
+              <p className="rounded-2xl bg-white px-3 py-4 text-center text-[12px] text-[#5E7A87]">
                 עדיין אין רשומות בהיסטוריה
               </p>
             ) : (

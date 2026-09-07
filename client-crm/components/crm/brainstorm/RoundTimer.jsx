@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Hourglass, Lock } from "lucide-react";
 import { timeLeft, isRoundClosed } from "@/lib/crm/brainstorm";
 
-// שעון החול של הסבב: סופר לאחור שלושה ימים מרגע הפתיחה.
+// שעון החול של הסבב: סופר לאחור שבוע מרגע השיגור.
 // כשהזמן נגמר, הלוח ננעל להוספת תגובות והשעון מציג זאת במפורש.
 export default function RoundTimer({ round }) {
   const [now, setNow] = useState(() => Date.now());
@@ -23,13 +23,13 @@ export default function RoundTimer({ round }) {
 
   if (closed) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-2xl bg-[#F5EDE3] px-3 py-2.5 text-[12px] font-bold text-[#8C7B6B]">
+      <div className="flex items-center justify-center gap-2 rounded-2xl bg-[#EDF4F8] px-3 py-2.5 text-[12px] font-bold text-[#5E7A87]">
         <Lock size={14} /> הסבב נסגר. אפשר לקרוא הכל, אך לא להוסיף.
       </div>
     );
   }
 
-  // מנוסח כמשפט אחד קריא במקום ארבעה מונים מתקתקים. על פני שלושה ימים,
+  // מנוסח כמשפט אחד קריא במקום ארבעה מונים מתקתקים. על פני שבוע,
   // שניות שרצות הן רעש - מה שחשוב זה כמה זמן נשאר בגדול.
   const text = left.days > 0
     ? `נשארו ${left.days} ימים ו-${left.hours} שעות`
@@ -39,14 +39,14 @@ export default function RoundTimer({ round }) {
 
   return (
     <div
-      className={`rounded-2xl px-3 py-2.5 ${urgent ? "bg-[#FBEDE9] text-[#C4584C]" : "bg-white/70 text-[#A05243]"} backdrop-blur`}
+      className={`rounded-2xl px-3 py-2.5 ${urgent ? "bg-[#E4F1F7] text-[#C4584C]" : "bg-white/70 text-[#1F6E88]"} backdrop-blur`}
     >
       <span className="flex items-center gap-1.5 text-[12.5px] font-bold">
         <Hourglass size={14} /> {text}
       </span>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
         <div
-          className={`h-full rounded-full transition-all duration-1000 ${urgent ? "bg-[#C4584C]" : "bg-[#C06E5E]"}`}
+          className={`h-full rounded-full transition-all duration-1000 ${urgent ? "bg-[#C4584C]" : "bg-[#2E8BA8]"}`}
           style={{ width: `${pct}%` }}
         />
       </div>

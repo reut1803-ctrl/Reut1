@@ -26,17 +26,17 @@ export default function StageFunnel({ status, compact = false, onSelect = null }
           <span
             className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold transition ${
               active
-                ? "bg-[#C06E5E] text-white ring-4 ring-[#C06E5E]/20"
+                ? "bg-[#2E8BA8] text-white ring-4 ring-[#2E8BA8]/20"
                 : done
-                ? "bg-[#8C9A78] text-white"
-                : "bg-[#EADCCB] text-[#C3B5A5]"
+                ? "bg-[#2FA39B] text-white"
+                : "bg-[#CFE3EC] text-[#9FBAC7]"
             }`}
           >
             {done ? <Check size={12} /> : i + 1}
           </span>
         );
         const caption = !compact && (
-          <span className={`text-center text-[9px] leading-tight ${active ? "font-bold text-[#C06E5E]" : "text-[#C3B5A5]"}`}>
+          <span className={`text-center text-[9px] leading-tight ${active ? "font-bold text-[#2E8BA8]" : "text-[#9FBAC7]"}`}>
             {stage}
           </span>
         );
@@ -58,7 +58,7 @@ export default function StageFunnel({ status, compact = false, onSelect = null }
             aria-label={`עדכון סטטוס ל${stage}`}
             aria-current={active ? "step" : undefined}
             className={`flex flex-1 flex-col items-center gap-1 rounded-xl py-1 transition ${
-              active ? "cursor-default" : "cursor-pointer hover:bg-[#FBF3EA] active:scale-95"
+              active ? "cursor-default" : "cursor-pointer hover:bg-[#F2F8FB] active:scale-95"
             }`}
           >
             {circle}

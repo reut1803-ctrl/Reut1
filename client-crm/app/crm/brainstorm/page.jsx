@@ -144,13 +144,13 @@ function RoundBoard({ round }) {
       {/* כותרת: על מי מדברים ומה השאלה */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-[#C06E5E]">סיעור מוחות על</p>
-          <h2 className="truncate text-[18px] font-bold text-[#5A4A3C]">
+          <p className="text-[11px] font-semibold text-[#2E8BA8]">סיעור מוחות על</p>
+          <h2 className="truncate text-[18px] font-bold text-[#23414E]">
             {round.candidateName || "מועמד/ת"}
           </h2>
           {/* טיוטה עדיין לא "נפתחה", ולכן מוצג תאריך ההכנה שלה.
               ערך חסר מחזיר מחרוזת ריקה - ולא 1.1.1970. */}
-          <p className="mt-0.5 text-[10px] leading-relaxed text-[#C3B5A5]">
+          <p className="mt-0.5 text-[10px] leading-relaxed text-[#9FBAC7]">
             {draft ? "הוכן" : "נפתח"} ע״י {round.openedBy}
             {startedAtLine ? ` · ${startedAtLine}` : ""}
           </p>
@@ -159,26 +159,26 @@ function RoundBoard({ round }) {
           <button
             type="button"
             onClick={() => setPeekId(round.candidateId)}
-            className="flex shrink-0 items-center gap-1 rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-[#C06E5E] shadow-sm transition active:scale-95"
+            className="flex shrink-0 items-center gap-1 rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-[#2E8BA8] shadow-sm transition active:scale-95"
           >
             <Eye size={13} /> הצצה לכרטיס
           </button>
         )}
       </div>
 
-      <div className="mt-3 rounded-2xl bg-[#FDF6EC]/80 p-3">
+      <div className="mt-3 rounded-2xl bg-[#EAF5FA]/80 p-3">
         <p className="flex items-center gap-1.5 text-[10px] font-bold text-[#8A6A32]">
           <Sparkles size={12} /> השאלה לסבב
         </p>
-        <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-[#5A4A3C]">{round.question}</p>
+        <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-[#23414E]">{round.question}</p>
       </div>
 
       {/* הזווית הנוספת: שאלה רחבה שגם מי שלא מכיר/ה את ההיסטוריה יכול/ה לענות עליה.
           זה מה שמאפשר לכל הצוות להשתתף, ולא רק למי שהיה מעורב בעבר. */}
       {round.secondQuestion && !editingAngle && (
-        <div className="mt-2 rounded-2xl border border-[#C3D0B4] bg-[#E6EDDF]/70 p-3">
+        <div className="mt-2 rounded-2xl border border-[#AFD6DC] bg-[#E1F0F4]/70 p-3">
           <div className="flex items-start justify-between gap-2">
-            <p className="flex items-center gap-1.5 text-[10px] font-bold text-[#6F7D5C]">
+            <p className="flex items-center gap-1.5 text-[10px] font-bold text-[#21867F]">
               <Compass size={12} /> זווית נוספת · פתוח לכולם
             </p>
             {isAdmin && !closed && (
@@ -189,13 +189,13 @@ function RoundBoard({ round }) {
                   setEditingAngle(true);
                 }}
                 aria-label="עריכת הזווית הנוספת"
-                className="shrink-0 rounded-full p-1 text-[#6F7D5C] transition hover:bg-white/70"
+                className="shrink-0 rounded-full p-1 text-[#21867F] transition hover:bg-white/70"
               >
                 <PenLine size={13} />
               </button>
             )}
           </div>
-          <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-[#5A4A3C]">{round.secondQuestion}</p>
+          <p className="mt-1 text-[13.5px] font-semibold leading-relaxed text-[#23414E]">{round.secondQuestion}</p>
           <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#4E7A69]">
             גם מי שלא מכיר/ה את הרקע מוזמן/ת לענות דווקא על זו.
           </p>
@@ -204,12 +204,12 @@ function RoundBoard({ round }) {
 
       {/* הוספה או עריכה של הזווית הנוספת תוך כדי סבב פעיל */}
       {isAdmin && !closed && (editingAngle || !round.secondQuestion) && (
-        <div className="mt-2 rounded-2xl border border-dashed border-[#C3D0B4] bg-white/70 p-3">
-          <p className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#6F7D5C]">
+        <div className="mt-2 rounded-2xl border border-dashed border-[#AFD6DC] bg-white/70 p-3">
+          <p className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#21867F]">
             <Compass size={13} /> {round.secondQuestion ? "עריכת הזווית הנוספת" : "הוספת זווית נוספת לצוות"}
           </p>
           {!round.secondQuestion && !editingAngle && (
-            <p className="mt-1 text-[11px] leading-relaxed text-[#8C7B6B]">
+            <p className="mt-1 text-[11px] leading-relaxed text-[#5E7A87]">
               שאלה רחבה שכל אחד/ת יכול/ה לענות עליה, גם בלי להכיר את ההיסטוריה.
             </p>
           )}
@@ -218,14 +218,14 @@ function RoundBoard({ round }) {
             onChange={(e) => setAngleDraft(e.target.value)}
             rows={2}
             placeholder="לאילו כיוונים חדשים כדאי לכוון את החיפוש עכשיו?"
-            className="mt-2 w-full resize-none rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-[13px] leading-relaxed outline-none focus:border-[#6F7D5C]"
+            className="mt-2 w-full resize-none rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-[13px] leading-relaxed outline-none focus:border-[#21867F]"
           />
           <div className="mt-2 flex gap-2">
             <button
               type="button"
               onClick={handleSaveAngle}
               disabled={savingAngle || !angleDraft.trim()}
-              className="flex-1 rounded-xl bg-[#8C9A78] py-2 text-[12.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
+              className="flex-1 rounded-xl bg-[#2FA39B] py-2 text-[12.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
             >
               {savingAngle ? "שומרת..." : "פרסום הזווית לצוות"}
             </button>
@@ -233,7 +233,7 @@ function RoundBoard({ round }) {
               <button
                 type="button"
                 onClick={() => setEditingAngle(false)}
-                className="rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#5A4A3C]"
+                className="rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#23414E]"
               >
                 ביטול
               </button>
@@ -244,15 +244,15 @@ function RoundBoard({ round }) {
 
       {/* טיוטה: הסבב מוכן אך עדיין לא גלוי לאיש. השעון מתחיל רק בשיגור. */}
       {draft ? (
-        <div className="mt-3 rounded-2xl border border-dashed border-[#E2A396] bg-white/70 p-3">
-          <p className="flex items-center gap-1.5 text-[12px] font-bold text-[#C06E5E]">
+        <div className="mt-3 rounded-2xl border border-dashed border-[#74B9CE] bg-white/70 p-3">
+          <p className="flex items-center gap-1.5 text-[12px] font-bold text-[#2E8BA8]">
             <FileEdit size={14} /> טיוטה - עדיין לא שוגר לצוות
           </p>
-          <p className="mt-1 text-[11.5px] leading-relaxed text-[#8C7B6B]">
-            רק את רואה אותו כרגע. שלושת הימים יתחילו מרגע השיגור.
+          <p className="mt-1 text-[11.5px] leading-relaxed text-[#5E7A87]">
+            רק את רואה אותו כרגע. שבוע הדיון יתחיל מרגע השיגור.
           </p>
           {launchError && (
-            <p className="mt-2 rounded-xl bg-[#FBEDE9] px-3 py-2 text-[11px] leading-relaxed text-[#C4584C]">
+            <p className="mt-2 rounded-xl bg-[#E4F1F7] px-3 py-2 text-[11px] leading-relaxed text-[#C4584C]">
               {launchError}
             </p>
           )}
@@ -260,7 +260,7 @@ function RoundBoard({ round }) {
             type="button"
             onClick={handleLaunch}
             disabled={launching}
-            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#C06E5E] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#2E8BA8] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
           >
             <Rocket size={15} /> {launching ? "משגרת..." : "שיגור לצוות והתחלת הספירה"}
           </button>
@@ -276,7 +276,7 @@ function RoundBoard({ round }) {
         <button
           type="button"
           onClick={() => setShowInvite(true)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#8C9A78] py-3 text-[13.5px] font-bold text-white shadow-[0_8px_20px_rgba(32,166,107,0.25)] transition active:scale-[0.98]"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#2FA39B] py-3 text-[13.5px] font-bold text-white shadow-[0_8px_20px_rgba(32,166,107,0.25)] transition active:scale-[0.98]"
         >
           <MessageCircle size={17} /> הודע לצוות בוואטסאפ
         </button>
@@ -285,7 +285,7 @@ function RoundBoard({ round }) {
       {/* חיווי השתתפות: עיגול לכל איש/אשת צוות. צבעוני = כבר כתב/ה, אפור = טרם. */}
       {!draft && participation.total > 0 && (
         <div className="mt-3 rounded-2xl bg-white/60 p-3">
-          <p className="mb-2 flex items-center gap-1.5 text-[10.5px] font-bold text-[#8C7B6B]">
+          <p className="mb-2 flex items-center gap-1.5 text-[10.5px] font-bold text-[#5E7A87]">
             <Users size={12} /> {participation.joinedCount} מתוך {participation.total} כבר השתתפו
           </p>
           <div className="flex flex-wrap gap-2">
@@ -302,14 +302,14 @@ function RoundBoard({ round }) {
                     style={
                       person.joined
                         ? { background: palette.dot, color: "#fff", boxShadow: `0 0 0 2px ${palette.border}` }
-                        : { background: "#F5EDE3", color: "#C3B5A5", border: "1px dashed #D8D2D0" }
+                        : { background: "#EDF4F8", color: "#9FBAC7", border: "1px dashed #D8D2D0" }
                     }
                   >
                     {initialsOf(person.name, person.email)}
                   </span>
                   <span
                     className={`max-w-[52px] truncate text-[9px] ${
-                      person.joined ? "font-semibold text-[#5A4A3C]" : "text-[#C3B5A5]"
+                      person.joined ? "font-semibold text-[#23414E]" : "text-[#9FBAC7]"
                     }`}
                   >
                     {person.name.split(/\s+/)[0]}
@@ -325,11 +325,11 @@ function RoundBoard({ round }) {
       {keywords.length > 0 && (
         <div className="mt-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <Tag size={12} className="text-[#C3B5A5]" />
+            <Tag size={12} className="text-[#9FBAC7]" />
             {keywords.map((k) => (
               <span
                 key={k.stem}
-                className="rounded-full bg-[#F7DFD8] px-2.5 py-1 font-bold text-[#A05243]"
+                className="rounded-full bg-[#DCEEF5] px-2.5 py-1 font-bold text-[#1F6E88]"
                 style={{ fontSize: `${Math.min(15, 10.5 + k.count * 0.9)}px` }}
               >
                 {k.word}
@@ -343,7 +343,7 @@ function RoundBoard({ round }) {
       <div ref={boardRef} className="relative mt-4">
         <MindMapLines containerRef={boardRef} pairs={pairs} />
         {notes.length === 0 ? (
-          <p className="rounded-2xl bg-white/60 px-3 py-6 text-center text-[12px] leading-relaxed text-[#8C7B6B]">
+          <p className="rounded-2xl bg-white/60 px-3 py-6 text-center text-[12px] leading-relaxed text-[#5E7A87]">
             {draft
               ? "הסבב מוכן. ברגע שתשגרי אותו, הצוות יוכל להתחיל לכתוב כאן."
               : "עוד לא נכתב כאן כלום. הכרטיסייה הראשונה היא תמיד הכי חשובה - היא פותחת את הכיוון לכולם."}
@@ -361,7 +361,7 @@ function RoundBoard({ round }) {
                   onReply={closed || draft ? null : setReplyTo}
                 />
                 {replies.length > 0 && (
-                  <div className="mt-2 mr-4 space-y-2 border-r-2 border-[#EADCCB] pr-3">
+                  <div className="mt-2 mr-4 space-y-2 border-r-2 border-[#CFE3EC] pr-3">
                     {replies.map((reply) => (
                       <NoteCard
                         key={reply.id}
@@ -384,7 +384,7 @@ function RoundBoard({ round }) {
 
       {/* תיבת הכתיבה */}
       {draft ? null : closed ? (
-        <div className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#F5EDE3] px-3 py-3 text-[12px] font-semibold text-[#8C7B6B]">
+        <div className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-[#EDF4F8] px-3 py-3 text-[12px] font-semibold text-[#5E7A87]">
           <Lock size={14} /> הסבב נעול. אפשר לקרוא הכל, אך לא להוסיף.
         </div>
       ) : (
@@ -404,11 +404,11 @@ function RoundBoard({ round }) {
             onClick={() => setShowTools((v) => !v)}
             className="flex w-full items-center justify-between text-right"
           >
-            <span className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#C06E5E]">
+            <span className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#2E8BA8]">
               <Settings2 size={14} /> כלי מנהלת
-              {round.summary ? <span className="text-[10px] font-normal text-[#8C7B6B]">· יש סיכום</span> : null}
+              {round.summary ? <span className="text-[10px] font-normal text-[#5E7A87]">· יש סיכום</span> : null}
             </span>
-            <ChevronDown size={17} className={`text-[#8C7B6B] transition ${showTools ? "rotate-180" : ""}`} />
+            <ChevronDown size={17} className={`text-[#5E7A87] transition ${showTools ? "rotate-180" : ""}`} />
           </button>
 
           {showTools && (
@@ -418,7 +418,7 @@ function RoundBoard({ round }) {
                   <button
                     type="button"
                     onClick={() => reopenRound(round.id)}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EADCCB] bg-white py-2.5 text-[12px] font-semibold text-[#5A4A3C] transition active:scale-[0.98]"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#CFE3EC] bg-white py-2.5 text-[12px] font-semibold text-[#23414E] transition active:scale-[0.98]"
                   >
                     <RotateCcw size={14} /> עוד 3 ימים
                   </button>
@@ -426,7 +426,7 @@ function RoundBoard({ round }) {
                   <button
                     type="button"
                     onClick={() => closeRound(round.id)}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#EADCCB] bg-white py-2.5 text-[12px] font-semibold text-[#5A4A3C] transition active:scale-[0.98]"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-[#CFE3EC] bg-white py-2.5 text-[12px] font-semibold text-[#23414E] transition active:scale-[0.98]"
                   >
                     <Lock size={14} /> סגירה עכשיו
                   </button>
@@ -447,7 +447,7 @@ function RoundBoard({ round }) {
 
       {/* הסיכום - נשאר גלוי תמיד למנהלת, כי זה הצעד האחרון והחשוב של הסבב */}
       {isAdmin && !draft && (
-        <div className="mt-3 rounded-2xl bg-[#FDF6EC]/80 p-3">
+        <div className="mt-3 rounded-2xl bg-[#EAF5FA]/80 p-3">
           <p className="text-[12.5px] font-bold text-[#8A6A32]">
             {closed ? "השורה התחתונה מהדיון" : "השורה התחתונה מהדיון (אפשר כבר עכשיו)"}
           </p>
@@ -456,13 +456,13 @@ function RoundBoard({ round }) {
             onChange={(e) => setSummaryDraft(e.target.value)}
             rows={3}
             placeholder="מה המסקנה? זה יופיע בראש כרטיס המועמד/ת."
-            className="mt-2 w-full resize-none rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-[13px] leading-relaxed outline-none focus:border-[#C06E5E]"
+            className="mt-2 w-full resize-none rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-[13px] leading-relaxed outline-none focus:border-[#2E8BA8]"
           />
           <button
             type="button"
             onClick={handleSaveSummary}
             disabled={savingSummary || !summaryDraft.trim()}
-            className="mt-2 w-full rounded-xl bg-[#C06E5E] py-2 text-[12.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
+            className="mt-2 w-full rounded-xl bg-[#2E8BA8] py-2 text-[12.5px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-30"
           >
             {savingSummary ? "שומרת..." : "שמירת הסיכום"}
           </button>
@@ -501,41 +501,47 @@ export default function BrainstormPage() {
   const brainstormLoaded = useCrmStore((s) => s.brainstormLoaded);
   const brainstormError = useCrmStore((s) => s.brainstormError);
   const [showArchive, setShowArchive] = useState(false);
+  const [showOtherOpen, setShowOtherOpen] = useState(false);
   const [inviteRound, setInviteRound] = useState(null);
 
   if (role !== "staff" && role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8C7B6B]">אזור זה זמין לצוות בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#5E7A87]">אזור זה זמין לצוות בלבד</p>;
   }
 
-  const open = rounds.filter((r) => !isRoundClosed(r));
+  const openRounds = rounds.filter((r) => !isRoundClosed(r));
   const closed = rounds.filter((r) => isRoundClosed(r));
+  // מיקוד: מועמד/ת מרכזי/ת אחד/ת בלבד על המסך - הסבב העדכני ביותר.
+  // סבבים פעילים נוספים (אם נפתחו) אינם נעלמים, אלא יורדים לאזור מקופל
+  // מתחת, כדי שהמסך הראשי יישאר ממוקד בדיוק בשאלה אחת.
+  const focusRound = openRounds[0] || null;
+  const otherOpen = openRounds.slice(1);
 
   return (
     <div className="relative min-h-full px-4 py-6">
       {/* רקע פסטלי רך שנותן לכרטיסיות את תחושת הריחוף */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -right-16 top-10 h-56 w-56 rounded-full bg-[#F7DFD8] blur-3xl opacity-70" />
-        <div className="absolute -left-20 top-56 h-64 w-64 rounded-full bg-[#E6EDDF] blur-3xl opacity-70" />
+        <div className="absolute -right-16 top-10 h-56 w-56 rounded-full bg-[#DCEEF5] blur-3xl opacity-70" />
+        <div className="absolute -left-20 top-56 h-64 w-64 rounded-full bg-[#E1F0F4] blur-3xl opacity-70" />
         <div className="absolute right-6 bottom-24 h-52 w-52 rounded-full bg-[#E8E9F6] blur-3xl opacity-70" />
       </div>
 
-      <h1 className="flex items-center gap-2 text-xl font-bold text-[#5A4A3C]">
-        <Lightbulb size={22} className="text-[#C06E5E]" /> זירת סיעור המוחות
+      <h1 className="flex items-center gap-2 text-xl font-bold text-[#23414E]">
+        <Lightbulb size={22} className="text-[#2E8BA8]" /> זירת סיעור המוחות
       </h1>
-      <p className="mt-1 text-[13px] leading-relaxed text-[#8C7B6B]">
-        מרחב אחד לחשוב יחד על מועמד/ת אחד/ת, שלושה ימים, שאלה אחת עמוקה.
+      <p className="mt-1 text-[13px] leading-relaxed text-[#5E7A87]">
+        מועמד/ת מרכזי/ת אחד/ת בכל פעם, שבוע שלם, שאלה אחת עמוקה. הצוות חושב יחד.
       </p>
 
       {brainstormError ? (
-        <div className="mt-4 rounded-3xl border border-[#EFC9A8] bg-[#FDF6EC] p-4">
+        <div className="mt-4 rounded-3xl border border-[#9EDAE6] bg-[#EAF5FA] p-4">
           <p className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#8A6A32]">
             <KeyRound size={15} /> נשאר צעד אחד להפעלת הזירה
           </p>
-          <p className="mt-2 text-[12px] leading-relaxed text-[#5A4A3C]">
+          <p className="mt-2 text-[12px] leading-relaxed text-[#23414E]">
             הזירה בנויה ומוכנה, אבל מסד הנתונים עדיין לא יודע להכניס אליה אף אחד. זו הרשאה שצריך
             לאשר פעם אחת בלבד בחשבון ה-Firebase, ורק בעלת החשבון יכולה לעשות זאת.
           </p>
-          <p className="mt-2 text-[11.5px] leading-relaxed text-[#8C7B6B]">
+          <p className="mt-2 text-[11.5px] leading-relaxed text-[#5E7A87]">
             אחרי האישור החד-פעמי הזה הזירה תעבוד לתמיד, ולא נצטרך לחזור לזה שוב. בינתיים כל שאר
             המערכת ממשיכה לעבוד כרגיל.
           </p>
@@ -549,17 +555,44 @@ export default function BrainstormPage() {
       )}
 
       <div className="mt-5 space-y-4">
-        {open.length === 0 && !brainstormError && brainstormLoaded && (
-          <p className="rounded-3xl bg-white/60 px-4 py-8 text-center text-[13px] leading-relaxed text-[#8C7B6B] backdrop-blur">
+        {openRounds.length === 0 && !brainstormError && brainstormLoaded && (
+          <p className="rounded-3xl bg-white/60 px-4 py-8 text-center text-[13px] leading-relaxed text-[#5E7A87] backdrop-blur">
             {role === "admin"
-              ? "אין כרגע סבב פעיל. פתחי סבב חדש למעלה, והצוות יקבל שלושה ימים לחשוב יחד."
+              ? "אין כרגע סבב פעיל. פתחי סבב חדש למעלה, והצוות יקבל שבוע שלם לחשוב יחד."
               : "אין כרגע סבב פעיל. כשהמנהלת תפתח סבב חדש תקבלו הודעה בוואטסאפ."}
           </p>
         )}
-        {open.map((round) => (
-          <RoundBoard key={round.id} round={round} />
-        ))}
+        {focusRound && (
+          <>
+            <p className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide text-[#2E8BA8]">
+              <Lightbulb size={14} /> המועמד/ת של השבוע
+            </p>
+            <RoundBoard key={focusRound.id} round={focusRound} />
+          </>
+        )}
       </div>
+
+      {otherOpen.length > 0 && (
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => setShowOtherOpen((v) => !v)}
+            className="flex w-full items-center justify-between rounded-2xl bg-white/70 px-4 py-3 text-right backdrop-blur"
+          >
+            <span className="text-[13px] font-bold text-[#23414E]">
+              סבבים פעילים נוספים ({otherOpen.length})
+            </span>
+            <ChevronDown size={18} className={`text-[#5E7A87] transition ${showOtherOpen ? "rotate-180" : ""}`} />
+          </button>
+          {showOtherOpen && (
+            <div className="mt-3 space-y-4">
+              {otherOpen.map((round) => (
+                <RoundBoard key={round.id} round={round} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {closed.length > 0 && (
         <div className="mt-6">
@@ -568,8 +601,8 @@ export default function BrainstormPage() {
             onClick={() => setShowArchive((v) => !v)}
             className="flex w-full items-center justify-between rounded-2xl bg-white/70 px-4 py-3 text-right backdrop-blur"
           >
-            <span className="text-[13px] font-bold text-[#5A4A3C]">סבבים שהסתיימו ({closed.length})</span>
-            <ChevronDown size={18} className={`text-[#8C7B6B] transition ${showArchive ? "rotate-180" : ""}`} />
+            <span className="text-[13px] font-bold text-[#23414E]">סבבים שהסתיימו ({closed.length})</span>
+            <ChevronDown size={18} className={`text-[#5E7A87] transition ${showArchive ? "rotate-180" : ""}`} />
           </button>
           {showArchive && (
             <div className="mt-3 space-y-4">

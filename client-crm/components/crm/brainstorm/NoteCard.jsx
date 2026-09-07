@@ -28,7 +28,7 @@ function renderText(text, mentionNames) {
     .split(pattern)
     .map((part, i) =>
       part.startsWith("@") && names.some((n) => part === `@${n}`) ? (
-        <span key={i} className="rounded px-1 font-bold text-[#A05243]" style={{ background: "rgba(140,74,85,0.12)" }}>
+        <span key={i} className="rounded px-1 font-bold text-[#1F6E88]" style={{ background: "rgba(140,74,85,0.12)" }}>
           {part}
         </span>
       ) : (
@@ -75,7 +75,7 @@ export default function NoteCard({
       className={`relative rounded-3xl border backdrop-blur-md transition ${isReply ? "p-3" : "p-3.5"}`}
       style={{
         background: palette.bg,
-        borderColor: taggedMe ? "#C06E5E" : gold ? "#C9A063" : palette.border,
+        borderColor: taggedMe ? "#2E8BA8" : gold ? "#C9A063" : palette.border,
         boxShadow: taggedMe
           ? "0 0 0 2px rgba(140,74,85,0.35), 0 8px 24px rgba(140,74,85,0.16)"
           : gold
@@ -90,13 +90,13 @@ export default function NoteCard({
       )}
 
       {taggedMe && (
-        <span className="absolute -top-2 left-4 flex items-center gap-1 rounded-full bg-[#C06E5E] px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">
+        <span className="absolute -top-2 left-4 flex items-center gap-1 rounded-full bg-[#2E8BA8] px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">
           <AtSign size={9} /> תויגת כאן
         </span>
       )}
 
       {isReply && note.replyToName && (
-        <p className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold text-[#8C7B6B]">
+        <p className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold text-[#5E7A87]">
           <CornerDownLeft size={11} /> בתגובה ל{note.replyToName}
         </p>
       )}
@@ -104,15 +104,15 @@ export default function NoteCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: palette.dot }} />
-          <span className={`truncate font-bold text-[#5A4A3C] ${isReply ? "text-[11px]" : "text-[12px]"}`}>
+          <span className={`truncate font-bold text-[#23414E] ${isReply ? "text-[11px]" : "text-[12px]"}`}>
             {note.authorName || "איש/אשת צוות"}
           </span>
         </div>
-        <span className="shrink-0 text-[10px] text-[#8C7B6B]">{hebrewTime(note.createdAt)}</span>
+        <span className="shrink-0 text-[10px] text-[#5E7A87]">{hebrewTime(note.createdAt)}</span>
       </div>
 
       <p
-        className={`mt-2 whitespace-pre-wrap leading-relaxed text-[#5A4A3C] ${
+        className={`mt-2 whitespace-pre-wrap leading-relaxed text-[#23414E] ${
           isReply ? "text-[12.5px]" : "text-[13.5px]"
         }`}
       >
@@ -127,7 +127,7 @@ export default function NoteCard({
             disabled={locked}
             aria-label={iLiked ? "ביטול חיזוק" : "חיזוק לכרטיסייה"}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 disabled:opacity-50 ${
-              iLiked ? "bg-[#C06E5E] text-white" : "bg-white/70 text-[#C06E5E]"
+              iLiked ? "bg-[#2E8BA8] text-white" : "bg-white/70 text-[#2E8BA8]"
             }`}
           >
             <Heart size={13} fill={iLiked ? "currentColor" : "none"} />
@@ -138,7 +138,7 @@ export default function NoteCard({
             <button
               type="button"
               onClick={() => onReply(note)}
-              className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-[11px] font-bold text-[#C06E5E] transition active:scale-95"
+              className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 text-[11px] font-bold text-[#2E8BA8] transition active:scale-95"
             >
               <Reply size={13} /> מגיב/ה
             </button>

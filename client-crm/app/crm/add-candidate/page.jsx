@@ -90,7 +90,7 @@ export default function AddCandidatePage() {
   }, [form, traits]);
 
   if (role !== "staff" && role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8C7B6B]">אזור זה זמין לצוות בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#5E7A87]">אזור זה זמין לצוות בלבד</p>;
   }
 
   const set = (partial) => setForm((f) => ({ ...f, ...partial }));
@@ -260,12 +260,12 @@ export default function AddCandidatePage() {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="flex items-center gap-2 text-xl font-bold text-[#5A4A3C]">
+      <h1 className="flex items-center gap-2 text-xl font-bold text-[#23414E]">
         <UserPlus size={22} /> העלאת מועמד/ת חדש/ה
       </h1>
-      <p className="mt-1 text-[13px] text-[#8C7B6B]">כל חברי הצוות יכולים להוסיף מועמדים למאגר</p>
+      <p className="mt-1 text-[13px] text-[#5E7A87]">כל חברי הצוות יכולים להוסיף מועמדים למאגר</p>
       {draftRestored && (
-        <p className="mt-2 rounded-xl bg-[#FDF6EC] px-3 py-2 text-[12px] font-semibold text-[#8A6A32]">
+        <p className="mt-2 rounded-xl bg-[#EAF5FA] px-3 py-2 text-[12px] font-semibold text-[#8A6A32]">
           שחזרנו טיוטה שלא נשמרה - אפשר להמשיך מאיפה שהפסקת
         </p>
       )}
@@ -274,7 +274,7 @@ export default function AddCandidatePage() {
 
       <div className="mt-4 space-y-4">
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">מגדר</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">מגדר</p>
           <div className="flex gap-2">
             {[
               { key: "male", label: "בחור" },
@@ -285,8 +285,8 @@ export default function AddCandidatePage() {
                 onClick={() => setGender(g.key)}
                 className={`flex-1 rounded-2xl border px-3.5 py-2.5 text-sm font-semibold transition ${
                   form.gender === g.key
-                    ? "border-[#C06E5E] bg-[#C06E5E] text-white"
-                    : "border-[#EADCCB] bg-white text-[#5A4A3C]"
+                    ? "border-[#2E8BA8] bg-[#2E8BA8] text-white"
+                    : "border-[#CFE3EC] bg-white text-[#23414E]"
                 }`}
               >
                 {g.label}
@@ -296,14 +296,14 @@ export default function AddCandidatePage() {
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">תמונות * (עד {MAX_PHOTOS})</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">תמונות * (עד {MAX_PHOTOS})</p>
           <div className="flex flex-wrap gap-2.5">
             {photos.map((p, i) => (
-              <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#EADCCB]">
+              <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#CFE3EC]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p} alt="תצוגה מקדימה" className="h-full w-full object-cover" />
                 {i === 0 && (
-                  <span className="absolute bottom-1 right-1 rounded-full bg-[#C06E5E] px-1.5 py-0.5 text-[9px] font-bold text-white">
+                  <span className="absolute bottom-1 right-1 rounded-full bg-[#2E8BA8] px-1.5 py-0.5 text-[9px] font-bold text-white">
                     ראשית
                   </span>
                 )}
@@ -317,14 +317,14 @@ export default function AddCandidatePage() {
               </div>
             ))}
             {photoUploading && (
-              <div className="flex h-32 w-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EADCCB] bg-white text-[#C3B5A5]">
+              <div className="flex h-32 w-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CFE3EC] bg-white text-[#9FBAC7]">
                 <span className="text-[11px] font-semibold">מעלה תמונה...</span>
               </div>
             )}
             {photos.length < MAX_PHOTOS && !photoUploading && (
               // הקלט מוסתר חזותית אך נשאר קיים בעמוד. עם display:none חלק מדפדפני
               // הנייד לא פותחים כלל את בוחר הקבצים בלחיצה על המסגרת.
-              <label className="relative flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl border-2 border-dashed border-[#EADCCB] bg-white text-[#C3B5A5] transition hover:border-[#C06E5E] hover:text-[#C06E5E]">
+              <label className="relative flex h-32 w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl border-2 border-dashed border-[#CFE3EC] bg-white text-[#9FBAC7] transition hover:border-[#2E8BA8] hover:text-[#2E8BA8]">
                 <ImagePlus size={22} />
                 <span className="text-[11px] font-semibold">הוספת תמונה</span>
                 <span className="text-[10px]">
@@ -341,7 +341,7 @@ export default function AddCandidatePage() {
             )}
           </div>
           {photoError && <p className="mt-1 text-[11px] text-red-500">{photoError}</p>}
-          <p className="mt-1 text-[11px] text-[#C3B5A5]">
+          <p className="mt-1 text-[11px] text-[#9FBAC7]">
             שדה חובה - התמונה הראשונה תוצג ככרטיס הראשי. אפשר לבחור כמה תמונות יחד.
           </p>
         </div>
@@ -426,7 +426,7 @@ export default function AddCandidatePage() {
         </Field>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">המסלול שלי (אפשר לסמן כמה)</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">המסלול שלי (אפשר לסמן כמה)</p>
           <div className="flex flex-wrap gap-2">
             {OCCUPATION_OPTIONS.map((o) => {
               const active = form.occupations?.includes(o);
@@ -436,7 +436,7 @@ export default function AddCandidatePage() {
                   type="button"
                   onClick={() => toggleOccupation(o)}
                   className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition active:scale-95 ${
-                    active ? "border-transparent bg-[#C06E5E] text-white" : "border-[#EADCCB] bg-white text-[#5A4A3C]"
+                    active ? "border-transparent bg-[#2E8BA8] text-white" : "border-[#CFE3EC] bg-white text-[#23414E]"
                   }`}
                 >
                   {o}
@@ -444,7 +444,7 @@ export default function AddCandidatePage() {
               );
             })}
           </div>
-          <p className="mt-1 text-[11px] text-[#C3B5A5]">כל הדרכים שעברו בחיים - ישיבה, צבא, שירות, לימודים, תארים.</p>
+          <p className="mt-1 text-[11px] text-[#9FBAC7]">כל הדרכים שעברו בחיים - ישיבה, צבא, שירות, לימודים, תארים.</p>
         </div>
 
         <Field label="עישון">
@@ -469,14 +469,14 @@ export default function AddCandidatePage() {
         </Field>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">תכונות</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">תכונות</p>
           <div className="flex flex-wrap gap-2">
             {TRAITS.map((t) => (
               <button
                 key={t}
                 onClick={() => toggleTrait(t)}
                 className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
-                  traits.includes(t) ? "border-[#C06E5E] bg-[#C06E5E] text-white" : "border-[#EADCCB] bg-white text-[#5A4A3C]"
+                  traits.includes(t) ? "border-[#2E8BA8] bg-[#2E8BA8] text-white" : "border-[#CFE3EC] bg-white text-[#23414E]"
                 }`}
               >
                 {t}
@@ -550,7 +550,7 @@ export default function AddCandidatePage() {
                 </button>
               </div>
             ) : (
-              <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EADCCB] bg-white text-[12px] font-semibold text-[#C06E5E]">
+              <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CFE3EC] bg-white text-[12px] font-semibold text-[#2E8BA8]">
                 <FileText size={15} />
                 {pdfUploading ? uploadStatus || "מעלה..." : "העלאת PDF"}
                 <input type="file" accept="application/pdf" onChange={handlePdfChange} disabled={pdfUploading} className="hidden" />
@@ -569,7 +569,7 @@ export default function AddCandidatePage() {
                 </button>
               </div>
             ) : (
-              <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#EADCCB] bg-white text-[12px] font-semibold text-[#C06E5E]">
+              <label className="flex h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CFE3EC] bg-white text-[12px] font-semibold text-[#2E8BA8]">
                 <Music size={15} />
                 {audioUploading ? uploadStatus || "מעלה..." : "העלאת אודיו"}
                 <input type="file" accept="audio/*" onChange={handleAudioChange} disabled={audioUploading} className="hidden" />
@@ -591,14 +591,14 @@ export default function AddCandidatePage() {
         .input-crm {
           width: 100%;
           border-radius: 1rem;
-          border: 1px solid #EADCCB;
+          border: 1px solid #CFE3EC;
           background: white;
           padding: 0.625rem 0.75rem;
           font-size: 0.875rem;
           outline: none;
         }
         .input-crm:focus {
-          border-color: #C06E5E;
+          border-color: #2E8BA8;
         }
       `}</style>
     </div>
@@ -607,18 +607,18 @@ export default function AddCandidatePage() {
 
 function MediaAudio({ value }) {
   const { url, error, loading } = useMediaUrl(value);
-  if (loading) return <p className="text-[11px] text-[#8C7B6B]">טוען הקלטה...</p>;
+  if (loading) return <p className="text-[11px] text-[#5E7A87]">טוען הקלטה...</p>;
   if (error) return <p className="text-[11px] text-red-500">{error}</p>;
   return <audio controls src={url} className="h-9 w-full" />;
 }
 
 function MediaFileLink({ value }) {
   const { url, error, loading } = useMediaUrl(value);
-  if (loading) return <p className="text-[11px] text-[#8C7B6B]">טוען קובץ...</p>;
+  if (loading) return <p className="text-[11px] text-[#5E7A87]">טוען קובץ...</p>;
   if (error) return <p className="text-[11px] text-red-500">{error}</p>;
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
-      className="block truncate rounded-2xl bg-[#FBF3EA] px-3 py-2 text-center text-[12px] font-semibold text-[#C06E5E]">
+      className="block truncate rounded-2xl bg-[#F2F8FB] px-3 py-2 text-center text-[12px] font-semibold text-[#2E8BA8]">
       צפייה בקובץ שהועלה
     </a>
   );
@@ -627,7 +627,7 @@ function MediaFileLink({ value }) {
 function Field({ label, children }) {
   return (
     <div>
-      <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">{label}</p>
+      <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">{label}</p>
       {children}
     </div>
   );

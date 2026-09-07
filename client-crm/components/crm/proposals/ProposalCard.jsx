@@ -67,14 +67,14 @@ function ContactCard({ candidate }) {
   };
 
   return (
-    <div className="rounded-2xl bg-[#FBF3EA] p-3">
-      <p className="text-[13px] font-bold text-[#5A4A3C]">{candidate.name}</p>
-      <p dir="ltr" className="mt-0.5 flex items-center gap-1 text-[12px] text-[#8C7B6B]">
+    <div className="rounded-2xl bg-[#F2F8FB] p-3">
+      <p className="text-[13px] font-bold text-[#23414E]">{candidate.name}</p>
+      <p dir="ltr" className="mt-0.5 flex items-center gap-1 text-[12px] text-[#5E7A87]">
         <Phone size={12} /> {candidate.phone}
       </p>
       <button
         onClick={handleCopy}
-        className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EADCCB] bg-white py-1.5 text-[11px] font-semibold text-[#C06E5E] transition active:scale-95 hover:bg-[#FBF3EA]"
+        className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CFE3EC] bg-white py-1.5 text-[11px] font-semibold text-[#2E8BA8] transition active:scale-95 hover:bg-[#F2F8FB]"
       >
         {copied ? <Check size={13} /> : <Copy size={13} />}
         {copied ? "הועתק!" : "העתקת כרטיס"}
@@ -85,19 +85,19 @@ function ContactCard({ candidate }) {
           type="button"
           onClick={handleDownloadPhoto}
           disabled={downloading}
-          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EADCCB] bg-white py-1.5 text-[11px] font-semibold text-[#C06E5E] transition active:scale-95 hover:bg-[#FBF3EA] disabled:opacity-60"
+          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CFE3EC] bg-white py-1.5 text-[11px] font-semibold text-[#2E8BA8] transition active:scale-95 hover:bg-[#F2F8FB] disabled:opacity-60"
         >
           <Download size={13} /> {downloading ? "מוריד..." : "הורדת תמונה"}
         </button>
       )}
 
       {candidate.referenceContacts && (
-        <div className="mt-2 rounded-xl border-2 border-[#C06E5E] bg-white p-2">
-          <p className="mb-1 text-[10px] font-bold text-[#C06E5E]">מספרים לבירורים</p>
-          <p className="mb-1.5 whitespace-pre-wrap text-[11px] text-[#5A4A3C]">{candidate.referenceContacts}</p>
+        <div className="mt-2 rounded-xl border-2 border-[#2E8BA8] bg-white p-2">
+          <p className="mb-1 text-[10px] font-bold text-[#2E8BA8]">מספרים לבירורים</p>
+          <p className="mb-1.5 whitespace-pre-wrap text-[11px] text-[#23414E]">{candidate.referenceContacts}</p>
           <button
             onClick={handleCopyReferenceContacts}
-            className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#C06E5E] py-1.5 text-[11px] font-semibold text-white transition active:scale-95"
+            className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#2E8BA8] py-1.5 text-[11px] font-semibold text-white transition active:scale-95"
           >
             {referenceCopied ? <Check size={12} /> : <Copy size={12} />}
             {referenceCopied ? "הועתק!" : "העתקה"}
@@ -113,12 +113,12 @@ function ExternalContactCard({ person }) {
   const { url } = useMediaUrl(person.audioUrl);
 
   return (
-    <div className="rounded-2xl border border-dashed border-[#E2A396] bg-[#FDF7F4] p-3">
-      <p className="text-[13px] font-bold text-[#5A4A3C]">{person.name}</p>
-      <p className="mt-0.5 text-[10px] font-semibold text-[#C06E5E]">מהמעגל האישי · לא במאגר</p>
-      {person.notes && <p className="mt-1.5 whitespace-pre-line text-[11px] leading-relaxed text-[#5A4A3C]">{person.notes}</p>}
+    <div className="rounded-2xl border border-dashed border-[#74B9CE] bg-[#F5FAFC] p-3">
+      <p className="text-[13px] font-bold text-[#23414E]">{person.name}</p>
+      <p className="mt-0.5 text-[10px] font-semibold text-[#2E8BA8]">מהמעגל האישי · לא במאגר</p>
+      {person.notes && <p className="mt-1.5 whitespace-pre-line text-[11px] leading-relaxed text-[#23414E]">{person.notes}</p>}
       {person.audioUrl &&
-        (url ? <audio controls src={url} className="mt-2 h-9 w-full" /> : <p className="mt-2 text-[11px] text-[#8C7B6B]">טוען הקלטה...</p>)}
+        (url ? <audio controls src={url} className="mt-2 h-9 w-full" /> : <p className="mt-2 text-[11px] text-[#5E7A87]">טוען הקלטה...</p>)}
     </div>
   );
 }
@@ -126,9 +126,9 @@ function ExternalContactCard({ person }) {
 // כרטיס מועמד/ת שנמחק מהמאגר. ההצעה עצמה נשמרת ומוצגת, כדי שהרציונל והיומן לא ילכו לאיבוד.
 function MissingContactCard({ name }) {
   return (
-    <div className="rounded-2xl border border-dashed border-[#EADCCB] bg-[#FBF3EA] p-3">
-      <p className="text-[13px] font-bold text-[#5A4A3C]">{name}</p>
-      <p className="mt-1 text-[11px] leading-relaxed text-[#8C7B6B]">
+    <div className="rounded-2xl border border-dashed border-[#CFE3EC] bg-[#F2F8FB] p-3">
+      <p className="text-[13px] font-bold text-[#23414E]">{name}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-[#5E7A87]">
         הכרטיס אינו קיים יותר במאגר, ולכן אין פרטי קשר להצגה. ההצעה עצמה נשמרה במלואה.
       </p>
     </div>
@@ -191,9 +191,9 @@ export default function ProposalCard({ proposal }) {
   };
 
   return (
-    <div className="rounded-3xl border border-[#EADCCB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+    <div className="rounded-3xl border border-[#CFE3EC] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <div className="flex items-center justify-between">
-        <h3 className="text-[15px] font-bold text-[#5A4A3C]">
+        <h3 className="text-[15px] font-bold text-[#23414E]">
           {maleName} ⚭ {femaleName}
         </h3>
         <div className="flex items-center gap-1">
@@ -206,7 +206,7 @@ export default function ProposalCard({ proposal }) {
               <Trash2 size={16} className="text-[#C4584C]" />
             </button>
           )}
-          <button onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:bg-[#FBF3EA]" aria-label="פתיחת יומן">
+          <button onClick={() => setOpen((v) => !v)} className="rounded-full p-1.5 hover:bg-[#F2F8FB]" aria-label="פתיחת יומן">
             <ChevronDown size={18} className={`transition ${open ? "rotate-180" : ""}`} />
           </button>
         </div>
@@ -214,23 +214,23 @@ export default function ProposalCard({ proposal }) {
 
       <div className="mt-2 flex items-center justify-between">
         {proposal.assignee ? (
-          <span className="flex items-center gap-1.5 rounded-full bg-[#F7DFD8] px-2.5 py-1 text-[11px] font-bold text-[#A05243]">
+          <span className="flex items-center gap-1.5 rounded-full bg-[#DCEEF5] px-2.5 py-1 text-[11px] font-bold text-[#1F6E88]">
             <UserCheck size={12} /> מטופל/ת ע״י {proposal.assignee}
           </span>
         ) : (
-          <span className="text-[11px] font-semibold text-[#C3B5A5]">טרם שויך לאיש צוות</span>
+          <span className="text-[11px] font-semibold text-[#9FBAC7]">טרם שויך לאיש צוות</span>
         )}
         {proposal.assignee ? (
           <button
             onClick={() => assignProposal(proposal.id, null)}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#C3B5A5] hover:text-[#C06E5E]"
+            className="flex items-center gap-1 text-[11px] font-semibold text-[#9FBAC7] hover:text-[#2E8BA8]"
           >
             <X size={12} /> שחרור שיוך
           </button>
         ) : (
           <button
             onClick={() => assignProposalToSelf(proposal.id)}
-            className="rounded-full bg-[#C06E5E] px-3 py-1 text-[11px] font-bold text-white transition active:scale-95"
+            className="rounded-full bg-[#2E8BA8] px-3 py-1 text-[11px] font-bold text-white transition active:scale-95"
           >
             לקחתי על עצמי
           </button>
@@ -241,7 +241,7 @@ export default function ProposalCard({ proposal }) {
         <StageFunnel status={proposal.status} onSelect={handleStageChange} />
       </div>
 
-      <div className="mt-4 rounded-2xl bg-[#FDF6EC] p-3">
+      <div className="mt-4 rounded-2xl bg-[#EAF5FA] p-3">
         <p className="mb-1 flex items-center gap-1 text-[11px] font-bold text-[#8A6A32]">
           <Sparkles size={12} /> הרציונל (הניצוץ)
         </p>
@@ -251,7 +251,7 @@ export default function ProposalCard({ proposal }) {
           onBlur={() => updateProposalRationale(proposal.id, rationaleDraft)}
           rows={2}
           placeholder="מה משלים בין הצדדים, למה נוצר החיבור..."
-          className="w-full resize-none rounded-xl border-none bg-transparent text-[12px] text-[#5A4A3C] outline-none placeholder:text-[#C3B5A5]"
+          className="w-full resize-none rounded-xl border-none bg-transparent text-[12px] text-[#23414E] outline-none placeholder:text-[#9FBAC7]"
         />
       </div>
 
@@ -273,9 +273,9 @@ export default function ProposalCard({ proposal }) {
       </div>
 
       {open && (
-        <div className="mt-4 space-y-3 border-t border-[#EADCCB] pt-3">
+        <div className="mt-4 space-y-3 border-t border-[#CFE3EC] pt-3">
           <div>
-            <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">עדכון סטטוס</p>
+            <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">עדכון סטטוס</p>
             <div className="flex flex-wrap gap-1.5">
               {[...PROPOSAL_STAGES, PROPOSAL_DROPPED].map((stage) => (
                 <button
@@ -283,8 +283,8 @@ export default function ProposalCard({ proposal }) {
                   onClick={() => handleStageChange(stage)}
                   className={`rounded-full border px-2.5 py-1.5 text-[11px] font-semibold transition ${
                     proposal.status === stage
-                      ? "border-[#C06E5E] bg-[#C06E5E] text-white"
-                      : "border-[#EADCCB] bg-white text-[#5A4A3C] hover:bg-[#FBF3EA]"
+                      ? "border-[#2E8BA8] bg-[#2E8BA8] text-white"
+                      : "border-[#CFE3EC] bg-white text-[#23414E] hover:bg-[#F2F8FB]"
                   }`}
                 >
                   {stage}
@@ -299,23 +299,23 @@ export default function ProposalCard({ proposal }) {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="הערה לעדכון הבא (אופציונלי)..."
-              className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#C06E5E]"
+              className="w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#2E8BA8]"
             />
           </div>
 
           <div>
-            <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#5A4A3C]">
+            <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#23414E]">
               <Clock size={13} /> יומן התקדמות
             </p>
             <ul className="space-y-1.5">
               {[...proposal.journal].reverse().map((entry) => (
-                <li key={entry.id} className="rounded-xl bg-[#FBF3EA] px-3 py-2 text-[12px]">
+                <li key={entry.id} className="rounded-xl bg-[#F2F8FB] px-3 py-2 text-[12px]">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[#5A4A3C]">{entry.status}</span>
-                    <span className="text-[#C3B5A5]">{new Date(entry.date).toLocaleDateString("he-IL")}</span>
+                    <span className="font-semibold text-[#23414E]">{entry.status}</span>
+                    <span className="text-[#9FBAC7]">{new Date(entry.date).toLocaleDateString("he-IL")}</span>
                   </div>
-                  {entry.note && <p className="mt-0.5 text-[#8C7B6B]">{entry.note}</p>}
-                  <p className="mt-0.5 text-[10px] text-[#C3B5A5]">עודכן ע״י {entry.author}</p>
+                  {entry.note && <p className="mt-0.5 text-[#5E7A87]">{entry.note}</p>}
+                  <p className="mt-0.5 text-[10px] text-[#9FBAC7]">עודכן ע״י {entry.author}</p>
                 </li>
               ))}
             </ul>

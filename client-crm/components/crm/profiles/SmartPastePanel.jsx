@@ -28,21 +28,21 @@ export default function SmartPastePanel({ onApply }) {
   };
 
   return (
-    <div className="mt-4 rounded-2xl border border-[#EADCCB] bg-white">
+    <div className="mt-4 rounded-2xl border border-[#CFE3EC] bg-white">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-4 py-3 text-right"
       >
-        <span className="flex items-center gap-2 text-[13px] font-bold text-[#C06E5E]">
+        <span className="flex items-center gap-2 text-[13px] font-bold text-[#2E8BA8]">
           <Wand2 size={16} /> מילוי מהיר מטקסט
         </span>
-        <ChevronDown size={18} className={`text-[#C06E5E] transition ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={18} className={`text-[#2E8BA8] transition ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="border-t border-[#EADCCB] p-4">
-          <p className="mb-2 text-[11px] leading-relaxed text-[#8C7B6B]">
+        <div className="border-t border-[#CFE3EC] p-4">
+          <p className="mb-2 text-[11px] leading-relaxed text-[#5E7A87]">
             הדביקו כאן טקסט חופשי (למשל הודעה שקיבלתם בוואטסאפ) והמערכת תפזר לבד את מה שהיא מזהה לשדות
             שלמטה. מה שלא זוהה יישאר ריק להקלדה ידנית, ואפשר תמיד לתקן כל שדה.
           </p>
@@ -52,14 +52,14 @@ export default function SmartPastePanel({ onApply }) {
             onChange={(e) => setText(e.target.value)}
             rows={5}
             placeholder={"שם: מוריה שגב\nגיל: 24\nגובה: 1.68\nעיר: ירושלים\nטלפון: 052-1234567"}
-            className="w-full resize-y rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#C06E5E]"
+            className="w-full resize-y rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#2E8BA8]"
           />
 
           <div className="mt-2 flex gap-2">
             <button
               type="button"
               onClick={handlePasteFromClipboard}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-[#EADCCB] px-3 py-2 text-[12px] font-semibold text-[#5A4A3C] transition active:scale-95"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-[#CFE3EC] px-3 py-2 text-[12px] font-semibold text-[#23414E] transition active:scale-95"
             >
               <ClipboardPaste size={14} /> הדבקה
             </button>
@@ -67,14 +67,14 @@ export default function SmartPastePanel({ onApply }) {
               type="button"
               onClick={handleApply}
               disabled={!text.trim()}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#C06E5E] px-3 py-2 text-[12px] font-semibold text-white transition active:scale-95 disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#2E8BA8] px-3 py-2 text-[12px] font-semibold text-white transition active:scale-95 disabled:opacity-50"
             >
               <Wand2 size={14} /> מילוי השדות
             </button>
           </div>
 
           {result !== null && (
-            <p className="mt-2 text-[12px] font-semibold text-[#8C9A78]">
+            <p className="mt-2 text-[12px] font-semibold text-[#2FA39B]">
               {result > 0 ? `מולאו ${result} שדות. בדקו אותם ותקנו במידת הצורך.` : "לא זוהו נתונים בטקסט - אפשר למלא ידנית."}
             </p>
           )}

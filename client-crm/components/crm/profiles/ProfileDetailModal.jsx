@@ -49,7 +49,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
         </div>
 
         <div className="p-5">
-          <h2 className="text-xl font-bold text-[#5A4A3C]">{candidate.name}</h2>
+          <h2 className="text-xl font-bold text-[#23414E]">{candidate.name}</h2>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span className="tag-chip-detail">{candidate.age}</span>
             <span className="tag-chip-detail">{candidate.height} ס״מ</span>
@@ -72,19 +72,19 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 
           {candidate.bio && (
             <div className="mt-4">
-              <p className="mb-1 text-[12px] font-semibold text-[#5A4A3C]">קצת עליי</p>
-              <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#8C7B6B]">{candidate.bio}</p>
+              <p className="mb-1 text-[12px] font-semibold text-[#23414E]">קצת עליי</p>
+              <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#5E7A87]">{candidate.bio}</p>
             </div>
           )}
 
           {occupations.length > 0 && (
             <div className="mt-4">
-              <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#5A4A3C]">
-                <Route size={13} className="text-[#C06E5E]" /> המסלול שלי
+              <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#23414E]">
+                <Route size={13} className="text-[#2E8BA8]" /> המסלול שלי
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {occupations.map((o) => (
-                  <span key={o} className="rounded-full bg-[#FBF3EA] px-2.5 py-1 text-[11px] font-semibold text-[#5A4A3C]">
+                  <span key={o} className="rounded-full bg-[#F2F8FB] px-2.5 py-1 text-[11px] font-semibold text-[#23414E]">
                     {o}
                   </span>
                 ))}
@@ -94,10 +94,10 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 
           {candidate.traits?.length > 0 && (
             <div className="mt-4">
-              <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">תכונות</p>
+              <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">תכונות</p>
               <div className="flex flex-wrap gap-1.5">
                 {candidate.traits.map((t) => (
-                  <span key={t} className="rounded-full bg-[#F7DFD8] px-2.5 py-1 text-[11px] font-semibold text-[#A05243]">
+                  <span key={t} className="rounded-full bg-[#DCEEF5] px-2.5 py-1 text-[11px] font-semibold text-[#1F6E88]">
                     {t}
                   </span>
                 ))}
@@ -106,7 +106,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           )}
 
           {candidate.smoking && (
-            <p className="mt-4 border-t border-[#EADCCB] pt-2.5 text-[11px] text-[#8C7B6B]">
+            <p className="mt-4 border-t border-[#CFE3EC] pt-2.5 text-[11px] text-[#5E7A87]">
               * עישון: {candidate.smoking}
             </p>
           )}
@@ -116,11 +116,11 @@ export default function ProfileDetailModal({ candidate, onClose }) {
       <style jsx>{`
         .tag-chip-detail {
           border-radius: 999px;
-          background: #FBF3EA;
+          background: #F2F8FB;
           padding: 4px 10px;
           font-size: 11px;
           font-weight: 700;
-          color: #5A4A3C;
+          color: #23414E;
         }
       `}</style>
     </div>
@@ -130,10 +130,10 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 function DetailRow({ icon: Icon, label, value }) {
   if (!value) return null;
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-[#FBF3EA] px-3 py-2.5">
-      <Icon size={16} className="shrink-0 text-[#C06E5E]" />
-      <span className="w-24 shrink-0 text-[12px] text-[#8C7B6B]">{label}</span>
-      <span className="text-sm font-medium text-[#5A4A3C]">{value}</span>
+    <div className="flex items-center gap-2.5 rounded-xl bg-[#F2F8FB] px-3 py-2.5">
+      <Icon size={16} className="shrink-0 text-[#2E8BA8]" />
+      <span className="w-24 shrink-0 text-[12px] text-[#5E7A87]">{label}</span>
+      <span className="text-sm font-medium text-[#23414E]">{value}</span>
     </div>
   );
 }

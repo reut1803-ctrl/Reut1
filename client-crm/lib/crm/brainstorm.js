@@ -1,8 +1,9 @@
 // לוגיקה טהורה של "זירת סיעור המוחות": מאגר השאלות, צבעי הצוות, ספירת הזמן,
 // חילוץ מילות המפתח והקשרים בין הכרטיסיות. הקובץ הזה אינו נוגע ב-Firebase.
 
-// משך סבב סיעור מוחות: שלושה ימים מרגע הפתיחה
-export const ROUND_DAYS = 3;
+// משך סבב סיעור מוחות: שבוע מרגע השיגור. המועמד/ת המרכזי/ת מתחלף/ת
+// אחת לשבוע, כדי שלצוות יהיה זמן אמיתי לחשוב לעומק על אחד/ת בכל פעם.
+export const ROUND_DAYS = 7;
 export const ROUND_MS = ROUND_DAYS * 24 * 60 * 60 * 1000;
 
 // מאגר שאלות העומק. המנהלת בוחרת שאלה אחת לכל סבב, או כותבת שאלה משלה.
@@ -22,14 +23,14 @@ export const QUESTION_BANK = [
 // צבע פסטל קבוע לכל איש/אשת צוות, כדי שיהיה אפשר לזהות מי כתב מה במבט חטוף.
 // הצבע נגזר מכתובת המייל, ולכן הוא נשאר זהה בכל מכשיר ובכל סבב.
 export const TEAM_PALETTE = [
-  { bg: "rgba(246,228,230,0.72)", border: "#F1B3A6", dot: "#E2A396", name: "ורוד" },
-  { bg: "rgba(223,238,232,0.72)", border: "#C3D0B4", dot: "#6FB79A", name: "מנטה" },
+  { bg: "rgba(246,228,230,0.72)", border: "#A8D8E8", dot: "#74B9CE", name: "ורוד" },
+  { bg: "rgba(223,238,232,0.72)", border: "#AFD6DC", dot: "#6FB79A", name: "מנטה" },
   { bg: "rgba(232,233,246,0.72)", border: "#BFC2E6", dot: "#8B90D0", name: "לבנדר" },
-  { bg: "rgba(252,239,220,0.72)", border: "#EFC9A8", dot: "#C9A063", name: "חמרה" },
+  { bg: "rgba(232,244,238,0.72)", border: "#AFD6C8", dot: "#4FA88C", name: "אקווה" },
   { bg: "rgba(223,236,246,0.72)", border: "#AFCDE6", dot: "#6E9FC4", name: "תכלת" },
   { bg: "rgba(241,232,245,0.72)", border: "#D8BFE4", dot: "#A97FBB", name: "סחלב" },
-  { bg: "rgba(238,243,222,0.72)", border: "#CBDBA0", dot: "#9BB55C", name: "זית" },
-  { bg: "rgba(250,232,228,0.72)", border: "#F2C0B4", dot: "#D18B78", name: "אפרסק" },
+  { bg: "rgba(226,240,246,0.72)", border: "#A8CFE0", dot: "#4E9CB8", name: "תכלת ים" },
+  { bg: "rgba(228,238,250,0.72)", border: "#B4C6F2", dot: "#7889D1", name: "כחול" },
 ];
 
 export function paletteFor(email) {
@@ -66,12 +67,12 @@ export function timeLeft(closesAt, now = Date.now()) {
 }
 
 // טיוטה: הסבב הוכן על ידי המנהלת אך עדיין לא שוגר לצוות, ולכן אינו גלוי לאיש.
-// שלושת הימים מתחילים לרוץ רק מרגע השיגור.
+// שבוע הדיון מתחיל לרוץ רק מרגע השיגור.
 export function isRoundDraft(round) {
   return round?.status === "draft";
 }
 
-// סבב נעול כשהמנהלת סגרה אותו ידנית או כששלושת הימים חלפו.
+// סבב נעול כשהמנהלת סגרה אותו ידנית או כששבוע הדיון חלף.
 // טיוטה אינה נעולה - היא פשוט עוד לא התחילה.
 export function isRoundClosed(round, now = Date.now()) {
   if (!round) return true;

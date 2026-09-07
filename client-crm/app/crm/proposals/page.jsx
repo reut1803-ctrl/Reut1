@@ -26,23 +26,23 @@ function DuplicateAlertDialog({ proposal, onContinue, onCancel }) {
     <div className="fixed inset-0 z-[200] flex items-center justify-center px-6" role="alertdialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative w-full max-w-xs rounded-3xl bg-white p-5 text-center shadow-2xl">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FDF6EC]">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF5FA]">
           <AlertTriangle size={22} className="text-[#8A6A32]" />
         </div>
-        <p className="text-[13px] font-bold leading-relaxed text-[#5A4A3C]">
+        <p className="text-[13px] font-bold leading-relaxed text-[#23414E]">
           שים לב: הצעה בין מועמדים אלו עלתה בעבר וירדה מהפרק. ייתכן ששווה לנסות שוב, אך כדאי לבדוק את
           נסיבות העבר. האם ברצונך להמשיך ולהקים את ההצעה?
         </p>
 
         {(whenText || proposal?.rationale || proposal?.isHistory) && (
-          <div className="mt-3 rounded-2xl bg-[#FBF3EA] px-3 py-2 text-right">
+          <div className="mt-3 rounded-2xl bg-[#F2F8FB] px-3 py-2 text-right">
             {whenText && (
-              <p className="text-[11px] text-[#8C7B6B]">
+              <p className="text-[11px] text-[#5E7A87]">
                 {proposal.isHistory ? "הוזן כהיסטוריה בתאריך" : "ירדה מהפרק במערכת בתאריך"} {whenText}
               </p>
             )}
             {proposal?.rationale && (
-              <p className="mt-1 text-[11px] leading-relaxed text-[#8C7B6B]">הרציונל שנכתב אז: {proposal.rationale}</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#5E7A87]">הרציונל שנכתב אז: {proposal.rationale}</p>
             )}
           </div>
         )}
@@ -50,11 +50,11 @@ function DuplicateAlertDialog({ proposal, onContinue, onCancel }) {
         <div className="mt-4 flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-2xl border border-[#EADCCB] py-2.5 text-sm font-semibold text-[#5A4A3C]"
+            className="flex-1 rounded-2xl border border-[#CFE3EC] py-2.5 text-sm font-semibold text-[#23414E]"
           >
             ביטול
           </button>
-          <button onClick={onContinue} className="flex-1 rounded-2xl bg-[#C06E5E] py-2.5 text-sm font-semibold text-white">
+          <button onClick={onContinue} className="flex-1 rounded-2xl bg-[#2E8BA8] py-2.5 text-sm font-semibold text-white">
             אישור והמשך
           </button>
         </div>
@@ -65,9 +65,9 @@ function DuplicateAlertDialog({ proposal, onContinue, onCancel }) {
 
 function ExternalPersonFields({ title, value, onChange }) {
   return (
-    <div className="mt-3 rounded-2xl border-2 border-dashed border-[#E2A396] bg-[#FDF7F4] p-3">
-      <p className="mb-2 text-[12px] font-bold text-[#C06E5E]">{title}</p>
-      <p className="mb-2.5 text-[11px] leading-relaxed text-[#8C7B6B]">
+    <div className="mt-3 rounded-2xl border-2 border-dashed border-[#74B9CE] bg-[#F5FAFC] p-3">
+      <p className="mb-2 text-[12px] font-bold text-[#2E8BA8]">{title}</p>
+      <p className="mb-2.5 text-[11px] leading-relaxed text-[#5E7A87]">
         אדם שאינו במאגר. הפרטים כאן נשמרים רק בתוך ההתאמה הזו ולא נפתח עבורו כרטיס במאגר.
       </p>
 
@@ -76,7 +76,7 @@ function ExternalPersonFields({ title, value, onChange }) {
         value={value.name}
         onChange={(e) => onChange({ ...value, name: e.target.value })}
         placeholder='מי זה? (שם מלא או זיהוי, למשל "בחור שפגשתי בשבת")'
-        className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#C06E5E]"
+        className="w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2E8BA8]"
       />
 
       <textarea
@@ -84,7 +84,7 @@ function ExternalPersonFields({ title, value, onChange }) {
         onChange={(e) => onChange({ ...value, notes: e.target.value })}
         rows={3}
         placeholder="פרטים על האדם עצמו: גיל, רקע, אופי, ממי הגיע..."
-        className="mt-2 w-full resize-y rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#C06E5E]"
+        className="mt-2 w-full resize-y rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#2E8BA8]"
       />
 
       <div className="mt-2.5">
@@ -134,7 +134,7 @@ export default function ProposalsPage() {
   const activeProposals = useMemo(() => proposals.filter((p) => p.status !== PROPOSAL_DROPPED), [proposals]);
 
   if (role !== "staff" && role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8C7B6B]">אזור זה זמין לצוות בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#5E7A87]">אזור זה זמין לצוות בלבד</p>;
   }
 
   const sideReady = (value, external) =>
@@ -178,12 +178,12 @@ export default function ProposalsPage() {
         <PreselectFromQuery />
       </Suspense>
 
-      <h1 className="text-xl font-bold text-[#5A4A3C]">הצעת התאמה</h1>
-      <p className="mt-1 text-[13px] text-[#8C7B6B]">בחרו בחור ובחורה והציעו התאמה ביניהם</p>
+      <h1 className="text-xl font-bold text-[#23414E]">הצעת התאמה</h1>
+      <p className="mt-1 text-[13px] text-[#5E7A87]">בחרו בחור ובחורה והציעו התאמה ביניהם</p>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">בחור</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">בחור</p>
           <SearchableSelect
             value={selection.male || ""}
             onChange={(v) => setSelection("male", v)}
@@ -197,7 +197,7 @@ export default function ProposalsPage() {
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">בחורה</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">בחורה</p>
           <SearchableSelect
             value={selection.female || ""}
             onChange={(v) => setSelection("female", v)}
@@ -219,27 +219,27 @@ export default function ProposalsPage() {
       )}
 
       {previousDropped && (
-        <div className="mt-3 rounded-2xl border border-[#F0E3C0] bg-[#FDF6EC] p-3">
+        <div className="mt-3 rounded-2xl border border-[#D6EAF2] bg-[#EAF5FA] p-3">
           <p className="flex items-center gap-1.5 text-[12px] font-bold text-[#8A6A32]">
             <Info size={14} /> שימו לב, הצעה בין השניים כבר עלתה בעבר וירדה מהפרק
           </p>
           {previousDropped.rationale && (
-            <p className="mt-1.5 text-[11px] leading-relaxed text-[#8C7B6B]">
+            <p className="mt-1.5 text-[11px] leading-relaxed text-[#5E7A87]">
               הרציונל שנכתב אז: {previousDropped.rationale}
             </p>
           )}
-          <p className="mt-1 text-[11px] text-[#8C7B6B]">אפשר להמשיך ולהציע שוב, אבל המערכת תבקש אישור לפני ההקמה.</p>
+          <p className="mt-1 text-[11px] text-[#5E7A87]">אפשר להמשיך ולהציע שוב, אבל המערכת תבקש אישור לפני ההקמה.</p>
         </div>
       )}
 
       <div className="mt-3">
-        <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">הרציונל (הניצוץ) - למה זה מתאים?</p>
+        <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">הרציונל (הניצוץ) - למה זה מתאים?</p>
         <textarea
           value={rationale}
           onChange={(e) => setRationale(e.target.value)}
           rows={2}
           placeholder="מה משלים בין הצדדים, למה נוצר החיבור..."
-          className="w-full resize-none rounded-2xl border border-[#EADCCB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#C06E5E]"
+          className="w-full resize-none rounded-2xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2E8BA8]"
         />
       </div>
 
@@ -253,9 +253,9 @@ export default function ProposalsPage() {
       </Button>
 
       <div className="mt-8">
-        <h2 className="mb-3 text-[15px] font-bold text-[#5A4A3C]">הצעות פעילות ({activeProposals.length})</h2>
+        <h2 className="mb-3 text-[15px] font-bold text-[#23414E]">הצעות פעילות ({activeProposals.length})</h2>
         {activeProposals.length === 0 ? (
-          <p className="text-center text-sm text-[#8C7B6B]">
+          <p className="text-center text-sm text-[#5E7A87]">
             {proposals.length === 0
               ? "עדיין לא הוצעו התאמות"
               : "אין כרגע הצעות פעילות. כל מה שירד מהפרק שמור בהיסטוריה למטה."}

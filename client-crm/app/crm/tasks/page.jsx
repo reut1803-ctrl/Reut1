@@ -28,20 +28,34 @@ export default function TasksPage() {
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [owner, setOwner] = useState("");
-  const [assigneeId, setAssigneeId] = useState(allowlistEmail(staffList[0]) || "");
+  const [assigneeId, setAssigneeId] = useState("");
   const [candidateId, setCandidateId] = useState("");
 
   useEffect(() => {
     if (role === "staff") markTasksSeenByStaff(currentStaffEmail);
   }, [role, currentStaffEmail, markTasksSeenByStaff]);
 
-  // רשימת הצוות נטענת מהשרת אחרי הרינדור הראשון, ולכן בוחרים נציגה ראשונה כשהיא מגיעה
+  // אפשרויות השיוך: קודם כל שיוך עצמי למנהלת, ואחריו שאר הצוות.
+  // המנהלת אינה בהכרח מופיעה ברשימת ההרשאות (היא מזוהה מתוך הקוד), ובלי
+  // השורה הזו לא היה לה שום דרך לשייך משימה לעצמה.
+  const myEmail = String(currentUser().email || "").trim().toLowerCase();
+  const assigneeOptions = useMemo(() => {
+    const fromStaff = staffList
+      .map((s) => ({ value: allowlistEmail(s), label: s.name || allowlistEmail(s) }))
+      .filter((o) => o.value);
+    const mine = fromStaff.find((o) => o.value === myEmail);
+    const rest = fromStaff.filter((o) => o.value !== myEmail);
+    if (!myEmail) return rest;
+    return [{ value: myEmail, label: `לעצמי · ${mine?.label || currentUser().name || myEmail}` }, ...rest];
+  }, [staffList, myEmail, currentUser]);
+
+  // ברירת המחדל היא שיוך עצמי, ואם אין - הנציגה הראשונה ברשימה
   useEffect(() => {
-    if (!assigneeId && staffList.length > 0) setAssigneeId(allowlistEmail(staffList[0]));
-  }, [assigneeId, staffList]);
+    if (!assigneeId && assigneeOptions.length > 0) setAssigneeId(assigneeOptions[0].value);
+  }, [assigneeId, assigneeOptions]);
 
   if (role !== "staff" && role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8C7B6B]">אזור זה זמין לצוות בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#5E7A87]">אזור זה זמין לצוות בלבד</p>;
   }
 
   // המנהלת רואה את כל המשימות. אשת צוות רואה אך ורק את המשימות שמשויכות אליה -
@@ -57,7 +71,7 @@ export default function TasksPage() {
     if (role === "admin") {
       // בלי נציגה משויכת המשימה לא תגיע לאף אחת, ולכן חוסמים יצירה כזו
       if (!assigneeId) {
-        showToast("יש לבחור נציגה לשיוך המשימה");
+        showToast("יש לבחור למי לשייך את המשימה");
         return;
       }
       pushTaskToStaff(title.trim(), dueDate.trim() || null, assigneeId, candidateId || null, description.trim());
@@ -80,25 +94,25 @@ export default function TasksPage() {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="text-xl font-bold text-[#5A4A3C]">משימות</h1>
-      <p className="mt-1 text-[13px] text-[#8C7B6B]">{open.length} משימות פתוחות</p>
+      <h1 className="text-xl font-bold text-[#23414E]">משימות</h1>
+      <p className="mt-1 text-[13px] text-[#5E7A87]">{open.length} משימות פתוחות</p>
 
-      <div className="mt-4 rounded-3xl border border-[#EADCCB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-        <p className="mb-2 text-[13px] font-semibold text-[#5A4A3C]">{role === "admin" ? "משימה חדשה - שיוך לצוות" : "משימה חדשה"}</p>
+      <div className="mt-4 rounded-3xl border border-[#CFE3EC] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+        <p className="mb-2 text-[13px] font-semibold text-[#23414E]">{role === "admin" ? "משימה חדשה" : "משימה חדשה"}</p>
         <div className="space-y-2">
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="מה צריך לעשות?"
-            className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#C06E5E]"
+            className="w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2E8BA8]"
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="פירוט ודגשים (לא חובה)"
-            className="w-full resize-y rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#C06E5E]"
+            className="w-full resize-y rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#2E8BA8]"
           />
           <div className="flex gap-2">
             <input
@@ -106,16 +120,16 @@ export default function TasksPage() {
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               placeholder="תאריך (למשל: כ' בחשוון)"
-              className="flex-1 rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#C06E5E]"
+              className="flex-1 rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2E8BA8]"
             />
             {role === "admin" ? (
               <SearchableSelect
                 className="flex-1"
                 value={assigneeId}
                 onChange={setAssigneeId}
-                placeholder="בחירת נציגה..."
+                placeholder="שיוך המשימה..."
                 emptyText="לא נמצאה נציגה בשם הזה"
-                options={staffList.map((s) => ({ value: allowlistEmail(s), label: s.name || allowlistEmail(s) }))}
+                options={assigneeOptions}
               />
             ) : (
               <input
@@ -123,7 +137,7 @@ export default function TasksPage() {
                 value={owner}
                 onChange={(e) => setOwner(e.target.value)}
                 placeholder="אחראי/ת"
-                className="flex-1 rounded-xl border border-[#EADCCB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#C06E5E]"
+                className="flex-1 rounded-xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2E8BA8]"
               />
             )}
           </div>
@@ -138,14 +152,14 @@ export default function TasksPage() {
           )}
           <Button variant="primary" className="w-full" onClick={handleAdd}>
             {role === "admin" ? <Megaphone size={16} /> : <Plus size={16} />}
-            {role === "admin" ? "שיוך משימה לנציגה" : "הוספת משימה"}
+            {role === "admin" ? "שיוך משימה (לעצמי או לנציגה)" : "הוספת משימה"}
           </Button>
         </div>
       </div>
 
       {pushedToMe.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-[#C06E5E]">
+          <p className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-[#2E8BA8]">
             <Megaphone size={14} /> משימות מהמנהלת
           </p>
           <div className="space-y-2">
@@ -160,26 +174,26 @@ export default function TasksPage() {
         {otherOpen.map((t) => (
           <TaskRow key={t.id} task={t} onToggle={() => toggleTaskDone(t.id)} />
         ))}
-        {open.length === 0 && <p className="py-6 text-center text-sm text-[#8C7B6B]">אין משימות פתוחות 🎉</p>}
+        {open.length === 0 && <p className="py-6 text-center text-sm text-[#5E7A87]">אין משימות פתוחות 🎉</p>}
       </div>
 
       {done.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 text-[13px] font-semibold text-[#C3B5A5]">הושלמו</p>
+          <p className="mb-2 text-[13px] font-semibold text-[#9FBAC7]">הושלמו</p>
           <div className="space-y-2">
             {done.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 rounded-2xl border border-[#EADCCB] bg-[#FBF3EA] p-3 opacity-70">
+              <div key={t.id} className="flex items-center gap-3 rounded-2xl border border-[#CFE3EC] bg-[#F2F8FB] p-3 opacity-70">
                 <button
                   onClick={() => toggleTaskDone(t.id)}
                   aria-label="סימון כפתוח"
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8C9A78] text-white"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2FA39B] text-white"
                 >
                   <Check size={14} />
                 </button>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-[#5A4A3C] line-through">{t.title}</p>
-                  {t.description && <p className="mt-0.5 text-[12px] text-[#C3B5A5]">{t.description}</p>}
-                  <p className="text-[11px] text-[#C3B5A5]">
+                  <p className="text-sm font-semibold text-[#23414E] line-through">{t.title}</p>
+                  {t.description && <p className="mt-0.5 text-[12px] text-[#9FBAC7]">{t.description}</p>}
+                  <p className="text-[11px] text-[#9FBAC7]">
                     {t.owner} {t.dueDate && `· ${t.dueDate}`}
                   </p>
                 </div>
@@ -198,20 +212,20 @@ function TaskRow({ task, onToggle, highlighted }) {
 
   return (
     <div
-      className={`rounded-2xl border p-3 ${highlighted ? "border-[#C06E5E] bg-[#F7DFD8]" : "border-[#EADCCB] bg-white"}`}
+      className={`rounded-2xl border p-3 ${highlighted ? "border-[#2E8BA8] bg-[#DCEEF5]" : "border-[#CFE3EC] bg-white"}`}
     >
       <div className="flex items-center gap-3">
         <button
           onClick={onToggle}
           aria-label="סימון כהושלם"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#C06E5E]"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-[#2E8BA8]"
         />
         <div className="flex-1">
-          <p className="text-sm font-semibold text-[#5A4A3C]">{task.title}</p>
+          <p className="text-sm font-semibold text-[#23414E]">{task.title}</p>
           {task.description && (
             <p className="mt-0.5 whitespace-pre-line text-[12px] leading-relaxed text-[#6B6265]">{task.description}</p>
           )}
-          <p className="mt-0.5 text-[11px] text-[#8C7B6B]">
+          <p className="mt-0.5 text-[11px] text-[#5E7A87]">
             {task.owner} {task.dueDate && `· ${task.dueDate}`} {candidate && `· בנוגע ל${candidate.name}`}
           </p>
         </div>
@@ -219,14 +233,14 @@ function TaskRow({ task, onToggle, highlighted }) {
 
       {candidate && (
         <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-[12px] shadow-sm">
-          <Link href={`/crm?openCandidate=${candidate.id}`} className="flex items-center gap-1.5 font-semibold text-[#C06E5E]">
+          <Link href={`/crm?openCandidate=${candidate.id}`} className="flex items-center gap-1.5 font-semibold text-[#2E8BA8]">
             צפייה בכרטיס {candidate.name} <ChevronLeft size={13} />
           </Link>
           {candidate.phone && (
             <a
               href={`tel:${candidate.phone}`}
               dir="ltr"
-              className="flex items-center gap-1 rounded-lg bg-[#FBF3EA] px-2 py-1 font-semibold text-[#5A4A3C]"
+              className="flex items-center gap-1 rounded-lg bg-[#F2F8FB] px-2 py-1 font-semibold text-[#23414E]"
             >
               <Phone size={12} /> {candidate.phone}
             </a>

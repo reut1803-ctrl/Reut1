@@ -25,7 +25,7 @@ export default function TipsCarousel() {
   };
 
   return (
-    <div className="mb-4 rounded-2xl border border-[#F0E3C0] bg-[#FDF6EC] p-3.5">
+    <div className="mb-4 rounded-2xl border border-[#D6EAF2] bg-[#EAF5FA] p-3.5">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Lightbulb size={16} className="text-[#8A6A32]" />
@@ -51,7 +51,7 @@ export default function TipsCarousel() {
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="טיפ חדש..."
             autoFocus
-            className="flex-1 rounded-xl border border-[#F0E3C0] bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-[#8A6A32]"
+            className="flex-1 rounded-xl border border-[#D6EAF2] bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-[#8A6A32]"
           />
           <button
             onClick={handleAdd}
@@ -64,17 +64,17 @@ export default function TipsCarousel() {
       )}
 
       {tips.length === 0 ? (
-        <p className="text-[13px] text-[#8C7B6B]">אין עדיין טיפים</p>
+        <p className="text-[13px] text-[#5E7A87]">אין עדיין טיפים</p>
       ) : (
         <div className="-mx-0.5 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-0.5 pb-1 [&::-webkit-scrollbar]:hidden">
           {tips.map((tip, i) => (
             <div key={i} className="relative w-full shrink-0 snap-center">
-              <p className="pl-5 text-[13px] leading-relaxed text-[#5A4A3C]">{tip}</p>
+              <p className="pl-5 text-[13px] leading-relaxed text-[#23414E]">{tip}</p>
               {isAdmin && (
                 <button
                   onClick={() => removeTip(i)}
                   aria-label="מחיקת טיפ"
-                  className="absolute left-0 top-0 rounded-full p-0.5 text-[#C3B5A5] hover:text-[#C4584C]"
+                  className="absolute left-0 top-0 rounded-full p-0.5 text-[#9FBAC7] hover:text-[#C4584C]"
                 >
                   <X size={14} />
                 </button>
@@ -85,7 +85,7 @@ export default function TipsCarousel() {
       )}
 
       {tips.length > 1 && (
-        <p className="mt-1.5 text-center text-[10px] text-[#C3B5A5]">החליקו לצדדים לעוד טיפים ({tips.length})</p>
+        <p className="mt-1.5 text-center text-[10px] text-[#9FBAC7]">החליקו לצדדים לעוד טיפים ({tips.length})</p>
       )}
     </div>
   );

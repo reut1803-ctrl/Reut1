@@ -102,13 +102,6 @@ function buildSteps({ hasCards, hasReferenceContacts }) {
 
   steps.push(
     {
-      target: '[data-tour="tour-nav-matches"]',
-      disableBeacon: true,
-      title: "מבחן התאמות",
-      content:
-        "כאן נמצא מבחן ההתאמות - שאלון קצר בן 7 שאלות. ממלאים אותו עבור מועמד/ת מסוימת, והמערכת מציגה מולו/ה את ההצעות הכי מתאימות מהמאגר לפי ההעדפות שהוזנו, כדי לעזור לייצר שידוך פוטנציאלי.",
-    },
-    {
       target: '[data-tour="tour-nav-proposals"]',
       disableBeacon: true,
       title: "מסך התאמות (שידוכים)",
@@ -189,7 +182,8 @@ export default function StaffTour() {
       <button
         onClick={startTour}
         aria-label={role === "admin" ? "הפעלת סיור הדרכה - תצוגת צוות" : "הפעלת סיור הדרכה"}
-        className="safe-bottom fixed bottom-28 left-20 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-[#C06E5E] text-white shadow-lg transition active:scale-90"
+        // באותה עמודה של שאר הכפתורים הצפים: מוצמד לשפה, חצי-שקוף במנוחה
+        className="safe-bottom fixed bottom-[12.5rem] left-0 z-20 flex h-11 w-11 items-center justify-center rounded-l-none rounded-r-full bg-[#2E8BA8] text-white shadow-lg opacity-55 transition hover:opacity-100 focus-visible:opacity-100 active:opacity-100 active:scale-95 motion-reduce:transition-none"
       >
         <HelpCircle size={20} />
       </button>
@@ -211,7 +205,7 @@ export default function StaffTour() {
           skip: "דילוג",
         }}
         styles={{
-          options: { primaryColor: "#C06E5E", zIndex: 10000, arrowColor: "#fff", textColor: "#5A4A3C" },
+          options: { primaryColor: "#2E8BA8", zIndex: 10000, arrowColor: "#fff", textColor: "#23414E" },
           tooltip: { direction: "rtl", textAlign: "right", borderRadius: 16 },
           buttonNext: { borderRadius: 12 },
         }}

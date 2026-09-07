@@ -18,8 +18,8 @@ export default function Toast() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[200] flex justify-center px-4">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-[#5A4A3C] px-4 py-3 text-sm font-semibold text-white shadow-xl">
-        <CheckCircle2 size={17} className="shrink-0 text-[#8C9A78]" />
+      <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-[#23414E] px-4 py-3 text-sm font-semibold text-white shadow-xl">
+        <CheckCircle2 size={17} className="shrink-0 text-[#2FA39B]" />
         {toast.message}
       </div>
     </div>

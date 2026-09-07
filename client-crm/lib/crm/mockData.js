@@ -47,12 +47,12 @@ export const TRAITS = ["הומור", "רוגע", "משפחתיות", "רגישו
 
 // תוויות סינון למאגר המועמדים - סקלת גוונים אחת ממשפחת הצבע הראשי של המערכת, מהכהה לבהיר
 export const CANDIDATE_TAGS = [
-  { name: "תורני", color: "#4A1D26", textColor: "#FFFFFF" },
-  { name: 'דתל"שים ומסורתיים', color: "#A05243", textColor: "#FFFFFF" },
-  { name: 'חב"ד', color: "#C06E5E", textColor: "#FFFFFF" },
-  { name: "חוזר/ת בתשובה", color: "#A96470", textColor: "#FFFFFF" },
-  { name: "ברסלב", color: "#E2A396", textColor: "#5A4A3C" },
-  { name: "פרק ב'", color: "#F3DCE0", textColor: "#5A4A3C" },
+  { name: "תורני", color: "#13455A", textColor: "#FFFFFF" },
+  { name: 'דתל"שים ומסורתיים', color: "#1F6E88", textColor: "#FFFFFF" },
+  { name: 'חב"ד', color: "#2E8BA8", textColor: "#FFFFFF" },
+  { name: "חוזר/ת בתשובה", color: "#4E9CB8", textColor: "#FFFFFF" },
+  { name: "ברסלב", color: "#74B9CE", textColor: "#23414E" },
+  { name: "פרק ב'", color: "#D6EEF6", textColor: "#23414E" },
 ];
 
 // תווית מאוחדת אחת לחזרה בתשובה. כרטיסים ישנים שנשמרו בניסוח אחר

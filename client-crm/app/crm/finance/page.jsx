@@ -18,13 +18,13 @@ function ProofUpload({ url, onUpload, label }) {
 
   if (url) {
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-semibold text-[#6F7D5C]">
+      <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-semibold text-[#21867F]">
         <ImageIcon size={12} /> צפייה באסמכתא
       </a>
     );
   }
   return (
-    <label className="flex cursor-pointer items-center gap-1 text-[11px] font-semibold text-[#C06E5E]">
+    <label className="flex cursor-pointer items-center gap-1 text-[11px] font-semibold text-[#2E8BA8]">
       <ImageIcon size={12} /> {label}
       <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
     </label>
@@ -60,7 +60,7 @@ export default function FinancePage() {
   const [filter, setFilter] = useState("all");
 
   if (role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8C7B6B]">אזור זה זמין למנהלת בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#5E7A87]">אזור זה זמין למנהלת בלבד</p>;
   }
 
   const handleAddService = () => {
@@ -88,19 +88,19 @@ export default function FinancePage() {
 
   return (
     <div className="px-4 py-6">
-      <h1 className="flex items-center gap-2 text-xl font-bold text-[#5A4A3C]">
+      <h1 className="flex items-center gap-2 text-xl font-bold text-[#23414E]">
         <Wallet size={22} /> ניהול כספים ותשלומים
       </h1>
-      <p className="mt-1 text-[13px] text-[#8C7B6B]">אזור זה נגיש למנהלת בלבד ומוסתר לחלוטין מהצוות</p>
+      <p className="mt-1 text-[13px] text-[#5E7A87]">אזור זה נגיש למנהלת בלבד ומוסתר לחלוטין מהצוות</p>
 
-      <h2 className="mt-6 mb-3 text-[15px] font-bold text-[#5A4A3C]">מחירון שירותים</h2>
-      <div className="rounded-3xl border border-[#EADCCB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+      <h2 className="mt-6 mb-3 text-[15px] font-bold text-[#23414E]">מחירון שירותים</h2>
+      <div className="rounded-3xl border border-[#CFE3EC] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
         <div className="space-y-2">
           {serviceTypes.map((s) => (
-            <div key={s.id} className="flex items-center justify-between rounded-xl bg-[#FBF3EA] px-3 py-2">
+            <div key={s.id} className="flex items-center justify-between rounded-xl bg-[#F2F8FB] px-3 py-2">
               <div>
-                <p className="text-[13px] font-semibold text-[#5A4A3C]">{s.name}</p>
-                <p className="text-[11px] text-[#8C7B6B]">
+                <p className="text-[13px] font-semibold text-[#23414E]">{s.name}</p>
+                <p className="text-[11px] text-[#5E7A87]">
                   מחיר: ₪{s.price} · עמלה: ₪{s.commission}
                 </p>
               </div>
@@ -110,13 +110,13 @@ export default function FinancePage() {
             </div>
           ))}
         </div>
-        <div className="mt-3 space-y-2 border-t border-[#EADCCB] pt-3">
+        <div className="mt-3 space-y-2 border-t border-[#CFE3EC] pt-3">
           <input
             type="text"
             value={svcName}
             onChange={(e) => setSvcName(e.target.value)}
             placeholder="שם השירות (לדוגמה: שיחת סינון)"
-            className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-sm outline-none focus:border-[#C06E5E]"
+            className="w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-sm outline-none focus:border-[#2E8BA8]"
           />
           <div className="flex gap-2">
             <input
@@ -124,14 +124,14 @@ export default function FinancePage() {
               value={svcPrice}
               onChange={(e) => setSvcPrice(e.target.value)}
               placeholder="מחיר למועמד/ת (₪)"
-              className="flex-1 rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-sm outline-none focus:border-[#C06E5E]"
+              className="flex-1 rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-sm outline-none focus:border-[#2E8BA8]"
             />
             <input
               type="number"
               value={svcCommission}
               onChange={(e) => setSvcCommission(e.target.value)}
               placeholder="עמלה לנציגה (₪)"
-              className="flex-1 rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-sm outline-none focus:border-[#C06E5E]"
+              className="flex-1 rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-sm outline-none focus:border-[#2E8BA8]"
             />
           </div>
           <Button variant="ghost" className="w-full" onClick={handleAddService}>
@@ -140,15 +140,15 @@ export default function FinancePage() {
         </div>
       </div>
 
-      <h2 className="mt-8 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#5A4A3C]">
+      <h2 className="mt-8 mb-3 flex items-center gap-1.5 text-[15px] font-bold text-[#23414E]">
         <Receipt size={17} /> חיוב חדש
       </h2>
-      <div className="rounded-3xl border border-[#EADCCB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+      <div className="rounded-3xl border border-[#CFE3EC] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
         <div className="space-y-2">
           <select
             value={chargeCandidateId}
             onChange={(e) => setChargeCandidateId(e.target.value)}
-            className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-sm outline-none focus:border-[#C06E5E]"
+            className="w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-sm outline-none focus:border-[#2E8BA8]"
           >
             <option value="">בחירת מועמד/ת...</option>
             {candidates.map((c) => (
@@ -160,7 +160,7 @@ export default function FinancePage() {
           <select
             value={chargeServiceId}
             onChange={(e) => setChargeServiceId(e.target.value)}
-            className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-sm outline-none focus:border-[#C06E5E]"
+            className="w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-sm outline-none focus:border-[#2E8BA8]"
           >
             {serviceTypes.map((s) => (
               <option key={s.id} value={s.id}>
@@ -171,7 +171,7 @@ export default function FinancePage() {
           <select
             value={chargeStaffId}
             onChange={(e) => setChargeStaffId(e.target.value)}
-            className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-sm outline-none focus:border-[#C06E5E]"
+            className="w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-sm outline-none focus:border-[#2E8BA8]"
           >
             {staffList.map((s) => (
               <option key={s.email} value={s.email}>
@@ -186,7 +186,7 @@ export default function FinancePage() {
       </div>
 
       <div className="mt-8 mb-3 flex items-center justify-between">
-        <h2 className="text-[15px] font-bold text-[#5A4A3C]">חיובים ועמלות ({filteredCharges.length})</h2>
+        <h2 className="text-[15px] font-bold text-[#23414E]">חיובים ועמלות ({filteredCharges.length})</h2>
       </div>
       <div className="mb-3 flex gap-2 rounded-2xl bg-white p-1 shadow-sm">
         {[
@@ -198,7 +198,7 @@ export default function FinancePage() {
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`flex-1 rounded-xl py-2 text-[12px] font-bold transition ${
-              filter === f.key ? "bg-[#F7DFD8] text-[#A05243]" : "text-[#8C7B6B]"
+              filter === f.key ? "bg-[#DCEEF5] text-[#1F6E88]" : "text-[#5E7A87]"
             }`}
           >
             {f.label}
@@ -207,27 +207,27 @@ export default function FinancePage() {
       </div>
 
       {filteredCharges.length === 0 ? (
-        <p className="py-6 text-center text-sm text-[#8C7B6B]">אין חיובים להצגה</p>
+        <p className="py-6 text-center text-sm text-[#5E7A87]">אין חיובים להצגה</p>
       ) : (
         <div className="space-y-3">
           {filteredCharges.map((c) => (
-            <div key={c.id} className="rounded-3xl border border-[#EADCCB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+            <div key={c.id} className="rounded-3xl border border-[#CFE3EC] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-[#5A4A3C]">{candidateName(c.candidateId)}</p>
-                <span className="text-[11px] text-[#C3B5A5]">{new Date(c.createdAt).toLocaleDateString("he-IL")}</span>
+                <p className="text-sm font-bold text-[#23414E]">{candidateName(c.candidateId)}</p>
+                <span className="text-[11px] text-[#9FBAC7]">{new Date(c.createdAt).toLocaleDateString("he-IL")}</span>
               </div>
-              <p className="text-[12px] text-[#8C7B6B]">{c.serviceName}</p>
+              <p className="text-[12px] text-[#5E7A87]">{c.serviceName}</p>
 
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                  <p className="text-[11px] font-semibold text-[#5A4A3C]">תשלום מועמד/ת</p>
-                  <p className="mt-0.5 text-sm font-bold text-[#5A4A3C]">₪{c.price}</p>
+                <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                  <p className="text-[11px] font-semibold text-[#23414E]">תשלום מועמד/ת</p>
+                  <p className="mt-0.5 text-sm font-bold text-[#23414E]">₪{c.price}</p>
                   <button
                     onClick={() =>
                       updateChargeCandidatePayment(c.id, c.candidatePaymentStatus === "שולם" ? PAYMENT_STATUSES[0] : PAYMENT_STATUSES[1])
                     }
                     className={`mt-1.5 flex w-full items-center justify-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold transition ${
-                      c.candidatePaymentStatus === "שולם" ? "bg-[#EDF2E6] text-[#6F7D5C]" : "bg-[#F7DFD8] text-[#C4584C]"
+                      c.candidatePaymentStatus === "שולם" ? "bg-[#E6F2F5] text-[#21867F]" : "bg-[#DCEEF5] text-[#C4584C]"
                     }`}
                   >
                     {c.candidatePaymentStatus === "שולם" && <Check size={12} />}
@@ -242,13 +242,13 @@ export default function FinancePage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                  <p className="text-[11px] font-semibold text-[#5A4A3C]">עמלת {staffName(c.staffId)}</p>
-                  <p className="mt-0.5 text-sm font-bold text-[#5A4A3C]">₪{c.commission}</p>
+                <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                  <p className="text-[11px] font-semibold text-[#23414E]">עמלת {staffName(c.staffId)}</p>
+                  <p className="mt-0.5 text-sm font-bold text-[#23414E]">₪{c.commission}</p>
                   <button
                     onClick={() => updateChargeStaffPayout(c.id, c.staffPayoutStatus === "שולם" ? PAYMENT_STATUSES[0] : PAYMENT_STATUSES[1])}
                     className={`mt-1.5 flex w-full items-center justify-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold transition ${
-                      c.staffPayoutStatus === "שולם" ? "bg-[#EDF2E6] text-[#6F7D5C]" : "bg-[#F7DFD8] text-[#C4584C]"
+                      c.staffPayoutStatus === "שולם" ? "bg-[#E6F2F5] text-[#21867F]" : "bg-[#DCEEF5] text-[#C4584C]"
                     }`}
                   >
                     {c.staffPayoutStatus === "שולם" && <Check size={12} />}

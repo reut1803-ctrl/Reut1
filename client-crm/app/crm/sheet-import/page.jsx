@@ -57,7 +57,7 @@ export default function SheetImportPage() {
   );
 
   if (role !== "admin") {
-    return <p className="px-4 py-10 text-center text-sm text-[#8C7B6B]">אזור זה זמין למנהלת בלבד</p>;
+    return <p className="px-4 py-10 text-center text-sm text-[#5E7A87]">אזור זה זמין למנהלת בלבד</p>;
   }
 
   const load = async (rawUrl) => {
@@ -263,20 +263,20 @@ export default function SheetImportPage() {
 
   return (
     <div className="px-4 py-6">
-      <Link href="/crm/dashboard" className="flex items-center gap-1 text-[13px] font-semibold text-[#C06E5E]">
+      <Link href="/crm/dashboard" className="flex items-center gap-1 text-[13px] font-semibold text-[#2E8BA8]">
         <ChevronLeft size={14} /> חזרה ללוח הבקרה
       </Link>
 
-      <h1 className="mt-3 flex items-center gap-2 text-xl font-bold text-[#5A4A3C]">
+      <h1 className="mt-3 flex items-center gap-2 text-xl font-bold text-[#23414E]">
         <Sheet size={20} /> ייבוא מגיליון Google
       </h1>
-      <p className="mt-1 text-[13px] leading-relaxed text-[#8C7B6B]">
+      <p className="mt-1 text-[13px] leading-relaxed text-[#5E7A87]">
         שואב שורות חדשות מהגיליון שבו נאספות תשובות המועמדים, ופותח מהן כרטיסים במאגר.
         שורה שכבר יובאה לא תיובא שוב.
       </p>
 
-      <div className="mt-4 rounded-3xl border border-[#EADCCB] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-        <p className="mb-1.5 flex items-center gap-1.5 text-[13px] font-semibold text-[#5A4A3C]">
+      <div className="mt-4 rounded-3xl border border-[#CFE3EC] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+        <p className="mb-1.5 flex items-center gap-1.5 text-[13px] font-semibold text-[#23414E]">
           <Link2 size={14} /> קישור לגיליון
         </p>
         <input
@@ -285,20 +285,20 @@ export default function SheetImportPage() {
           value={linkDraft}
           onChange={(e) => setLinkDraft(e.target.value)}
           placeholder="https://docs.google.com/spreadsheets/..."
-          className="w-full rounded-xl border border-[#EADCCB] bg-white px-3 py-2 text-left text-[13px] outline-none focus:border-[#C06E5E]"
+          className="w-full rounded-xl border border-[#CFE3EC] bg-white px-3 py-2 text-left text-[13px] outline-none focus:border-[#2E8BA8]"
         />
         <button
           onClick={() => load(linkDraft)}
           disabled={loading}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#C06E5E] px-4 py-2.5 text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#2E8BA8] px-4 py-2.5 text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
         >
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           {loading ? "טוענת מהגיליון..." : "בדיקת הגיליון ורענון"}
         </button>
 
-        <div className="mt-3 rounded-xl bg-[#FBF3EA] p-3">
-          <p className="text-[11px] font-bold text-[#5A4A3C]">איך מכינים את הגיליון (פעם אחת):</p>
-          <ol className="mt-1 list-inside list-decimal space-y-0.5 text-[11px] leading-relaxed text-[#8C7B6B]">
+        <div className="mt-3 rounded-xl bg-[#F2F8FB] p-3">
+          <p className="text-[11px] font-bold text-[#23414E]">איך מכינים את הגיליון (פעם אחת):</p>
+          <ol className="mt-1 list-inside list-decimal space-y-0.5 text-[11px] leading-relaxed text-[#5E7A87]">
             <li>פותחים את הגיליון ב-Google Sheets</li>
             <li>בתפריט העליון: קובץ ← שיתוף ← פרסום באינטרנט</li>
             <li>בוחרים את הגיליון הרצוי, ובפורמט בוחרים CSV</li>
@@ -308,7 +308,7 @@ export default function SheetImportPage() {
       </div>
 
       {error && (
-        <div className="mt-3 flex items-start gap-2 rounded-2xl bg-[#FBEDE9] p-3">
+        <div className="mt-3 flex items-start gap-2 rounded-2xl bg-[#E4F1F7] p-3">
           <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[#C4584C]" />
           <p className="text-[12px] leading-relaxed text-[#C4584C]">{error}</p>
         </div>
@@ -316,17 +316,17 @@ export default function SheetImportPage() {
 
       {headers.length > 0 && (
         <>
-          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">התאמת עמודות</h2>
-          <p className="mb-2 text-[11px] leading-relaxed text-[#8C7B6B]">
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#23414E]">התאמת עמודות</h2>
+          <p className="mb-2 text-[11px] leading-relaxed text-[#5E7A87]">
             המערכת ניחשה לבד לפי הכותרות. אפשר לתקן כל שורה, והבחירה נשמרת לפעם הבאה.
           </p>
-          <div className="space-y-1.5 rounded-3xl border border-[#EADCCB] bg-white p-4">
+          <div className="space-y-1.5 rounded-3xl border border-[#CFE3EC] bg-white p-4">
             {Object.entries(FIELD_LABELS).map(([field, label]) => (
               <div key={field} className="flex items-center justify-between gap-2">
                 <select
                   value={mapping[field] === undefined ? "" : String(mapping[field])}
                   onChange={(e) => changeMapping(field, e.target.value)}
-                  className="min-w-0 flex-1 rounded-xl border border-[#EADCCB] bg-white px-2 py-1.5 text-[12px] outline-none focus:border-[#C06E5E]"
+                  className="min-w-0 flex-1 rounded-xl border border-[#CFE3EC] bg-white px-2 py-1.5 text-[12px] outline-none focus:border-[#2E8BA8]"
                 >
                   <option value="">-- אין עמודה --</option>
                   {headers.map((h, i) => (
@@ -335,31 +335,31 @@ export default function SheetImportPage() {
                     </option>
                   ))}
                 </select>
-                <span className="w-28 shrink-0 text-right text-[12px] font-semibold text-[#5A4A3C]">{label}</span>
+                <span className="w-28 shrink-0 text-right text-[12px] font-semibold text-[#23414E]">{label}</span>
               </div>
             ))}
           </div>
 
-          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">מה ייכנס לתיאור האישי?</h2>
-          <p className="mb-2 text-[11px] leading-relaxed text-[#8C7B6B]">
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#23414E]">מה ייכנס לתיאור האישי?</h2>
+          <p className="mb-2 text-[11px] leading-relaxed text-[#5E7A87]">
             סמנו כמה עמודות שתרצו. התשובות ייכנסו לתיאור כטקסט רציף, בלי כותרות השאלות.
             שאלות טכניות (טלפון, מייל, חותמת זמן) אינן מסומנות מראש.
           </p>
-          <div className="rounded-3xl border border-[#EADCCB] bg-white p-4">
+          <div className="rounded-3xl border border-[#CFE3EC] bg-white p-4">
             <div className="mb-2 flex gap-2">
               <button
                 onClick={() => setAllBioColumns(true)}
-                className="rounded-xl border border-[#EADCCB] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#5A4A3C]"
+                className="rounded-xl border border-[#CFE3EC] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#23414E]"
               >
                 סימון הכל
               </button>
               <button
                 onClick={() => setAllBioColumns(false)}
-                className="rounded-xl border border-[#EADCCB] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#5A4A3C]"
+                className="rounded-xl border border-[#CFE3EC] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#23414E]"
               >
                 ניקוי הכל
               </button>
-              <span className="flex-1 self-center text-left text-[11px] text-[#8C7B6B]">
+              <span className="flex-1 self-center text-left text-[11px] text-[#5E7A87]">
                 {bioColumns.length} עמודות נבחרו
               </span>
             </div>
@@ -367,24 +367,24 @@ export default function SheetImportPage() {
               {headers.map((header, index) => (
                 <label
                   key={index}
-                  className="flex cursor-pointer items-center justify-end gap-2 rounded-xl px-2 py-1.5 hover:bg-[#F7DFD8]"
+                  className="flex cursor-pointer items-center justify-end gap-2 rounded-xl px-2 py-1.5 hover:bg-[#DCEEF5]"
                 >
-                  <span className="min-w-0 flex-1 break-words text-right text-[12px] leading-relaxed text-[#5A4A3C]">
+                  <span className="min-w-0 flex-1 break-words text-right text-[12px] leading-relaxed text-[#23414E]">
                     {header || `עמודה ${index + 1}`}
                   </span>
                   <input
                     type="checkbox"
                     checked={bioColumns.includes(index)}
                     onChange={() => toggleBioColumn(index)}
-                    className="h-4 w-4 shrink-0 accent-[#C06E5E]"
+                    className="h-4 w-4 shrink-0 accent-[#2E8BA8]"
                   />
                 </label>
               ))}
             </div>
           </div>
 
-          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">לאיזה מאגר השורות שייכות?</h2>
-          <div className="rounded-3xl border border-[#EADCCB] bg-white p-4">
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#23414E]">לאיזה מאגר השורות שייכות?</h2>
+          <div className="rounded-3xl border border-[#CFE3EC] bg-white p-4">
             <div className="flex gap-2">
               {[
                 { key: "female", label: "בנות" },
@@ -396,24 +396,24 @@ export default function SheetImportPage() {
                   onClick={() => chooseGender(option.key)}
                   className={`flex-1 rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition ${
                     forcedGender === option.key
-                      ? "border-[#C06E5E] bg-[#C06E5E] text-white"
-                      : "border-[#EADCCB] bg-white text-[#5A4A3C]"
+                      ? "border-[#2E8BA8] bg-[#2E8BA8] text-white"
+                      : "border-[#CFE3EC] bg-white text-[#23414E]"
                   }`}
                 >
                   {option.label}
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-[#8C7B6B]">
+            <p className="mt-2 text-[11px] leading-relaxed text-[#5E7A87]">
               כל השורות בגיליון הזה ייכנסו למאגר שנבחר כאן. הבחירה נשמרת לפעם הבאה.
             </p>
           </div>
 
           {alreadyImported > 0 && (
             <>
-              <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">עדכון כרטיסים שכבר יובאו</h2>
-              <div className="rounded-3xl border border-[#EADCCB] bg-white p-4">
-                <p className="text-[12px] leading-relaxed text-[#8C7B6B]">
+              <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#23414E]">עדכון כרטיסים שכבר יובאו</h2>
+              <div className="rounded-3xl border border-[#CFE3EC] bg-white p-4">
+                <p className="text-[12px] leading-relaxed text-[#5E7A87]">
                   {alreadyImported} שורות בגיליון כבר קיימות ככרטיסים במאגר. הכפתור משלים בהן את
                   התיאור המלא (כל שאר השאלות והתשובות מהגיליון), מוריד את התמונות מהגיליון
                   ושומר אותן בתוך המערכת, ומתקן את המאגר לפי הבחירה שלמעלה.
@@ -422,7 +422,7 @@ export default function SheetImportPage() {
                 <button
                   onClick={runRepair}
                   disabled={repairing}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#C06E5E] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#C06E5E] transition active:scale-95 disabled:opacity-60"
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#2E8BA8] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#2E8BA8] transition active:scale-95 disabled:opacity-60"
                 >
                   <RefreshCw size={15} className={repairing ? "animate-spin" : ""} />
                   {repairing ? progress || "מעדכנת..." : `עדכון ${alreadyImported} הכרטיסים הקיימים`}
@@ -431,14 +431,14 @@ export default function SheetImportPage() {
             </>
           )}
 
-          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#5A4A3C]">
+          <h2 className="mt-6 mb-2 text-[15px] font-bold text-[#23414E]">
             שורות חדשות לייבוא ({newRows.length} מתוך {rows.length})
           </h2>
 
           {newRows.length === 0 ? (
-            <div className="flex items-center gap-2 rounded-2xl bg-[#E6EDDF] p-3">
-              <Check size={16} className="shrink-0 text-[#5F7355]" />
-              <p className="text-[12px] text-[#5F7355]">הכל מסונכרן - אין שורות חדשות בגיליון</p>
+            <div className="flex items-center gap-2 rounded-2xl bg-[#E1F0F4] p-3">
+              <Check size={16} className="shrink-0 text-[#2A7F86]" />
+              <p className="text-[12px] text-[#2A7F86]">הכל מסונכרן - אין שורות חדשות בגיליון</p>
             </div>
           ) : (
             <>
@@ -446,9 +446,9 @@ export default function SheetImportPage() {
                 {newRows.slice(0, 25).map((r, i) => {
                   const preview = toCandidate(r);
                   return (
-                    <div key={i} className="rounded-2xl border border-[#EADCCB] bg-white px-3 py-2">
-                      <p className="text-[13px] font-bold text-[#5A4A3C]">{preview.name || "(ללא שם - ידולג)"}</p>
-                      <p className="text-[11px] text-[#8C7B6B]">
+                    <div key={i} className="rounded-2xl border border-[#CFE3EC] bg-white px-3 py-2">
+                      <p className="text-[13px] font-bold text-[#23414E]">{preview.name || "(ללא שם - ידולג)"}</p>
+                      <p className="text-[11px] text-[#5E7A87]">
                         {[
                           preview.gender === "female" ? "בחורה" : "בחור",
                           preview.age ? `גיל ${preview.age}` : null,
@@ -463,7 +463,7 @@ export default function SheetImportPage() {
                   );
                 })}
                 {newRows.length > 25 && (
-                  <p className="py-1 text-center text-[11px] text-[#8C7B6B]">
+                  <p className="py-1 text-center text-[11px] text-[#5E7A87]">
                     ועוד {newRows.length - 25} שורות...
                   </p>
                 )}

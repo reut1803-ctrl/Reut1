@@ -21,7 +21,7 @@ import Overlay from "@/components/crm/ui/Overlay";
 // נגן להקלטה ששמורה במסד בחלקים. נטען רק כשהחלון פתוח.
 function VoicePlayer({ value }) {
   const { url, error, loading } = useMediaUrl(value);
-  if (loading) return <p className="text-[11px] text-[#C3B5A5]">טוען הקלטה...</p>;
+  if (loading) return <p className="text-[11px] text-[#9FBAC7]">טוען הקלטה...</p>;
   if (error || !url) return <p className="text-[11px] text-[#C4584C]">ההקלטה לא נטענה</p>;
   return <audio controls src={url} className="h-8 w-full" />;
 }
@@ -29,10 +29,10 @@ function VoicePlayer({ value }) {
 function Row({ icon: Icon, label, value }) {
   if (!value) return null;
   return (
-    <div className="flex items-center gap-2.5 rounded-xl bg-[#FBF3EA] px-3 py-2.5">
-      <Icon size={15} className="shrink-0 text-[#C06E5E]" />
-      <span className="w-24 shrink-0 text-[12px] text-[#8C7B6B]">{label}</span>
-      <span className="text-[13px] font-medium text-[#5A4A3C]">{value}</span>
+    <div className="flex items-center gap-2.5 rounded-xl bg-[#F2F8FB] px-3 py-2.5">
+      <Icon size={15} className="shrink-0 text-[#2E8BA8]" />
+      <span className="w-24 shrink-0 text-[12px] text-[#5E7A87]">{label}</span>
+      <span className="text-[13px] font-medium text-[#23414E]">{value}</span>
     </div>
   );
 }
@@ -70,15 +70,15 @@ export default function CandidatePeek({ candidateId, onClose }) {
           aria-label="סגירה וחזרה לדיון"
           className="sticky top-3 z-10 ml-3 mr-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md"
         >
-          <X size={18} className="text-[#5A4A3C]" />
+          <X size={18} className="text-[#23414E]" />
         </button>
 
         {!candidatesLoaded ? (
-          <p className="px-5 pb-6 pt-2 text-center text-[13px] text-[#8C7B6B]">טוען את הכרטיס...</p>
+          <p className="px-5 pb-6 pt-2 text-center text-[13px] text-[#5E7A87]">טוען את הכרטיס...</p>
         ) : missing ? (
           <div className="px-5 pb-6 pt-2 text-center">
-            <p className="text-[14px] font-bold text-[#5A4A3C]">הכרטיס אינו זמין</p>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-[#8C7B6B]">
+            <p className="text-[14px] font-bold text-[#23414E]">הכרטיס אינו זמין</p>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-[#5E7A87]">
               הכרטיס נמחק מהמאגר, או שהוא מסומן כחסוי ואין לך הרשאה לצפות בו.
             </p>
           </div>
@@ -99,7 +99,7 @@ export default function CandidatePeek({ candidateId, onClose }) {
                 </div>
               )}
 
-              <h2 className="text-xl font-bold text-[#5A4A3C]">{candidate.name}</h2>
+              <h2 className="text-xl font-bold text-[#23414E]">{candidate.name}</h2>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {candidate.age && <span className="peek-chip">{candidate.age}</span>}
                 {candidate.height && <span className="peek-chip">{candidate.height} ס״מ</span>}
@@ -124,15 +124,15 @@ export default function CandidatePeek({ candidateId, onClose }) {
 
               {candidate.bio && (
                 <div className="mt-4">
-                  <p className="mb-1 text-[12px] font-semibold text-[#5A4A3C]">קצת עליי</p>
-                  <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#8C7B6B]">{candidate.bio}</p>
+                  <p className="mb-1 text-[12px] font-semibold text-[#23414E]">קצת עליי</p>
+                  <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#5E7A87]">{candidate.bio}</p>
                 </div>
               )}
 
               {occupations.length > 0 && (
                 <div className="mt-4">
-                  <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#5A4A3C]">
-                    <Route size={13} className="text-[#C06E5E]" /> המסלול שלי
+                  <p className="mb-1.5 flex items-center gap-1 text-[12px] font-semibold text-[#23414E]">
+                    <Route size={13} className="text-[#2E8BA8]" /> המסלול שלי
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {occupations.map((o) => (
@@ -146,10 +146,10 @@ export default function CandidatePeek({ candidateId, onClose }) {
 
               {candidate.traits?.length > 0 && (
                 <div className="mt-4">
-                  <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">תכונות</p>
+                  <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">תכונות</p>
                   <div className="flex flex-wrap gap-1.5">
                     {candidate.traits.map((t) => (
-                      <span key={t} className="rounded-full bg-[#F7DFD8] px-2.5 py-1 text-[11px] font-semibold text-[#A05243]">
+                      <span key={t} className="rounded-full bg-[#DCEEF5] px-2.5 py-1 text-[11px] font-semibold text-[#1F6E88]">
                         {t}
                       </span>
                     ))}
@@ -158,25 +158,25 @@ export default function CandidatePeek({ candidateId, onClose }) {
               )}
 
               {candidate.smoking && (
-                <p className="mt-3 text-[11px] text-[#8C7B6B]">* עישון: {candidate.smoking}</p>
+                <p className="mt-3 text-[11px] text-[#5E7A87]">* עישון: {candidate.smoking}</p>
               )}
 
               {/* האזור הפנימי: הקלטות ומידע שמור לצוות בלבד */}
               {canSeeInternal && (
-                <div className="mt-4 space-y-3 border-t border-[#EADCCB] pt-4">
-                  <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                    <p className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold text-[#5A4A3C]">
+                <div className="mt-4 space-y-3 border-t border-[#CFE3EC] pt-4">
+                  <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                    <p className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold text-[#23414E]">
                       <Mic size={14} /> הקלטות שמע
                     </p>
                     {!candidate.voiceNotes || candidate.voiceNotes.length === 0 ? (
-                      <p className="text-[12px] text-[#C3B5A5]">אין הקלטות</p>
+                      <p className="text-[12px] text-[#9FBAC7]">אין הקלטות</p>
                     ) : (
                       <ul className="space-y-1.5">
                         {candidate.voiceNotes.map((vn) => (
                           <li key={vn.id} className="rounded-xl bg-white px-2.5 py-2 shadow-sm">
                             <div className="mb-1 flex items-center gap-2 text-[11px]">
-                              <span className="font-medium text-[#5A4A3C]">{vn.author}</span>
-                              <span className="mr-auto text-[#C3B5A5]">{vn.date}</span>
+                              <span className="font-medium text-[#23414E]">{vn.author}</span>
+                              <span className="mr-auto text-[#9FBAC7]">{vn.date}</span>
                             </div>
                             <VoicePlayer value={vn.audioUrl} />
                           </li>
@@ -186,23 +186,23 @@ export default function CandidatePeek({ candidateId, onClose }) {
                   </div>
 
                   {candidate.referenceContacts && (
-                    <div className="rounded-2xl border-2 border-[#C06E5E] bg-[#F7DFD8] p-3">
-                      <p className="mb-1 text-[12px] font-bold text-[#C06E5E]">מספרים לבירורים</p>
-                      <p className="whitespace-pre-wrap text-[13px] text-[#5A4A3C]">{candidate.referenceContacts}</p>
+                    <div className="rounded-2xl border-2 border-[#2E8BA8] bg-[#DCEEF5] p-3">
+                      <p className="mb-1 text-[12px] font-bold text-[#2E8BA8]">מספרים לבירורים</p>
+                      <p className="whitespace-pre-wrap text-[13px] text-[#23414E]">{candidate.referenceContacts}</p>
                     </div>
                   )}
 
                   {candidate.complexityNotes && (
-                    <div className="rounded-2xl bg-[#FBF3EA] p-3">
-                      <p className="mb-1 text-[12px] font-semibold text-[#5A4A3C]">מורכבויות וייחודיות</p>
-                      <p className="whitespace-pre-wrap text-[13px] text-[#8C7B6B]">{candidate.complexityNotes}</p>
+                    <div className="rounded-2xl bg-[#F2F8FB] p-3">
+                      <p className="mb-1 text-[12px] font-semibold text-[#23414E]">מורכבויות וייחודיות</p>
+                      <p className="whitespace-pre-wrap text-[13px] text-[#5E7A87]">{candidate.complexityNotes}</p>
                     </div>
                   )}
 
                   {role === "admin" && candidate.adminNote && (
-                    <div className="rounded-2xl bg-[#FDF6EC] p-3">
+                    <div className="rounded-2xl bg-[#EAF5FA] p-3">
                       <p className="mb-1 text-[12px] font-semibold text-[#8A6A32]">הערת מנהלת</p>
-                      <p className="whitespace-pre-wrap text-[13px] text-[#5A4A3C]">{candidate.adminNote}</p>
+                      <p className="whitespace-pre-wrap text-[13px] text-[#23414E]">{candidate.adminNote}</p>
                     </div>
                   )}
                 </div>
@@ -211,13 +211,13 @@ export default function CandidatePeek({ candidateId, onClose }) {
               <div className="mt-4 flex gap-2">
                 <button
                   onClick={onClose}
-                  className="flex-1 rounded-2xl bg-[#C06E5E] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98]"
+                  className="flex-1 rounded-2xl bg-[#2E8BA8] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98]"
                 >
                   חזרה לדיון
                 </button>
                 <Link
                   href={`/crm?openCandidate=${candidate.id}`}
-                  className="flex shrink-0 items-center justify-center gap-1 rounded-2xl border border-[#EADCCB] bg-white px-3 py-2.5 text-[12px] font-semibold text-[#C06E5E]"
+                  className="flex shrink-0 items-center justify-center gap-1 rounded-2xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-[12px] font-semibold text-[#2E8BA8]"
                 >
                   לכרטיס המלא <ChevronLeft size={14} />
                 </Link>
@@ -227,11 +227,11 @@ export default function CandidatePeek({ candidateId, onClose }) {
             <style jsx>{`
               .peek-chip {
                 border-radius: 999px;
-                background: #FBF3EA;
+                background: #F2F8FB;
                 padding: 4px 10px;
                 font-size: 11px;
                 font-weight: 700;
-                color: #5A4A3C;
+                color: #23414E;
               }
             `}</style>
           </>

@@ -68,7 +68,7 @@ export default function MindMapLines({ containerRef, pairs }) {
             key={line.id}
             d={`M ${line.a.x} ${line.a.y} Q ${cx} ${midY} ${line.b.x} ${line.b.y}`}
             fill="none"
-            stroke="#E2A396"
+            stroke="#74B9CE"
             strokeWidth={Math.min(2.2, 1 + line.strength * 0.4)}
             strokeOpacity={0.32}
             strokeDasharray="5 6"

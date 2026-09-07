@@ -60,14 +60,14 @@ export default function VoiceRecorderField({ value, onChange, label = "הקלט�
 
   return (
     <div>
-      <p className="mb-1.5 text-[12px] font-semibold text-[#5A4A3C]">{label}</p>
+      <p className="mb-1.5 text-[12px] font-semibold text-[#23414E]">{label}</p>
 
       {value ? (
         <div className="flex items-center gap-2">
           {url ? (
             <audio controls src={url} className="h-9 flex-1" />
           ) : (
-            <p className="flex-1 text-[12px] text-[#8C7B6B]">טוען הקלטה...</p>
+            <p className="flex-1 text-[12px] text-[#5E7A87]">טוען הקלטה...</p>
           )}
           <button
             type="button"
@@ -84,7 +84,7 @@ export default function VoiceRecorderField({ value, onChange, label = "הקלט�
           onClick={recording ? stop : start}
           disabled={saving}
           className={`flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-60 ${
-            recording ? "bg-red-500" : "bg-[#C06E5E]"
+            recording ? "bg-red-500" : "bg-[#2E8BA8]"
           }`}
         >
           {recording ? <Square size={14} /> : <Mic size={15} />}

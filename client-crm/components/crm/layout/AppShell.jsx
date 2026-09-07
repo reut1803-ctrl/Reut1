@@ -24,7 +24,7 @@ export default function AppShell({ children }) {
     useCrmStore.getState().initCrmFirebase();
   }, []);
 
-  if (authLoading) return <div className="h-dvh bg-[#FBF3EA]" />;
+  if (authLoading) return <div className="h-dvh bg-[#F2F8FB]" />;
   if (!googleUser) return <SignInGate />;
 
   // כל עוד בדיקת ההרשאה האישית לא הסתיימה - לא מציגים לא מסך חסימה ולא מאגר ריק,
@@ -34,7 +34,7 @@ export default function AppShell({ children }) {
     myEntryStatus !== "loading" ||
     isOwnerEmail(myEmail) ||
     authAllowlist.some((e) => allowlistEmail(e) === myEmail);
-  if (!decided) return <div className="h-dvh bg-[#FBF3EA]" />;
+  if (!decided) return <div className="h-dvh bg-[#F2F8FB]" />;
 
   // תשובה ודאית מהשרת: הכתובת אינה ברשימת ההרשאות
   if (role === "unauthorized") return <AccessDeniedGate />;
@@ -42,9 +42,9 @@ export default function AppShell({ children }) {
   if (role === "unverified") return <AccessDeniedGate unverified />;
 
   return (
-    <div className="flex h-dvh flex-col bg-[#FBF3EA] text-[#5A4A3C]" dir="rtl">
+    <div className="flex h-dvh flex-col bg-[#F2F8FB] text-[#23414E]" dir="rtl">
       <TopBar />
-      <main ref={scrollRef} className="flex-1 overflow-y-auto pb-24">
+      <main ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-32">
         {children}
       </main>
       <FabButtons />

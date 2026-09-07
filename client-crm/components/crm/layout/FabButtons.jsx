@@ -2,6 +2,15 @@
 
 import { Accessibility, MessageCircle, Check } from "lucide-react";
 import { useEffect, useState } from "react";
+import { SUPPORT_WHATSAPP } from "@/lib/appConfig";
+
+// הכפתורים הצפים מוצמדים לשפה השמאלית של המסך ולא מרחפים מעל התוכן.
+// הם חצי-שקופים במנוחה וחוזרים לאטימות מלאה במגע, במעבר עכבר או בפוקוס
+// מקלדת - כך הם זמינים תמיד בלי להעמיס על העין ובלי לדחוס את העמוד.
+const FAB_BASE =
+  "safe-bottom fixed left-0 z-20 flex items-center justify-center rounded-l-none rounded-r-full text-white shadow-lg " +
+  "opacity-55 transition hover:opacity-100 focus-visible:opacity-100 active:opacity-100 active:scale-95 " +
+  "motion-reduce:transition-none";
 
 export default function FabButtons() {
   const [accessibilityOpen, setAccessibilityOpen] = useState(false);
@@ -17,43 +26,52 @@ export default function FabButtons() {
   }, [highContrast]);
 
   return (
-    <div className="safe-bottom fixed bottom-28 left-4 z-20 flex flex-col items-center gap-3">
+    <>
       <button
         aria-label="פתיחת תפריט נגישות"
+        aria-expanded={accessibilityOpen}
         onClick={() => setAccessibilityOpen((v) => !v)}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-[#5A4A3C] text-white shadow-lg transition active:scale-90"
+        // כשהתפריט פתוח הכפתור אטום, אחרת הוא נראה מנותק מהחלונית שנפתחה ממנו
+        className={`${FAB_BASE} bottom-[9.25rem] h-11 w-11 bg-[#23414E] ${accessibilityOpen ? "opacity-100" : ""}`}
       >
-        <Accessibility size={22} />
+        <Accessibility size={20} />
       </button>
-      <a
-        href="https://wa.me/972543085242"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="פתיחת וואטסאפ"
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#8C9A78] text-white shadow-[0_10px_25px_rgba(32,166,107,0.4)] transition active:scale-90"
-      >
-        <MessageCircle size={26} />
-      </a>
+
+      {SUPPORT_WHATSAPP && (
+        <a
+          href={`https://wa.me/${SUPPORT_WHATSAPP}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="פנייה בוואטסאפ"
+          className={`${FAB_BASE} bottom-24 h-11 w-11 bg-[#2FA39B]`}
+        >
+          <MessageCircle size={20} />
+        </a>
+      )}
 
       {accessibilityOpen && (
-        <div className="absolute bottom-0 left-16 w-56 rounded-2xl border border-[#EADCCB] bg-white p-3 text-sm shadow-xl">
-          <p className="mb-2 font-semibold text-[#5A4A3C]">הגדרות נגישות</p>
-          <button
-            onClick={() => setLargeText((v) => !v)}
-            className="mb-1.5 flex w-full items-center justify-between rounded-xl bg-[#FBF3EA] px-3 py-2 text-right text-[13px] hover:bg-[#EADCCB]"
-          >
-            הגדלת טקסט
-            {largeText && <Check size={14} className="text-[#8C9A78]" />}
-          </button>
-          <button
-            onClick={() => setHighContrast((v) => !v)}
-            className="flex w-full items-center justify-between rounded-xl bg-[#FBF3EA] px-3 py-2 text-right text-[13px] hover:bg-[#EADCCB]"
-          >
-            ניגודיות גבוהה
-            {highContrast && <Check size={14} className="text-[#8C9A78]" />}
-          </button>
-        </div>
+        <>
+          {/* לחיצה מחוץ לחלונית סוגרת אותה, כדי שלא תישאר תקועה על המסך */}
+          <div className="fixed inset-0 z-20" onClick={() => setAccessibilityOpen(false)} />
+          <div className="safe-bottom fixed bottom-[9.25rem] left-14 z-30 w-56 rounded-2xl border border-[#CFE3EC] bg-white p-3 text-sm shadow-xl">
+            <p className="mb-2 font-semibold text-[#23414E]">הגדרות נגישות</p>
+            <button
+              onClick={() => setLargeText((v) => !v)}
+              className="mb-1.5 flex w-full items-center justify-between rounded-xl bg-[#F2F8FB] px-3 py-2 text-right text-[13px] hover:bg-[#CFE3EC]"
+            >
+              הגדלת טקסט
+              {largeText && <Check size={14} className="text-[#2FA39B]" />}
+            </button>
+            <button
+              onClick={() => setHighContrast((v) => !v)}
+              className="flex w-full items-center justify-between rounded-xl bg-[#F2F8FB] px-3 py-2 text-right text-[13px] hover:bg-[#CFE3EC]"
+            >
+              ניגודיות גבוהה
+              {highContrast && <Check size={14} className="text-[#2FA39B]" />}
+            </button>
+          </div>
+        </>
       )}
-    </div>
+    </>
   );
 }

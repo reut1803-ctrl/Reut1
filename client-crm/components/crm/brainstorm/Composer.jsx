@@ -67,8 +67,8 @@ export default function Composer({ roundId, replyTo, onCancelReply, onSent }) {
   return (
     <div className="mt-4">
       {replyTo && (
-        <div className="mb-1.5 flex items-center justify-between gap-2 rounded-2xl bg-[#F7DFD8] px-3 py-2">
-          <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-[#A05243]">
+        <div className="mb-1.5 flex items-center justify-between gap-2 rounded-2xl bg-[#DCEEF5] px-3 py-2">
+          <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-[#1F6E88]">
             <CornerDownLeft size={12} className="shrink-0" />
             <span className="truncate">בתגובה ל{replyTo.authorName}: {replyTo.text}</span>
           </span>
@@ -76,7 +76,7 @@ export default function Composer({ roundId, replyTo, onCancelReply, onSent }) {
             type="button"
             onClick={onCancelReply}
             aria-label="ביטול התגובה"
-            className="shrink-0 rounded-full p-1 text-[#C06E5E] hover:bg-white/70"
+            className="shrink-0 rounded-full p-1 text-[#2E8BA8] hover:bg-white/70"
           >
             <X size={14} />
           </button>
@@ -93,7 +93,7 @@ export default function Composer({ roundId, replyTo, onCancelReply, onSent }) {
             ? `מה את/ה מוסיף/ה על מה ש${replyTo.authorName} כתב/ה?`
             : "מה את/ה חושב/ת? כתבו בחופשיות - כאן בונים יחד את התמונה."
         }
-        className="w-full resize-none rounded-2xl border border-[#EADCCB] bg-white/90 px-3 py-2.5 text-[13.5px] leading-relaxed outline-none focus:border-[#C06E5E]"
+        className="w-full resize-none rounded-2xl border border-[#CFE3EC] bg-white/90 px-3 py-2.5 text-[13.5px] leading-relaxed outline-none focus:border-[#2E8BA8]"
       />
 
       {picked.length > 0 && (
@@ -101,7 +101,7 @@ export default function Composer({ roundId, replyTo, onCancelReply, onSent }) {
           {picked.map((p) => (
             <span
               key={p.email}
-              className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-[#5A4A3C]"
+              className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-[#23414E]"
               style={{ background: paletteFromRoster(p.email, roster).bg }}
             >
               <AtSign size={10} /> {p.name}
@@ -111,16 +111,16 @@ export default function Composer({ roundId, replyTo, onCancelReply, onSent }) {
       )}
 
       {showPicker && (
-        <div className="mt-1.5 rounded-2xl border border-[#EADCCB] bg-white p-2">
+        <div className="mt-1.5 rounded-2xl border border-[#CFE3EC] bg-white p-2">
           {team.length === 0 ? (
-            <p className="px-2 py-2 text-center text-[11px] text-[#8C7B6B]">אין אנשי צוות נוספים לתייג</p>
+            <p className="px-2 py-2 text-center text-[11px] text-[#5E7A87]">אין אנשי צוות נוספים לתייג</p>
           ) : (
             team.map((person) => (
               <button
                 key={person.email}
                 type="button"
                 onClick={() => addMention(person)}
-                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-right text-[12.5px] font-semibold text-[#5A4A3C] transition hover:bg-[#FBF3EA]"
+                className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-right text-[12.5px] font-semibold text-[#23414E] transition hover:bg-[#F2F8FB]"
               >
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -134,14 +134,14 @@ export default function Composer({ roundId, replyTo, onCancelReply, onSent }) {
       )}
 
       {error && (
-        <p className="mt-1.5 rounded-xl bg-[#FBEDE9] px-3 py-2 text-[11px] leading-relaxed text-[#C4584C]">{error}</p>
+        <p className="mt-1.5 rounded-xl bg-[#E4F1F7] px-3 py-2 text-[11px] leading-relaxed text-[#C4584C]">{error}</p>
       )}
 
       <div className="mt-2 flex gap-2">
         <button
           type="button"
           onClick={() => setShowPicker((v) => !v)}
-          className="flex shrink-0 items-center justify-center gap-1.5 rounded-2xl border border-[#EADCCB] bg-white px-3 py-2.5 text-[12px] font-semibold text-[#C06E5E] transition active:scale-[0.98]"
+          className="flex shrink-0 items-center justify-center gap-1.5 rounded-2xl border border-[#CFE3EC] bg-white px-3 py-2.5 text-[12px] font-semibold text-[#2E8BA8] transition active:scale-[0.98]"
         >
           <AtSign size={14} /> תיוג
         </button>
@@ -149,7 +149,7 @@ export default function Composer({ roundId, replyTo, onCancelReply, onSent }) {
           type="button"
           onClick={handleSend}
           disabled={!draft.trim() || sending}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#C06E5E] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-[#2E8BA8] py-2.5 text-[13px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
         >
           <Send size={15} /> {sending ? "שולחת..." : replyTo ? "שליחת התגובה" : "הוספה ללוח"}
         </button>
