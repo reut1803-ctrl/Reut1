@@ -16,7 +16,7 @@ import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { crmDb, crmAuth, googleProvider } from "./firebaseClient";
 import { DEFAULT_TERMS_TEXT, DEFAULT_DAILY_TIP } from "./mockData";
 import { ROUND_MS, unseenMentions } from "./brainstorm";
-import { BOOTSTRAP_ADMIN_EMAIL, isFirebaseConfigured } from "../appConfig";
+import { BOOTSTRAP_ADMIN_EMAILS, isFirebaseConfigured } from "../appConfig";
 
 export const PROPOSAL_STAGES = ["הוצע", "בבדיקה", "הוחלפו פרטים", "נפגשו", "בהמשך / מתקדמים", "אירוסין"];
 export const PROPOSAL_DROPPED = "ירד מהפרק";
@@ -28,8 +28,12 @@ export const NEW_TAB_LIMIT = 10;
 
 // בעלת המערכת. מזוהה כמנהלת תמיד, כדי שלא תוכל להינעל מחוץ למערכת שלה
 // גם אם רשימת ההרשאות אינה נטענת (תקלת רשת, כתובת אתר חדשה וכדומה).
-// בעלת המערכת. מוגדרת במקום אחד יחיד – lib/appConfig.js.
-export const OWNER_EMAIL = String(BOOTSTRAP_ADMIN_EMAIL || "").trim().toLowerCase();
+// בעלות המערכת. מוגדרות במקום אחד יחיד – lib/appConfig.js.
+export const OWNER_EMAILS = (BOOTSTRAP_ADMIN_EMAILS || []).map((e) =>
+  String(e || "").trim().toLowerCase()
+);
+export const isOwnerEmail = (email) =>
+  OWNER_EMAILS.includes(String(email || "").trim().toLowerCase());
 
 const withId = (d) => ({ id: d.id, ...d.data() });
 
@@ -280,9 +284,9 @@ export const useCrmStore = create((set, get) => ({
     }
     const myEmail = normalizeEmail(googleUser.email);
 
-    // בעלת המערכת מזוהה כמנהלת גם אם קריאת רשימת ההרשאות נכשלה מסיבה כלשהי.
+    // בעלות המערכת מזוהות כמנהלות גם אם קריאת רשימת ההרשאות נכשלה מסיבה כלשהי.
     // זו רשת ביטחון: אסור שבעלת המערכת תינעל אי פעם מחוץ למערכת שלה.
-    if (myEmail === OWNER_EMAIL) {
+    if (isOwnerEmail(myEmail)) {
       set({ role: "admin", currentStaffEmail: null, allowlistLoaded: true });
       get().subscribeTasks();
       return;

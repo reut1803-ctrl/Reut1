@@ -9,7 +9,7 @@ import Toast from "./Toast";
 import SignInGate from "./SignInGate";
 import AccessDeniedGate from "./AccessDeniedGate";
 import { useScrollRestoration } from "@/lib/crm/useScrollRestoration";
-import { useCrmStore, allowlistEmail, OWNER_EMAIL } from "@/lib/crm/store";
+import { useCrmStore, allowlistEmail, isOwnerEmail } from "@/lib/crm/store";
 
 export default function AppShell({ children }) {
   const scrollRef = useRef(null);
@@ -32,7 +32,7 @@ export default function AppShell({ children }) {
   const myEmail = String(googleUser.email || "").trim().toLowerCase();
   const decided =
     myEntryStatus !== "loading" ||
-    myEmail === OWNER_EMAIL ||
+    isOwnerEmail(myEmail) ||
     authAllowlist.some((e) => allowlistEmail(e) === myEmail);
   if (!decided) return <div className="h-dvh bg-[#FBF3EA]" />;
 

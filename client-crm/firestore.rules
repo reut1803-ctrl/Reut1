@@ -5,13 +5,26 @@ service cloud.firestore {
     function myEmail() {
       return request.auth.token.email.lower();
     }
+    // בעלות המערכת: מנהלות תמיד, גם כשרשימת הצוות ריקה לגמרי.
+    // בלי זה נוצר מבוי סתום במערכת חדשה - כתיבה לרשימת הצוות מותרת רק
+    // למנהלת, ובמסד נתונים ריק אף אחת אינה מנהלת, ולכן איש לא יכול להתחיל.
+    // חייב להישאר זהה ל-BOOTSTRAP_ADMIN_EMAILS שב-lib/appConfig.js.
+    function isFounder() {
+      return request.auth != null
+        && myEmail() in [
+          "reut1803@gmail.com",
+          "6253322@gmail.com"
+        ];
+    }
     function isStaff() {
       return request.auth != null
-        && exists(/databases/$(database)/documents/staffAllowlist/$(myEmail()));
+        && (isFounder()
+          || exists(/databases/$(database)/documents/staffAllowlist/$(myEmail())));
     }
     function isAdmin() {
       return request.auth != null
-        && get(/databases/$(database)/documents/staffAllowlist/$(myEmail())).data.role == "admin";
+        && (isFounder()
+          || get(/databases/$(database)/documents/staffAllowlist/$(myEmail())).data.role == "admin");
     }
     function notBlockedFromMe() {
       return isAdmin()
