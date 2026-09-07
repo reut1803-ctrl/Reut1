@@ -282,10 +282,10 @@ export default function AdminPage() {
                   <p className="text-xs text-ink/60">חמשת המועמדים האחרונים שהצטרפו למאגר.</p>
                 </div>
                 {newCands.length === 0 && <p className="text-sm text-ink/40">אין מועמדים חדשים.</p>}
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex snap-x gap-3 overflow-x-auto pb-2">
                   {newCands.map((c) => (
+                    <div key={c.id} className="w-64 shrink-0 snap-start">
                     <CandidateCard
-                      key={c.id}
                       candidate={c}
                       openQuestions={data.openQuestions}
                       reps={data.reps}
@@ -297,6 +297,7 @@ export default function AdminPage() {
                       onUpdate={updateCandidate}
                       onDelete={isAdmin ? deleteCandidate : undefined}
                     />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -313,10 +314,10 @@ export default function AdminPage() {
                     <p className="text-xs text-ink/60">{rep.institution}</p>
                   </div>
                   {cands.length === 0 && <p className="text-sm text-ink/40">אין מועמדים משויכים.</p>}
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex snap-x gap-3 overflow-x-auto pb-2">
                     {cands.map((c) => (
+                      <div key={c.id} className="w-64 shrink-0 snap-start">
                       <CandidateCard
-                        key={c.id}
                         candidate={c}
                         openQuestions={data.openQuestions}
                         reps={data.reps}
@@ -328,6 +329,7 @@ export default function AdminPage() {
                         onUpdate={updateCandidate}
                         onDelete={isAdmin ? deleteCandidate : undefined}
                       />
+                      </div>
                     ))}
                   </div>
                 </section>
@@ -340,10 +342,10 @@ export default function AdminPage() {
                 <div className="rounded-2xl bg-sand px-4 py-2">
                   <p className="font-bold text-ink">ללא שיוך נציג</p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex snap-x gap-3 overflow-x-auto pb-2">
                   {unassigned.map((c) => (
+                    <div key={c.id} className="w-64 shrink-0 snap-start">
                     <CandidateCard
-                      key={c.id}
                       candidate={c}
                       openQuestions={data.openQuestions}
                       reps={data.reps}
@@ -355,6 +357,7 @@ export default function AdminPage() {
                       onUpdate={updateCandidate}
                       onDelete={isAdmin ? deleteCandidate : undefined}
                     />
+                    </div>
                   ))}
                 </div>
               </section>
