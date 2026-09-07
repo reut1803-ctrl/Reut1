@@ -48,14 +48,14 @@ export const BOOTSTRAP_ADMIN_EMAILS = [SUPER_ADMIN_EMAIL, DATABASE_MANAGER_EMAIL
 
 // --- חיבור למסד הנתונים (Firebase) ---
 // הערכים האלה מזהים את פרויקט ה-Firebase של המערכת הזו בלבד.
-// יש להחליף אותם בפרטים של פרויקט Firebase חדש ונפרד של הלקוחה.
+// פרויקט Firebase נפרד ועצמאי של המערכת הזו: or-behirut-haderech.
 export const firebaseConfig = {
-  apiKey: "__API_KEY__",
-  authDomain: "__PROJECT_ID__.firebaseapp.com",
-  projectId: "__PROJECT_ID__",
-  storageBucket: "__PROJECT_ID__.firebasestorage.app",
-  messagingSenderId: "__SENDER_ID__",
-  appId: "__APP_ID__",
+  apiKey: "AIzaSyBuRzRUiPMwixSu9gYTLqmOcyfMzPaVZkc",
+  authDomain: "or-behirut-haderech.firebaseapp.com",
+  projectId: "or-behirut-haderech",
+  storageBucket: "or-behirut-haderech.firebasestorage.app",
+  messagingSenderId: "389907824664",
+  appId: "1:389907824664:web:88b60e8623cfe3dba4c36d",
 };
 
 // האם כבר הוזנו כאן פרטי חיבור אמיתיים. כל עוד לא – המערכת מציגה את מסך
