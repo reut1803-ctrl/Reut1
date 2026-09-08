@@ -228,8 +228,6 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
         const woman = candById(m.womanId);
         const manLabel = man?.fullName || m.externalMan?.name || "—";
         const womanLabel = woman?.fullName || m.externalWoman?.name || "—";
-        const entries = involvedReps(m, man, woman);
-        const others = entries.filter((e) => user.role === "admin" || e.rep.id !== user.repId);
         const isCollapsed = !!collapsed[m.id];
         const curStage = Math.max(0, STAGES.indexOf(m.status));
         const handler = handlerName(m);
@@ -310,24 +308,37 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                   )}
                 </div>
 
-                {/* כרטיסי המועמדים - זה לצד זה (רספונסיבי) להשוואה מיידית */}
-                <div className="grid grid-cols-2 items-start gap-2">
-                  {man ? candidateCard(man) : externalCard(m, "man")}
-                  {woman ? candidateCard(woman) : externalCard(m, "woman")}
-                </div>
-
-                {/* אנשי קשר - הנציגים האחרים בלבד, עם כפתורי חיוג */}
-                <div className="space-y-2 border-t border-sand pt-3">
-                  <p className="text-sm font-bold text-roseDark">אנשי קשר להתאמה</p>
-                  {others.length === 0 && <p className="text-xs text-ink/40">אין נציגים נוספים ליצירת קשר בהתאמה זו.</p>}
-                  {others.map((e) => (
-                    <div key={e.rep.id} className="rounded-2xl bg-blush/40 p-2.5">
-                      <p className="text-sm font-semibold text-ink">{e.rep.name}</p>
-                      <p className="mb-1 text-xs text-ink/50">{e.roles.join(" · ")}{e.rep.institution ? ` · ${e.rep.institution}` : ""}</p>
-                      {contactButtons(e.rep, manLabel, womanLabel)}
+                {/* כרטיסי המועמדים - זה לצד זה, ואיש הקשר של כל צד צמוד לכרטיס שלו */}
+                {(() => {
+                  const manRep = displayRep(man, data.reps);
+                  const womanRep = displayRep(woman, data.reps);
+                  const initRep = m.createdByRep && m.createdByRep !== "admin" ? repById(m.createdByRep) : null;
+                  const showManC = manRep && (user.role === "admin" || manRep.id !== user.repId);
+                  const showWomanC = womanRep && (user.role === "admin" || womanRep.id !== user.repId);
+                  const showInit = initRep && initRep.id !== manRep?.id && initRep.id !== womanRep?.id && (user.role === "admin" || initRep.id !== user.repId);
+                  const repBlock = (rep, role) => (
+                    <div className="rounded-2xl bg-blush/40 p-2.5">
+                      <p className="text-sm font-semibold text-ink">{rep.name}</p>
+                      <p className="mb-1 text-[11px] text-ink/50">{role}{rep.institution ? ` · ${rep.institution}` : ""}</p>
+                      {contactButtons(rep, manLabel, womanLabel)}
                     </div>
-                  ))}
-                </div>
+                  );
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 items-start gap-2">
+                        <div className="space-y-2">
+                          {man ? candidateCard(man) : externalCard(m, "man")}
+                          {showManC && repBlock(manRep, "נציג/ת הבחור")}
+                        </div>
+                        <div className="space-y-2">
+                          {woman ? candidateCard(woman) : externalCard(m, "woman")}
+                          {showWomanC && repBlock(womanRep, "נציג/ת הבחורה")}
+                        </div>
+                      </div>
+                      {showInit && <div className="pt-1">{repBlock(initRep, "יוזם/ת ההתאמה")}</div>}
+                    </>
+                  );
+                })()}
 
                 {/* יומן מעקב - עדכונים והערות */}
                 <div className="space-y-2 border-t border-sand pt-3">

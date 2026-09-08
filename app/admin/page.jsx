@@ -214,7 +214,7 @@ export default function AdminPage() {
 
       <main className="mx-auto max-w-3xl px-4 py-5 pb-28">
         {tab === "candidates" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* טיפ בשידוכים - קבוע בראש עמוד המועמדים */}
             <TipBanner popup={data.popup} />
             {isViewer && (
@@ -305,15 +305,14 @@ export default function AdminPage() {
 
             {(candView === "previous" || term) && visibleReps.map((rep) => {
               const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c));
-              if (term && cands.length === 0) return null;
+              if (cands.length === 0) return null; // אין מציגים מדור ריק של נציג
               return (
-                <section key={rep.id} className="space-y-3">
+                <section key={rep.id} className="space-y-2">
                   {/* בראש העמודה: שם הנציג ושם המוסד */}
                   <div className="rounded-2xl bg-blush px-4 py-2">
                     <p className="font-bold text-roseDark">{rep.name}</p>
                     <p className="text-xs text-ink/60">{rep.institution}</p>
                   </div>
-                  {cands.length === 0 && <p className="text-sm text-ink/40">אין מועמדים משויכים.</p>}
                   <div className="flex snap-x gap-3 overflow-x-auto pb-2">
                     {cands.map((c) => (
                       <div key={c.id} className="w-64 shrink-0 snap-start">
