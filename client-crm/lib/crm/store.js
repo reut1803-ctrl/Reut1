@@ -111,104 +111,17 @@ export const useCrmStore = create((set, get) => ({
       return;
     }
 
-    onSnapshot(
-      collection(crmDb, "staffAllowlist"),
-      (snap) => {
-        set({ authAllowlist: snap.docs.map(withId), allowlistLoaded: true });
-        get().recomputeRole();
-      },
-      // כשלון קריאה אינו אומר "אין הרשאה" - הוא יכול לנבוע גם מרשת, מכתובת אתר שאינה
-      // מאושרת או מתקלה זמנית. לכן מסמנים אותו בנפרד ולא נועלים את המשתמש/ת בחוץ.
-      (err) => {
-        set({ allowlistLoaded: true, allowlistError: true, allowlistErrorCode: err?.code || "unknown" });
-        get().recomputeRole();
-      }
-    );
-
-    onSnapshot(
-      collection(crmDb, "candidates"),
-      (snap) => {
-        set({ candidates: snap.docs.map(withId), candidatesLoaded: true, candidatesError: false });
-      },
-      () => {
-        set({ candidatesLoaded: true, candidatesError: true });
-      }
-    );
-
-    onSnapshot(collection(crmDb, "candidateStatus"), (snap) => {
-      const map = {};
-      snap.docs.forEach((d) => (map[d.id] = d.data().availabilityStatus));
-      set({ candidateStatus: map });
-    });
-
-    onSnapshot(collection(crmDb, "proposals"), (snap) => {
-      set({ proposals: snap.docs.map(withId) });
-    });
-
-    // זירת סיעור המוחות. כשל קריאה כאן לא נוגע בשום דבר אחר במערכת -
-    // הזירה תציג הסבר, וכל שאר המסכים ימשיכו לעבוד כרגיל.
-    onSnapshot(
-      collection(crmDb, "brainstormRounds"),
-      (snap) => set({ brainstormRounds: snap.docs.map(withId), brainstormLoaded: true, brainstormError: false }),
-      () => set({ brainstormLoaded: true, brainstormError: true })
-    );
-
-    onSnapshot(
-      collection(crmDb, "brainstormNotes"),
-      (snap) => set({ brainstormNotes: snap.docs.map(withId) }),
-      () => set({ brainstormNotes: [] })
-    );
-
-    // המשימות נטענות בנפרד (subscribeTasks), אחרי שידוע מי מחובר/ת:
-    // מנהלת מקבלת את כל המשימות, ואשת צוות רק את אלה שמשויכות אליה.
-
-    onSnapshot(collection(crmDb, "serviceTypes"), (snap) => {
-      set({ serviceTypes: snap.docs.map(withId) });
-    });
-
-    onSnapshot(collection(crmDb, "charges"), (snap) => {
-      set({ charges: snap.docs.map(withId) });
-    });
-
-    onSnapshot(collection(crmDb, "emailLog"), (snap) => {
-      const list = snap.docs.map(withId).sort((a, b) => new Date(b.date) - new Date(a.date));
-      set({ emailLog: list });
-    });
-
-    onSnapshot(collection(crmDb, "termsAcceptances"), (snap) => {
-      const map = {};
-      snap.docs.forEach((d) => (map[d.id] = true));
-      set({ termsAccepted: map });
-    });
-
-    onSnapshot(collection(crmDb, "telemetry"), (snap) => {
-      const map = {};
-      snap.docs.forEach((d) => (map[d.id] = d.data()));
-      set({ telemetry: map });
-    });
-
-    // פניות מהטופס החיצוני. כישלון כאן אינו שקט: הוא נרשם ומוצג בלוח הבקרה,
-    // כי המשמעות היא שכללי האבטחה החדשים עדיין לא פורסמו.
-    onSnapshot(
-      collection(crmDb, "intakeSubmissions"),
-      (snap) => set({ intakeSubmissions: snap.docs.map(withId), intakeLoaded: true, intakeError: false }),
-      () => set({ intakeSubmissions: [], intakeLoaded: true, intakeError: true })
-    );
-
-    onSnapshot(doc(crmDb, "settings", "app"), (d) => {
-      const data = d.exists() ? d.data() : {};
-      set({
-        termsText: data.termsText ?? DEFAULT_TERMS_TEXT,
-        tips: data.tips ?? (data.dailyTip ? [data.dailyTip] : [DEFAULT_DAILY_TIP]),
-        weeklyGoals: data.weeklyGoals ?? { profileViews: 20, audioPlays: 10 },
-        sheetImport: data.sheetImport ?? { csvUrl: "", mapping: {} },
-      });
-    });
+    // המאזינים נבנים רק אחרי שידוע מי מחובר/ת - ראו _subscribeCollections.
 
     onAuthStateChanged(crmAuth, (user) => {
       if (user) {
         set({ googleUser: { email: user.email, name: user.displayName, picture: user.photoURL, uid: user.uid } });
-        onSnapshot(doc(crmDb, "userPrefs", user.email.toLowerCase()), (d) => {
+        // המאזינים נבנים כאן ולא בעליית האפליקציה, כדי שלא ייווצרו לפני
+        // שההזדהות הסתיימה - מאזין כזה נדחה על הסף ונסגר לצמיתות.
+        get()._subscribeCollections();
+        const prevPrefs = get()._userPrefsUnsub;
+        if (prevPrefs) prevPrefs();
+        const unsubPrefs = onSnapshot(doc(crmDb, "userPrefs", user.email.toLowerCase()), (d) => {
           if (d.exists())
             set({
               favorites: d.data().favorites || {},
@@ -216,8 +129,12 @@ export const useCrmStore = create((set, get) => ({
               brainstormSeenAt: d.data().brainstormSeenAt || null,
             });
         });
+        set({ _userPrefsUnsub: unsubPrefs });
       } else {
-        set({ googleUser: null, favorites: {}, personalNotes: {}, brainstormSeenAt: null });
+        get()._teardownCollections();
+        const prevPrefs = get()._userPrefsUnsub;
+        if (prevPrefs) prevPrefs();
+        set({ _userPrefsUnsub: null, googleUser: null, favorites: {}, personalNotes: {}, brainstormSeenAt: null });
       }
       // ההרשאה נקבעת לפי הרשומה האישית, ולא לפי היכולת לקרוא את הרשימה כולה
       get().subscribeMyAllowlistEntry(user?.email || null);
@@ -225,6 +142,149 @@ export const useCrmStore = create((set, get) => ({
       set({ authLoading: false });
     });
   },
+
+  // --- סנכרון מול מסד הנתונים ---
+  // כל המאזינים מרוכזים כאן, ואפשר לפרק ולבנות אותם מחדש בכל רגע.
+  // זה קריטי: ב-Firestore מאזין שנכשל נסגר לצמיתות ואינו מנסה שוב לבד.
+  // כשהמאזינים נבנו פעם אחת בלבד בעליית האפליקציה, כישלון רגעי יחיד -
+  // כללי אבטחה שטרם פורסמו, רשת סלולרית שנופלת, טאב שנרדם - היה משאיר
+  // את המסך תקוע על "אין סנכרון" עד רענון מלא של הדף.
+  _collectionUnsubs: [],
+  _teardownCollections: () => {
+    get()._collectionUnsubs.forEach((fn) => {
+      try {
+        fn();
+      } catch {
+        // מאזין שכבר נסגר - אין מה לעשות איתו
+      }
+    });
+    set({ _collectionUnsubs: [] });
+  },
+
+  _subscribeCollections: () => {
+    get()._teardownCollections();
+    const unsubs = [];
+    const u = (fn) => {
+      unsubs.push(fn);
+      return fn;
+    };
+
+    // דגלי התקלה מתאפסים בכל בנייה מחדש, אחרת חיווי ישן היה נשאר על המסך
+    // גם אחרי שהסנכרון כבר חזר לעבוד.
+    set({ allowlistError: false, allowlistErrorCode: null, candidatesError: false, brainstormError: false, intakeError: false });
+
+    u(
+      onSnapshot(
+        collection(crmDb, "staffAllowlist"),
+        (snap) => {
+          set({ authAllowlist: snap.docs.map(withId), allowlistLoaded: true, allowlistError: false });
+          get().recomputeRole();
+        },
+        // כשלון קריאה אינו אומר "אין הרשאה" - הוא יכול לנבוע גם מרשת, מכתובת אתר שאינה
+        // מאושרת או מתקלה זמנית. לכן מסמנים אותו בנפרד ולא נועלים את המשתמש/ת בחוץ.
+        (err) => {
+          set({ allowlistLoaded: true, allowlistError: true, allowlistErrorCode: err?.code || "unknown" });
+          get().recomputeRole();
+        }
+      )
+    );
+
+    u(
+      onSnapshot(
+        collection(crmDb, "candidates"),
+        (snap) => set({ candidates: snap.docs.map(withId), candidatesLoaded: true, candidatesError: false }),
+        () => set({ candidatesLoaded: true, candidatesError: true })
+      )
+    );
+
+    u(
+      onSnapshot(collection(crmDb, "candidateStatus"), (snap) => {
+        const map = {};
+        snap.docs.forEach((d) => (map[d.id] = d.data().availabilityStatus));
+        set({ candidateStatus: map });
+      })
+    );
+
+    u(onSnapshot(collection(crmDb, "proposals"), (snap) => set({ proposals: snap.docs.map(withId) })));
+
+    // זירת סיעור המוחות. כשל קריאה כאן לא נוגע בשום דבר אחר במערכת -
+    // הזירה תציג הסבר, וכל שאר המסכים ימשיכו לעבוד כרגיל.
+    u(
+      onSnapshot(
+        collection(crmDb, "brainstormRounds"),
+        (snap) => set({ brainstormRounds: snap.docs.map(withId), brainstormLoaded: true, brainstormError: false }),
+        () => set({ brainstormLoaded: true, brainstormError: true })
+      )
+    );
+
+    u(
+      onSnapshot(
+        collection(crmDb, "brainstormNotes"),
+        (snap) => set({ brainstormNotes: snap.docs.map(withId) }),
+        () => set({ brainstormNotes: [] })
+      )
+    );
+
+    u(onSnapshot(collection(crmDb, "serviceTypes"), (snap) => set({ serviceTypes: snap.docs.map(withId) })));
+    u(onSnapshot(collection(crmDb, "charges"), (snap) => set({ charges: snap.docs.map(withId) })));
+
+    u(
+      onSnapshot(collection(crmDb, "emailLog"), (snap) => {
+        const list = snap.docs.map(withId).sort((a, b) => new Date(b.date) - new Date(a.date));
+        set({ emailLog: list });
+      })
+    );
+
+    u(
+      onSnapshot(collection(crmDb, "termsAcceptances"), (snap) => {
+        const map = {};
+        snap.docs.forEach((d) => (map[d.id] = true));
+        set({ termsAccepted: map });
+      })
+    );
+
+    u(
+      onSnapshot(collection(crmDb, "telemetry"), (snap) => {
+        const map = {};
+        snap.docs.forEach((d) => (map[d.id] = d.data()));
+        set({ telemetry: map });
+      })
+    );
+
+    // פניות מטופס ההרשמה החיצוני
+    u(
+      onSnapshot(
+        collection(crmDb, "intakeSubmissions"),
+        (snap) => set({ intakeSubmissions: snap.docs.map(withId), intakeLoaded: true, intakeError: false }),
+        () => set({ intakeSubmissions: [], intakeLoaded: true, intakeError: true })
+      )
+    );
+
+    u(
+      onSnapshot(doc(crmDb, "settings", "app"), (d) => {
+        const data = d.exists() ? d.data() : {};
+        set({
+          termsText: data.termsText ?? DEFAULT_TERMS_TEXT,
+          tips: data.tips ?? (data.dailyTip ? [data.dailyTip] : [DEFAULT_DAILY_TIP]),
+          weeklyGoals: data.weeklyGoals ?? { profileViews: 20, audioPlays: 10 },
+          sheetImport: data.sheetImport ?? { csvUrl: "", mapping: {} },
+        });
+      })
+    );
+
+    set({ _collectionUnsubs: unsubs });
+  },
+
+  // בניית הסנכרון מחדש בלי לרענן את הדף. מחוברת לכפתור הריענון בראש המסך,
+  // וזו הדרך להחזיר לעצמו מאזין שנפל בגלל תקלת רשת רגעית.
+  resyncData: () => {
+    if (!isFirebaseConfigured) return;
+    get()._subscribeCollections();
+    get().subscribeMyAllowlistEntry(get().googleUser?.email || null);
+    get().subscribeTasks();
+  },
+
+  _userPrefsUnsub: null,
 
   // --- הרשאה: נקבעת אך ורק לפי כניסה עם גוגל + רשימת ההרשאות ב-Firestore ---
   googleUser: null,

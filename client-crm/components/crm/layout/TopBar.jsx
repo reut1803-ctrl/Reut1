@@ -12,6 +12,17 @@ export default function TopBar() {
   const signOutGoogle = useCrmStore((s) => s.signOutGoogle);
   const currentUser = useCrmStore((s) => s.currentUser);
   const unreadCount = useCrmStore((s) => s.unreadCount());
+  const resyncData = useCrmStore((s) => s.resyncData);
+  const [syncing, setSyncing] = useState(false);
+
+  // ריענון בונה מחדש את המאזינים למסד הנתונים במקום לטעון את הדף מחדש:
+  // מהיר יותר, לא מאבד את מקום הגלילה, ומחזיר לעצמו סנכרון שנפל ברשת חלשה.
+  const handleResync = () => {
+    if (syncing) return;
+    setSyncing(true);
+    resyncData();
+    setTimeout(() => setSyncing(false), 1200);
+  };
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const user = currentUser();
@@ -34,11 +45,13 @@ export default function TopBar() {
 
         <div className="flex items-center gap-1">
           <button
-            aria-label="ריענון"
-            className="rounded-full p-2 text-[#5E7A87] transition hover:bg-[#F2F8FB] active:scale-90"
-            onClick={() => window.location.reload()}
+            aria-label="ריענון הסנכרון"
+            title="ריענון הסנכרון מול מסד הנתונים"
+            disabled={syncing}
+            className="rounded-full p-2 text-[#5E7A87] transition hover:bg-[#F2F8FB] active:scale-90 disabled:opacity-60"
+            onClick={handleResync}
           >
-            <RefreshCw size={20} />
+            <RefreshCw size={20} className={syncing ? "animate-spin" : ""} />
           </button>
           <button
             aria-label="התראות"
