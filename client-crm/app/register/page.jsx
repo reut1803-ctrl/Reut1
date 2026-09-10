@@ -10,7 +10,7 @@
 // מתמזגות לפסקה אחת שנכנסת ל"תיאור אישי". ראו lib/crm/registerForm.js.
 
 import { useMemo, useState } from "react";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { Check, AlertCircle, Camera, X, Loader2, ChevronLeft, ChevronRight, HandHeart, Phone, Sparkles } from "lucide-react";
 import { crmDb } from "@/lib/crm/firebaseClient";
 import { REGIONS, OCCUPATION_OPTIONS } from "@/lib/crm/mockData";
@@ -37,6 +37,7 @@ import {
 } from "@/lib/crm/registerForm";
 import { StepIndicator, Field, TextInput, TextArea, Select, ChipGroup, ScaleSlider } from "@/components/crm/register/FormBits";
 import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
+import { cleanTrackMessage } from "@/lib/crm/personalTrack";
 
 const STEPS = ["פרטים אישיים", "עולם דתי ולימודים", "אופי ותחומי עניין", "מה מחפשים ואישורים"];
 const MAX_PHOTOS = 4;
@@ -85,6 +86,8 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [done, setDone] = useState(false);
+  // מזהה הפנייה שנוצרה, כדי שמסך הסיום יוכל לצרף אליה את בחירת המסלול
+  const [intakeId, setIntakeId] = useState("");
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const missing = useMemo(
@@ -128,7 +131,7 @@ export default function RegisterPage() {
     try {
       const age = ageFromBirthDate(form.birthDate) ?? (form.age ? Number(form.age) : null);
       // status:"pending" הוא תנאי בכללי האבטחה בשרת, ולכן חייב להישלח כך
-      await addDoc(collection(crmDb, "intakeSubmissions"), {
+      const ref = await addDoc(collection(crmDb, "intakeSubmissions"), {
         status: "pending",
         source: "register-form",
         createdAt: new Date().toISOString(),
@@ -160,6 +163,7 @@ export default function RegisterPage() {
         termsAcceptedAt: new Date().toISOString(),
         privacyAcceptedAt: new Date().toISOString(),
       });
+      setIntakeId(ref.id);
       setDone(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
@@ -169,7 +173,7 @@ export default function RegisterPage() {
     }
   };
 
-  if (done) return <ThankYou />;
+  if (done) return <ThankYou intakeId={intakeId} />;
 
   return (
     <main className="min-h-screen bg-[#F2F8FB] px-4 py-8" dir="rtl">
@@ -543,7 +547,18 @@ function PhotoUploader({ photos, setPhotos, busy, error, onPick }) {
   );
 }
 
-function ThankYou() {
+function ThankYou({ intakeId }) {
+  // בחירת המסלול נצמדת לפנייה שזה עתה נשלחה. כללי האבטחה מתירים כאן
+  // עדכון של שלושת השדות האלה בלבד, ורק כל עוד הפנייה טרם טופלה.
+  const handleChoose = async (value, message) => {
+    if (!intakeId) return;
+    await updateDoc(doc(crmDb, "intakeSubmissions", intakeId), {
+      personalTrack: value,
+      trackMessage: cleanTrackMessage(message),
+      trackUpdatedAt: new Date().toISOString(),
+    });
+  };
+
   return (
     <main className="min-h-screen bg-[#F2F8FB] px-4 py-10" dir="rtl">
       <div className="mx-auto w-full max-w-lg">
@@ -560,7 +575,7 @@ function ThankYou() {
           </p>
         </div>
 
-        <PersonalTrackOffer />
+        <PersonalTrackOffer onChoose={handleChoose} />
 
         <p className="mt-6 text-center text-[11px] text-[#5E7A87]">
           {APP_NAME} · {APP_SUBTITLE}

@@ -6,11 +6,13 @@ import { Check } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { getAvailabilityColors } from "@/lib/crm/availability";
 import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
+import { cleanTrackMessage } from "@/lib/crm/personalTrack";
 
 function StatusForm() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
+  const setCandidateTrack = useCrmStore((s) => s.setCandidateTrack);
   const [candidate, setCandidate] = useState(undefined);
   const [saved, setSaved] = useState(false);
 
@@ -64,8 +66,13 @@ function StatusForm() {
       {saved && <p className="mt-4 text-[13px] font-semibold text-[#2FA39B]">הסטטוס עודכן, תודה!</p>}
     </div>
 
-    {/* ההצעה נשארת זמינה כאן באופן קבוע, למי שיעדיף להצטרף למסלול מאוחר יותר */}
-    <PersonalTrackOffer variant="compact" />
+    {/* ההצעה נשארת זמינה כאן באופן קבוע, למי שיעדיף להצטרף למסלול מאוחר
+        יותר. מי שכבר במסלול אינו רואה אותה - הרכיב מסתיר את עצמו. */}
+    <PersonalTrackOffer
+      variant="compact"
+      currentTrack={candidate.personalTrack || ""}
+      onChoose={(value, message) => setCandidateTrack(id, value, cleanTrackMessage(message))}
+    />
     </div>
   );
 }

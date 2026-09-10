@@ -50,8 +50,14 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isStaff();
       allow create: if isStaff();
+      // עדכון ללא התחברות מוגבל לשדות שהמועמד/ת עצמו/ה מעדכן/ת מהקישור
+      // האישי: סטטוס הזמינות, ובחירת המסלול האישי וההודעה שנלווית לה.
+      // כל שדה אחר בכרטיס אינו ניתן לנגיעה מכאן.
       allow update: if isStaff()
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availabilityStatus']);
+        || (request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['availabilityStatus', 'personalTrack', 'trackMessage', 'trackUpdatedAt'])
+            && request.resource.data.get('trackMessage', '') is string
+            && request.resource.data.get('trackMessage', '').size() < 2000);
     }
 
     // מדיה (הקלטות/PDF) נשמרת בחלקים קטנים, כי רשתות מסוימות לא מעבירות בקשה אחת גדולה.
@@ -151,7 +157,16 @@ service cloud.firestore {
         && request.resource.data.get('photo', '') is string
         && request.resource.data.get('photo', '').size() < 500000;
       allow get, list: if isStaff();
-      allow update, delete: if isAdmin();
+      // מיד אחרי השליחה, מסך הסיום מאפשר לבחור את המסלול האישי ולהשאיר
+      // הודעה. זו הכתיבה היחידה שמותרת לפנייה מבחוץ, והיא מוגבלת לשלושת
+      // השדות האלה ולפנייה שטרם טופלה.
+      allow update: if isAdmin()
+        || (resource.data.get('status', '') == 'pending'
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['personalTrack', 'trackMessage', 'trackUpdatedAt'])
+            && request.resource.data.get('trackMessage', '') is string
+            && request.resource.data.get('trackMessage', '').size() < 2000);
+      allow delete: if isAdmin();
     }
 
     match /userPrefs/{email} {

@@ -200,8 +200,21 @@ export const useCrmStore = create((set, get) => ({
     u(
       onSnapshot(collection(crmDb, "candidateStatus"), (snap) => {
         const map = {};
-        snap.docs.forEach((d) => (map[d.id] = d.data().availabilityStatus));
-        set({ candidateStatus: map });
+        const track = {};
+        snap.docs.forEach((d) => {
+          const data = d.data();
+          map[d.id] = data.availabilityStatus;
+          // מצב המסלול האישי נשמר באותו מסמך, ונאסף למפה נפרדת כדי
+          // שהקוד הקיים שקורא את candidateStatus יישאר בדיוק כשהיה.
+          if (data.personalTrack || data.trackMessage) {
+            track[d.id] = {
+              personalTrack: data.personalTrack || "",
+              trackMessage: data.trackMessage || "",
+              trackUpdatedAt: data.trackUpdatedAt || null,
+            };
+          }
+        });
+        set({ candidateStatus: map, candidateTrack: track });
       })
     );
 
@@ -831,6 +844,7 @@ export const useCrmStore = create((set, get) => ({
   candidates: [],
   candidatesLoaded: false,
   candidatesError: false,
+  candidateTrack: {},
   candidateStatus: {},
   setCandidateAvailability: async (id, status) => {
     await setDoc(doc(crmDb, "candidateStatus", id), { availabilityStatus: status }, { merge: true });
@@ -945,6 +959,20 @@ export const useCrmStore = create((set, get) => ({
       // מקור הכרטיס נשמר, כדי שיהיה ברור שהוא הגיע מהטופס החיצוני
       source: "register-form",
     });
+    // מצב המסלול שנבחר במסך הסיום עובר לרשומת הסטטוס של הכרטיס החדש,
+    // כדי שהחיווי בלוח הבקרה והתצוגה באזור האישי יימשכו ברצף.
+    if (item.personalTrack || item.trackMessage) {
+      await setDoc(
+        doc(crmDb, "candidateStatus", candidate.id),
+        {
+          personalTrack: item.personalTrack || "",
+          trackMessage: item.trackMessage || "",
+          trackUpdatedAt: item.trackUpdatedAt || new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
+    }
+
     await updateDoc(doc(crmDb, "intakeSubmissions", item.id), {
       status: "converted",
       candidateId: candidate.id,
@@ -1021,6 +1049,22 @@ export const useCrmStore = create((set, get) => ({
   },
   // מאזין ציבורי חד-פעמי לכרטיס סטטוס יחיד - לשימוש בעמוד הקישור האישי (ללא התחברות),
   // ולכן לא נוגע כלל באוסף candidates החסוי אלא רק בשם ובסטטוס הפניות שנשמרים בנפרד.
+  // בחירת המסלול האישי, נכתבת מהאזור האישי בלי התחברות. הכתיבה מוגבלת
+  // בכללי האבטחה לשלושת השדות האלה בלבד, ולכן אי אפשר לגעת דרכה בשום
+  // נתון אחר של הכרטיס.
+  setCandidateTrack: async (id, personalTrack, trackMessage = "") => {
+    const { cleanTrackMessage } = await import("./personalTrack");
+    await setDoc(
+      doc(crmDb, "candidateStatus", id),
+      {
+        personalTrack: personalTrack || "",
+        trackMessage: cleanTrackMessage(trackMessage),
+        trackUpdatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  },
+
   subscribeCandidateStatus: (id, callback) =>
     onSnapshot(doc(crmDb, "candidateStatus", id), (d) => {
       callback(d.exists() ? { id, ...d.data() } : null);

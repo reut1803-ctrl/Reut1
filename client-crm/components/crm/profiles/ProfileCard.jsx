@@ -19,8 +19,10 @@ import {
   Plus,
   UserRound,
   StickyNote,
+  MessageSquare,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
+import { trackBadge } from "@/lib/crm/personalTrack";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { viewerActionText } from "@/lib/crm/genderText";
@@ -66,6 +68,9 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const personalNote = useCrmStore((s) => s.personalNoteFor(candidate.id));
   const setPersonalNote = useCrmStore((s) => s.setPersonalNote);
   const deleteCandidate = useCrmStore((s) => s.deleteCandidate);
+  // מצב "המסלול האישי" של המועמד/ת, לחיווי ולמעקב של המנהלת
+  const track = useCrmStore((s) => s.candidateTrack[candidate.id]);
+  const badge = trackBadge(track?.personalTrack);
   const [pendingDeleteCandidate, setPendingDeleteCandidate] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -301,6 +306,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
           <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold shadow ${availability.bg} ${availability.text}`}>
             {candidate.availabilityStatus}
           </span>
+          {badge && (
+            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold shadow ${badge.bg} ${badge.text}`}>
+              {badge.label}
+            </span>
+          )}
           {candidateTag && (
             <span
               className="rounded-full px-2.5 py-1 text-[11px] font-bold shadow"
@@ -496,6 +506,17 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   >
                     <PenLine size={15} /> עריכת פרטי הכרטיס
                   </Link>
+                )}
+
+                {track?.trackMessage && (
+                  <div className="rounded-2xl border-2 border-[#C9A063] bg-[#EAF5FA] p-3">
+                    <p className="mb-1 flex items-center gap-1 text-[11.5px] font-bold text-[#8A6A32]">
+                      <MessageSquare size={12} /> הודעה מהמועמד/ת
+                    </p>
+                    <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#23414E]">
+                      {track.trackMessage}
+                    </p>
+                  </div>
                 )}
 
                 {role === "admin" && (
