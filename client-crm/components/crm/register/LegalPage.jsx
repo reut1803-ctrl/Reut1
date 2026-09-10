@@ -36,3 +36,30 @@ export function Section({ heading, children }) {
     </section>
   );
 }
+
+// נוסח שהמנהלת הזינה בממשק הניהול.
+// עיצוב מינימלי ובטוח: שורה שמתחילה ב-## היא כותרת, שורה ריקה מפרידה
+// בין פסקאות, וכל השאר מוצג כטקסט. אין כאן פירוש של HTML, ולכן אי אפשר
+// להזריק דרך הממשק תגיות או סקריפט לעמוד.
+export function CustomLegalText({ text }) {
+  const blocks = String(text || "")
+    .split(/\n\s*\n/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  return (
+    <>
+      {blocks.map((block, i) =>
+        block.startsWith("##") ? (
+          <h2 key={i} className="mb-1.5 mt-4 text-[15px] font-bold text-[#1F6E88]">
+            {block.replace(/^#+\s*/, "")}
+          </h2>
+        ) : (
+          <p key={i} className="whitespace-pre-line">
+            {block}
+          </p>
+        )
+      )}
+    </>
+  );
+}

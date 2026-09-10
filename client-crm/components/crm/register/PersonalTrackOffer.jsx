@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, Phone, Check, Loader2, MessageSquare } from "lucide-react";
-import { PERSONAL_TRACK_PRICE, PAYBOX_URL, BIT_PHONE } from "@/lib/appConfig";
+import { DEFAULT_CONTENT } from "@/lib/crm/publicContent";
 import { TRACK_CHOICES, TRACK_PAID, TRACK_MESSAGE, MAX_TRACK_MESSAGE, shouldOfferTrack } from "@/lib/crm/personalTrack";
 
 // הצעת "המסלול האישי".
@@ -15,7 +15,13 @@ import { TRACK_CHOICES, TRACK_PAID, TRACK_MESSAGE, MAX_TRACK_MESSAGE, shouldOffe
 //
 // currentTrack נקבע לפי מה שכבר נבחר: מי שכבר במסלול אינו רואה את
 // ההצעה שוב, אלא אישור קצר במקומה.
-export default function PersonalTrackOffer({ variant = "full", currentTrack = "", onChoose }) {
+export default function PersonalTrackOffer({ variant = "full", currentTrack = "", onChoose, payment }) {
+  // קישורי התשלום והמחיר מגיעים ממה שהמנהלת הגדירה בלוח הבקרה.
+  // אם עדיין לא הוגדר דבר, נופלים לברירות המחדל שבקוד.
+  const pay = { ...DEFAULT_CONTENT.payment, ...(payment || {}) };
+  const PERSONAL_TRACK_PRICE = pay.personalTrackPrice;
+  const PAYBOX_URL = pay.payboxUrl;
+  const BIT_PHONE = pay.bitPhone;
   const compact = variant === "compact";
   const [choice, setChoice] = useState("");
   const [message, setMessage] = useState("");

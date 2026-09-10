@@ -169,6 +169,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // תוכן שהמנהלת עורכת בעצמה: כיתובי הטופס, השאלות, קישורי התשלום
+    // והנספחים המשפטיים. הקריאה חייבת להיות פתוחה, כי הטופס הציבורי
+    // והנספחים נטענים בלי התחברות. הכתיבה שמורה למנהלת בלבד.
+    // אין כאן שום מידע על מועמדים - רק תוכן שממילא מוצג לכל הנכנסים.
+    match /publicContent/{id} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow write: if isAdmin();
+    }
+
     match /userPrefs/{email} {
       allow read, write: if request.auth != null && myEmail() == email;
     }

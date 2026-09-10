@@ -7,12 +7,14 @@ import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { getAvailabilityColors } from "@/lib/crm/availability";
 import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
 import { cleanTrackMessage } from "@/lib/crm/personalTrack";
+import { usePublicContent } from "@/lib/crm/usePublicContent";
 
 function StatusForm() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const setCandidateTrack = useCrmStore((s) => s.setCandidateTrack);
+  const { content } = usePublicContent();
   const [candidate, setCandidate] = useState(undefined);
   const [saved, setSaved] = useState(false);
 
@@ -71,6 +73,7 @@ function StatusForm() {
     <PersonalTrackOffer
       variant="compact"
       currentTrack={candidate.personalTrack || ""}
+      payment={content?.payment}
       onChoose={(value, message) => setCandidateTrack(id, value, cleanTrackMessage(message))}
     />
     </div>

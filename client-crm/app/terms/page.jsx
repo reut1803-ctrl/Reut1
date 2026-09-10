@@ -1,9 +1,25 @@
-import LegalPage, { Section } from "@/components/crm/register/LegalPage";
-import { APP_NAME, SUCCESS_FEE, PERSONAL_TRACK_PRICE } from "@/lib/appConfig";
+"use client";
 
-export const metadata = { title: "נספח 1 — הסכם ההתקשרות" };
+import LegalPage, { Section, CustomLegalText } from "@/components/crm/register/LegalPage";
+import { usePublicContent } from "@/lib/crm/usePublicContent";
+import { APP_NAME } from "@/lib/appConfig";
 
 export default function TermsPage() {
+  // נוסח שהמנהלת הזינה גובר על הנוסח שבקוד
+  const { content } = usePublicContent();
+  const custom = String(content?.legal?.terms || "").trim();
+  // הסכומים בנוסח שבקוד מתעדכנים לפי מה שהוגדר בלוח הבקרה
+  const successFee = Number(content?.payment?.successFee || 0);
+  const trackPrice = Number(content?.payment?.personalTrackPrice || 0);
+
+  if (custom) {
+    return (
+      <LegalPage title="נספח 1 — הסכם ההתקשרות" subtitle={`${APP_NAME} · מאגר שידוכים`}>
+        <CustomLegalText text={custom} />
+      </LegalPage>
+    );
+  }
+
   return (
     <LegalPage title="נספח 1 — הסכם ההתקשרות" subtitle={`${APP_NAME} · מאגר שידוכים`}>
       <Section heading="1. מהות השירות">
@@ -27,14 +43,14 @@ export default function TermsPage() {
       <Section heading="3. המסלול האישי — שירות אופציונלי">
         <p>
           המסלול האישי הוא שירות נוסף ונפרד: שיחת היכרות מעמיקה שנועדה לדייק את החיפוש. עלותו{" "}
-          {PERSONAL_TRACK_PRICE} ₪ (מחיר השקה), והוא אינו תנאי להימצאות במאגר או לקבלת הצעות.
+          {trackPrice} ₪ (מחיר השקה), והוא אינו תנאי להימצאות במאגר או לקבלת הצעות.
         </p>
       </Section>
 
       <Section heading="4. דמי הצלחה">
         <p>
           בקרות נישואין שמקורם בהצעה שהתקבלה דרך המיזם, ישולמו דמי הצלחה בסך{" "}
-          <strong>{SUCCESS_FEE.toLocaleString("he-IL")} ₪</strong>.
+          <strong>{successFee.toLocaleString("he-IL")} ₪</strong>.
         </p>
         <p>
           דמי ההצלחה משולמים <strong>אך ורק</strong> במקרה של נישואין בפועל. אין תשלום בגין הצעות,

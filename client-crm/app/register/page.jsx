@@ -20,7 +20,6 @@ import {
   APP_NAME,
   APP_SUBTITLE,
   LOGO_SRC,
-  SUCCESS_FEE,
 } from "@/lib/appConfig";
 import {
   MARITAL_STATUSES,
@@ -38,6 +37,9 @@ import { StepIndicator, Field, TextInput, TextArea, Select, ChipGroup, ScaleSlid
 import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
 import { cleanTrackMessage } from "@/lib/crm/personalTrack";
 import { narrativeFromForm } from "@/lib/crm/bioNarrative";
+import { usePublicContent } from "@/lib/crm/usePublicContent";
+import { coreLabel, coreHint, isCoreRequired, questionsForStep, customAnswersToText, missingCustom } from "@/lib/crm/publicContent";
+import CustomQuestions from "@/components/crm/register/CustomQuestions";
 
 const STEPS = ["פרטים אישיים", "עולם דתי ולימודים", "אופי ותחומי עניין", "מה מחפשים ואישורים"];
 const MAX_PHOTOS = 4;
@@ -75,7 +77,10 @@ const EMPTY = {
 };
 
 export default function RegisterPage() {
+  const { content, loaded: contentLoaded } = usePublicContent();
   const [step, setStep] = useState(0);
+  // תשובות לשאלות שהמנהלת הוסיפה בעצמה
+  const [custom, setCustom] = useState({});
   const [form, setForm] = useState(EMPTY);
   const [occupations, setOccupations] = useState([]);
   const [photos, setPhotos] = useState([]);
@@ -91,8 +96,8 @@ export default function RegisterPage() {
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const missing = useMemo(
-    () => missingFields(form, { photos, agreeTerms, agreePrivacy }),
-    [form, photos, agreeTerms, agreePrivacy]
+    () => [...missingFields(form, { photos, agreeTerms, agreePrivacy }), ...missingCustom(content, custom)],
+    [form, photos, agreeTerms, agreePrivacy, content, custom]
   );
 
   const handlePhotos = async (fileList) => {
@@ -157,7 +162,10 @@ export default function RegisterPage() {
         photoUrls: photos,
 
         // --- תשובות העומק, ממוזגות לפסקה אחת ---
-        bio: narrativeFromForm(form),
+        // המנגנון קבוע: תשובות העומק מתמזגות לפסקה אחת. מה שדינמי הוא
+        // רק אילו שאלות נשאלו, ולכן מבנה הכרטיס אינו משתנה.
+        bio: [narrativeFromForm(form), customAnswersToText(content, custom)].filter(Boolean).join("\n\n"),
+        customAnswers: custom,
 
         consentAccepted: true,
         termsAcceptedAt: new Date().toISOString(),
@@ -173,7 +181,12 @@ export default function RegisterPage() {
     }
   };
 
-  if (done) return <ThankYou intakeId={intakeId} />;
+  // קישור חיצוני פעיל: כל ההרשמה עוברת לשם, והטופס הפנימי אינו מוצג
+  if (contentLoaded && content.externalFormUrl) {
+    return <ExternalRedirect url={content.externalFormUrl} />;
+  }
+
+  if (done) return <ThankYou intakeId={intakeId} content={content} />;
 
   return (
     <main className="min-h-screen bg-[#F2F8FB] px-4 py-8" dir="rtl">
@@ -184,14 +197,15 @@ export default function RegisterPage() {
           <p className="text-[14px] font-semibold text-[#1F6E88]">{APP_SUBTITLE}</p>
         </header>
 
-        {step === 0 && <Welcome />}
+        {step === 0 && <Welcome content={content} />}
 
         <div className="rounded-3xl border border-[#CFE3EC] bg-white p-5 shadow-[0_4px_18px_rgba(31,110,136,0.06)]">
-          <StepIndicator steps={STEPS} current={step} onJump={setStep} />
+          <StepIndicator steps={content.stepTitles} current={step} onJump={setStep} />
 
-          {step === 0 && <StepPersonal form={form} set={set} />}
-          {step === 1 && <StepReligious form={form} set={set} occupations={occupations} setOccupations={setOccupations} />}
+          {step === 0 && <StepPersonal form={form} set={set} content={content} />}
+          {step === 1 && <StepReligious form={form} set={set} content={content} occupations={occupations} setOccupations={setOccupations} />}
           {step === 2 && <StepCharacter form={form} set={set} />}
+          <CustomQuestions questions={questionsForStep(content, step)} answers={custom} onChange={setCustom} />
           {step === 3 && (
             <StepClosing
               form={form}
@@ -205,6 +219,7 @@ export default function RegisterPage() {
               setAgreeTerms={setAgreeTerms}
               agreePrivacy={agreePrivacy}
               setAgreePrivacy={setAgreePrivacy}
+              content={content}
             />
           )}
 
@@ -224,7 +239,7 @@ export default function RegisterPage() {
                 <ChevronRight size={16} /> חזרה
               </button>
             )}
-            {step < STEPS.length - 1 ? (
+            {step < content.stepTitles.length - 1 ? (
               <button
                 type="button"
                 onClick={() => {
@@ -248,14 +263,14 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {step === STEPS.length - 1 && missing.length > 0 && (
+          {step === content.stepTitles.length - 1 && missing.length > 0 && (
             <p className="mt-3 rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[12px] leading-relaxed text-[#1F6E88]">
               כדי לשלוח חסר: {missing.join(" · ")}
             </p>
           )}
         </div>
 
-        <Costs />
+        <Costs content={content} />
 
         <p className="mt-6 text-center text-[11px] text-[#5E7A87]">
           {APP_NAME} · {APP_SUBTITLE}
@@ -265,25 +280,49 @@ export default function RegisterPage() {
   );
 }
 
-function Welcome() {
+function Welcome({ content }) {
   return (
     <div className="mb-4 rounded-3xl border border-[#CFE3EC] bg-white p-5 shadow-[0_4px_18px_rgba(31,110,136,0.06)]">
-      <h1 className="text-[17px] font-bold text-[#1F6E88]">שלום וברוכים הבאים ל{APP_NAME}</h1>
-      <p className="mt-2 text-[14px] leading-relaxed text-[#23414E]">
-        מיזם להקמת בתים בישראל. אנחנו כאן כדי להכיר אתכם באמת — לא רק שורה בטבלה.
-      </p>
-      <p className="mt-2 rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#1F6E88]">
-        ההצטרפות למאגר <strong>ללא עלות</strong> ואינה כוללת התחייבות.
-      </p>
+      <h1 className="text-[17px] font-bold text-[#1F6E88]">
+        {content.intro.title} ל{APP_NAME}
+      </h1>
+      <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[#23414E]">{content.intro.body}</p>
+      {content.intro.note && (
+        <p className="mt-2 rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#1F6E88]">
+          {content.intro.note}
+        </p>
+      )}
     </div>
   );
 }
 
-function StepPersonal({ form, set }) {
+// מסך הפניה לטופס חיצוני שהמנהלת הגדירה
+function ExternalRedirect({ url }) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#F2F8FB] px-5" dir="rtl">
+      <div className="w-full max-w-sm text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={LOGO_SRC} alt={APP_NAME} className="mx-auto mb-5 w-48 max-w-[70%] object-contain" />
+        <p className="text-[15px] font-semibold text-[#1F6E88]">{APP_SUBTITLE}</p>
+        <p className="mt-3 text-[14px] leading-relaxed text-[#23414E]">
+          ההרשמה מתבצעת בטופס שלנו. לחיצה אחת ואתם שם.
+        </p>
+        <a
+          href={url}
+          className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#2E8BA8] py-3.5 text-[15px] font-bold text-white shadow transition active:scale-95"
+        >
+          למעבר לטופס ההרשמה
+        </a>
+      </div>
+    </main>
+  );
+}
+
+function StepPersonal({ form, set, content }) {
   const age = ageFromBirthDate(form.birthDate);
   return (
     <div className="space-y-4">
-      <Field label="אני" required>
+      <Field label={coreLabel(content, "gender", "אני")} hint={coreHint(content, "gender")} required>
         <ChipGroup
           options={["בחורה", "בחור"]}
           value={form.gender === "male" ? "בחור" : "בחורה"}
@@ -291,11 +330,11 @@ function StepPersonal({ form, set }) {
         />
       </Field>
 
-      <Field label="שם מלא" required>
+      <Field label={coreLabel(content, "name", "שם מלא")} hint={coreHint(content, "name")} required>
         <TextInput value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="שם פרטי ומשפחה" />
       </Field>
 
-      <Field label="מספר טלפון" required hint="נשמר בנפרד ומשמש אותנו ליצירת קשר בלבד.">
+      <Field label={coreLabel(content, "phone", "מספר טלפון")} required hint={coreHint(content, "phone", "נשמר בנפרד ומשמש אותנו ליצירת קשר בלבד.")}>
         <TextInput
           type="tel"
           inputMode="tel"
@@ -315,28 +354,28 @@ function StepPersonal({ form, set }) {
         </Field>
       )}
 
-      <Field label="מצב משפחתי">
+      <Field label={coreLabel(content, "maritalStatus", "מצב משפחתי")} hint={coreHint(content, "maritalStatus")} required={isCoreRequired(content, "maritalStatus")}>
         <ChipGroup options={MARITAL_STATUSES} value={form.maritalStatus} onChange={(v) => set({ maritalStatus: v })} />
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label='גובה (ס"מ)'>
+        <Field label={coreLabel(content, "height", 'גובה (ס"מ)')} hint={coreHint(content, "height")} required={isCoreRequired(content, "height")}>
           <TextInput type="number" inputMode="numeric" value={form.height} onChange={(e) => set({ height: e.target.value })} placeholder="170" />
         </Field>
-        <Field label="עדה">
+        <Field label={coreLabel(content, "eda", "עדה")} hint={coreHint(content, "eda")} required={isCoreRequired(content, "eda")}>
           <TextInput value={form.eda} onChange={(e) => set({ eda: e.target.value })} placeholder="אשכנזי / ספרדי / מעורב" />
         </Field>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="אזור מגורים">
+        <Field label={coreLabel(content, "region", "אזור מגורים")} hint={coreHint(content, "region")} required={isCoreRequired(content, "region")}>
           <Select value={form.region} onChange={(e) => set({ region: e.target.value })}>
             {REGIONS.map((r) => (
               <option key={r}>{r}</option>
             ))}
           </Select>
         </Field>
-        <Field label="עיר / יישוב">
+        <Field label={coreLabel(content, "city", "עיר / יישוב")} hint={coreHint(content, "city")} required={isCoreRequired(content, "city")}>
           <TextInput value={form.city} onChange={(e) => set({ city: e.target.value })} placeholder="שם היישוב" />
         </Field>
       </div>
@@ -344,10 +383,10 @@ function StepPersonal({ form, set }) {
   );
 }
 
-function StepReligious({ form, set, occupations, setOccupations }) {
+function StepReligious({ form, set, content, occupations, setOccupations }) {
   return (
     <div className="space-y-4">
-      <Field label="הגדרה דתית ואורח חיים">
+      <Field label={coreLabel(content, "lifestyle", "הגדרה דתית ואורח חיים")} hint={coreHint(content, "lifestyle")} required={isCoreRequired(content, "lifestyle")}>
         <ChipGroup options={LIFESTYLE_DEFINITIONS} value={form.lifestyle} onChange={(v) => set({ lifestyle: v })} />
       </Field>
 
@@ -355,7 +394,7 @@ function StepReligious({ form, set, occupations, setOccupations }) {
         <TextArea rows={3} value={form.breslov} onChange={(e) => set({ breslov: e.target.value })} placeholder="למשל: נוסע לאומן, לומד ליקוטי מוהר״ן, גדלתי בבית ברסלבי..." />
       </Field>
 
-      <Field label="מה אני עושה היום" hint="ישיבה, כולל, עבודה, לימודים אקדמיים, מדרשה וכדומה.">
+      <Field label={coreLabel(content, "currentOccupation", "מה אני עושה היום")} hint={coreHint(content, "currentOccupation", "ישיבה, כולל, עבודה, לימודים אקדמיים, מדרשה וכדומה.")} required={isCoreRequired(content, "currentOccupation")}>
         <TextInput value={form.currentOccupation} onChange={(e) => set({ currentOccupation: e.target.value })} placeholder="לדוגמה: לומדת בסמינר ועובדת בהוראה" />
       </Field>
 
@@ -425,7 +464,7 @@ function StepCharacter({ form, set }) {
 }
 
 function StepClosing({
-  form, set, photos, setPhotos, photoBusy, photoError, onPhotos,
+  form, set, photos, setPhotos, photoBusy, photoError, onPhotos, content,
   agreeTerms, setAgreeTerms, agreePrivacy, setAgreePrivacy,
 }) {
   return (
@@ -456,7 +495,7 @@ function StepClosing({
         <ChipGroup options={BRESLOV_IN_PARTNER} value={form.breslovInPartner} onChange={(v) => set({ breslovInPartner: v })} />
       </Field>
 
-      <Field label="אנשי קשר לבירורים" hint="שמות וטלפונים של רבנים, מחנכים או מכרים שאפשר לפנות אליהם.">
+      <Field label={coreLabel(content, "referenceContacts", "אנשי קשר לבירורים")} hint={coreHint(content, "referenceContacts", "שמות וטלפונים של רבנים, מחנכים או מכרים שאפשר לפנות אליהם.")} required={isCoreRequired(content, "referenceContacts")}>
         <TextArea rows={3} value={form.referenceContacts} onChange={(e) => set({ referenceContacts: e.target.value })} />
       </Field>
 
@@ -465,7 +504,7 @@ function StepClosing({
       <div className="space-y-2.5 rounded-2xl border border-[#CFE3EC] bg-[#F2F8FB] p-3.5">
         <Consent checked={agreeTerms} onChange={setAgreeTerms} href="/terms/">
           קראתי ואני מאשר/ת את <strong>נספח 1 — הסכם ההתקשרות</strong>, הכולל דמי הצלחה בסך{" "}
-          {SUCCESS_FEE.toLocaleString("he-IL")} ₪ במקרה של נישואין.
+          {Number(content.payment.successFee || 0).toLocaleString("he-IL")} ₪ במקרה של נישואין.
         </Consent>
         <Consent checked={agreePrivacy} onChange={setAgreePrivacy} href="/privacy/">
           קראתי ואני מאשר/ת את <strong>נספח 2 — מדיניות הפרטיות</strong>.
@@ -547,7 +586,7 @@ function PhotoUploader({ photos, setPhotos, busy, error, onPick }) {
   );
 }
 
-function ThankYou({ intakeId }) {
+function ThankYou({ intakeId, content }) {
   // בחירת המסלול נצמדת לפנייה שזה עתה נשלחה. כללי האבטחה מתירים כאן
   // עדכון של שלושת השדות האלה בלבד, ורק כל עוד הפנייה טרם טופלה.
   const handleChoose = async (value, message) => {
@@ -569,13 +608,13 @@ function ThankYou({ intakeId }) {
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#DCEEF5]">
             <Check size={26} className="text-[#2E8BA8]" />
           </div>
-          <h1 className="text-[18px] font-bold text-[#1F6E88]">קיבלנו, תודה רבה!</h1>
-          <p className="mt-2 text-[14px] leading-relaxed text-[#23414E]">
-            הפרטים שלכם הגיעו אלינו. נעבור עליהם בעיון וניצור איתכם קשר.
+          <h1 className="text-[18px] font-bold text-[#1F6E88]">{content?.thankYou?.title || "קיבלנו, תודה רבה!"}</h1>
+          <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[#23414E]">
+            {content?.thankYou?.body || "הפרטים שלכם הגיעו אלינו. נעבור עליהם בעיון וניצור איתכם קשר."}
           </p>
         </div>
 
-        <PersonalTrackOffer onChoose={handleChoose} />
+        <PersonalTrackOffer onChoose={handleChoose} payment={content?.payment} />
 
         <p className="mt-6 text-center text-[11px] text-[#5E7A87]">
           {APP_NAME} · {APP_SUBTITLE}
@@ -585,7 +624,7 @@ function ThankYou({ intakeId }) {
   );
 }
 
-function Costs() {
+function Costs({ content }) {
   return (
     <div className="mt-5 rounded-3xl border border-[#CFE3EC] bg-white p-5">
       <p className="text-[14px] font-bold text-[#1F6E88]">עלויות והצטרפות</p>
@@ -594,7 +633,7 @@ function Costs() {
           <strong>ההצטרפות למאגר — ללא עלות</strong> ובלי התחייבות.
         </li>
         <li>
-          <strong>דמי הצלחה — {SUCCESS_FEE.toLocaleString("he-IL")} ₪</strong>, משולמים אך ורק אם
+          <strong>דמי הצלחה — {Number(content.payment.successFee || 0).toLocaleString("he-IL")} ₪</strong>, משולמים אך ורק אם
           וכאשר נישאים. הפירוט המלא ב
           <a href="/terms/" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2E8BA8] underline">
             הסכם ההתקשרות

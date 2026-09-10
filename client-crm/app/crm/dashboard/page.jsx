@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope, Sheet } from "lucide-react";
+import { BarChart3, Mail, ShieldCheck, Lightbulb, Check, KeyRound, Trash2, UserPlus, Target, Wallet, ChevronLeft, Stethoscope, Sheet, Settings2 } from "lucide-react";
 import { useCrmStore, allowlistEmail, isBrokenAllowlistEntry } from "@/lib/crm/store";
 import { whatsappNumber } from "@/lib/crm/brainstorm";
 import Button from "@/components/crm/ui/Button";
@@ -271,6 +271,20 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
+
+      <Link
+        href="/crm/form-settings"
+        className="mt-6 flex items-center justify-between rounded-3xl border-2 border-[#2E8BA8] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)] transition active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-2">
+          <Settings2 size={17} className="text-[#2E8BA8]" />
+          <div>
+            <p className="text-[13px] font-bold text-[#23414E]">ניהול הטופס והתכנים</p>
+            <p className="text-[11px] text-[#5E7A87]">שאלות, כיתובים, קישורי תשלום והנספחים</p>
+          </div>
+        </div>
+        <ChevronLeft size={18} className="text-[#2E8BA8]" />
+      </Link>
 
       <Link
         href="/crm/sheet-import"

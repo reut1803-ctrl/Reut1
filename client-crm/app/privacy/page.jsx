@@ -1,9 +1,22 @@
-import LegalPage, { Section } from "@/components/crm/register/LegalPage";
+"use client";
+
+import LegalPage, { Section, CustomLegalText } from "@/components/crm/register/LegalPage";
+import { usePublicContent } from "@/lib/crm/usePublicContent";
 import { APP_NAME } from "@/lib/appConfig";
 
-export const metadata = { title: "נספח 2 — מדיניות הפרטיות" };
-
 export default function PrivacyPage() {
+  // נוסח שהמנהלת הזינה גובר על הנוסח שבקוד
+  const { content } = usePublicContent();
+  const custom = String(content?.legal?.privacy || "").trim();
+
+  if (custom) {
+    return (
+      <LegalPage title="נספח 2 — מדיניות הפרטיות" subtitle={`${APP_NAME} · מאגר שידוכים`}>
+        <CustomLegalText text={custom} />
+      </LegalPage>
+    );
+  }
+
   return (
     <LegalPage title="נספח 2 — מדיניות הפרטיות" subtitle={`${APP_NAME} · מאגר שידוכים`}>
       <Section heading="1. איזה מידע נאסף">

@@ -16,6 +16,7 @@ import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { crmDb, crmAuth, googleProvider } from "./firebaseClient";
 import { DEFAULT_TERMS_TEXT, DEFAULT_DAILY_TIP, REGIONS } from "./mockData";
 import { nameKeys } from "./nameKey";
+import { mergeContent } from "./publicContent";
 import { ROUND_MS, unseenMentions } from "./brainstorm";
 import { BOOTSTRAP_ADMIN_EMAILS, isFirebaseConfigured } from "../appConfig";
 
@@ -270,6 +271,15 @@ export const useCrmStore = create((set, get) => ({
         collection(crmDb, "intakeSubmissions"),
         (snap) => set({ intakeSubmissions: snap.docs.map(withId), intakeLoaded: true, intakeError: false }),
         () => set({ intakeSubmissions: [], intakeLoaded: true, intakeError: true })
+      )
+    );
+
+    // תוכן הטופס והנספחים, כפי שהמנהלת ערכה אותו
+    u(
+      onSnapshot(
+        doc(crmDb, "publicContent", "form"),
+        (d) => set({ publicContent: mergeContent(d.exists() ? d.data() : null), publicContentLoaded: true }),
+        () => set({ publicContent: mergeContent(null), publicContentLoaded: true })
       )
     );
 
@@ -845,6 +855,17 @@ export const useCrmStore = create((set, get) => ({
   candidatesLoaded: false,
   candidatesError: false,
   candidateTrack: {},
+
+  // --- תוכן שהמנהלת עורכת: כיתובים, שאלות, תשלום ונספחים ---
+  // נשמר במסמך אחד, ולכן שמירה היא פעולה אחת ואין מצב ביניים שבו חלק
+  // מהשינויים נכנסו וחלק לא.
+  publicContent: mergeContent(null),
+  publicContentLoaded: false,
+  savePublicContent: async (patch) => {
+    const next = mergeContent({ ...get().publicContent, ...patch });
+    await setDoc(doc(crmDb, "publicContent", "form"), { ...next, updatedAt: new Date().toISOString() });
+    return next;
+  },
   candidateStatus: {},
   setCandidateAvailability: async (id, status) => {
     await setDoc(doc(crmDb, "candidateStatus", id), { availabilityStatus: status }, { merge: true });
