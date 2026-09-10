@@ -67,12 +67,20 @@ export async function uploadToCloudinary(file, onProgress) {
       const res = await fetch("/api/upload/", { method: "POST", body: formData });
       const data = await res.json().catch(() => null);
 
-      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      if (!res.ok) {
+        const err = new Error(data?.error || `HTTP ${res.status}`);
+        // תשובה מפורשת מהשרת על תקלה שאינה רשת - קובץ פסול, אחסון שלא
+        // הוגדר, הגדרה שגויה. ניסיון חוזר עליה רק יגרום להמתנה מיותרת של
+        // כמה שניות לפני שתוצג בדיוק אותה הודעה, ולכן נעצרים כאן מיד.
+        err.permanent = res.status < 500 || res.status === 501 || res.status === 503;
+        throw err;
+      }
       if (!data?.url) throw new Error("לא התקבל קישור לקובץ");
 
       return data.url;
     } catch (err) {
       lastErr = err;
+      if (err?.permanent) break;
       // המתנה עולה בין ניסיונות, כדי לתת לרשת להתאושש
       if (attempt < ATTEMPTS) {
         await new Promise((r) => setTimeout(r, 800 * attempt));

@@ -900,16 +900,29 @@ export const useCrmStore = create((set, get) => ({
     // מורשה לכתוב לאוסף המדיה. כאן, בהרשאות של הצוות, היא נשמרת כמדיה רגילה.
     // כישלון בשמירת התמונה לא יבטל את יצירת הכרטיס: עדיף כרטיס בלי תמונה
     // על פנייה שנתקעת.
-    let photoRef = null;
-    if (typeof item.photo === "string" && item.photo.startsWith("data:")) {
-      try {
-        const { dataUrlToFile } = await import("./imageCompress");
-        const { saveMedia } = await import("./mediaStore");
-        photoRef = await saveMedia(dataUrlToFile(item.photo, `${item.name || "photo"}.jpg`));
-      } catch {
-        photoRef = null;
+    // הטופס מעלה תמונות לשירות האחסון ושולח כתובות. פניות ותיקות עדיין
+    // נושאות את התמונה כמחרוזת בתוך המסמך, ולכן שני המקרים נתמכים כאן -
+    // אחרת אישור של פנייה ישנה היה יוצר כרטיס בלי תמונה.
+    const asUrl = (v) => (typeof v === "string" && /^https?:\/\//.test(v) ? v : null);
+    let photoList = (Array.isArray(item.photoUrls) ? item.photoUrls : []).map(asUrl).filter(Boolean);
+
+    if (photoList.length === 0) {
+      const direct = asUrl(item.photo);
+      if (direct) {
+        photoList = [direct];
+      } else if (typeof item.photo === "string" && item.photo.startsWith("data:")) {
+        try {
+          const { dataUrlToFile } = await import("./imageCompress");
+          const { saveMedia } = await import("./mediaStore");
+          const ref = await saveMedia(dataUrlToFile(item.photo, `${item.name || "photo"}.jpg`));
+          if (ref) photoList = [ref];
+        } catch {
+          // כישלון בשמירת התמונה לא יבטל את יצירת הכרטיס: עדיף כרטיס בלי
+          // תמונה על פנייה שנתקעת ואי אפשר לאשר אותה.
+        }
       }
     }
+    const photoRef = photoList[0] || null;
 
     const candidate = await get().addCandidate({
       gender: item.gender === "male" ? "male" : "female",
@@ -926,7 +939,9 @@ export const useCrmStore = create((set, get) => ({
       bio: item.bio || "",
       referenceContacts: item.referenceContacts || "",
       photoUrl: photoRef,
-      photoUrls: photoRef ? [photoRef] : [],
+      photoUrls: photoList,
+      // מצב משפחתי שאינו רווקות מסומן גם כתווית, כדי שיהיה אפשר לסנן לפיו
+      tag: item.maritalStatus && item.maritalStatus !== "רווק/ה" ? "פרק ב'" : null,
       // מקור הכרטיס נשמר, כדי שיהיה ברור שהוא הגיע מהטופס החיצוני
       source: "register-form",
     });

@@ -124,10 +124,25 @@ export default function IntakeInbox() {
                       item.eda,
                       item.city,
                       item.religiousLevel,
+                      item.maritalStatus && item.maritalStatus !== "רווק/ה" ? item.maritalStatus : null,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
+                  {/* שאר התמונות שהועלו בטופס. הראשונה כבר מוצגת בגדול לצד השם. */}
+                  {Array.isArray(item.photoUrls) && item.photoUrls.length > 1 && (
+                    <div className="mt-1.5 flex gap-1">
+                      {item.photoUrls.slice(1, 4).map((url) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={url}
+                          src={url}
+                          alt={item.name}
+                          className="h-8 w-8 rounded-lg border border-[#CFE3EC] object-cover"
+                        />
+                      ))}
+                    </div>
+                  )}
                   {item.currentOccupation && (
                     <p className="text-[12px] text-[#5E7A87]">עיסוק כיום: {item.currentOccupation}</p>
                   )}
