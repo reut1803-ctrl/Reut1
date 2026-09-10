@@ -50,6 +50,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const allProposals = useCrmStore((s) => s.proposalsForCandidate(candidate.id));
   const brainstormSummary = useCrmStore((s) => s.brainstormSummaryFor(candidate.id));
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
+  const setCandidateSpotlight = useCrmStore((s) => s.setCandidateSpotlight);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const showToast = useCrmStore((s) => s.showToast);
   const trackProfileView = useCrmStore((s) => s.trackProfileView);
@@ -116,10 +117,11 @@ export default function ProfileCard({ candidate, onReadMore }) {
     if (spotlightSaving) return;
     setSpotlightSaving(true);
     try {
-      // touch: false בכוונה - סימון לזרקור אינו "טיפול" במועמד/ת. אם הוא היה
-      // נספר כטיפול, כל סימון היה מאפס את מונה הימים ומוציא את הכרטיס
-      // מהבחירה האוטומטית של 14 הימים.
-      await updateCandidate(candidate.id, { spotlight: !inSpotlight }, { touch: false });
+      // סימון לזרקור אינו "טיפול" במועמד/ת, ולכן אינו מאפס את
+      // מונה הימים של "דורש התייחסות". חותמת הסימון נכתבת
+      // על ידי השרת, ולפיה נקבע סדר הזרקור: הסימון האחרון
+      // ראשון, כך שכרטיס שסומן עכשיו נכנס למסך מיד גם כשהמכסה מלאה.
+      await setCandidateSpotlight(candidate.id, !inSpotlight);
       showToast(inSpotlight ? "הוסר מהזרקור היומי" : "נוסף לזרקור היומי");
     } catch {
       showToast("לא הצלחנו לעדכן את הזרקור");

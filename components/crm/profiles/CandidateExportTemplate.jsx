@@ -1,4 +1,5 @@
 import { normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
+import { displayLocation } from "@/lib/crm/location";
 
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
@@ -32,7 +33,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
 
       <h1 style={{ textAlign: "center", fontSize: "30px", margin: "0 0 6px", color: "#8C4A55" }}>{candidate.name}</h1>
       <p style={{ textAlign: "center", fontSize: "15px", color: "#8A8285", margin: "0 0 28px" }}>
-        {candidate.age} | {candidate.height} ס״מ | {candidate.region}
+        {candidate.age} | {candidate.height} ס״מ | {displayLocation(candidate)}
         {candidate.eda ? ` | ${candidate.eda}` : ""}
       </p>
 

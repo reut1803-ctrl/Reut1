@@ -20,6 +20,10 @@ function EditCandidateForm() {
   const id = searchParams.get("id");
   const role = useCrmStore((s) => s.role);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
+  // הרשימה הגולמית ודגל הסיום נקראים כאן כדי שהטעינה למטה תנסה שוב ברגע
+  // שהנתונים מגיעים מהשרת. בלעדיהם המסך היה נשאר תקוע ב"טוען פרטי כרטיס..."
+  const candidates_ = useCrmStore((s) => s.candidates);
+  const candidatesLoaded = useCrmStore((s) => s.candidatesLoaded);
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const showToast = useCrmStore((s) => s.showToast);
@@ -70,7 +74,8 @@ function EditCandidateForm() {
     setPdfUrl(c.pdfUrl || null);
     setIntroAudioUrl(c.introAudioUrl || null);
     setLoaded(true);
-  }, [id, loaded, findCandidateById]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loaded, findCandidateById, candidates_]);
 
   if (role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין למנהלת בלבד</p>;
@@ -78,6 +83,12 @@ function EditCandidateForm() {
 
   if (!id) {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">לא נבחר מועמד/ת לעריכה</p>;
+  }
+
+  // הכרטיס אינו קיים במאגר (נמחק, או קישור ישן). עדיף לומר זאת מאשר
+  // להשאיר מסך טעינה שלעולם לא יינגמר.
+  if (candidatesLoaded && !loaded && !findCandidateById(id)) {
+    return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">הכרטיס המבוקש לא נמצא במאגר</p>;
   }
 
   if (!loaded || !form) {

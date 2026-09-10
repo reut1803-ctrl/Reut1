@@ -102,13 +102,17 @@ function PreselectFromQuery() {
   const searchParams = useSearchParams();
   const setSelection = useCrmStore((s) => s.setProposalSelection);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
+  // נקרא כדי שהבחירה מהקישור תנוסה שוב ברגע שהמאגר מגיע מהשרת.
+  // בלעדיו כניסה ישירה לקישור היתה נוחתת בלי בחירה כלל.
+  const candidates_ = useCrmStore((s) => s.candidates);
 
   useEffect(() => {
     const selectId = searchParams.get("select");
     if (!selectId) return;
     const candidate = findCandidateById(selectId);
     if (candidate) setSelection(candidate.gender, candidate.id);
-  }, [searchParams, setSelection, findCandidateById]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setSelection, findCandidateById, candidates_]);
 
   return null;
 }
