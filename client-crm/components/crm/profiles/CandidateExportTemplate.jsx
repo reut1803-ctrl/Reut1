@@ -1,5 +1,6 @@
 import { normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
 import { humanizeBio } from "@/lib/crm/bioNarrative";
+import MediaImage from "@/components/crm/ui/MediaImage";
 
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
@@ -23,9 +24,11 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
       }}
     >
       {candidate.photoUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={candidate.photoUrl}
+        <MediaImage
+          // בקובץ ה-PDF אין גלילה ואין "מחוץ למסך": הטעינה חייבת להיות
+          // מיידית, אחרת התמונה לא תספיק להיטען לפני ההפקה.
+          loading="eager"
+          value={candidate.photoUrl}
           alt=""
           style={{ display: "block", width: "220px", height: "280px", objectFit: "cover", borderRadius: "16px", margin: "0 auto 28px" }}
         />

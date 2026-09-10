@@ -5,6 +5,7 @@ import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
 import { humanizeBio } from "@/lib/crm/bioNarrative";
+import MediaImage from "@/components/crm/ui/MediaImage";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   useBackToClose(true, onClose);
@@ -19,10 +20,9 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           {photos.length > 0 ? (
             <div className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [&::-webkit-scrollbar]:hidden">
               {photos.map((url, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <MediaImage
                   key={i}
-                  src={url}
+                  value={url}
                   alt={candidate.name}
                   className="h-full w-full shrink-0 snap-center object-cover"
                 />

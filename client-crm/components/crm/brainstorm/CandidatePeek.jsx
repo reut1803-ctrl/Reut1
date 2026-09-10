@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+import MediaImage from "@/components/crm/ui/MediaImage";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
 import Overlay from "@/components/crm/ui/Overlay";
@@ -89,10 +90,9 @@ export default function CandidatePeek({ candidateId, onClose }) {
               {photos.length > 0 && (
                 <div className="mb-4 flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-2xl [&::-webkit-scrollbar]:hidden">
                   {photos.map((url, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <MediaImage
                       key={i}
-                      src={url}
+                      value={url}
                       alt={candidate.name}
                       className="h-56 w-full shrink-0 snap-center rounded-2xl object-cover"
                     />

@@ -36,6 +36,7 @@ import { CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+import MediaImage from "@/components/crm/ui/MediaImage";
 import { humanizeBio } from "@/lib/crm/bioNarrative";
 
 // המרת מספר ישראלי לפורמט שוואטסאפ מצפה לו
@@ -73,6 +74,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const track = useCrmStore((s) => s.candidateTrack[candidate.id]);
   const badge = trackBadge(track?.personalTrack);
   const [pendingDeleteCandidate, setPendingDeleteCandidate] = useState(false);
+  // תמונה שלא הצליחה להיטען בשום דרך מוצגת כ"ללא תמונה", ולא כאייקון שבור
+  const [photoUnavailable, setPhotoUnavailable] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const noteBoxRef = useRef(null);
@@ -261,9 +264,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
   return (
     <div className="overflow-hidden rounded-3xl border border-[#CFE3EC] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
-        {candidate.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={candidate.photoUrl} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
+        {candidate.photoUrl && !photoUnavailable ? (
+          <MediaImage
+            value={candidate.photoUrl}
+            alt={candidate.name}
+            className="absolute inset-0 h-full w-full object-cover"
+            onUnavailable={() => setPhotoUnavailable(true)}
+          />
         ) : (
           // אין תמונה: מצב מכוון וברור, ולא מסך ריק שנראה כמו תקלת טעינה
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">

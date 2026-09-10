@@ -5,6 +5,7 @@ import { ChevronDown, Clock, Copy, Check, Download, Phone, Sparkles, Trash2, Use
 import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+import { isMediaRef, resolveMediaUrl } from "@/lib/crm/mediaStore";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
 
@@ -17,7 +18,22 @@ function forcedDownloadUrl(url) {
 
 // מורידים את התמונה עצמה ואז שומרים אותה מקומית, כך שאפשר לתת לקובץ שם בעברית
 // בלי לשלוח את השם לשרת. אם ההורדה הישירה נחסמת - נופלים לכתובת הגיבוי.
-async function downloadPhoto(url, fileName) {
+async function downloadPhoto(value, fileName) {
+  // תמונה שנשמרה כהפניית מדיה מפוצלת לחלקים ב-Firestore. צריך לאחות
+  // אותה לכתובת אמיתית לפני ההורדה, אחרת ה-fetch נכשל והגיבוי פותח
+  // חלון עם מחרוזת "media:..." חסרת משמעות.
+  let url = value;
+  let objectUrlToRevoke = null;
+  if (isMediaRef(value)) {
+    try {
+      url = await resolveMediaUrl(value);
+      objectUrlToRevoke = url;
+    } catch {
+      return false;
+    }
+  }
+  if (!url) return false;
+
   try {
     const res = await fetch(url, { mode: "cors", cache: "no-store" });
     if (!res.ok) throw new Error(String(res.status));
@@ -33,9 +49,15 @@ async function downloadPhoto(url, fileName) {
     setTimeout(() => {
       a.remove();
       URL.revokeObjectURL(objectUrl);
+      if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
     }, 1500);
     return true;
   } catch {
+    // גיבוי רק לכתובות רשת. להפניית מדיה אין כתובת חלופית לפתוח.
+    if (objectUrlToRevoke) {
+      URL.revokeObjectURL(objectUrlToRevoke);
+      return false;
+    }
     window.open(forcedDownloadUrl(url), "_blank", "noopener");
     return false;
   }

@@ -14,6 +14,7 @@ import { waDigits } from "@/components/crm/profiles/ProfileCard";
 import { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { humanizeBio } from "@/lib/crm/bioNarrative";
+import MediaImage from "@/components/crm/ui/MediaImage";
 
 export default function IntakeInbox() {
   const pendingIntake = useCrmStore((s) => s.pendingIntake);
@@ -115,9 +116,8 @@ export default function IntakeInbox() {
                 {/* התמונה שהמועמד/ת העלה/תה בטופס. מוצגת כאן כדי שאפשר יהיה
                     לראות אותה לפני האישור. באישור היא נשמרת בכרטיס. */}
                 {item.photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.photo}
+                  <MediaImage
+                    value={item.photo}
                     alt={item.name}
                     className="h-16 w-16 shrink-0 rounded-2xl border border-[#CFE3EC] object-cover"
                   />
@@ -147,10 +147,9 @@ export default function IntakeInbox() {
                   {Array.isArray(item.photoUrls) && item.photoUrls.length > 1 && (
                     <div className="mt-1.5 flex gap-1">
                       {item.photoUrls.slice(1, 4).map((url) => (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <MediaImage
                           key={url}
-                          src={url}
+                          value={url}
                           alt={item.name}
                           className="h-8 w-8 rounded-lg border border-[#CFE3EC] object-cover"
                         />
