@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { getAvailabilityColors } from "@/lib/crm/availability";
+import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
 
 function StatusForm() {
   const searchParams = useSearchParams();
@@ -35,7 +36,8 @@ function StatusForm() {
   };
 
   return (
-    <div className="w-full max-w-sm rounded-3xl border border-[#CFE3EC] bg-white p-6 text-center shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+    <div className="w-full max-w-sm">
+    <div className="rounded-3xl border border-[#CFE3EC] bg-white p-6 text-center shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
       <p className="text-sm text-[#5E7A87]">שלום {candidate.name.split(" ")[0]},</p>
       <h1 className="mt-1 text-xl font-bold text-[#23414E]">מה הסטטוס שלך כרגע?</h1>
       <p className="mt-2 text-[13px] text-[#5E7A87]">לחיצה על אחד הכפתורים תעדכן את הצוות מיידית</p>
@@ -60,6 +62,10 @@ function StatusForm() {
       </div>
 
       {saved && <p className="mt-4 text-[13px] font-semibold text-[#2FA39B]">הסטטוס עודכן, תודה!</p>}
+    </div>
+
+    {/* ההצעה נשארת זמינה כאן באופן קבוע, למי שיעדיף להצטרף למסלול מאוחר יותר */}
+    <PersonalTrackOffer variant="compact" />
     </div>
   );
 }

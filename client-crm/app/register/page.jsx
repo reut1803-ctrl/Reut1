@@ -20,10 +20,7 @@ import {
   APP_NAME,
   APP_SUBTITLE,
   LOGO_SRC,
-  PERSONAL_TRACK_PRICE,
   SUCCESS_FEE,
-  PAYBOX_URL,
-  BIT_PHONE,
 } from "@/lib/appConfig";
 import {
   MARITAL_STATUSES,
@@ -39,6 +36,7 @@ import {
   STEP_OF_FIELD,
 } from "@/lib/crm/registerForm";
 import { StepIndicator, Field, TextInput, TextArea, Select, ChipGroup, ScaleSlider } from "@/components/crm/register/FormBits";
+import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
 
 const STEPS = ["פרטים אישיים", "עולם דתי ולימודים", "אופי ותחומי עניין", "מה מחפשים ואישורים"];
 const MAX_PHOTOS = 4;
@@ -545,55 +543,6 @@ function PhotoUploader({ photos, setPhotos, busy, error, onPick }) {
   );
 }
 
-// מסך הסיום. מציע את "המסלול האישי" ומסביר איך משלמים.
-// אותו רכיב מוצג גם למי שלא שילם מיד, ולכן הוא עומד בפני עצמו.
-export function PersonalTrackOffer() {
-  const hasPayment = Boolean(PAYBOX_URL || BIT_PHONE);
-  return (
-    <div className="mt-5 rounded-3xl border-2 border-[#2E8BA8] bg-white p-5 shadow-[0_4px_18px_rgba(31,110,136,0.08)]">
-      <p className="flex items-center gap-1.5 text-[15px] font-bold text-[#1F6E88]">
-        <Sparkles size={17} /> המסלול האישי
-      </p>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-[#23414E]">
-        שיחת היכרות מעמיקה איתנו, שבה נדייק יחד את מה שאתם באמת מחפשים. זה מה שהופך את ההצעות
-        מ״מתאים על הנייר״ למתאים באמת.
-      </p>
-      <p className="mt-3 rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[13px] font-semibold text-[#1F6E88]">
-        מחיר השקה: {PERSONAL_TRACK_PRICE} ₪ בלבד · אופציונלי לחלוטין
-      </p>
-
-      {hasPayment ? (
-        <div className="mt-3 space-y-2">
-          {PAYBOX_URL && (
-            <a
-              href={PAYBOX_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#2E8BA8] py-3 text-[14px] font-bold text-white transition active:scale-95"
-            >
-              תשלום ב-PayBox
-            </a>
-          )}
-          {BIT_PHONE && (
-            <p className="flex items-center justify-center gap-1.5 rounded-2xl border border-[#CFE3EC] py-2.5 text-[13px] font-semibold text-[#23414E]">
-              <Phone size={14} /> ביט למספר {BIT_PHONE}
-            </p>
-          )}
-        </div>
-      ) : (
-        <p className="mt-3 rounded-2xl border border-dashed border-[#CFE3EC] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[#5E7A87]">
-          פרטי התשלום יימסרו לכם בשיחה איתנו.
-        </p>
-      )}
-
-      <p className="mt-3 text-[12px] leading-relaxed text-[#5E7A87]">
-        לאחר התשלום ניצור איתכם קשר לתיאום השיחה. אפשר גם לדלג ולהצטרף למאגר בלבד — ההצטרפות ללא
-        עלות.
-      </p>
-    </div>
-  );
-}
-
 function ThankYou() {
   return (
     <main className="min-h-screen bg-[#F2F8FB] px-4 py-10" dir="rtl">
@@ -628,10 +577,6 @@ function Costs() {
       <ul className="mt-2 space-y-2 text-[13px] leading-relaxed text-[#23414E]">
         <li>
           <strong>ההצטרפות למאגר — ללא עלות</strong> ובלי התחייבות.
-        </li>
-        <li>
-          <strong>המסלול האישי — {PERSONAL_TRACK_PRICE} ₪</strong> (מחיר השקה). שיחת היכרות מעמיקה
-          לדיוק החיפוש. אופציונלי.
         </li>
         <li>
           <strong>דמי הצלחה — {SUCCESS_FEE.toLocaleString("he-IL")} ₪</strong>, משולמים אך ורק אם
