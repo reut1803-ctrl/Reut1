@@ -1,4 +1,5 @@
 import { normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
+import { humanizeBio } from "@/lib/crm/bioNarrative";
 
 // תבנית מוסתרת (מחוץ למסך) שמצולמת ל-PDF - כך שהטקסט העברי מוצג ומיושר נכון (RTL)
 // על ידי מנוע הדפדפן עצמו, בלי צורך בפונט מוטמע או טיפול ידני בכיווניות בתוך ה-PDF.
@@ -46,7 +47,7 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
       {candidate.bio && (
         <div style={{ marginTop: "28px" }}>
           <h3 style={{ fontSize: "17px", margin: "0 0 8px", color: "#2E8BA8" }}>קצת על {firstName}</h3>
-          <p style={{ fontSize: "15px", lineHeight: 1.7, whiteSpace: "pre-line", margin: 0 }}>{candidate.bio}</p>
+          <p style={{ fontSize: "15px", lineHeight: 1.7, whiteSpace: "pre-line", margin: 0 }}>{humanizeBio(candidate.bio, candidate)}</p>
         </div>
       )}
 

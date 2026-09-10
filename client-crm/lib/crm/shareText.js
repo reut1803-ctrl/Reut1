@@ -1,3 +1,4 @@
+import { humanizeBio } from "./bioNarrative";
 import { candidateOccupations } from "./mockData";
 
 // בניית טקסט מלא לשיתוף/העתקה של פרופיל מועמד/ת - כולל כל פרטי התיאור, לא רק שם וטלפון.
@@ -11,7 +12,7 @@ export function buildProfileShareText(candidate, { includePhone = true } = {}) {
   lines.push(`עישון: ${candidate.smoking}`);
   if (candidate.traits?.length) lines.push(`תכונות: ${candidate.traits.join(", ")}`);
   lines.push("");
-  lines.push(candidate.bio);
+  lines.push(humanizeBio(candidate.bio, candidate));
   if (candidate.phone && includePhone) {
     lines.push("");
     lines.push(`טלפון: ${candidate.phone}`);

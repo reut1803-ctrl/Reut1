@@ -31,13 +31,13 @@ import {
   CHARACTER_SCALES,
   describeScale,
   ageFromBirthDate,
-  buildBio,
   missingFields,
   STEP_OF_FIELD,
 } from "@/lib/crm/registerForm";
 import { StepIndicator, Field, TextInput, TextArea, Select, ChipGroup, ScaleSlider } from "@/components/crm/register/FormBits";
 import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
 import { cleanTrackMessage } from "@/lib/crm/personalTrack";
+import { narrativeFromForm } from "@/lib/crm/bioNarrative";
 
 const STEPS = ["פרטים אישיים", "עולם דתי ולימודים", "אופי ותחומי עניין", "מה מחפשים ואישורים"];
 const MAX_PHOTOS = 4;
@@ -157,7 +157,7 @@ export default function RegisterPage() {
         photoUrls: photos,
 
         // --- תשובות העומק, ממוזגות לפסקה אחת ---
-        bio: buildBio(form),
+        bio: narrativeFromForm(form),
 
         consentAccepted: true,
         termsAcceptedAt: new Date().toISOString(),

@@ -7,6 +7,7 @@
 //   * תשובות העומק (אופי, יסוד, משפחה, מה מחפשים) מתמזגות לפסקה אחת
 //     רציפה שנכנסת ל"תיאור אישי". כך לא נפתחות עשרות עמודות חדשות
 //     במסד הנתונים, והכרטיס נשאר קריא לשדכנית.
+//     הניסוח עצמו נעשה ב-lib/crm/bioNarrative.js.
 
 export const MARITAL_STATUSES = ["רווק/ה", "גרוש/ה", "אלמן/ה", "אחר"];
 
@@ -67,42 +68,6 @@ export function ageFromBirthDate(birthDate) {
 }
 
 const clean = (v) => String(v ?? "").trim();
-
-// מיזוג תשובות העומק לפסקה אחת. כל סעיף נכנס רק אם נענה, ולכן
-// טופס שמולא חלקית מפיק תיאור קצר ותקין ולא שורות ריקות.
-export function buildBio(form) {
-  const parts = [];
-  const add = (title, value) => {
-    const v = clean(value);
-    if (v) parts.push(title ? `${title}: ${v}` : v);
-  };
-
-  add("", form.selfDescription);
-
-  const character = CHARACTER_SCALES.map((s) => describeScale(s, form[s.id])).filter(Boolean);
-  if (character.length > 0) parts.push(`אופי: ${character.join(" · ")}.`);
-
-  if (clean(form.element)) {
-    const why = clean(form.elementWhy);
-    parts.push(`היסוד המרכזי שלי: ${clean(form.element)}${why ? ` — ${why}` : ""}.`);
-  }
-
-  add("הגדרה דתית ואורח חיים", form.lifestyle);
-  add("הקשר שלי לברסלב", form.breslov);
-  add("מה אני עושה היום", form.currentOccupation);
-  add("המסלול שלי", form.pathStory);
-  add("רקע משפחתי", form.familyBackground);
-  add("תחביבים וכישרונות", form.hobbies);
-  add("דברים שחשוב להכיר עליי", form.importantToKnow);
-  add("מה אני מחפש/ת", form.lookingFor);
-  add("גילאים מועדפים", form.preferredAges);
-  add("דרישות מרכזיות", form.mainRequirements);
-  add("הקשר לברסלב אצל בן/בת הזוג", form.breslovInPartner);
-  add("מצב משפחתי", form.maritalStatus);
-  add("עישון", form.smokingSelf);
-
-  return parts.join("\n\n").trim();
-}
 
 // מה חסר כדי לשלוח. מוחזר כרשימה קריאה בעברית, ולא כדגל בוליאני,
 // כדי שההודעה תוכל לומר במפורש מה נשאר להשלים.

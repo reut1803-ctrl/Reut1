@@ -13,6 +13,7 @@ import { trackBadge } from "@/lib/crm/personalTrack";
 import { waDigits } from "@/components/crm/profiles/ProfileCard";
 import { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
+import { humanizeBio } from "@/lib/crm/bioNarrative";
 
 export default function IntakeInbox() {
   const pendingIntake = useCrmStore((s) => s.pendingIntake);
@@ -217,7 +218,7 @@ export default function IntakeInbox() {
                 <div className="mt-3">
                   <p className="mb-1 text-[11px] font-semibold text-[#23414E]">תיאור אישי</p>
                   <p className="whitespace-pre-line rounded-2xl bg-[#F2F8FB] px-3 py-2 text-[12px] leading-relaxed text-[#23414E]">
-                    {item.bio}
+                    {humanizeBio(item.bio, item)}
                   </p>
                 </div>
               )}

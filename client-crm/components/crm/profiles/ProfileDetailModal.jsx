@@ -4,6 +4,7 @@ import { X, MapPin, Briefcase, Route, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
+import { humanizeBio } from "@/lib/crm/bioNarrative";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   useBackToClose(true, onClose);
@@ -73,7 +74,7 @@ export default function ProfileDetailModal({ candidate, onClose }) {
           {candidate.bio && (
             <div className="mt-4">
               <p className="mb-1 text-[12px] font-semibold text-[#23414E]">קצת עליי</p>
-              <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#5E7A87]">{candidate.bio}</p>
+              <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#5E7A87]">{humanizeBio(candidate.bio, candidate)}</p>
             </div>
           )}
 

@@ -36,6 +36,7 @@ import { CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+import { humanizeBio } from "@/lib/crm/bioNarrative";
 
 // המרת מספר ישראלי לפורמט שוואטסאפ מצפה לו
 export const waDigits = (phone) =>
@@ -352,7 +353,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
         )}
 
         <h3 className="text-lg font-bold text-[#23414E]">{candidate.name}</h3>
-        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#5E7A87]">{candidate.bio}</p>
+        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#5E7A87]">{humanizeBio(candidate.bio, candidate)}</p>
 
         <div className="mt-4 flex flex-col gap-2">
           <Button

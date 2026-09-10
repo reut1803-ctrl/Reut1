@@ -17,6 +17,7 @@ import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
 import Overlay from "@/components/crm/ui/Overlay";
+import { humanizeBio } from "@/lib/crm/bioNarrative";
 
 // נגן להקלטה ששמורה במסד בחלקים. נטען רק כשהחלון פתוח.
 function VoicePlayer({ value }) {
@@ -125,7 +126,7 @@ export default function CandidatePeek({ candidateId, onClose }) {
               {candidate.bio && (
                 <div className="mt-4">
                   <p className="mb-1 text-[12px] font-semibold text-[#23414E]">קצת עליי</p>
-                  <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#5E7A87]">{candidate.bio}</p>
+                  <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#5E7A87]">{humanizeBio(candidate.bio, candidate)}</p>
                 </div>
               )}
 
