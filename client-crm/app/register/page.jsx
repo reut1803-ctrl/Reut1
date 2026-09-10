@@ -6,43 +6,33 @@
 // ישירות למאגר המועמדים אלא לאוסף נפרד (intakeSubmissions), והמנהלת
 // היא שמאשרת ויוצרת מהן כרטיס. כך המאגר נשאר סגור לכתיבה מבחוץ.
 //
+// העמוד אינו מחזיק רשימת שאלות משלו: הוא מצייר את מה שכתוב במפת
+// השאלות (lib/crm/formSchema.js) אחרי שהוחלו עליה ההגדרות שהמנהלת
+// קבעה בלוח הבקרה. לכן כיבוי שאלה, שינוי נוסח או שינוי סדר משתקפים
+// כאן מיד, בלי לגעת בקוד.
+//
 // חלוקת השדות: פרטי הליבה נשמרים כל אחד בשדה נפרד, ותשובות העומק
-// מתמזגות לפסקה אחת שנכנסת ל"תיאור אישי". ראו lib/crm/registerForm.js.
+// מתמזגות לפסקה אחת שנכנסת ל"תיאור אישי". ראו lib/crm/bioNarrative.js.
 
 import { useMemo, useState } from "react";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
-import { Check, AlertCircle, Camera, X, Loader2, ChevronLeft, ChevronRight, HandHeart, Phone, Sparkles } from "lucide-react";
+import { Check, AlertCircle, Camera, X, Loader2, ChevronLeft, ChevronRight, HandHeart } from "lucide-react";
 import { crmDb } from "@/lib/crm/firebaseClient";
-import { REGIONS, OCCUPATION_OPTIONS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { compressImage } from "@/lib/crm/compressImage";
+import { APP_NAME, APP_SUBTITLE, LOGO_SRC } from "@/lib/appConfig";
+import { ELEMENTS, describeScale, ageFromBirthDate } from "@/lib/crm/registerForm";
+import { visibleItems, optionsOf, scaleOf, missingItems, customAnswersText } from "@/lib/crm/formSchema";
 import {
-  APP_NAME,
-  APP_SUBTITLE,
-  LOGO_SRC,
-} from "@/lib/appConfig";
-import {
-  MARITAL_STATUSES,
-  LIFESTYLE_DEFINITIONS,
-  BRESLOV_IN_PARTNER,
-  SMOKING_SELF,
-  ELEMENTS,
-  CHARACTER_SCALES,
-  describeScale,
-  ageFromBirthDate,
-  missingFields,
-  STEP_OF_FIELD,
-} from "@/lib/crm/registerForm";
-import { StepIndicator, Field, TextInput, TextArea, Select, ChipGroup, ScaleSlider } from "@/components/crm/register/FormBits";
+  StepIndicator, Field, TextInput, TextArea, Select, ChipGroup, ScaleSlider,
+} from "@/components/crm/register/FormBits";
 import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
 import { cleanTrackMessage } from "@/lib/crm/personalTrack";
 import { narrativeFromForm } from "@/lib/crm/bioNarrative";
 import { usePublicContent } from "@/lib/crm/usePublicContent";
-import { coreLabel, coreHint, isCoreRequired, questionsForStep, customAnswersToText, missingCustom } from "@/lib/crm/publicContent";
-import CustomQuestions from "@/components/crm/register/CustomQuestions";
 
-const STEPS = ["פרטים אישיים", "עולם דתי ולימודים", "אופי ותחומי עניין", "מה מחפשים ואישורים"];
 const MAX_PHOTOS = 4;
+const LAST_STEP = 3;
 
 const EMPTY = {
   gender: "female",
@@ -53,11 +43,12 @@ const EMPTY = {
   maritalStatus: "",
   height: "",
   eda: "",
-  region: REGIONS[0],
+  region: "",
   city: "",
   lifestyle: "",
   breslov: "",
   currentOccupation: "",
+  occupations: [],
   pathStory: "",
   introExtro: 5,
   heartMind: 5,
@@ -79,10 +70,9 @@ const EMPTY = {
 export default function RegisterPage() {
   const { content, loaded: contentLoaded } = usePublicContent();
   const [step, setStep] = useState(0);
+  const [form, setForm] = useState(EMPTY);
   // תשובות לשאלות שהמנהלת הוסיפה בעצמה
   const [custom, setCustom] = useState({});
-  const [form, setForm] = useState(EMPTY);
-  const [occupations, setOccupations] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [photoBusy, setPhotoBusy] = useState("");
   const [photoError, setPhotoError] = useState("");
@@ -95,9 +85,11 @@ export default function RegisterPage() {
   const [intakeId, setIntakeId] = useState("");
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+
+  const items = useMemo(() => visibleItems(content, step), [content, step]);
   const missing = useMemo(
-    () => [...missingFields(form, { photos, agreeTerms, agreePrivacy }), ...missingCustom(content, custom)],
-    [form, photos, agreeTerms, agreePrivacy, content, custom]
+    () => missingItems(content, form, { photos, custom, agreeTerms, agreePrivacy }),
+    [content, form, photos, custom, agreeTerms, agreePrivacy]
   );
 
   const handlePhotos = async (fileList) => {
@@ -119,16 +111,11 @@ export default function RegisterPage() {
     setPhotoBusy("");
   };
 
-  const goToMissing = () => {
-    const first = missing[0];
-    const target = STEP_OF_FIELD[first];
-    if (typeof target === "number") setStep(target);
-  };
-
   const handleSubmit = async () => {
     if (missing.length > 0) {
-      setSubmitError(`עוד רגע ואנחנו שם. חסר: ${missing.join(" · ")}`);
-      goToMissing();
+      setSubmitError(`עוד רגע ואנחנו שם. חסר: ${missing.map((m) => m.label).join(" · ")}`);
+      setStep(missing[0].step);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     setSubmitting(true);
@@ -154,7 +141,7 @@ export default function RegisterPage() {
         city: form.city.trim(),
         religiousLevel: form.lifestyle || null,
         currentOccupation: form.currentOccupation.trim(),
-        occupations,
+        occupations: form.occupations,
         referenceContacts: form.referenceContacts.trim(),
 
         // התמונה הראשונה היא הראשית של הכרטיס
@@ -164,7 +151,7 @@ export default function RegisterPage() {
         // --- תשובות העומק, ממוזגות לפסקה אחת ---
         // המנגנון קבוע: תשובות העומק מתמזגות לפסקה אחת. מה שדינמי הוא
         // רק אילו שאלות נשאלו, ולכן מבנה הכרטיס אינו משתנה.
-        bio: [narrativeFromForm(form), customAnswersToText(content, custom)].filter(Boolean).join("\n\n"),
+        bio: [narrativeFromForm(form), customAnswersText(content, custom)].filter(Boolean).join("\n\n"),
         customAnswers: custom,
 
         consentAccepted: true,
@@ -188,6 +175,8 @@ export default function RegisterPage() {
 
   if (done) return <ThankYou intakeId={intakeId} content={content} />;
 
+  const note = content.stepNotes?.[step] || "";
+
   return (
     <main className="min-h-screen bg-[#F2F8FB] px-4 py-8" dir="rtl">
       <div className="mx-auto w-full max-w-lg">
@@ -202,25 +191,34 @@ export default function RegisterPage() {
         <div className="rounded-3xl border border-[#CFE3EC] bg-white p-5 shadow-[0_4px_18px_rgba(31,110,136,0.06)]">
           <StepIndicator steps={content.stepTitles} current={step} onJump={setStep} />
 
-          {step === 0 && <StepPersonal form={form} set={set} content={content} />}
-          {step === 1 && <StepReligious form={form} set={set} content={content} occupations={occupations} setOccupations={setOccupations} />}
-          {step === 2 && <StepCharacter form={form} set={set} />}
-          <CustomQuestions questions={questionsForStep(content, step)} answers={custom} onChange={setCustom} />
-          {step === 3 && (
-            <StepClosing
-              form={form}
-              set={set}
-              photos={photos}
-              setPhotos={setPhotos}
-              photoBusy={photoBusy}
-              photoError={photoError}
-              onPhotos={handlePhotos}
-              agreeTerms={agreeTerms}
-              setAgreeTerms={setAgreeTerms}
-              agreePrivacy={agreePrivacy}
-              setAgreePrivacy={setAgreePrivacy}
-              content={content}
-            />
+          {note && (
+            <p className="mb-4 whitespace-pre-line rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[#1F6E88]">
+              {note}
+            </p>
+          )}
+
+          <StepBody
+            items={items}
+            form={form}
+            set={set}
+            custom={custom}
+            setCustom={setCustom}
+            photos={photos}
+            setPhotos={setPhotos}
+            photoBusy={photoBusy}
+            photoError={photoError}
+            onPhotos={handlePhotos}
+            agreeTerms={agreeTerms}
+            setAgreeTerms={setAgreeTerms}
+            agreePrivacy={agreePrivacy}
+            setAgreePrivacy={setAgreePrivacy}
+            content={content}
+          />
+
+          {items.length === 0 && (
+            <p className="rounded-2xl bg-[#F2F8FB] px-3.5 py-4 text-center text-[13px] text-[#5E7A87]">
+              אין שאלות בשלב הזה. אפשר להמשיך הלאה.
+            </p>
           )}
 
           {submitError && (
@@ -239,7 +237,7 @@ export default function RegisterPage() {
                 <ChevronRight size={16} /> חזרה
               </button>
             )}
-            {step < content.stepTitles.length - 1 ? (
+            {step < LAST_STEP ? (
               <button
                 type="button"
                 onClick={() => {
@@ -263,9 +261,9 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {step === content.stepTitles.length - 1 && missing.length > 0 && (
+          {step === LAST_STEP && missing.length > 0 && (
             <p className="mt-3 rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[12px] leading-relaxed text-[#1F6E88]">
-              כדי לשלוח חסר: {missing.join(" · ")}
+              כדי לשלוח חסר: {missing.map((m) => m.label).join(" · ")}
             </p>
           )}
         </div>
@@ -278,6 +276,202 @@ export default function RegisterPage() {
       </div>
     </main>
   );
+}
+
+// ===================================================================
+//  גוף השלב
+// ===================================================================
+// שתי שאלות קצרות שמסומנות half מוצגות זו לצד זו, כפי שהיו תמיד.
+// הזיווג נעשה כאן ולא ברשימה, כדי שכיבוי שאלה או שינוי סדר לא יותירו
+// חצי שורה ריקה או פריסה שבורה.
+function StepBody({ items, ...rest }) {
+  const rows = [];
+  for (let i = 0; i < items.length; i += 1) {
+    const cur = items[i];
+    const next = items[i + 1];
+    if (cur.half && next?.half) {
+      rows.push(
+        <div key={cur.id} className="grid grid-cols-2 gap-3">
+          <ItemField item={cur} {...rest} />
+          <ItemField item={next} {...rest} />
+        </div>
+      );
+      i += 1;
+    } else {
+      rows.push(<ItemField key={cur.id} item={cur} {...rest} />);
+    }
+  }
+  return <div className="space-y-4">{rows}</div>;
+}
+
+function ItemField({ item, form, set, custom, setCustom, content, ...rest }) {
+  const value = item.kind === "custom" ? custom[item.id] : form[item.id];
+  const onChange = (v) =>
+    item.kind === "custom" ? setCustom({ ...custom, [item.id]: v }) : set({ [item.id]: v });
+
+  // שאלות שמביאות איתן מבנה משלהן ואינן עטופות ב-Field רגיל
+  if (item.widget === "photos") {
+    return <PhotoUploader item={item} {...rest} />;
+  }
+  if (item.widget === "consents") {
+    return <Consents item={item} content={content} {...rest} />;
+  }
+  if (item.widget === "scale") {
+    const base = scaleOf(item.id);
+    if (!base) return null;
+    const scale = { ...base, label: item.label };
+    return (
+      <ScaleSlider
+        scale={scale}
+        value={form[item.id]}
+        onChange={(v) => set({ [item.id]: v })}
+        description={describeScale(scale, form[item.id])}
+      />
+    );
+  }
+
+  return (
+    <Field label={item.label} hint={item.hint} required={item.required}>
+      <ItemInput item={item} value={value} onChange={onChange} form={form} set={set} />
+    </Field>
+  );
+}
+
+function ItemInput({ item, value, onChange, form, set }) {
+  switch (item.widget) {
+    case "genderChips":
+      return (
+        <ChipGroup
+          options={["בחורה", "בחור"]}
+          value={form.gender === "male" ? "בחור" : "בחורה"}
+          onChange={(v) => set({ gender: v === "בחור" ? "male" : "female" })}
+        />
+      );
+
+    case "birthDate": {
+      const age = ageFromBirthDate(form.birthDate);
+      return (
+        <>
+          <TextInput type="date" value={form.birthDate} onChange={(e) => set({ birthDate: e.target.value })} />
+          <p className="mt-1 text-[11.5px] text-[#5E7A87]">
+            {age ? `הגיל שיחושב: ${age}` : "אם נוח יותר, אפשר להזין גיל בשדה שמתחת."}
+          </p>
+          {!form.birthDate && (
+            <div className="mt-2">
+              <span className="mb-1 block text-[12.5px] font-semibold text-[#23414E]">או גיל</span>
+              <TextInput
+                type="number"
+                inputMode="numeric"
+                value={form.age}
+                onChange={(e) => set({ age: e.target.value })}
+                placeholder="למשל 24"
+              />
+            </div>
+          )}
+        </>
+      );
+    }
+
+    case "element":
+      return (
+        <>
+          <ChipGroup options={ELEMENTS.map((e) => e.key)} value={form.element} onChange={(v) => set({ element: v })} />
+          {form.element && (
+            <p className="mt-1.5 text-[11.5px] text-[#5E7A87]">
+              {ELEMENTS.find((e) => e.key === form.element)?.hint}
+            </p>
+          )}
+          {form.element && (
+            <div className="mt-2.5">
+              <span className="mb-1 block text-[12.5px] font-semibold text-[#23414E]">
+                התכונה הבולטת שלי מתוך היסוד הזה
+              </span>
+              <TextInput
+                value={form.elementWhy}
+                onChange={(e) => set({ elementWhy: e.target.value })}
+                placeholder="במשפט קצר"
+              />
+            </div>
+          )}
+        </>
+      );
+
+    case "chips":
+      return <ChipGroup options={optionsOf(item)} value={value ?? ""} onChange={onChange} />;
+
+    case "multiChips":
+      return <ChipGroup options={optionsOf(item)} value={Array.isArray(value) ? value : []} onChange={onChange} multi />;
+
+    case "select": {
+      const options = optionsOf(item);
+      return (
+        <Select value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
+          {(item.allowEmpty || !value) && <option value="">בחירה...</option>}
+          {options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </Select>
+      );
+    }
+
+    case "number":
+      return (
+        <TextInput
+          type="number"
+          inputMode="numeric"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={item.placeholder}
+        />
+      );
+
+    case "tel":
+      return (
+        <TextInput
+          type="tel"
+          inputMode="tel"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={item.placeholder}
+        />
+      );
+
+    case "textarea":
+      return (
+        <TextArea
+          rows={item.rows || 4}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={item.placeholder}
+        />
+      );
+
+    case "simpleScale": {
+      const n = Number(value) || 5;
+      return (
+        <div className="rounded-2xl border border-[#CFE3EC] bg-white p-3.5">
+          <input
+            type="range"
+            min={1}
+            max={10}
+            step={1}
+            value={n}
+            onChange={(e) => onChange(Number(e.target.value))}
+            aria-label={item.label}
+            className="w-full accent-[#2E8BA8]"
+          />
+          <p className="mt-1 text-center text-[12px] font-semibold text-[#1F6E88]">{n} מתוך 10</p>
+        </div>
+      );
+    }
+
+    default:
+      return (
+        <TextInput value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={item.placeholder} />
+      );
+  }
 }
 
 function Welcome({ content }) {
@@ -318,198 +512,17 @@ function ExternalRedirect({ url }) {
   );
 }
 
-function StepPersonal({ form, set, content }) {
-  const age = ageFromBirthDate(form.birthDate);
+function Consents({ item, content, agreeTerms, setAgreeTerms, agreePrivacy, setAgreePrivacy }) {
   return (
-    <div className="space-y-4">
-      <Field label={coreLabel(content, "gender", "אני")} hint={coreHint(content, "gender")} required>
-        <ChipGroup
-          options={["בחורה", "בחור"]}
-          value={form.gender === "male" ? "בחור" : "בחורה"}
-          onChange={(v) => set({ gender: v === "בחור" ? "male" : "female" })}
-        />
-      </Field>
-
-      <Field label={coreLabel(content, "name", "שם מלא")} hint={coreHint(content, "name")} required>
-        <TextInput value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="שם פרטי ומשפחה" />
-      </Field>
-
-      <Field label={coreLabel(content, "phone", "מספר טלפון")} required hint={coreHint(content, "phone", "נשמר בנפרד ומשמש אותנו ליצירת קשר בלבד.")}>
-        <TextInput
-          type="tel"
-          inputMode="tel"
-          value={form.phone}
-          onChange={(e) => set({ phone: e.target.value })}
-          placeholder="050-1234567"
-        />
-      </Field>
-
-      <Field label="תאריך לידה" required hint={age ? `הגיל שיחושב: ${age}` : "אם נוח יותר, אפשר להזין גיל בשדה שמתחת."}>
-        <TextInput type="date" value={form.birthDate} onChange={(e) => set({ birthDate: e.target.value })} />
-      </Field>
-
-      {!form.birthDate && (
-        <Field label="או גיל">
-          <TextInput type="number" inputMode="numeric" value={form.age} onChange={(e) => set({ age: e.target.value })} placeholder="למשל 24" />
-        </Field>
-      )}
-
-      <Field label={coreLabel(content, "maritalStatus", "מצב משפחתי")} hint={coreHint(content, "maritalStatus")} required={isCoreRequired(content, "maritalStatus")}>
-        <ChipGroup options={MARITAL_STATUSES} value={form.maritalStatus} onChange={(v) => set({ maritalStatus: v })} />
-      </Field>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={coreLabel(content, "height", 'גובה (ס"מ)')} hint={coreHint(content, "height")} required={isCoreRequired(content, "height")}>
-          <TextInput type="number" inputMode="numeric" value={form.height} onChange={(e) => set({ height: e.target.value })} placeholder="170" />
-        </Field>
-        <Field label={coreLabel(content, "eda", "עדה")} hint={coreHint(content, "eda")} required={isCoreRequired(content, "eda")}>
-          <TextInput value={form.eda} onChange={(e) => set({ eda: e.target.value })} placeholder="אשכנזי / ספרדי / מעורב" />
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={coreLabel(content, "region", "אזור מגורים")} hint={coreHint(content, "region")} required={isCoreRequired(content, "region")}>
-          <Select value={form.region} onChange={(e) => set({ region: e.target.value })}>
-            {REGIONS.map((r) => (
-              <option key={r}>{r}</option>
-            ))}
-          </Select>
-        </Field>
-        <Field label={coreLabel(content, "city", "עיר / יישוב")} hint={coreHint(content, "city")} required={isCoreRequired(content, "city")}>
-          <TextInput value={form.city} onChange={(e) => set({ city: e.target.value })} placeholder="שם היישוב" />
-        </Field>
-      </div>
-    </div>
-  );
-}
-
-function StepReligious({ form, set, content, occupations, setOccupations }) {
-  return (
-    <div className="space-y-4">
-      <Field label={coreLabel(content, "lifestyle", "הגדרה דתית ואורח חיים")} hint={coreHint(content, "lifestyle")} required={isCoreRequired(content, "lifestyle")}>
-        <ChipGroup options={LIFESTYLE_DEFINITIONS} value={form.lifestyle} onChange={(v) => set({ lifestyle: v })} />
-      </Field>
-
-      <Field label="הקשר שלי לברסלב" hint="רשות. אם יש זיקה או קשר — נשמח לשמוע.">
-        <TextArea rows={3} value={form.breslov} onChange={(e) => set({ breslov: e.target.value })} placeholder="למשל: נוסע לאומן, לומד ליקוטי מוהר״ן, גדלתי בבית ברסלבי..." />
-      </Field>
-
-      <Field label={coreLabel(content, "currentOccupation", "מה אני עושה היום")} hint={coreHint(content, "currentOccupation", "ישיבה, כולל, עבודה, לימודים אקדמיים, מדרשה וכדומה.")} required={isCoreRequired(content, "currentOccupation")}>
-        <TextInput value={form.currentOccupation} onChange={(e) => set({ currentOccupation: e.target.value })} placeholder="לדוגמה: לומדת בסמינר ועובדת בהוראה" />
-      </Field>
-
-      <Field label="מסגרות שעברתי" hint="אפשר לסמן כמה שרוצים.">
-        <ChipGroup options={OCCUPATION_OPTIONS} value={occupations} onChange={setOccupations} multi />
-      </Field>
-
-      <Field label="המסלול שלי" hint="תחנות חיים מרכזיות, בקצרה.">
-        <TextArea value={form.pathStory} onChange={(e) => set({ pathStory: e.target.value })} placeholder="למשל: אולפנה, שירות לאומי, מדרשה, ועכשיו לימודים..." />
-      </Field>
-    </div>
-  );
-}
-
-function StepCharacter({ form, set }) {
-  return (
-    <div className="space-y-4">
-      <p className="rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[#1F6E88]">
-        החלק הזה עוזר לנו להכיר אתכם לעומק. התשובות נכנסות לתיאור האישי בכרטיס, ונקראות רק בידי צוות
-        השדכניות.
-      </p>
-
-      <div className="space-y-3">
-        {CHARACTER_SCALES.map((scale) => (
-          <ScaleSlider
-            key={scale.id}
-            scale={scale}
-            value={form[scale.id]}
-            onChange={(v) => set({ [scale.id]: v })}
-            description={describeScale(scale, form[scale.id])}
-          />
-        ))}
-      </div>
-
-      <Field label="היסוד המרכזי שלי">
-        <ChipGroup options={ELEMENTS.map((e) => e.key)} value={form.element} onChange={(v) => set({ element: v })} />
-        {form.element && (
-          <p className="mt-1.5 text-[11.5px] text-[#5E7A87]">
-            {ELEMENTS.find((e) => e.key === form.element)?.hint}
-          </p>
-        )}
-      </Field>
-
-      {form.element && (
-        <Field label="התכונה הבולטת שלי מתוך היסוד הזה">
-          <TextInput value={form.elementWhy} onChange={(e) => set({ elementWhy: e.target.value })} placeholder="במשפט קצר" />
-        </Field>
-      )}
-
-      <Field label="רקע משפחתי" hint="בקצרה — מאיפה הבית שלי.">
-        <TextArea rows={3} value={form.familyBackground} onChange={(e) => set({ familyBackground: e.target.value })} />
-      </Field>
-
-      <Field label="תחביבים וכישרונות">
-        <TextArea rows={3} value={form.hobbies} onChange={(e) => set({ hobbies: e.target.value })} placeholder="למשל: נגינה, טבע, בישול, כתיבה..." />
-      </Field>
-
-      <Field label="דברים שחשוב להכיר עליי">
-        <TextArea rows={3} value={form.importantToKnow} onChange={(e) => set({ importantToKnow: e.target.value })} />
-      </Field>
-
-      <Field label="קצת עליי, במילים שלי" hint="שאיפות, דרך חיים, מה מניע אותי.">
-        <TextArea rows={5} value={form.selfDescription} onChange={(e) => set({ selfDescription: e.target.value })} />
-      </Field>
-    </div>
-  );
-}
-
-function StepClosing({
-  form, set, photos, setPhotos, photoBusy, photoError, onPhotos, content,
-  agreeTerms, setAgreeTerms, agreePrivacy, setAgreePrivacy,
-}) {
-  return (
-    <div className="space-y-4">
-      <Field label="מה אני מחפש/ת" hint="קווים לדמותו/ה של בן/בת הזוג.">
-        <TextArea rows={4} value={form.lookingFor} onChange={(e) => set({ lookingFor: e.target.value })} />
-      </Field>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="גילאים מועדפים">
-          <TextInput value={form.preferredAges} onChange={(e) => set({ preferredAges: e.target.value })} placeholder="למשל 22-27" />
-        </Field>
-        <Field label="עישון">
-          <Select value={form.smokingSelf} onChange={(e) => set({ smokingSelf: e.target.value })}>
-            <option value="">בחירה...</option>
-            {SMOKING_SELF.map((o) => (
-              <option key={o}>{o}</option>
-            ))}
-          </Select>
-        </Field>
-      </div>
-
-      <Field label="דרישות מרכזיות">
-        <TextArea rows={3} value={form.mainRequirements} onChange={(e) => set({ mainRequirements: e.target.value })} />
-      </Field>
-
-      <Field label="הקשר לברסלב אצל בן/בת הזוג">
-        <ChipGroup options={BRESLOV_IN_PARTNER} value={form.breslovInPartner} onChange={(v) => set({ breslovInPartner: v })} />
-      </Field>
-
-      <Field label={coreLabel(content, "referenceContacts", "אנשי קשר לבירורים")} hint={coreHint(content, "referenceContacts", "שמות וטלפונים של רבנים, מחנכים או מכרים שאפשר לפנות אליהם.")} required={isCoreRequired(content, "referenceContacts")}>
-        <TextArea rows={3} value={form.referenceContacts} onChange={(e) => set({ referenceContacts: e.target.value })} />
-      </Field>
-
-      <PhotoUploader photos={photos} setPhotos={setPhotos} busy={photoBusy} error={photoError} onPick={onPhotos} />
-
-      <div className="space-y-2.5 rounded-2xl border border-[#CFE3EC] bg-[#F2F8FB] p-3.5">
-        <Consent checked={agreeTerms} onChange={setAgreeTerms} href="/terms/">
-          קראתי ואני מאשר/ת את <strong>נספח 1 — הסכם ההתקשרות</strong>, הכולל דמי הצלחה בסך{" "}
-          {Number(content.payment.successFee || 0).toLocaleString("he-IL")} ₪ במקרה של נישואין.
-        </Consent>
-        <Consent checked={agreePrivacy} onChange={setAgreePrivacy} href="/privacy/">
-          קראתי ואני מאשר/ת את <strong>נספח 2 — מדיניות הפרטיות</strong>.
-        </Consent>
-      </div>
+    <div className="space-y-2.5 rounded-2xl border border-[#CFE3EC] bg-[#F2F8FB] p-3.5">
+      {item.hint && <p className="text-[12px] leading-relaxed text-[#5E7A87]">{item.hint}</p>}
+      <Consent checked={agreeTerms} onChange={setAgreeTerms} href="/terms/">
+        קראתי ואני מאשר/ת את <strong>נספח 1 — הסכם ההתקשרות</strong>, הכולל דמי הצלחה בסך{" "}
+        {Number(content.payment.successFee || 0).toLocaleString("he-IL")} ₪ במקרה של נישואין.
+      </Consent>
+      <Consent checked={agreePrivacy} onChange={setAgreePrivacy} href="/privacy/">
+        קראתי ואני מאשר/ת את <strong>נספח 2 — מדיניות הפרטיות</strong>.
+      </Consent>
     </div>
   );
 }
@@ -534,9 +547,9 @@ function Consent({ checked, onChange, href, children }) {
   );
 }
 
-function PhotoUploader({ photos, setPhotos, busy, error, onPick }) {
+function PhotoUploader({ item, photos, setPhotos, photoBusy, photoError, onPhotos }) {
   return (
-    <Field label={`תמונות (עד ${MAX_PHOTOS})`} required hint="הראשונה תשמש כתמונה הראשית בכרטיס. התמונות מוצגות לצוות המאגר בלבד.">
+    <Field label={`${item.label} (עד ${MAX_PHOTOS})`} required hint={item.hint}>
       <div className="grid grid-cols-4 gap-2">
         {photos.map((url, i) => (
           <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-[#CFE3EC] bg-white">
@@ -568,7 +581,7 @@ function PhotoUploader({ photos, setPhotos, busy, error, onPick }) {
               multiple
               className="hidden"
               onChange={(e) => {
-                onPick(e.target.files);
+                onPhotos(e.target.files);
                 e.target.value = "";
               }}
             />
@@ -576,12 +589,12 @@ function PhotoUploader({ photos, setPhotos, busy, error, onPick }) {
         )}
       </div>
 
-      {busy && (
+      {photoBusy && (
         <p className="mt-2 flex items-center gap-1.5 text-[12px] text-[#1F6E88]">
-          <Loader2 size={13} className="animate-spin" /> {busy}
+          <Loader2 size={13} className="animate-spin" /> {photoBusy}
         </p>
       )}
-      {error && <p className="mt-2 text-[12px] text-[#C4584C]">{error}</p>}
+      {photoError && <p className="mt-2 text-[12px] text-[#C4584C]">{photoError}</p>}
     </Field>
   );
 }

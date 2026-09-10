@@ -67,28 +67,6 @@ export function ageFromBirthDate(birthDate) {
   return age >= 16 && age <= 99 ? age : null;
 }
 
-const clean = (v) => String(v ?? "").trim();
-
-// מה חסר כדי לשלוח. מוחזר כרשימה קריאה בעברית, ולא כדגל בוליאני,
-// כדי שההודעה תוכל לומר במפורש מה נשאר להשלים.
-export function missingFields(form, { photos = [], agreeTerms, agreePrivacy } = {}) {
-  const missing = [];
-  if (!clean(form.name)) missing.push("שם מלא");
-  if (!clean(form.phone)) missing.push("טלפון");
-  if (!clean(form.birthDate) && !clean(form.age)) missing.push("תאריך לידה או גיל");
-  if (photos.length === 0) missing.push("תמונה אחת לפחות");
-  if (!agreeTerms) missing.push("אישור הסכם ההתקשרות");
-  if (!agreePrivacy) missing.push("אישור מדיניות הפרטיות");
-  return missing;
-}
-
-// באיזה שלב נמצא כל שדה חסר - כדי שכפתור "מה חסר" יוכל להחזיר את
-// הממלא/ת בדיוק לשלב הנכון ולא רק להציג הודעה.
-export const STEP_OF_FIELD = {
-  "שם מלא": 0,
-  טלפון: 0,
-  "תאריך לידה או גיל": 0,
-  "תמונה אחת לפחות": 3,
-  "אישור הסכם ההתקשרות": 3,
-  "אישור מדיניות הפרטיות": 3,
-};
+// מה חסר כדי לשלוח, ולאיזה שלב לחזור, מחושב עכשיו מתוך מפת השאלות
+// (lib/crm/formSchema.js -> missingItems), כי החובה נקבעת בלוח הבקרה
+// ולא בקוד. לכן אין כאן עוד רשימת שדות חובה קבועה.
