@@ -2,6 +2,7 @@
 
 import { Inbox, PhoneCall, MessageCircle, Check } from "lucide-react";
 import { whatsappNumber } from "@/lib/crm/brainstorm";
+import { optimizedImage } from "@/lib/crm/imageUrl";
 
 // פאנל "פניות ממתינות לאישור" בלוח הבקרה.
 //
@@ -66,7 +67,12 @@ export default function IntakePanel({
                   <div className="flex items-start gap-3">
                     {item.photoUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.photoUrl} alt={item.name} className="h-20 w-16 shrink-0 rounded-xl object-cover" />
+                      <img
+                        src={optimizedImage(item.photoUrl, 260)}
+                        alt={item.name}
+                        decoding="async"
+                        className="h-20 w-16 shrink-0 rounded-xl object-cover"
+                      />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-[15px] font-bold text-[#3A3335]">{item.name}</p>

@@ -7,6 +7,7 @@ import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, occupationsFor, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
+import { optimizedImage } from "@/lib/crm/imageUrl";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { compressImage } from "@/lib/crm/compressImage";
 import Button from "@/components/crm/ui/Button";
@@ -303,7 +304,7 @@ export default function AddCandidatePage() {
             {photos.map((p, i) => (
               <div key={i} className="relative h-32 w-28 shrink-0 overflow-hidden rounded-2xl border border-[#EAE5E3]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p} alt="תצוגה מקדימה" className="h-full w-full object-cover" />
+                <img src={optimizedImage(p, 400)} alt="תצוגה מקדימה" decoding="async" className="h-full w-full object-cover" />
                 {i === 0 && (
                   <span className="absolute bottom-1 right-1 rounded-full bg-[#8C4A55] px-1.5 py-0.5 text-[9px] font-bold text-white">
                     ראשית

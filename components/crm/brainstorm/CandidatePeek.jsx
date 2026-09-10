@@ -16,6 +16,7 @@ import { useCrmStore } from "@/lib/crm/store";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
+import { optimizedImage } from "@/lib/crm/imageUrl";
 import Overlay from "@/components/crm/ui/Overlay";
 
 // נגן להקלטה ששמורה במסד בחלקים. נטען רק כשהחלון פתוח.
@@ -91,8 +92,9 @@ export default function CandidatePeek({ candidateId, onClose }) {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       key={i}
-                      src={url}
+                      src={optimizedImage(url, 700)}
                       alt={candidate.name}
+                      decoding="async"
                       className="h-56 w-full shrink-0 snap-center rounded-2xl object-cover"
                     />
                   ))}

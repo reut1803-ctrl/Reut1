@@ -26,6 +26,7 @@ import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
+import { optimizedImage } from "@/lib/crm/imageUrl";
 import { viewerActionText } from "@/lib/crm/genderText";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { getAvailabilityColors } from "@/lib/crm/availability";
@@ -280,7 +281,12 @@ export default function ProfileCard({ candidate, onReadMore }) {
       <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient ?? candidate.name)}`}>
         {candidate.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={candidate.photoUrl} alt={candidate.name} className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={optimizedImage(candidate.photoUrl, 700)}
+            alt={candidate.name}
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-6xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">

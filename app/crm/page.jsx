@@ -145,22 +145,60 @@ function ProfilesFeed() {
     [visibleInBoard, tab, filters]
   );
 
-  // כרטיסי "הזרקור היומי". נבחרים מתוך אותה רשימה שמוצגת מטה בדיוק, ולכן כל
-  // כרטיס בזרקור נמצא תמיד גם ברשימה הרגילה - הזרקור אינו מוציא אף אחד ממנה.
+  // "הזרקור היומי" הוא אזור גלובלי, בדיוק כמו המועדפים: הוא מרכז את כל מי
+  // שסומן/ה בזרקור מכל המאגרים, הקהילות והקטגוריות יחד - בלי קשר לסינון
+  // שפעיל ברקע ובלי קשר למאגר (בנים/בנות) או ללשונית שנצפית כרגע.
+  // סינון ההרשאות כן נשמר: כרטיס חסוי או חסום אינו נכנס לכאן לעולם,
+  // כי allCandidates כבר מסנן אותם לפי התפקיד.
+  const spotlightPool = useMemo(
+    () => [...allCandidates("male"), ...allCandidates("female")],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allCandidates, candidates_]
+  );
   const spotlightNow = Date.now() + serverOffsetMs;
   const spotlight = useMemo(
-    () => (role === "staff" || role === "admin" ? pickSpotlight(candidates, spotlightNow, attentionData) : []),
+    () => (role === "staff" || role === "admin" ? pickSpotlight(spotlightPool, spotlightNow, attentionData) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [candidates, role, serverOffsetMs, attentionData]
+    [spotlightPool, role, serverOffsetMs, attentionData]
   );
 
-  // גלילה אל הכרטיס המלא ברשימה שמתחת, בלי ניווט ובלי רענון
+  // גלילה אל הכרטיס המלא ברשימה שמתחת, בלי ניווט ובלי רענון.
+  //
+  // מאז שהזרקור גלובלי, כרטיס שמופיע בו לא בהכרח נמצא ברשימה שמתחת -
+  // הוא יכול להיות במאגר השני, בלשונית השנייה, או מוסתר בגלל סינון פעיל.
+  // לכן, אם הוא אינו במסך, המערכת מנקה את הסינון ועוברת למאגר וללשונית
+  // הנכונים, ואז גוללת אליו. בלי זה הלחיצה פשוט לא הייתה עושה כלום.
+  const focusCard = (id) => {
+    let cancelled = false;
+    const deadline = Date.now() + 2500;
+    const tryFocus = () => {
+      if (cancelled) return;
+      const el = document.querySelector(`[data-candidate-card="${id}"]`);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        setFocusedId(id);
+        setTimeout(() => setFocusedId((cur) => (cur === id ? null : cur)), 2200);
+        return;
+      }
+      if (Date.now() < deadline) requestAnimationFrame(tryFocus);
+    };
+    requestAnimationFrame(tryFocus);
+    return () => {
+      cancelled = true;
+    };
+  };
+
   const jumpToCard = (id) => {
-    const el = document.querySelector(`[data-candidate-card="${id}"]`);
-    if (!el) return;
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
-    setFocusedId(id);
-    setTimeout(() => setFocusedId((cur) => (cur === id ? null : cur)), 2200);
+    if (document.querySelector(`[data-candidate-card="${id}"]`)) {
+      focusCard(id);
+      return;
+    }
+    const c = findCandidateById(id);
+    if (!c) return;
+    clearAllFilters();
+    setBoard(c.gender);
+    setTab(c.isNew ? "new" : "previous");
+    focusCard(id);
   };
 
   // כמה כרטיסים יש בלשונית הנוכחית לפני הסינון, וכמה מוסתרים בגללו

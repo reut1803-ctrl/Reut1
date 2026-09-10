@@ -3,6 +3,7 @@
 import { Sun, ChevronLeft } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
+import { optimizedImage } from "@/lib/crm/imageUrl";
 import { daysSinceActivity } from "@/lib/crm/attention";
 
 // "הזרקור היומי" - מקטע נפרד מעל הרשימה. הכרטיסים שמופיעים כאן נשארים
@@ -34,7 +35,12 @@ export default function SpotlightStrip({ candidates, now, attentionData, onSelec
                 <div className={`relative h-20 w-full bg-gradient-to-br ${getGradientClass(c.gradient ?? c.name)}`}>
                   {c.photoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={c.photoUrl} alt={c.name} className="absolute inset-0 h-full w-full object-cover" />
+                    <img
+                      src={optimizedImage(c.photoUrl, 320)}
+                      alt={c.name}
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-2xl font-bold text-white drop-shadow">{candidateInitials(c.name)}</span>

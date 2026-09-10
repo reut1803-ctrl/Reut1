@@ -5,6 +5,7 @@ import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
+import { optimizedImage } from "@/lib/crm/imageUrl";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   useBackToClose(true, onClose);
@@ -22,8 +23,9 @@ export default function ProfileDetailModal({ candidate, onClose }) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={i}
-                  src={url}
+                  src={optimizedImage(url, 1000)}
                   alt={candidate.name}
+                  decoding="async"
                   className="h-full w-full shrink-0 snap-center object-cover"
                 />
               ))}
