@@ -1,0 +1,195 @@
+rules_version = '2';
+
+// ============================================================================
+//  אזור מוגן - אין לשנות בלי אישור מפורש של רעות
+// ============================================================================
+//  הקובץ הזה קובע מי יכול להיכנס למערכת ומה מותר לו לעשות. שינוי שגוי כאן
+//  נועל את כל הצוות בחוץ, גם כשהקוד עצמו תקין לחלוטין.
+//
+//  שלושה כללי ברזל:
+//
+//  1. אסור לצמצם את מה שמותר ל-isStaff(). כל שורה שנוגעת ב-staffAllowlist,
+//     ב-candidates או ב-proposals - לא נוגעים בה. אלה שורות החיים של הצוות.
+//     בפרט: candidates create חייב להישאר isStaff() - הצוות מזין מועמדים.
+//
+//  2. פיצ'ר חדש = אוסף חדש בסוף הקובץ. לא משנים אוסף קיים כדי "להתאים" אותו.
+//
+//  3. הקובץ הזה אינו מתעדכן לבד. גם אחרי שינוי כאן, הוא נכנס לתוקף רק
+//     אחרי פרסום ידני ב-Firebase. לכן: אם שינית כאן משהו ולא ביקשת פרסום -
+//     המערכת עדיין רצה על הגרסה הישנה, וזה מקור לבלבול.
+//
+//  אבחון מהיר כשאיש צוות לא נכנס:
+//    "החשבון עדיין לא מאושר"  -> השרת ענה. הכתובת אינה ב-staffAllowlist.
+//    "החיבור לשרת לא הצליח"   -> השרת לא ענה בכלל. זו תקלת תקשורת,
+//                                 ולא קשור לקובץ הזה.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+    function isStaff() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/staffAllowlist/$(myEmail()));
+    }
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/staffAllowlist/$(myEmail())).data.role == "admin";
+    }
+    // בעלת המערכת. האפליקציה מזהה אותה כמנהלת תמיד, גם אם רשומת ההרשאות
+    // שלה חסרה או פגומה, ואותה רשת ביטחון קיימת עכשיו גם בשרת - כדי שכלל
+    // שמוגבל למנהלת לא יוכל לחסום אותה מהנתונים של עצמה.
+    function isOwner() {
+      return request.auth != null && myEmail() == "reut1803@gmail.com";
+    }
+    function notBlockedFromMe() {
+      return isAdmin()
+        || !(myEmail() in resource.data.get('blockedStaffEmails', []));
+    }
+
+    match /staffAllowlist/{email} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    // מאגר המועמדים. הצוות קורא, מוסיף ומעדכן. מחיקה שמורה למנהלת בלבד.
+    // אין לצמצם את create ל-isAdmin: הצוות חייב להיות מסוגל להזין מועמדים
+    // חדשים בעצמו, וזו דרישה מפורשת של רעות.
+    //
+    // כרטיס חסוי: מסמך שבו confidential == true נקרא על ידי המנהלת בלבד.
+    // הכלל הזה נאכף בשרת, ולא רק במסך - איש/אשת צוות אינו/ה יכול/ה למשוך
+    // אותו בשום דרך, גם לא ישירות מול מסד הנתונים.
+    function notConfidential() {
+      return resource.data.get('confidential', false) == false;
+    }
+    match /candidates/{candidateId} {
+      allow get: if isAdmin() || (isStaff() && notConfidential() && notBlockedFromMe());
+      allow list: if isAdmin() || (isStaff() && notConfidential());
+      allow create: if isStaff();
+      allow update: if isAdmin() || (isStaff() && notConfidential() && notBlockedFromMe());
+      allow delete: if isAdmin();
+    }
+
+    // אוסף ציבורי וצר: מכיל רק שם וסטטוס פניות, כדי שהקישור האישי של מועמד/ת
+    // (ללא התחברות) לעולם לא ייתן גישה לשאר פרטי הכרטיס החסויים.
+    match /candidateStatus/{candidateId} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create: if isStaff();
+      allow update: if isStaff()
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availabilityStatus']);
+    }
+
+    // מדיה (הקלטות/PDF) נשמרת בחלקים קטנים, כי רשתות מסוימות לא מעבירות בקשה אחת גדולה.
+    // מסמך הכתר ב-media מחזיק את סוג הקובץ ומספר החלקים, והתוכן עצמו יושב ב-mediaChunks.
+    match /media/{id} {
+      allow read, create, update: if isStaff();
+      allow delete: if isStaff();
+    }
+
+    match /mediaChunks/{id} {
+      allow read, create, update: if isStaff();
+      allow delete: if isStaff();
+    }
+
+    match /proposals/{id} {
+      allow read, create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // זירת סיעור המוחות: סבב דיון של הצוות על מועמד/ת אחד/ת.
+    // רק המנהלת פותחת, סוגרת, מסכמת ומוחקת סבב. הצוות קורא ומשתתף.
+    match /brainstormRounds/{id} {
+      allow read: if isStaff();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // כרטיסיות הדיון. כל אשת צוות כותבת ומסמנת לייקים.
+    // מחיקה: המנהלת, או הכותב/ת של הכרטיסייה עצמה.
+    match /brainstormNotes/{id} {
+      allow read, create: if isStaff();
+      allow update: if isStaff();
+      allow delete: if isAdmin() || (isStaff() && resource.data.get('authorEmail', '') == myEmail());
+    }
+
+    // משימות: המנהלת רואה הכל. אשת צוות רואה אך ורק משימות שמשויכות אליה,
+    // ולכן היא חייבת לשלוח שאילתה מסוננת לפי assigneeId (כפי שהאפליקציה עושה).
+    function isMyTask() {
+      return resource.data.get('assigneeId', '') == myEmail();
+    }
+
+    match /tasks/{id} {
+      allow get, list: if isAdmin() || (isStaff() && isMyTask());
+      allow create: if isStaff();
+      allow update: if isAdmin() || (isStaff() && isMyTask());
+      allow delete: if isAdmin();
+    }
+
+    match /telemetry/{staffEmail} {
+      allow read: if isStaff();
+      allow write: if isStaff() && myEmail() == staffEmail;
+    }
+
+    match /termsAcceptances/{staffEmail} {
+      allow read: if isStaff();
+      allow write: if isStaff() && myEmail() == staffEmail;
+    }
+
+    match /settings/{id} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    match /emailLog/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /serviceTypes/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /charges/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ----------------------------------------------------------------
+    //  טופס ההרשמה החיצוני (/register) - שני אוספים חדשים.
+    //  לא נגעתי בשום אוסף קיים.
+    // ----------------------------------------------------------------
+
+    // מפתח חיפוש לפי שם. מסמך אחד לכל שם, שהמזהה שלו נגזר מהשם עצמו.
+    // get בלבד פתוח לציבור: אפשר לבדוק שם מדויק אחד, ואי אפשר לסרוק
+    // או לשלוף את רשימת השמות. הרשימה עצמה שמורה לצוות.
+    match /nameIndex/{key} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // פניות שהגיעו מהטופס החיצוני. כל אחד יכול להפקיד פנייה, ואיש אינו
+    // יכול לקרוא אותן חוץ מהצוות. הפנייה אינה נכנסת ישירות למאגר המועמדים:
+    // המערכת הפנימית היא שממירה אותה לכרטיס, ולכן candidates נשאר סגור
+    // לחלוטין לכתיבה מבחוץ.
+    match /intakeSubmissions/{id} {
+      allow create: if request.resource.data.get('status', '') == 'pending'
+        && request.resource.data.get('name', '') is string
+        && request.resource.data.name.size() > 1
+        && request.resource.data.name.size() < 120
+        && request.resource.data.get('phone', '') is string
+        && request.resource.data.phone.size() < 40;
+      // קריאה שמורה למנהלת בלבד. פנייה שממתינה לאישור מכילה טלפון, תמונה
+      // ומורכבויות של מי שעדיין לא דיברו איתו/ה, ולכן אינה נחשפת לצוות -
+      // גם לא ישירות מול מסד הנתונים. הצוות רואה רק את הכרטיס שנוצר אחרי
+      // שהמנהלת אישרה.
+      allow get, list: if isAdmin() || isOwner();
+      allow update, delete: if isAdmin() || isOwner();
+    }
+
+    match /userPrefs/{email} {
+      allow read, write: if request.auth != null && myEmail() == email;
+    }
+  }
+}

@@ -17,6 +17,14 @@ body {
   box-sizing: border-box;
 }
 
+/* נגישות: הגדלת טקסט וניגודיות גבוהה (מופעל דרך כפתור הנגישות הצף) */
+html.a11y-large-text {
+  zoom: 1.25;
+}
+html.a11y-high-contrast {
+  filter: contrast(1.3);
+}
+
 @layer components {
   .field-label {
     @apply block text-sm font-medium text-ink/80 mb-1.5;
