@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "./Modal";
 import CandidateEditor from "./CandidateEditor";
 import Recorder from "./Recorder";
-import { PERSONAL_FIELDS, genderLabel } from "../lib/questions";
+import { genderLabel } from "../lib/questions";
 import { toHebrewDate } from "../lib/dates";
 import { copyClean, downloadPdf } from "../lib/export";
 import { displayRep, trackEngagement } from "../lib/store";
@@ -18,6 +18,22 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
 
   // הנציג/ה המוצג/ת ליצירת קשר: מחליף/ה אם המשויך/ת בחופשה, אחרת המשויך/ת.
   const rep = displayRep(candidate, reps);
+
+  // נתוני ליבה קצרים -> תגיות; תוכן ועומק -> נרטיב אחד זורם.
+  const g = candidate.gender;
+  const genderWord = g === "female" ? "בחורה" : "בחור";
+  const phoneDigits = (candidate.phone || "").replace(/[^0-9]/g, "");
+  const badges = [
+    `${genderWord} · גיל ${candidate.age || "—"}`,
+    candidate.height && `גובה ${candidate.height}`,
+    candidate.community,
+    candidate.location,
+    candidate.work,
+    candidate.degree,
+    candidate.birthDate && toHebrewDate(candidate.birthDate),
+  ].filter(Boolean);
+  const hasNarrative = !!candidate.description || !!candidate.parentsWork || (openQuestions || []).some((q) => candidate.answers?.[q.key]);
+  const aboutTitle = g === "female" ? "קצת עליה" : "קצת עליו";
 
   async function handleCopy() {
     await copyClean(candidate, openQuestions, canSeeSensitive);
@@ -72,26 +88,34 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
             />
           ) : (
             <div className="space-y-4">
-              {candidate.photo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={candidate.photo} alt={candidate.fullName} className="h-32 w-32 rounded-2xl object-cover" />
-              )}
-              <div className="space-y-2">
-                {PERSONAL_FIELDS.filter((f) => f.key !== "phone" || canSeeSensitive).map((f) => (
-                  <p key={f.key} className="text-lg">
-                    <span className="font-bold">{genderLabel(f, candidate.gender)}:</span> {candidate[f.key]}
-                    {f.key === "birthDate" && candidate[f.key] && (
-                      <span className="text-roseDark"> · {toHebrewDate(candidate[f.key])}</span>
-                    )}
-                  </p>
-                ))}
-                <p className="text-lg"><span className="font-bold">שיוך נציג:</span> {rep ? `${rep.name} (${rep.institution})` : "ללא שיוך"}</p>
+              <div className="flex items-start gap-3">
+                {candidate.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={candidate.photo} alt={candidate.fullName} className="h-24 w-24 shrink-0 rounded-2xl object-cover" />
+                )}
+                {/* נתוני ליבה כתגיות נקיות למבט מהיר */}
+                <div className="flex flex-wrap gap-1.5">
+                  {badges.map((b, i) => (
+                    <span key={i} className="rounded-full bg-blush px-3 py-1 text-sm font-medium text-roseDark">{b}</span>
+                  ))}
+                </div>
               </div>
 
-              {/* הטלפון האישי של המועמד מוסתר משאר הנציגים. ליצירת קשר - דרך הנציג שלו. */}
+              <p className="text-sm text-ink/60">נציג/ה מלווה: {rep ? `${rep.name}${rep.institution ? ` · ${rep.institution}` : ""}` : "ללא שיוך"}</p>
+
+              {/* טלפון אישי - למורשים בלבד */}
+              {canSeeSensitive && candidate.phone && (
+                <div className="flex flex-wrap gap-2">
+                  <a className="btn-soft" href={`tel:${phoneDigits}`}>📞 {candidate.phone}</a>
+                  <a className="btn-soft" href={`sms:${phoneDigits}`}>💬 SMS</a>
+                  <a className="btn-soft" href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer">🟢 וואטסאפ</a>
+                </div>
+              )}
+
+              {/* הטלפון האישי מוסתר משאר הנציגים - יצירת קשר דרך הנציג/ה */}
               {!canSeeSensitive && rep && (
                 <div className="rounded-2xl bg-blush/60 p-4">
-                  <p className="mb-2 text-base font-semibold text-roseDark">לפרטים ולבירורים — דרך הנציג: {rep.name}</p>
+                  <p className="mb-2 text-base font-semibold text-roseDark">לפרטים ולבירורים — דרך הנציג/ה: {rep.name}</p>
                   {rep.phone ? (
                     <div className="flex flex-wrap gap-2">
                       <a className="btn-soft" href={`tel:${rep.phone}`}>📞 שיחה</a>
@@ -104,23 +128,26 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
                 </div>
               )}
 
-              {candidate.description && (
-                <div className="border-t border-sand pt-3">
-                  <p className="mb-1.5 text-base font-bold text-roseDark">📝 תיאור אישי</p>
-                  <div className="whitespace-pre-wrap rounded-2xl bg-blush/50 p-4 text-lg leading-relaxed text-ink/90">{candidate.description}</div>
+              {/* הנרטיב האישי - כל התוכן והעומק בגוש אחד זורם ונעים לעין */}
+              {hasNarrative && (
+                <div className="space-y-3 rounded-2xl bg-blush/40 p-4">
+                  <p className="text-base font-bold text-roseDark">{aboutTitle}</p>
+                  {candidate.description && (
+                    <p className="whitespace-pre-wrap text-lg leading-relaxed text-ink/90">{candidate.description}</p>
+                  )}
+                  {candidate.parentsWork && (
+                    <p className="text-lg leading-relaxed text-ink/90">רקע משפחתי: {candidate.parentsWork}</p>
+                  )}
+                  {(openQuestions || []).map((q) =>
+                    candidate.answers?.[q.key] ? (
+                      <div key={q.key}>
+                        <p className="mb-0.5 text-xs text-ink/45">{genderLabel(q, candidate.gender)}</p>
+                        <p className="whitespace-pre-wrap text-lg leading-relaxed text-ink/90">{candidate.answers[q.key]}</p>
+                      </div>
+                    ) : null
+                  )}
                 </div>
               )}
-
-              <div className="space-y-4 border-t border-sand pt-3">
-                {(openQuestions || []).map((q) => (
-                  <div key={q.key}>
-                    <p className="mb-1.5 text-base font-bold text-roseDark">{genderLabel(q, candidate.gender)}</p>
-                    <div className="whitespace-pre-wrap rounded-2xl bg-blush/50 p-4 text-lg leading-relaxed text-ink/90">
-                      {candidate.answers?.[q.key]}
-                    </div>
-                  </div>
-                ))}
-              </div>
 
               {candidate.references?.length > 0 && (
                 <div className="border-t border-sand pt-3">
