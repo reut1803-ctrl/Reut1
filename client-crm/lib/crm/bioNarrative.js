@@ -67,8 +67,9 @@ const bucketOf = (value) => {
   return 4;
 };
 
-export function characterSentence(form, gender) {
+export function characterSentence(form, gender, isOn = () => true) {
   const parts = ["introExtro", "heartMind", "planFlow"]
+    .filter(isOn)
     .map((id) => {
       const b = bucketOf(form[id]);
       return b === null ? null : SCALE_PHRASES[id][b];
@@ -98,22 +99,25 @@ export function elementSentence(element, why) {
 // נכללים כאן רק דברים שאין להם תג משלהם בראש הכרטיס. גיל, גובה, עדה,
 // אזור, רמה תורנית, עיסוק ומצב משפחתי נשמרים ומוצגים כשדות נפרדים,
 // וחזרה עליהם בתוך הטקסט הייתה כפילות מיותרת.
-export function narrativeFromForm(form = {}) {
+// activeIds: מזהי השאלות שמוצגות כרגע בטופס. שאלה שכובתה בלוח הבקרה
+// אינה נשאלת, ולכן גם אסור לה להופיע בתיאור האישי - אחרת נוצר טקסט
+// שמתאר תשובה שאיש לא נתן. כשלא מועבר דבר, הכל נכלל (התנהגות קודמת).
+export function narrativeFromForm(form = {}, activeIds = null) {
   const gender = form.gender === "female" ? "female" : "male";
+  const on = activeIds instanceof Set ? (id) => activeIds.has(id) : () => true;
+  const val = (id) => (on(id) ? form[id] : "");
   const paragraphs = [];
   const push = (text) => {
     const t = clean(text);
     if (t) paragraphs.push(t);
   };
 
-  push(form.selfDescription);
-
-  push([characterSentence(form, gender), elementSentence(form.element, form.elementWhy)].filter(Boolean).join(" "));
+  push(val("selfDescription"));
 
   push(
     [
-      clean(form.breslov) ? endSentence(`הקשר שלי לברסלב — ${clean(form.breslov)}`) : "",
-      clean(form.pathStory) ? endSentence(`הדרך שעברתי — ${clean(form.pathStory)}`) : "",
+      characterSentence(form, gender, on),
+      on("element") ? elementSentence(form.element, form.elementWhy) : "",
     ]
       .filter(Boolean)
       .join(" ")
@@ -121,24 +125,33 @@ export function narrativeFromForm(form = {}) {
 
   push(
     [
-      clean(form.familyBackground) ? endSentence(`על הבית שלי — ${clean(form.familyBackground)}`) : "",
-      clean(form.hobbies) ? endSentence(`בזמן הפנוי — ${clean(form.hobbies)}`) : "",
-      clean(form.importantToKnow) ? endSentence(`ומשהו שחשוב לי שתדעו — ${clean(form.importantToKnow)}`) : "",
+      clean(val("breslov")) ? endSentence(`הקשר שלי לברסלב — ${clean(form.breslov)}`) : "",
+      clean(val("pathStory")) ? endSentence(`הדרך שעברתי — ${clean(form.pathStory)}`) : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+
+  push(
+    [
+      clean(val("familyBackground")) ? endSentence(`על הבית שלי — ${clean(form.familyBackground)}`) : "",
+      clean(val("hobbies")) ? endSentence(`בזמן הפנוי — ${clean(form.hobbies)}`) : "",
+      clean(val("importantToKnow")) ? endSentence(`ומשהו שחשוב לי שתדעו — ${clean(form.importantToKnow)}`) : "",
     ]
       .filter(Boolean)
       .join(" ")
   );
 
   const wants = [
-    clean(form.lookingFor) ? endSentence(`מה שאני מחפש${gender === "female" ? "ת" : ""} — ${clean(form.lookingFor)}`) : "",
-    clean(form.preferredAges) ? endSentence(`הגילאים שנוחים לי — ${clean(form.preferredAges)}`) : "",
-    clean(form.mainRequirements) ? endSentence(`חשוב לי במיוחד — ${clean(form.mainRequirements)}`) : "",
-    clean(form.breslovInPartner) ? endSentence(`קשר לברסלב אצל בן או בת הזוג — ${clean(form.breslovInPartner)}`) : "",
+    clean(val("lookingFor")) ? endSentence(`מה שאני מחפש${gender === "female" ? "ת" : ""} — ${clean(form.lookingFor)}`) : "",
+    clean(val("preferredAges")) ? endSentence(`הגילאים שנוחים לי — ${clean(form.preferredAges)}`) : "",
+    clean(val("mainRequirements")) ? endSentence(`חשוב לי במיוחד — ${clean(form.mainRequirements)}`) : "",
+    clean(val("breslovInPartner")) ? endSentence(`קשר לברסלב אצל בן או בת הזוג — ${clean(form.breslovInPartner)}`) : "",
   ].filter(Boolean);
   push(wants.join(" "));
 
   // עישון מצוין רק כשהוא רלוונטי. "לא מעשן" אינו מידע שמוסיף משהו.
-  if (clean(form.smokingSelf) && clean(form.smokingSelf) !== "לא מעשן/ת") {
+  if (clean(val("smokingSelf")) && clean(form.smokingSelf) !== "לא מעשן/ת") {
     push(endSentence(`לגבי עישון — ${clean(form.smokingSelf)}`));
   }
 

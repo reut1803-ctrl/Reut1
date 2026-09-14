@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { Tag, X } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
-import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { visibleTags } from "@/lib/crm/tags";
+import { mergeContent } from "@/lib/crm/publicContent";
 
 // רצועת סינון מהירה לפי קהילה ומגזר.
 // גלויה תמיד ומיד מתחת לחיפוש, כדי שסינון לפי תווית יהיה לחיצה אחת
@@ -10,6 +12,10 @@ import { CANDIDATE_TAGS } from "@/lib/crm/mockData";
 export default function TagFilterStrip() {
   const activeTag = useCrmStore((s) => s.filters.tag);
   const setFilters = useCrmStore((s) => s.setFilters);
+  const publicContent = useCrmStore((s) => s.publicContent);
+  // התוויות נערכות בלוח הבקרה. עד שהתוכן נטען - ברירת המחדל שבקוד,
+  // כך שהרצועה לעולם אינה מוצגת ריקה.
+  const tags = useMemo(() => visibleTags(mergeContent(publicContent)), [publicContent]);
 
   const select = (name) => setFilters({ tag: activeTag === name ? null : name });
 
@@ -31,11 +37,11 @@ export default function TagFilterStrip() {
       </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {CANDIDATE_TAGS.map((tag) => {
+        {tags.map((tag) => {
           const active = activeTag === tag.name;
           return (
             <button
-              key={tag.name}
+              key={tag.id || tag.name}
               type="button"
               onClick={() => select(tag.name)}
               aria-pressed={active}

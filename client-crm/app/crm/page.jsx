@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, UserPlus } from "lucide-react";
 import { useCrmStore, AGE_LIMITS, HEIGHT_LIMITS } from "@/lib/crm/store";
-import { normalizeTagName } from "@/lib/crm/mockData";
+import { visibleTags, tagMatches, findTagByName } from "@/lib/crm/tags";
+import { mergeContent } from "@/lib/crm/publicContent";
 import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import FilterSheet from "@/components/crm/profiles/FilterSheet";
@@ -28,6 +29,7 @@ function ProfilesFeed() {
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const candidates_ = useCrmStore((s) => s.candidates);
+  const publicContent = useCrmStore((s) => s.publicContent);
   const candidatesLoaded = useCrmStore((s) => s.candidatesLoaded);
   const candidatesError = useCrmStore((s) => s.candidatesError);
   const tab = useCrmStore((s) => s.feedTab);
@@ -79,6 +81,9 @@ function ProfilesFeed() {
 
   const visibleInBoard = useMemo(() => allCandidates(board), [board, allCandidates, candidates_]);
 
+  // התוויות כפי שהוגדרו בלוח הבקרה, יחד עם השאלות שהן משויכות אליהן
+  const activeTags = useMemo(() => visibleTags(mergeContent(publicContent)), [publicContent]);
+
   const passesFilters = (c) => {
     if (!inRange(c.age, filters.ageRange, AGE_LIMITS)) return false;
     if (!inRange(c.height, filters.heightRange, HEIGHT_LIMITS)) return false;
@@ -86,7 +91,10 @@ function ProfilesFeed() {
     if (filters.region !== "הכל" && c.region !== filters.region) return false;
     // חיפוש חופשי על כל תוכן הכרטיס, כולל ההערות
     if (filters.search && !matchesSearch(c, filters.search, personalNotes[c.id])) return false;
-    if (filters.tag && normalizeTagName(c.tag) !== filters.tag) return false;
+    // סינון לפי תווית: גם תווית שסומנה ידנית בכרטיס, וגם התאמה לפי
+    // התשובה בשאלון (למשל "תורני" בשאלת ההגדרה הדתית). בלי החלק השני,
+    // כרטיס שנוצר מהטופס החיצוני לא היה מופיע באף תווית.
+    if (filters.tag && !tagMatches(c, findTagByName(activeTags, filters.tag))) return false;
     return true;
   };
 

@@ -52,15 +52,23 @@ export function StepIndicator({ steps, current, onJump }) {
   );
 }
 
-export function Field({ label, hint, required, children }) {
+// שדה בטופס.
+//
+// group=true מצייר קבוצה (div) במקום תווית (label). זה חובה בכל שדה
+// שמכיל כפתורים או תווית משלו - גלריית התמונות, קבוצות הבחירה
+// והאישורים. תווית שעוטפת כפתורים יוצרת שני כשלים: תווית בתוך תווית
+// היא HTML לא חוקי, וקורא מסך מקריא כל כפתור עם שם השדה מודבק לפניו
+// ("אני * בחור" במקום "בחור").
+export function Field({ label, hint, required, children, group = false }) {
+  const Wrap = group ? "div" : "label";
   return (
-    <label className="block">
+    <Wrap className="block">
       <span className="mb-1 block text-[13px] font-semibold text-[#23414E]">
         {label} {required && <span className="text-[#C4584C]">*</span>}
       </span>
       {hint && <span className="mb-1.5 block text-[11.5px] leading-relaxed text-[#5E7A87]">{hint}</span>}
       {children}
-    </label>
+    </Wrap>
   );
 }
 
@@ -128,13 +136,19 @@ export function ChipGroup({ options, value, onChange, multi = false }) {
 }
 
 // סולם 1-10 עם שני קטבים מסומנים, כדי שברור מה כל קצה אומר.
+//
+// סדר הקטבים קריטי: בעברית (RTL) הדפדפן הופך את פס הגרירה, ולכן הערך
+// הנמוך (1) יושב בקצה הימני והגבוה (10) בשמאלי. ב-flex תחת RTL הילד
+// הראשון מוצג מימין, ולכן הקוטב הנמוך חייב להיכתב ראשון. קודם הוא
+// נכתב הפוך, וכך מי שגרר לקצה שכתוב בו "שכלי/ת" קיבל בתיאור "רגשי/ת
+// מאוד" - בדיוק ההפך ממה שהתכוון.
 export function ScaleSlider({ scale, value, onChange, description }) {
   return (
     <div className="rounded-2xl border border-[#CFE3EC] bg-white p-3.5">
       <div className="mb-2 flex items-center justify-between text-[12px] font-semibold text-[#5E7A87]">
-        <span>{scale.high}</span>
-        <span className="text-[13px] font-bold text-[#1F6E88]">{scale.label}</span>
         <span>{scale.low}</span>
+        <span className="text-[13px] font-bold text-[#1F6E88]">{scale.label}</span>
+        <span>{scale.high}</span>
       </div>
       <input
         type="range"

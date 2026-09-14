@@ -14,11 +14,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Settings2, Link2, CreditCard, FileText, ListChecks, Lock, Check, Loader2,
-  Trash2, ChevronUp, ChevronDown, Plus, ExternalLink, AlertTriangle, Pencil, EyeOff,
+  Trash2, ChevronUp, ChevronDown, Plus, ExternalLink, AlertTriangle, Pencil, EyeOff, Tag,
 } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { QUESTION_TYPES, newQuestion, mergeContent } from "@/lib/crm/publicContent";
-import { resolveItems, movedOrder, orderWithInserted, BUILTIN_BY_ID } from "@/lib/crm/formSchema";
+import {
+  resolveItems, movedOrder, orderWithInserted, BUILTIN_BY_ID, CHOICE_WIDGETS, choiceItems, optionsOf,
+} from "@/lib/crm/formSchema";
+import { resolveTags, newTag, TAG_COLORS } from "@/lib/crm/tags";
 import Button from "@/components/crm/ui/Button";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 
@@ -83,6 +86,7 @@ export default function FormSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [pendingTagDelete, setPendingTagDelete] = useState(null);
 
   // הטיוטה נטענת פעם אחת מהשמור, כדי שהקלדה לא תידרס בכל עדכון מהשרת
   useEffect(() => {
@@ -156,6 +160,22 @@ export default function FormSettingsPage() {
     set({ questions: next.questions, order: orderWithInserted(next, q.id, step) });
     setOpenId(q.id);
   };
+
+  // ----- תוויות הסינון המהיר -----
+  const tags = resolveTags(draft);
+  const setTags = (next) => set({ tags: next });
+  const patchTag = (id, patch) => setTags(tags.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  const addTag = () => setTags([...tags, newTag()]);
+  const removeTag = (id) => setTags(tags.filter((t) => t.id !== id));
+  const moveTag = (id, dir) => {
+    const list = [...tags];
+    const i = list.findIndex((t) => t.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    setTags(list);
+  };
+  const choices = choiceItems(draft);
 
   const removeQuestion = (id) =>
     set({ questions: draft.questions.filter((q) => q.id !== id), order: draft.order.filter((x) => x !== id) });
@@ -243,6 +263,139 @@ export default function FormSettingsPage() {
             </div>
           );
         })}
+      </Section>
+
+      {/* ---------- תוויות הסינון ---------- */}
+      <Section
+        icon={Tag}
+        title="תוויות הסינון המהיר"
+        hint="התוויות שמופיעות מעל רשימת המועמדים. אפשר לשייך כל תווית לשאלה בשאלון ולסמן אילו תשובות שייכות אליה — וכך התווית תתאים מאליה למה שהמועמדים ענו, בלי לסמן כרטיס-כרטיס ביד."
+      >
+        {tags.map((tag, i) => {
+          const q = choices.find((c) => c.id === tag.questionId) || null;
+          return (
+            <div key={tag.id} className="rounded-2xl border border-[#CFE3EC] bg-white p-3">
+              <div className="mb-2 flex items-center gap-1.5">
+                <div className="flex flex-col">
+                  <button type="button" onClick={() => moveTag(tag.id, -1)} aria-label="הזזה למעלה" className="px-1 text-[#8AA6B3] active:text-[#1F6E88]">
+                    <ChevronUp size={15} />
+                  </button>
+                  <button type="button" onClick={() => moveTag(tag.id, 1)} aria-label="הזזה למטה" className="px-1 text-[#8AA6B3] active:text-[#1F6E88]">
+                    <ChevronDown size={15} />
+                  </button>
+                </div>
+                <span
+                  className="shrink-0 rounded-full px-3 py-1 text-[12px] font-bold"
+                  style={{ backgroundColor: tag.color, color: tag.textColor }}
+                >
+                  {tag.name || "תווית חדשה"}
+                </span>
+                <span className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setPendingTagDelete(tag.id)}
+                  aria-label="מחיקת התווית"
+                  className="rounded-lg p-1 text-[#C4584C] active:bg-red-50"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+
+              <input
+                className={INPUT}
+                placeholder="שם התווית"
+                value={tag.name}
+                onChange={(e) => patchTag(tag.id, { name: e.target.value })}
+              />
+
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {TAG_COLORS.map((c) => (
+                  <button
+                    key={c.color}
+                    type="button"
+                    aria-label={`צבע ${c.color}`}
+                    onClick={() => patchTag(tag.id, { color: c.color, textColor: c.textColor })}
+                    className={`h-7 w-7 rounded-full border-2 transition ${
+                      tag.color === c.color ? "border-[#23414E] scale-110" : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: c.color }}
+                  />
+                ))}
+              </div>
+
+              <label className="mt-2.5 block">
+                <span className="mb-1 block text-[11.5px] font-semibold text-[#5E7A87]">
+                  שיוך לשאלה בשאלון
+                </span>
+                <select
+                  className={INPUT}
+                  value={tag.questionId}
+                  onChange={(e) => patchTag(tag.id, { questionId: e.target.value, values: [] })}
+                >
+                  <option value="">בלי שיוך — סימון ידני בכרטיס בלבד</option>
+                  {choices.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                      {c.enabled ? "" : " (כבויה)"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {q && (
+                <div className="mt-2">
+                  <span className="mb-1.5 block text-[11.5px] font-semibold text-[#5E7A87]">
+                    אילו תשובות שייכות לתווית הזו
+                  </span>
+                  {q.options.length === 0 ? (
+                    <p className="rounded-xl bg-[#F2F8FB] px-2.5 py-2 text-[11.5px] text-[#5E7A87]">
+                      לשאלה הזו אין עדיין רשימת תשובות. אפשר להוסיף לה אפשרויות במקטע השאלות שלמעלה.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {q.options.map((opt) => {
+                        const on = tag.values.includes(opt);
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() =>
+                              patchTag(tag.id, {
+                                values: on ? tag.values.filter((v) => v !== opt) : [...tag.values, opt],
+                              })
+                            }
+                            className={`rounded-full border px-2.5 py-1.5 text-[12px] font-semibold transition ${
+                              on
+                                ? "border-[#2E8BA8] bg-[#2E8BA8] text-white"
+                                : "border-[#CFE3EC] bg-white text-[#23414E]"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <p className="mt-2 text-[11px] leading-relaxed text-[#5E7A87]">
+                {tag.questionId && tag.values.length > 0
+                  ? `כל מי שענה/תה ${tag.values.join(" או ")} יקבל/תקבל את התווית אוטומטית.`
+                  : "בלי שיוך, התווית תופיע רק על כרטיסים שסומנו בה ידנית."}
+              </p>
+            </div>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={addTag}
+          className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-[#CFE3EC] py-3 text-[13px] font-bold text-[#2E8BA8] transition active:scale-[0.99]"
+        >
+          <Plus size={15} /> הוספת תווית
+        </button>
       </Section>
 
       {/* ---------- טקסטים ---------- */}
@@ -465,6 +618,17 @@ export default function FormSettingsPage() {
         </Button>
       </div>
 
+      {pendingTagDelete && (
+        <ConfirmDialog
+          message="למחוק את התווית? כרטיסים שסומנו בה ידנית ישמרו על הסימון, אבל התווית לא תופיע יותר ברצועת הסינון."
+          onConfirm={() => {
+            removeTag(pendingTagDelete);
+            setPendingTagDelete(null);
+          }}
+          onCancel={() => setPendingTagDelete(null)}
+        />
+      )}
+
       {pendingDelete && (
         <ConfirmDialog
           message="למחוק את השאלה הזו מהטופס? תשובות שכבר נשמרו בכרטיסים קיימים לא ייפגעו. אם רק רוצים להסתיר אותה זמנית — עדיף לכבות את המתג."
@@ -486,6 +650,7 @@ export default function FormSettingsPage() {
 // טלפון. לחיצה על השורה פותחת את עריכת הנוסח המלא.
 function QuestionRow({ item, raw, base, open, onToggleOpen, onPatch, onMove, onDelete, stepTitles }) {
   const off = !item.enabled;
+  const isChoice = CHOICE_WIDGETS.has(item.widget);
   return (
     <div
       className={`rounded-2xl border bg-white transition ${
@@ -588,8 +753,11 @@ function QuestionRow({ item, raw, base, open, onToggleOpen, onPatch, onMove, onD
             </label>
           )}
 
-          {item.kind === "custom" && item.type === "chips" && (
-            <OptionsInput options={item.options} onPatch={onPatch} />
+          {isChoice && (
+            // optionsOf ולא item.options: בשאלה מובנית שלא נערכה, השדה
+            // מחזיק את שם הרשימה ולא את הרשימה עצמה. העברה ישירה שלו
+            // הפילה את המסך ברגע שנפתחה שאלת בחירה.
+            <OptionsInput options={optionsOf(item)} onPatch={onPatch} builtin={item.kind === "builtin"} />
           )}
 
           <div className="flex items-center justify-between pt-0.5">
@@ -625,8 +793,9 @@ function QuestionRow({ item, raw, base, open, onToggleOpen, onPatch, onMove, onD
 // או רווח בסוף נעלמו ברגע שהוקלדו ולא היה אפשר לכתוב אפשרות שנייה.
 // עכשיו מה שמוקלד נשמר כפי שהוא בזמן ההקלדה, והפיצול לרשימה נעשה
 // ברקע. אפשר להקליד רווחים, פסיקים וסימני פיסוק בחופשיות מלאה.
-function OptionsInput({ options, onPatch }) {
-  const joined = (options || []).join(", ");
+function OptionsInput({ options, onPatch, builtin = false }) {
+  const list = Array.isArray(options) ? options : [];
+  const joined = list.join(", ");
   const [text, setText] = useState(joined);
   const lastParsed = useRef(joined);
 
@@ -648,7 +817,9 @@ function OptionsInput({ options, onPatch }) {
 
   return (
     <label className="block">
-      <span className="mb-1 block text-[11.5px] font-semibold text-[#5E7A87]">האפשרויות לבחירה</span>
+      <span className="mb-1 block text-[11.5px] font-semibold text-[#5E7A87]">
+        האפשרויות לבחירה{builtin ? " (אפשר להוסיף או להסיר)" : ""}
+      </span>
       <input
         className={`${INPUT} text-[13px]`}
         placeholder="למשל: כן, לא, לא משנה — מופרד בפסיקים"
@@ -656,9 +827,7 @@ function OptionsInput({ options, onPatch }) {
         onChange={(e) => handle(e.target.value)}
       />
       <span className="mt-1 block text-[11px] text-[#5E7A87]">
-        {(options || []).length > 0
-          ? `${(options || []).length} אפשרויות: ${(options || []).join(" · ")}`
-          : "מפרידים בין האפשרויות בפסיק."}
+        {list.length > 0 ? `${list.length} אפשרויות: ${list.join(" · ")}` : "מפרידים בין האפשרויות בפסיק."}
       </span>
     </label>
   );

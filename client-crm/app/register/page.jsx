@@ -14,15 +14,16 @@
 // חלוקת השדות: פרטי הליבה נשמרים כל אחד בשדה נפרד, ותשובות העומק
 // מתמזגות לפסקה אחת שנכנסת ל"תיאור אישי". ראו lib/crm/bioNarrative.js.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
-import { Check, AlertCircle, Camera, X, Loader2, ChevronLeft, ChevronRight, HandHeart } from "lucide-react";
+import { Check, AlertCircle, Camera, X, Loader2, ChevronLeft, ChevronRight, HandHeart, RotateCcw } from "lucide-react";
 import { crmDb } from "@/lib/crm/firebaseClient";
-import { uploadToCloudinary } from "@/lib/crm/cloudinary";
-import { compressImage } from "@/lib/crm/compressImage";
+import { uploadPhoto } from "@/lib/crm/photoUpload";
 import { APP_NAME, APP_SUBTITLE, LOGO_SRC } from "@/lib/appConfig";
 import { ELEMENTS, describeScale, ageFromBirthDate } from "@/lib/crm/registerForm";
-import { visibleItems, optionsOf, scaleOf, missingItems, customAnswersText } from "@/lib/crm/formSchema";
+import {
+  visibleItems, optionsOf, scaleOf, missingItems, customAnswersText, activeBuiltinIds,
+} from "@/lib/crm/formSchema";
 import {
   StepIndicator, Field, TextInput, TextArea, Select, ChipGroup, ScaleSlider,
 } from "@/components/crm/register/FormBits";
@@ -32,6 +33,13 @@ import { narrativeFromForm } from "@/lib/crm/bioNarrative";
 import { usePublicContent } from "@/lib/crm/usePublicContent";
 
 const MAX_PHOTOS = 4;
+
+// שדות שמכילים כפתורים או תווית משלהם. הם מצוירים כקבוצה ולא כתווית,
+// כדי שלא ייווצר label בתוך label ושקורא מסך לא יקריא את שם השדה לפני
+// כל כפתור. ראו ההערה ב-Field.
+const GROUP_WIDGETS = new Set([
+  "photos", "consents", "genderChips", "chips", "multiChips", "element", "birthDate", "simpleScale",
+]);
 const LAST_STEP = 3;
 
 const EMPTY = {
@@ -73,9 +81,14 @@ export default function RegisterPage() {
   const [form, setForm] = useState(EMPTY);
   // תשובות לשאלות שהמנהלת הוסיפה בעצמה
   const [custom, setCustom] = useState({});
-  const [photos, setPhotos] = useState([]);
-  const [photoBusy, setPhotoBusy] = useState("");
-  const [photoError, setPhotoError] = useState("");
+  // כל תמונה מנוהלת כרשומה עם מצב משלה, ולא כרשימת כתובות. כך תמונה
+  // שנכשלה אינה נעלמת בשקט: היא נשארת על המסך עם סיבת הכישלון וכפתור
+  // "לנסות שוב", ואי אפשר להגיע למסך השליחה בלי לשים לב שהיא חסרה.
+  const [photoItems, setPhotoItems] = useState([]);
+  const photoItemsRef = useRef([]);
+  useEffect(() => {
+    photoItemsRef.current = photoItems;
+  }, [photoItems]);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -87,31 +100,60 @@ export default function RegisterPage() {
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   const items = useMemo(() => visibleItems(content, step), [content, step]);
+  const photos = useMemo(
+    () => photoItems.filter((p) => p.status === "done").map((p) => p.url),
+    [photoItems]
+  );
+  const uploading = photoItems.some((p) => p.status === "uploading");
+
   const missing = useMemo(
     () => missingItems(content, form, { photos, custom, agreeTerms, agreePrivacy }),
     [content, form, photos, custom, agreeTerms, agreePrivacy]
   );
 
-  const handlePhotos = async (fileList) => {
-    setPhotoError("");
-    const files = Array.from(fileList || []).slice(0, MAX_PHOTOS - photos.length);
-    if (files.length === 0) return;
-    for (const file of files) {
-      try {
-        setPhotoBusy(`מעלה את ${file.name || "התמונה"}...`);
-        // כיווץ לפני ההעלאה: תמונה מהטלפון שוקלת מגה-בייטים, וזה גם
-        // מאט את ההעלאה ברשת סלולרית וגם מייקר אחסון בלי שום תועלת.
-        const blob = await compressImage(file, { maxDimension: 1400, quality: 0.82 });
-        const url = await uploadToCloudinary(new File([blob], file.name || "photo.jpg", { type: "image/jpeg" }));
-        setPhotos((prev) => (prev.length >= MAX_PHOTOS ? prev : [...prev, url]));
-      } catch (err) {
-        setPhotoError(err?.message || "העלאת התמונה נכשלה. אפשר לנסות שוב.");
-      }
+  const patchPhoto = (id, patch) =>
+    setPhotoItems((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+
+  const runUpload = async (entry) => {
+    patchPhoto(entry.id, { status: "uploading", note: "מעלה...", error: "" });
+    try {
+      // כיווץ והעלאה יחד, כולל נפילה חזרה לקובץ המקורי כשהדפדפן אינו
+      // יודע לפענח את הפורמט. ראו lib/crm/photoUpload.js.
+      const url = await uploadPhoto(entry.file, (note) => patchPhoto(entry.id, { note }));
+      patchPhoto(entry.id, { status: "done", url, note: "", error: "" });
+    } catch (err) {
+      patchPhoto(entry.id, {
+        status: "error",
+        note: "",
+        error: err?.message || "ההעלאה נכשלה. אפשר לנסות שוב.",
+      });
     }
-    setPhotoBusy("");
+  };
+
+  const handlePhotos = async (fileList) => {
+    const picked = Array.from(fileList || []);
+    if (picked.length === 0) return;
+    const room = Math.max(0, MAX_PHOTOS - photoItemsRef.current.length);
+    const entries = picked.slice(0, room).map((file, i) => ({
+      id: `${Date.now().toString(36)}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+      file,
+      status: "uploading",
+      note: "מעלה...",
+      url: "",
+      error: "",
+    }));
+    if (entries.length === 0) return;
+    setPhotoItems((prev) => [...prev, ...entries]);
+    // אחת אחרי השנייה: ברשת סלולרית חלשה, ארבע העלאות במקביל נוטות
+    // להיכשל כולן יחד.
+    for (const entry of entries) await runUpload(entry);
   };
 
   const handleSubmit = async () => {
+    if (uploading) {
+      setSubmitError("רגע אחד — תמונה עדיין עולה. נשלח ברגע שהיא תסיים.");
+      return;
+    }
     if (missing.length > 0) {
       setSubmitError(`עוד רגע ואנחנו שם. חסר: ${missing.map((m) => m.label).join(" · ")}`);
       setStep(missing[0].step);
@@ -151,7 +193,11 @@ export default function RegisterPage() {
         // --- תשובות העומק, ממוזגות לפסקה אחת ---
         // המנגנון קבוע: תשובות העומק מתמזגות לפסקה אחת. מה שדינמי הוא
         // רק אילו שאלות נשאלו, ולכן מבנה הכרטיס אינו משתנה.
-        bio: [narrativeFromForm(form), customAnswersText(content, custom)].filter(Boolean).join("\n\n"),
+        // התיאור נבנה אך ורק מהשאלות שמוצגות כרגע. שאלה שכובתה בלוח
+        // הבקרה אינה נשאלת, ולכן גם אינה מופיעה כאן.
+        bio: [narrativeFromForm(form, activeBuiltinIds(content)), customAnswersText(content, custom)]
+          .filter(Boolean)
+          .join("\n\n"),
         customAnswers: custom,
 
         consentAccepted: true,
@@ -203,11 +249,10 @@ export default function RegisterPage() {
             set={set}
             custom={custom}
             setCustom={setCustom}
-            photos={photos}
-            setPhotos={setPhotos}
-            photoBusy={photoBusy}
-            photoError={photoError}
+            photoItems={photoItems}
+            setPhotoItems={setPhotoItems}
             onPhotos={handlePhotos}
+            onRetryPhoto={runUpload}
             agreeTerms={agreeTerms}
             setAgreeTerms={setAgreeTerms}
             agreePrivacy={agreePrivacy}
@@ -331,7 +376,7 @@ function ItemField({ item, form, set, custom, setCustom, content, ...rest }) {
   }
 
   return (
-    <Field label={item.label} hint={item.hint} required={item.required}>
+    <Field label={item.label} hint={item.hint} required={item.required} group={GROUP_WIDGETS.has(item.widget)}>
       <ItemInput item={item} value={value} onChange={onChange} form={form} set={set} texts={content.texts} />
     </Field>
   );
@@ -557,37 +602,81 @@ function Consent({ checked, onChange, href, children }) {
   );
 }
 
-function PhotoUploader({ item, photos, setPhotos, photoBusy, photoError, onPhotos }) {
+// גלריית התמונות.
+//
+// כל תמונה מציגה את מצבה בפני עצמה: עולה, עלתה, או נכשלה. תמונה
+// שנכשלה נשארת גלויה עם סיבת הכישלון וכפתור ניסיון חוזר, במקום
+// להיעלם בשקט ולהשאיר את הממלא/ת בטוח/ה שהכל נקלט.
+function PhotoUploader({ item, photoItems, setPhotoItems, onPhotos, onRetryPhoto }) {
+  const done = photoItems.filter((p) => p.status === "done").length;
+  const failed = photoItems.filter((p) => p.status === "error");
+  const busy = photoItems.filter((p) => p.status === "uploading");
+  const remove = (id) => setPhotoItems((prev) => prev.filter((p) => p.id !== id));
+
   return (
-    <Field label={item.label} required hint={item.hint}>
+    <Field label={item.label} required hint={item.hint} group>
       <div className="grid grid-cols-4 gap-2">
-        {photos.map((url, i) => (
-          <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-[#CFE3EC] bg-white">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={url} alt={`תמונה ${i + 1}`} className="h-full w-full object-cover" />
-            {i === 0 && (
-              <span className="absolute inset-x-0 bottom-0 bg-[#2E8BA8]/85 py-0.5 text-center text-[9px] font-bold text-white">
-                ראשית
-              </span>
+        {photoItems.map((p, i) => (
+          <div
+            key={p.id}
+            data-photo={p.status}
+            className={`relative aspect-square overflow-hidden rounded-xl border bg-white ${
+              p.status === "error" ? "border-[#E9B4AD] bg-[#FDECEA]" : "border-[#CFE3EC]"
+            }`}
+          >
+            {p.status === "done" && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.url} alt={`תמונה ${i + 1}`} className="h-full w-full object-cover" />
+                {i === 0 && (
+                  <span className="absolute inset-x-0 bottom-0 bg-[#2E8BA8]/85 py-0.5 text-center text-[9px] font-bold text-white">
+                    ראשית
+                  </span>
+                )}
+              </>
             )}
-            <button
-              type="button"
-              onClick={() => setPhotos(photos.filter((p) => p !== url))}
-              aria-label="הסרת התמונה"
-              className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-[#C4584C] shadow"
-            >
-              <X size={12} />
-            </button>
+
+            {p.status === "uploading" && (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[#2E8BA8]">
+                <Loader2 size={18} className="animate-spin" />
+                <span className="px-1 text-center text-[9px] font-semibold leading-tight">{p.note || "מעלה..."}</span>
+              </div>
+            )}
+
+            {p.status === "error" && (
+              <button
+                type="button"
+                onClick={() => onRetryPhoto(p)}
+                className="flex h-full w-full flex-col items-center justify-center gap-1 text-[#C4584C]"
+                aria-label="ניסיון חוזר להעלאת התמונה"
+              >
+                <RotateCcw size={18} />
+                <span className="text-[9px] font-bold">לנסות שוב</span>
+              </button>
+            )}
+
+            {p.status !== "uploading" && (
+              <button
+                type="button"
+                onClick={() => remove(p.id)}
+                aria-label="הסרת התמונה"
+                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-[#C4584C] shadow"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
         ))}
 
-        {photos.length < MAX_PHOTOS && (
+        {photoItems.length < MAX_PHOTOS && (
           <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[#CFE3EC] bg-white text-[#2E8BA8] transition hover:bg-[#F2F8FB]">
             <Camera size={20} />
             <span className="text-[10px] font-semibold">הוספה</span>
             <input
               type="file"
-              accept="image/*"
+              // HEIC מצוין במפורש: אייפון מסמן כך תמונות, ובחלק
+              // מהמכשירים accept="image/*" בלבד אינו מציע אותן כלל.
+              accept="image/*,.heic,.heif"
               multiple
               className="hidden"
               onChange={(e) => {
@@ -599,12 +688,34 @@ function PhotoUploader({ item, photos, setPhotos, photoBusy, photoError, onPhoto
         )}
       </div>
 
-      {photoBusy && (
+      {busy.length > 0 && (
         <p className="mt-2 flex items-center gap-1.5 text-[12px] text-[#1F6E88]">
-          <Loader2 size={13} className="animate-spin" /> {photoBusy}
+          <Loader2 size={13} className="animate-spin" />
+          {busy.length === 1 ? "מעלה תמונה..." : `מעלה ${busy.length} תמונות...`}
         </p>
       )}
-      {photoError && <p className="mt-2 text-[12px] text-[#C4584C]">{photoError}</p>}
+
+      {failed.length > 0 && (
+        <div className="mt-2 rounded-2xl bg-[#FDECEA] px-3 py-2.5 text-[12px] leading-relaxed text-[#C4584C]">
+          <p className="font-bold">
+            {failed.length === 1 ? "תמונה אחת לא עלתה" : `${failed.length} תמונות לא עלו`}
+          </p>
+          <p className="mt-0.5">{failed[0].error}</p>
+          <button
+            type="button"
+            onClick={() => failed.forEach(onRetryPhoto)}
+            className="mt-1.5 flex items-center gap-1 font-bold underline"
+          >
+            <RotateCcw size={12} /> לנסות שוב הכל
+          </button>
+        </div>
+      )}
+
+      {done > 0 && failed.length === 0 && busy.length === 0 && (
+        <p className="mt-2 flex items-center gap-1 text-[12px] font-semibold text-[#2E8BA8]">
+          <Check size={13} /> {done === 1 ? "תמונה אחת נשמרה" : `${done} תמונות נשמרו`}
+        </p>
+      )}
     </Field>
   );
 }

@@ -11,6 +11,7 @@
 
 import { BUILTIN_BY_ID, RESERVED_IDS, orderOf, CUSTOM_WIDGET } from "./formSchema";
 import { APP_NAME } from "../appConfig";
+import { cleanTag, DEFAULT_TAGS } from "./tags";
 
 // סוגי שאלה שאפשר להוסיף ידנית
 export const QUESTION_TYPES = [
@@ -70,6 +71,9 @@ export const DEFAULT_CONTENT = {
     costsTitle: "עלויות והצטרפות",
     costsLines: "ההצטרפות למאגר — ללא עלות ובלי התחייבות.\nדמי הצלחה — {{fee}} ₪, משולמים אך ורק אם וכאשר נישאים. הפירוט המלא בהסכם ההתקשרות.",
   },
+
+  // תוויות הסינון המהיר, ושיוכן לשאלות בשאלון. ראו lib/crm/tags.js.
+  tags: DEFAULT_TAGS,
 
   // שאלות שנוספו ידנית
   questions: [],
@@ -137,6 +141,7 @@ function cleanOverride(raw) {
   if (Number.isInteger(Number(raw.step))) o.step = Number(raw.step);
   if (typeof raw.required === "boolean") o.required = raw.required;
   if (typeof raw.enabled === "boolean") o.enabled = raw.enabled;
+  if (Array.isArray(raw.options)) o.options = raw.options.map((v) => String(v)).filter(Boolean);
   return Object.keys(o).length ? o : null;
 }
 
@@ -184,6 +189,7 @@ export function mergeContent(saved) {
         ? s.stepNotes.map((t) => String(t ?? ""))
         : d.stepNotes,
     texts: { ...d.texts, ...(isObj(s.texts) ? s.texts : {}) },
+    tags: Array.isArray(s.tags) ? s.tags.map(cleanTag).filter(Boolean) : d.tags,
     items,
     questions,
     order: Array.isArray(s.order) ? s.order.filter((id) => typeof id === "string") : [],

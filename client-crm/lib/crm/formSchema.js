@@ -163,6 +163,9 @@ export function resolveItems(content) {
       step: clampStep(o.step, base.step),
       enabled: locked ? true : o.enabled !== false,
       required: locked ? true : o.required === undefined ? base.required === true : o.required === true,
+      // רשימת הבחירה ניתנת לעריכה גם בשאלות המובנות, כדי שאפשר יהיה
+      // להוסיף אפשרות (למשל קהילה נוספת) ולשייך אליה תווית סינון.
+      options: Array.isArray(o.options) && o.options.length > 0 ? o.options : base.options,
     };
   });
 
@@ -307,4 +310,19 @@ export function orderWithInserted(content, id, step) {
   }
   order.splice(at, 0, id);
   return order;
+}
+
+// מזהי השאלות המובנות שמוצגות כרגע. משמש את מנוע ניסוח התיאור האישי,
+// כדי שהטקסט ייבנה אך ורק משאלות שנשאלו בפועל.
+export const activeBuiltinIds = (content) =>
+  new Set(resolveItems(content).filter((it) => it.kind === "builtin" && it.enabled).map((it) => it.id));
+
+// שאלות שהתשובה עליהן היא בחירה מרשימה סגורה. רק אליהן אפשר לשייך
+// תווית סינון, כי רק בהן יש קבוצת ערכים ידועה מראש לבחור מתוכה.
+export const CHOICE_WIDGETS = new Set(["chips", "select", "multiChips"]);
+
+export function choiceItems(content) {
+  return resolveItems(content)
+    .filter((it) => CHOICE_WIDGETS.has(it.widget))
+    .map((it) => ({ id: it.id, label: it.label, enabled: it.enabled, options: optionsOf(it) }));
 }

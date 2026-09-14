@@ -973,6 +973,11 @@ export const useCrmStore = create((set, get) => ({
       phone: item.phone || "",
       bio: item.bio || "",
       referenceContacts: item.referenceContacts || "",
+      maritalStatus: item.maritalStatus || "",
+      // התשובות לשאלות שהמנהלת הוסיפה עוברות לכרטיס, כדי שאפשר יהיה
+      // לשייך אליהן תווית סינון ולחפש לפיהן. בלי זה, תווית שמצביעה על
+      // שאלה שנוספה לא הייתה מוצאת אף כרטיס.
+      customAnswers: item.customAnswers && typeof item.customAnswers === "object" ? item.customAnswers : {},
       photoUrl: photoRef,
       photoUrls: photoList,
       // מצב משפחתי שאינו רווקות מסומן גם כתווית, כדי שיהיה אפשר לסנן לפיו

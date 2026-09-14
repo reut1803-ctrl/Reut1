@@ -1,10 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, OCCUPATION_OPTIONS, smokingOptionsFor, TRAITS, CANDIDATE_TAGS, normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, OCCUPATION_OPTIONS, smokingOptionsFor, TRAITS, normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
+import { visibleTags } from "@/lib/crm/tags";
+import { mergeContent } from "@/lib/crm/publicContent";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -18,6 +20,10 @@ function EditCandidateForm() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const role = useCrmStore((s) => s.role);
+  // התוויות כפי שהוגדרו בלוח הבקרה, כדי ששמות התוויות בכרטיס
+  // ובסינון המהיר יהיו תמיד אותם שמות.
+  const tagPublicContent = useCrmStore((s) => s.publicContent);
+  const tagOptions = useMemo(() => visibleTags(mergeContent(tagPublicContent)), [tagPublicContent]);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
@@ -404,7 +410,7 @@ function EditCandidateForm() {
         <Field label="תווית (רשות)">
           <select value={form.tag} onChange={(e) => set({ tag: e.target.value })} className="input-crm">
             <option value="">ללא תווית</option>
-            {CANDIDATE_TAGS.map((t) => (
+            {tagOptions.map((t) => (
               <option key={t.name} value={t.name}>
                 {t.name}
               </option>
