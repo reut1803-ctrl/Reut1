@@ -107,7 +107,7 @@ export const BUILTIN_ITEMS = [
     hint: "שמות וטלפונים של רבנים, מחנכים או מכרים שאפשר לפנות אליהם.", required: true,
   },
   {
-    id: "photos", step: 3, widget: "photos", label: "תמונות",
+    id: "photos", step: 3, widget: "photos", label: "תמונות (עד 4)",
     hint: "הראשונה תשמש כתמונה הראשית בכרטיס. התמונות מוצגות לצוות המאגר בלבד.", locked: true,
   },
   { id: "consents", step: 3, widget: "consents", label: "אישורים משפטיים", locked: true },

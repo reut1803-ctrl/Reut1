@@ -10,7 +10,7 @@
 // וחיצי סדר. חמש שאלות בלבד נעולות — שם, טלפון, תאריך לידה, תמונה
 // ואישורים — כי בלעדיהן אין כרטיס תקין ואין דרך ליצור קשר.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Settings2, Link2, CreditCard, FileText, ListChecks, Lock, Check, Loader2,
@@ -194,6 +194,25 @@ export default function FormSettingsPage() {
                 שלב {step + 1} · {title}
               </p>
 
+              {/* ההערה הכחולה שמופיעה בראש השלב בטופס. ריקון התיבה מוחק
+                  אותה מהטופס לגמרי. */}
+              <label className="mb-2 block px-1">
+                <span className="mb-1 block text-[11px] font-semibold text-[#5E7A87]">
+                  הערה בראש השלב (ריק = לא מוצגת)
+                </span>
+                <textarea
+                  rows={2}
+                  className={`${INPUT} bg-white text-[12.5px]`}
+                  placeholder="אפשר להשאיר ריק"
+                  value={draft.stepNotes[step]}
+                  onChange={(e) => {
+                    const next = [...draft.stepNotes];
+                    next[step] = e.target.value;
+                    set({ stepNotes: next });
+                  }}
+                />
+              </label>
+
               <div className="space-y-2">
                 {group.map((item) => (
                   <QuestionRow
@@ -228,7 +247,7 @@ export default function FormSettingsPage() {
 
       {/* ---------- טקסטים ---------- */}
       <Section icon={FileText} title="הטקסטים בטופס">
-        <Field label="כותרת הפתיחה">
+        <Field label="כותרת הפתיחה" hint="מוצגת בדיוק כפי שנכתבת. ריק = לא מוצגת כלל.">
           <input className={INPUT} value={draft.intro.title} onChange={(e) => setIn("intro", { title: e.target.value })} />
         </Field>
         <Field label="הודעת הפתיחה">
@@ -255,22 +274,64 @@ export default function FormSettingsPage() {
           </div>
         </Field>
 
-        <Field label="הערה בראש כל שלב" hint="ריק = לא מוצגת הערה באותו שלב.">
+        <Field
+          label="האישורים המשפטיים בסוף הטופס"
+          hint="הכיתוב שליד כל תיבת סימון. {{fee}} יוחלף אוטומטית בדמי ההצלחה."
+        >
           <div className="space-y-2">
-            {draft.stepNotes.map((t, i) => (
-              <textarea
-                key={i}
-                rows={2}
-                className={`${INPUT} text-[13px]`}
-                placeholder={`הערה בראש שלב ${i + 1} (לא חובה)`}
-                value={t}
-                onChange={(e) => {
-                  const next = [...draft.stepNotes];
-                  next[i] = e.target.value;
-                  set({ stepNotes: next });
-                }}
-              />
-            ))}
+            <textarea
+              rows={3}
+              className={`${INPUT} text-[13px]`}
+              value={draft.texts.consentTerms}
+              onChange={(e) => setIn("texts", { consentTerms: e.target.value })}
+            />
+            <textarea
+              rows={2}
+              className={`${INPUT} text-[13px]`}
+              value={draft.texts.consentPrivacy}
+              onChange={(e) => setIn("texts", { consentPrivacy: e.target.value })}
+            />
+          </div>
+        </Field>
+
+        <Field
+          label="קופסת העלויות בתחתית הטופס"
+          hint="כל שורה חדשה = סעיף נוסף. ריקון הכותרת והשורות מסתיר את הקופסה כולה."
+        >
+          <div className="space-y-2">
+            <input
+              className={INPUT}
+              placeholder="כותרת (ריק = מוסתרת)"
+              value={draft.texts.costsTitle}
+              onChange={(e) => setIn("texts", { costsTitle: e.target.value })}
+            />
+            <textarea
+              rows={4}
+              className={`${INPUT} text-[13px]`}
+              placeholder="שורה לכל סעיף"
+              value={draft.texts.costsLines}
+              onChange={(e) => setIn("texts", { costsLines: e.target.value })}
+            />
+          </div>
+        </Field>
+
+        <Field
+          label="כיתובים קטנים בתוך שאלות"
+          hint="ריקון של אחד מהם מסתיר את השדה הקטן שהוא מלווה."
+        >
+          <div className="space-y-2">
+            <input
+              className={INPUT}
+              placeholder="כיתוב שדה הגיל החלופי (בשאלת תאריך הלידה)"
+              value={draft.texts.ageFallbackLabel}
+              onChange={(e) => setIn("texts", { ageFallbackLabel: e.target.value })}
+            />
+            <input
+              className={INPUT}
+              placeholder="שאלת ההמשך של שאלת היסודות"
+              value={draft.texts.elementWhyLabel}
+              onChange={(e) => setIn("texts", { elementWhyLabel: e.target.value })}
+            />
           </div>
         </Field>
 
@@ -528,17 +589,7 @@ function QuestionRow({ item, raw, base, open, onToggleOpen, onPatch, onMove, onD
           )}
 
           {item.kind === "custom" && item.type === "chips" && (
-            <label className="block">
-              <span className="mb-1 block text-[11.5px] font-semibold text-[#5E7A87]">האפשרויות לבחירה</span>
-              <input
-                className={`${INPUT} text-[13px]`}
-                placeholder="למשל: כן, לא, לא משנה — מופרד בפסיקים"
-                value={(item.options || []).join(", ")}
-                onChange={(e) =>
-                  onPatch({ options: e.target.value.split(",").map((o) => o.trim()).filter(Boolean) })
-                }
-              />
-            </label>
+            <OptionsInput options={item.options} onPatch={onPatch} />
           )}
 
           <div className="flex items-center justify-between pt-0.5">
@@ -565,5 +616,50 @@ function QuestionRow({ item, raw, base, open, onToggleOpen, onPatch, onMove, onD
         </div>
       )}
     </div>
+  );
+}
+
+// שדה האפשרויות של שאלת בחירה.
+//
+// הבאג שהיה כאן: הטקסט נחתך לרשימה ומורכב מחדש בכל הקשה, ולכן פסיק
+// או רווח בסוף נעלמו ברגע שהוקלדו ולא היה אפשר לכתוב אפשרות שנייה.
+// עכשיו מה שמוקלד נשמר כפי שהוא בזמן ההקלדה, והפיצול לרשימה נעשה
+// ברקע. אפשר להקליד רווחים, פסיקים וסימני פיסוק בחופשיות מלאה.
+function OptionsInput({ options, onPatch }) {
+  const joined = (options || []).join(", ");
+  const [text, setText] = useState(joined);
+  const lastParsed = useRef(joined);
+
+  // ערך שהשתנה מבחוץ (טעינה מחדש, ביטול) מתעדכן כאן. שינוי שמקורו
+  // בהקלדה שלנו אינו דורס את מה שמוקלד ברגע זה.
+  useEffect(() => {
+    if (joined !== lastParsed.current) {
+      lastParsed.current = joined;
+      setText(joined);
+    }
+  }, [joined]);
+
+  const handle = (raw) => {
+    setText(raw);
+    const parsed = raw.split(",").map((o) => o.trim()).filter(Boolean);
+    lastParsed.current = parsed.join(", ");
+    onPatch({ options: parsed });
+  };
+
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11.5px] font-semibold text-[#5E7A87]">האפשרויות לבחירה</span>
+      <input
+        className={`${INPUT} text-[13px]`}
+        placeholder="למשל: כן, לא, לא משנה — מופרד בפסיקים"
+        value={text}
+        onChange={(e) => handle(e.target.value)}
+      />
+      <span className="mt-1 block text-[11px] text-[#5E7A87]">
+        {(options || []).length > 0
+          ? `${(options || []).length} אפשרויות: ${(options || []).join(" · ")}`
+          : "מפרידים בין האפשרויות בפסיק."}
+      </span>
+    </label>
   );
 }

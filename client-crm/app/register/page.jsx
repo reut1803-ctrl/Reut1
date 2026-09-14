@@ -332,12 +332,12 @@ function ItemField({ item, form, set, custom, setCustom, content, ...rest }) {
 
   return (
     <Field label={item.label} hint={item.hint} required={item.required}>
-      <ItemInput item={item} value={value} onChange={onChange} form={form} set={set} />
+      <ItemInput item={item} value={value} onChange={onChange} form={form} set={set} texts={content.texts} />
     </Field>
   );
 }
 
-function ItemInput({ item, value, onChange, form, set }) {
+function ItemInput({ item, value, onChange, form, set, texts }) {
   switch (item.widget) {
     case "genderChips":
       return (
@@ -350,15 +350,14 @@ function ItemInput({ item, value, onChange, form, set }) {
 
     case "birthDate": {
       const age = ageFromBirthDate(form.birthDate);
+      const ageLabel = texts.ageFallbackLabel;
       return (
         <>
           <TextInput type="date" value={form.birthDate} onChange={(e) => set({ birthDate: e.target.value })} />
-          <p className="mt-1 text-[11.5px] text-[#5E7A87]">
-            {age ? `הגיל שיחושב: ${age}` : "אם נוח יותר, אפשר להזין גיל בשדה שמתחת."}
-          </p>
-          {!form.birthDate && (
+          {age ? <p className="mt-1 text-[11.5px] text-[#5E7A87]">{`הגיל שיחושב: ${age}`}</p> : null}
+          {!form.birthDate && ageLabel && (
             <div className="mt-2">
-              <span className="mb-1 block text-[12.5px] font-semibold text-[#23414E]">או גיל</span>
+              <span className="mb-1 block text-[12.5px] font-semibold text-[#23414E]">{ageLabel}</span>
               <TextInput
                 type="number"
                 inputMode="numeric"
@@ -381,10 +380,10 @@ function ItemInput({ item, value, onChange, form, set }) {
               {ELEMENTS.find((e) => e.key === form.element)?.hint}
             </p>
           )}
-          {form.element && (
+          {form.element && texts.elementWhyLabel && (
             <div className="mt-2.5">
               <span className="mb-1 block text-[12.5px] font-semibold text-[#23414E]">
-                התכונה הבולטת שלי מתוך היסוד הזה
+                {texts.elementWhyLabel}
               </span>
               <TextInput
                 value={form.elementWhy}
@@ -474,16 +473,19 @@ function ItemInput({ item, value, onChange, form, set }) {
   }
 }
 
+// הכותרת, ההודעה וההערה מוצגות בדיוק כפי שנכתבו בלוח הבקרה. הקוד
+// אינו מוסיף להן מילה, ולכן אין כאן שם מיזם כפול שאי אפשר למחוק.
+// שלושתן ריקות - הקופסה כולה נעלמת.
 function Welcome({ content }) {
+  const { title, body, note } = content.intro;
+  if (!title && !body && !note) return null;
   return (
     <div className="mb-4 rounded-3xl border border-[#CFE3EC] bg-white p-5 shadow-[0_4px_18px_rgba(31,110,136,0.06)]">
-      <h1 className="text-[17px] font-bold text-[#1F6E88]">
-        {content.intro.title} ל{APP_NAME}
-      </h1>
-      <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[#23414E]">{content.intro.body}</p>
-      {content.intro.note && (
-        <p className="mt-2 rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#1F6E88]">
-          {content.intro.note}
+      {title && <h1 className="whitespace-pre-line text-[17px] font-bold text-[#1F6E88]">{title}</h1>}
+      {body && <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[#23414E]">{body}</p>}
+      {note && (
+        <p className="mt-2 whitespace-pre-line rounded-2xl bg-[#EAF5FA] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#1F6E88]">
+          {note}
         </p>
       )}
     </div>
@@ -513,18 +515,26 @@ function ExternalRedirect({ url }) {
 }
 
 function Consents({ item, content, agreeTerms, setAgreeTerms, agreePrivacy, setAgreePrivacy }) {
+  const terms = withFee(content.texts.consentTerms, content);
+  const privacy = withFee(content.texts.consentPrivacy, content);
   return (
     <div className="space-y-2.5 rounded-2xl border border-[#CFE3EC] bg-[#F2F8FB] p-3.5">
       {item.hint && <p className="text-[12px] leading-relaxed text-[#5E7A87]">{item.hint}</p>}
       <Consent checked={agreeTerms} onChange={setAgreeTerms} href="/terms/">
-        קראתי ואני מאשר/ת את <strong>נספח 1 — הסכם ההתקשרות</strong>, הכולל דמי הצלחה בסך{" "}
-        {Number(content.payment.successFee || 0).toLocaleString("he-IL")} ₪ במקרה של נישואין.
+        {terms}
       </Consent>
       <Consent checked={agreePrivacy} onChange={setAgreePrivacy} href="/privacy/">
-        קראתי ואני מאשר/ת את <strong>נספח 2 — מדיניות הפרטיות</strong>.
+        {privacy}
       </Consent>
     </div>
   );
+}
+
+// {{fee}} מוחלף בדמי ההצלחה שהוגדרו בלוח הבקרה, כדי שסכום לא יופיע
+// פעמיים בקוד וייווצר מצב שבו שני מקומות אומרים דברים שונים.
+function withFee(text, content) {
+  const fee = Number(content?.payment?.successFee || 0).toLocaleString("he-IL");
+  return String(text ?? "").split("{{fee}}").join(fee);
 }
 
 function Consent({ checked, onChange, href, children }) {
@@ -549,7 +559,7 @@ function Consent({ checked, onChange, href, children }) {
 
 function PhotoUploader({ item, photos, setPhotos, photoBusy, photoError, onPhotos }) {
   return (
-    <Field label={`${item.label} (עד ${MAX_PHOTOS})`} required hint={item.hint}>
+    <Field label={item.label} required hint={item.hint}>
       <div className="grid grid-cols-4 gap-2">
         {photos.map((url, i) => (
           <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-[#CFE3EC] bg-white">
@@ -637,23 +647,33 @@ function ThankYou({ intakeId, content }) {
   );
 }
 
+// קופסת העלויות. כל שורה נכתבת בלוח הבקרה, ושורה ריקה אינה מוצגת.
+// ריקון הכותרת והשורות מסתיר את הקופסה כולה.
 function Costs({ content }) {
+  const title = String(content.texts.costsTitle || "").trim();
+  const lines = String(content.texts.costsLines || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!title && lines.length === 0) return null;
   return (
     <div className="mt-5 rounded-3xl border border-[#CFE3EC] bg-white p-5">
-      <p className="text-[14px] font-bold text-[#1F6E88]">עלויות והצטרפות</p>
-      <ul className="mt-2 space-y-2 text-[13px] leading-relaxed text-[#23414E]">
-        <li>
-          <strong>ההצטרפות למאגר — ללא עלות</strong> ובלי התחייבות.
-        </li>
-        <li>
-          <strong>דמי הצלחה — {Number(content.payment.successFee || 0).toLocaleString("he-IL")} ₪</strong>, משולמים אך ורק אם
-          וכאשר נישאים. הפירוט המלא ב
-          <a href="/terms/" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2E8BA8] underline">
-            הסכם ההתקשרות
-          </a>
-          .
-        </li>
-      </ul>
+      {title && <p className="text-[14px] font-bold text-[#1F6E88]">{title}</p>}
+      {lines.length > 0 && (
+        <ul className="mt-2 space-y-2 text-[13px] leading-relaxed text-[#23414E]">
+          {lines.map((line, i) => (
+            <li key={i}>{withFee(line, content)}</li>
+          ))}
+        </ul>
+      )}
+      <a
+        href="/terms/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-3 inline-block text-[12.5px] font-semibold text-[#2E8BA8] underline"
+      >
+        לקריאת הסכם ההתקשרות
+      </a>
     </div>
   );
 }

@@ -10,6 +10,7 @@
 // מפת השאלות עצמה יושבת ב-lib/crm/formSchema.js.
 
 import { BUILTIN_BY_ID, RESERVED_IDS, orderOf, CUSTOM_WIDGET } from "./formSchema";
+import { APP_NAME } from "../appConfig";
 
 // סוגי שאלה שאפשר להוסיף ידנית
 export const QUESTION_TYPES = [
@@ -34,8 +35,11 @@ export const DEFAULT_CONTENT = {
   // במקום לטופס הפנימי. כשהוא ריק, הטופס הפנימי הוא שפעיל.
   externalFormUrl: "",
 
+  // הכותרת מוצגת בדיוק כפי שהיא נכתבת כאן. אין שום תוספת מהקוד,
+  // ולכן אי אפשר לקבל שם מיזם כפול שאי אפשר למחוק. שדה ריק פשוט
+  // אינו מוצג.
   intro: {
-    title: "שלום וברוכים הבאים",
+    title: `שלום וברוכים הבאים ל${APP_NAME}`,
     body: "מיזם להקמת בתים בישראל. אנחנו כאן כדי להכיר אתכם באמת — לא רק שורה בטבלה.",
     note: "ההצטרפות למאגר ללא עלות ואינה כוללת התחייבות.",
   },
@@ -53,6 +57,19 @@ export const DEFAULT_CONTENT = {
   // שינויים לשאלות המובנות: נוסח, הסבר, שלב, חובה, ודלוק/כבוי.
   // המפתח הוא מזהה השאלה. שאלה שאינה מופיעה כאן מוצגת כברירת המחדל.
   items: {},
+
+  // טקסטים קבועים שאינם שאלות. כולם ניתנים לעריכה ולמחיקה: טקסט ריק
+  // פשוט אינו מוצג, ולכן אין בטופס אף מילה שהמנהלת אינה שולטת עליה.
+  // {{fee}} מוחלף בדמי ההצלחה שהוגדרו למעלה, כדי שסכום לא יישאר
+  // כתוב פעמיים במקומות שונים ויסתור את עצמו.
+  texts: {
+    ageFallbackLabel: "או גיל",
+    elementWhyLabel: "התכונה הבולטת שלי מתוך היסוד הזה",
+    consentTerms: "קראתי ואני מאשר/ת את נספח 1 — הסכם ההתקשרות, הכולל דמי הצלחה בסך {{fee}} ₪ במקרה של נישואין.",
+    consentPrivacy: "קראתי ואני מאשר/ת את נספח 2 — מדיניות הפרטיות.",
+    costsTitle: "עלויות והצטרפות",
+    costsLines: "ההצטרפות למאגר — ללא עלות ובלי התחייבות.\nדמי הצלחה — {{fee}} ₪, משולמים אך ורק אם וכאשר נישאים. הפירוט המלא בהסכם ההתקשרות.",
+  },
 
   // שאלות שנוספו ידנית
   questions: [],
@@ -166,6 +183,7 @@ export function mergeContent(saved) {
       Array.isArray(s.stepNotes) && s.stepNotes.length === 4
         ? s.stepNotes.map((t) => String(t ?? ""))
         : d.stepNotes,
+    texts: { ...d.texts, ...(isObj(s.texts) ? s.texts : {}) },
     items,
     questions,
     order: Array.isArray(s.order) ? s.order.filter((id) => typeof id === "string") : [],
