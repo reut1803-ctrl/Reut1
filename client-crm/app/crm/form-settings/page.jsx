@@ -10,11 +10,12 @@
 // וחיצי סדר. חמש שאלות בלבד נעולות — שם, טלפון, תאריך לידה, תמונה
 // ואישורים — כי בלעדיהן אין כרטיס תקין ואין דרך ליצור קשר.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Settings2, Link2, CreditCard, FileText, ListChecks, Lock, Check, Loader2,
-  Trash2, ChevronUp, ChevronDown, Plus, ExternalLink, AlertTriangle, Pencil, EyeOff, Tag,
+  Trash2, ChevronUp, ChevronDown, Plus, ExternalLink, AlertTriangle, Pencil, EyeOff, Tag, Eye,
+  History, RotateCcw, Undo2,
 } from "lucide-react";
 import { useCrmStore } from "@/lib/crm/store";
 import { QUESTION_TYPES, newQuestion, mergeContent } from "@/lib/crm/publicContent";
@@ -25,6 +26,8 @@ import { describeScale } from "@/lib/crm/registerForm";
 import { resolveTags, newTag, TAG_COLORS } from "@/lib/crm/tags";
 import Button from "@/components/crm/ui/Button";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
+import FormPreviewSheet from "@/components/crm/settings/FormPreviewSheet";
+import { describeVersion, summarizeChange } from "@/lib/crm/contentHistory";
 
 const INPUT =
   "w-full rounded-2xl border border-[#CFE3EC] bg-white px-3.5 py-2.5 text-[14px] text-[#23414E] outline-none transition focus:border-[#2E8BA8] focus:ring-2 focus:ring-[#2E8BA8]/20";
@@ -80,6 +83,7 @@ export default function FormSettingsPage() {
   const saved = useCrmStore((s) => s.publicContent);
   const loaded = useCrmStore((s) => s.publicContentLoaded);
   const savePublicContent = useCrmStore((s) => s.savePublicContent);
+  const loadContentVersions = useCrmStore((s) => s.loadContentVersions);
   const showToast = useCrmStore((s) => s.showToast);
 
   const [draft, setDraft] = useState(null);
@@ -88,6 +92,11 @@ export default function FormSettingsPage() {
   const [error, setError] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [pendingTagDelete, setPendingTagDelete] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [versions, setVersions] = useState(null);
+  const [versionsError, setVersionsError] = useState("");
+  const [pendingRestore, setPendingRestore] = useState(null);
+  const [restoredFrom, setRestoredFrom] = useState("");
 
   // הטיוטה נטענת פעם אחת מהשמור, כדי שהקלדה לא תידרס בכל עדכון מהשרת
   useEffect(() => {
@@ -98,6 +107,21 @@ export default function FormSettingsPage() {
     () => draft !== null && JSON.stringify(draft) !== JSON.stringify(mergeContent(saved)),
     [draft, saved]
   );
+
+  // רשימת הגרסאות נטענת פעם אחת בכניסה למסך, ומתרעננת אחרי כל שמירה
+  const refreshVersions = useCallback(async () => {
+    try {
+      setVersions(await loadContentVersions());
+      setVersionsError("");
+    } catch {
+      setVersions([]);
+      setVersionsError("לא הצלחנו לטעון את רשימת הגרסאות כרגע.");
+    }
+  }, [loadContentVersions]);
+
+  useEffect(() => {
+    if (loaded) refreshVersions();
+  }, [loaded, refreshVersions]);
 
   const items = useMemo(() => (draft ? resolveItems(draft) : []), [draft]);
 
@@ -115,7 +139,9 @@ export default function FormSettingsPage() {
     try {
       // הסדר נשמר תמיד במלואו, ולכן הוא נשאר יציב גם אחרי הוספה או מחיקה
       await savePublicContent({ ...draft, order: items.map((it) => it.id) });
+      setRestoredFrom("");
       showToast("התוכן עודכן והוא כבר באוויר");
+      refreshVersions();
     } catch {
       setError("השמירה לא הצליחה. אפשר לנסות שוב בעוד רגע.");
     } finally {
@@ -192,6 +218,16 @@ export default function FormSettingsPage() {
       <p className="mt-1 text-[13px] leading-relaxed text-[#5E7A87]">
         כל שינוי כאן משתקף מיד בטופס הציבורי ובנספחים, בלי צורך בעדכון תוכנה.
       </p>
+
+      {restoredFrom && (
+        <p className="mt-3 flex items-start gap-1.5 rounded-2xl bg-[#FDF3E7] px-3.5 py-3 text-[12.5px] leading-relaxed text-[#8A6320]">
+          <History size={15} className="mt-0.5 shrink-0" />
+          <span>
+            נטענה הגרסה מ<strong>{restoredFrom}</strong>. אפשר לבדוק אותה בתצוגה המקדימה.
+            היא תיכנס לאוויר רק אחרי לחיצה על <strong>שמירה ופרסום</strong>.
+          </span>
+        </p>
+      )}
 
       {/* ---------- השאלות ---------- */}
       <Section
@@ -573,6 +609,65 @@ export default function FormSettingsPage() {
         )}
       </Section>
 
+      {/* ---------- גיבוי ושחזור ---------- */}
+      <Section
+        icon={History}
+        title="גיבוי ושחזור"
+        hint="לפני כל פרסום, הגרסה הקודמת נשמרת כאן אוטומטית. אפשר לחזור לכל אחת מהן — ושום שחזור אינו מפרסם דבר עד שלוחצים 'שמירה ופרסום'."
+      >
+        {dirty && (
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(mergeContent(saved));
+              setRestoredFrom("");
+              setOpenId("");
+            }}
+            className="flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#CFE3EC] bg-white py-3 text-[13px] font-bold text-[#23414E] transition active:scale-[0.99]"
+          >
+            <Undo2 size={15} /> ביטול השינויים שטרם פורסמו
+          </button>
+        )}
+
+        {versionsError && (
+          <p className="rounded-2xl bg-[#FDECEA] px-3 py-2.5 text-[12px] text-[#C4584C]">{versionsError}</p>
+        )}
+
+        {versions === null && !versionsError && (
+          <p className="py-2 text-center text-[12.5px] text-[#5E7A87]">טוען גרסאות...</p>
+        )}
+
+        {versions !== null && versions.length === 0 && !versionsError && (
+          <p className="rounded-2xl bg-[#F2F8FB] px-3 py-3 text-center text-[12.5px] leading-relaxed text-[#5E7A87]">
+            עדיין אין גרסאות שמורות. מהפרסום הבא והלאה, כל גרסה קודמת תישמר כאן אוטומטית.
+          </p>
+        )}
+
+        {(versions || []).map((v, i) => {
+          const change = summarizeChange(v.content, i === 0 ? mergeContent(saved) : versions[i - 1].content);
+          return (
+            <div key={v.id} className="rounded-2xl border border-[#CFE3EC] bg-white p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-bold text-[#23414E]">{describeVersion(v.savedAt)}</p>
+                  <p className="mt-0.5 text-[11.5px] leading-relaxed text-[#5E7A87]">
+                    {v.savedByName || v.savedBy || "לא ידוע"}
+                    {change ? ` · אחריה ${change}` : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPendingRestore(v)}
+                  className="flex shrink-0 items-center gap-1 rounded-xl border border-[#CFE3EC] px-2.5 py-1.5 text-[12px] font-bold text-[#2E8BA8] active:scale-95"
+                >
+                  <RotateCcw size={13} /> שחזור
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </Section>
+
       {/* ---------- נספחים ---------- */}
       <Section
         icon={FileText}
@@ -611,13 +706,41 @@ export default function FormSettingsPage() {
         <p className="mt-4 rounded-2xl bg-[#FDECEA] px-3.5 py-3 text-[13px] text-[#C4584C]">{error}</p>
       )}
 
-      {/* סרגל שמירה צף: תמיד בהישג יד, גם באמצע מסך ארוך */}
-      <div className="safe-bottom fixed inset-x-0 bottom-16 z-30 mx-auto max-w-md px-4">
-        <Button variant="primary" className="w-full shadow-lg" disabled={!dirty || saving} onClick={handleSave}>
+      {/* סרגל צף: תצוגה מקדימה ושמירה, תמיד בהישג יד */}
+      <div className="safe-bottom fixed inset-x-0 bottom-16 z-30 mx-auto flex max-w-md gap-2 px-4">
+        <button
+          type="button"
+          onClick={() => setPreviewOpen(true)}
+          className="flex shrink-0 items-center justify-center gap-1.5 rounded-2xl border-2 border-[#2E8BA8] bg-white px-4 py-3 text-[13.5px] font-bold text-[#1F6E88] shadow-lg transition active:scale-95"
+        >
+          <Eye size={16} /> תצוגה מקדימה
+        </button>
+        <Button variant="primary" className="flex-1 shadow-lg" disabled={!dirty || saving} onClick={handleSave}>
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
           {saving ? "שומרת..." : dirty ? "שמירה ופרסום" : "הכל שמור"}
         </Button>
       </div>
+
+      {/* הטיוטה עצמה מוצגת, ולא הגרסה השמורה - כדי לראות שינוי לפני פרסום */}
+      {previewOpen && (
+        <FormPreviewSheet content={draft} dirty={dirty} onClose={() => setPreviewOpen(false)} />
+      )}
+
+      {pendingRestore && (
+        <ConfirmDialog
+          message={`לטעון את הגרסה מ${describeVersion(pendingRestore.savedAt)}? השינויים שלא פורסמו יוחלפו בה. שום דבר לא יפורסם עד שתלחצי "שמירה ופרסום".`}
+          onConfirm={() => {
+            setDraft(mergeContent(pendingRestore.content));
+            setRestoredFrom(describeVersion(pendingRestore.savedAt));
+            setOpenId("");
+            setPendingRestore(null);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onCancel={() => setPendingRestore(null)}
+          confirmLabel="טעינת הגרסה"
+          tone="neutral"
+        />
+      )}
 
       {pendingTagDelete && (
         <ConfirmDialog

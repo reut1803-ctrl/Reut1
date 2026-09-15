@@ -11,6 +11,7 @@ import {
   setDoc,
   query,
   where,
+  getDocs,
 } from "firebase/firestore";
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { crmDb, crmAuth, googleProvider } from "./firebaseClient";
@@ -878,9 +879,37 @@ export const useCrmStore = create((set, get) => ({
   publicContent: mergeContent(null),
   publicContentLoaded: false,
   savePublicContent: async (patch) => {
-    const next = mergeContent({ ...get().publicContent, ...patch });
+    const previous = get().publicContent;
+    const next = mergeContent({ ...previous, ...patch });
     await setDoc(doc(crmDb, "publicContent", "form"), { ...next, updatedAt: new Date().toISOString() });
+
+    // הגרסה שנדרסה נשמרת בצד, כדי שתמיד אפשר יהיה לחזור אליה.
+    // כישלון כאן לא יבטל את השמירה עצמה: עדיף תוכן שנשמר בלי גיבוי
+    // על תוכן שלא נשמר בכלל.
+    try {
+      const { historyId, historyEntry } = await import("./contentHistory");
+      const me = get().currentUser();
+      await setDoc(doc(crmDb, "publicContent", historyId()), historyEntry(previous, me));
+      await get().pruneContentVersions();
+    } catch {
+      // מתעלמים בשקט - רשימת הגרסאות פשוט תהיה קצרה יותר
+    }
     return next;
+  },
+
+  // רשימת הגרסאות השמורות, מהחדשה לישנה
+  loadContentVersions: async () => {
+    const { sortVersions } = await import("./contentHistory");
+    const snap = await getDocs(collection(crmDb, "publicContent"));
+    return sortVersions(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  },
+
+  // מחיקת הגרסאות הישנות מעבר למכסה, כדי שהאוסף לא יגדל בלי סוף
+  pruneContentVersions: async () => {
+    const { versionsToPrune } = await import("./contentHistory");
+    const snap = await getDocs(collection(crmDb, "publicContent"));
+    const extra = versionsToPrune(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    await Promise.all(extra.map((id) => deleteDoc(doc(crmDb, "publicContent", id)).catch(() => {})));
   },
   candidateStatus: {},
   setCandidateAvailability: async (id, status) => {
