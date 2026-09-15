@@ -18,7 +18,7 @@ import { normalizeTagName } from "./mockData";
 export const DEFAULT_TAGS = [
   { id: "t-torani", name: "תורני", color: "#13455A", textColor: "#FFFFFF", questionId: "lifestyle", values: ["תורני", 'חרד"ל'] },
   { id: "t-datlash", name: 'דתל"שים ומסורתיים', color: "#1F6E88", textColor: "#FFFFFF", questionId: "lifestyle", values: ['דתל"ש', "מסורתי"] },
-  { id: "t-chabad", name: 'חב"ד', color: "#2E8BA8", textColor: "#FFFFFF", questionId: "lifestyle", values: [] },
+  { id: "t-chabad", name: 'חב"ד', color: "#2E8BA8", textColor: "#FFFFFF", questionId: "lifestyle", values: ['חב"ד'] },
   { id: "t-returnee", name: "חוזר/ת בתשובה", color: "#4E9CB8", textColor: "#FFFFFF", questionId: "lifestyle", values: ["בעל/ת תשובה"] },
   { id: "t-breslov", name: "ברסלב", color: "#74B9CE", textColor: "#23414E", questionId: "lifestyle", values: ["ברסלב"] },
   { id: "t-second", name: "פרק ב'", color: "#D6EEF6", textColor: "#23414E", questionId: "maritalStatus", values: ["גרוש/ה", "אלמן/ה"] },
@@ -39,6 +39,37 @@ export const TAG_COLORS = [
 
 const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
 const str = (v) => String(v ?? "").trim();
+
+// ===================================================================
+//  אותו מושג, ניסוחים שונים
+// ===================================================================
+// במאגר חיים זה לצד זה שני אוצרות מילים: הטופס החיצוני שומר ניסוח
+// אחיד לכולם ("תורני"), והרשימות הוותיקות ב-CRM מנוסחות לפי מגדר
+// ("תורנית"). בלי איחוד, אותה הגדרה בדיוק לא הייתה מתאימה לעצמה,
+// וכרטיס של בחורה לא היה מקבל את התווית שמגיעה לו.
+//
+// הראשון בכל שורה הוא הניסוח הקנוני. ההשוואה נעשית עליו בלבד, ולכן
+// אין צורך לגעת באף כרטיס קיים במסד הנתונים.
+const SAME_MEANING = [
+  ["תורני", "תורנית"],
+  ['חרד"ל', 'חרד"לית', "חרדל", "חרדלית"],
+  ["חסידי", "חסידית"],
+  ["חרדי", "חרדית"],
+  ["דתי", "דתייה", "דתיה"],
+  ["מסורתי", "מסורתית"],
+  ['דתל"ש', 'דתל"שית', "דתלש", "דתלשית"],
+  ["בעל/ת תשובה", "בעל תשובה", "בעלת תשובה", "חוזר/ת בתשובה", "חוזר בתשובה", "חוזרת בתשובה"],
+  ["ברסלב", "ברסלבי", "ברסלבית"],
+  ['חב"ד', "חבד", 'חב"דניק', "חבדניק", 'חב"דנית'],
+  ["רווק/ה", "רווק", "רווקה"],
+  ["גרוש/ה", "גרוש", "גרושה"],
+  ["אלמן/ה", "אלמן", "אלמנה"],
+];
+
+const CANON = new Map();
+SAME_MEANING.forEach((group) => group.forEach((word) => CANON.set(word, group[0])));
+
+export const canonicalValue = (value) => CANON.get(str(value)) || str(value);
 
 export const newTag = () => ({
   id: `tag-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
@@ -100,9 +131,9 @@ export function tagMatches(candidate, tag) {
   if (!tag) return false;
   if (normalizeTagName(candidate?.tag) === tag.name) return true;
   if (!tag.questionId || tag.values.length === 0) return false;
-  const values = candidateValuesFor(candidate, tag.questionId);
+  const values = candidateValuesFor(candidate, tag.questionId).map(canonicalValue);
   if (values.length === 0) return false;
-  return tag.values.some((wanted) => values.includes(wanted));
+  return tag.values.some((wanted) => values.includes(canonicalValue(wanted)));
 }
 
 // התוויות שמוצגות למשתמשים. תווית שעדיין אין לה שם קיימת בלוח הבקרה
