@@ -22,7 +22,7 @@ import {
   PhoneCall,
   EyeOff,
 } from "lucide-react";
-import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED } from "@/lib/crm/store";
+import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED, OWNER_EMAIL } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
@@ -51,6 +51,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const brainstormSummary = useCrmStore((s) => s.brainstormSummaryFor(candidate.id));
   const updateCandidate = useCrmStore((s) => s.updateCandidate);
   const setCandidateSpotlight = useCrmStore((s) => s.setCandidateSpotlight);
+  const deleteCandidate = useCrmStore((s) => s.deleteCandidate);
+  const googleUser = useCrmStore((s) => s.googleUser);
   const setCandidateAvailability = useCrmStore((s) => s.setCandidateAvailability);
   const showToast = useCrmStore((s) => s.showToast);
   const trackProfileView = useCrmStore((s) => s.trackProfileView);
@@ -252,6 +254,27 @@ export default function ProfileCard({ candidate, onReadMore }) {
     await navigator.clipboard.writeText(candidate.referenceContacts || "");
     setReferenceCopied(true);
     setTimeout(() => setReferenceCopied(false), 2000);
+  };
+
+  // מחיקת הכרטיס כולו. מוצג ופועל רק לבעלת המערכת, לפי כתובת
+  // המייל שאיתה היא מחוברת - לא לפי תפקיד בלבד.
+  const isOwner = String(googleUser?.email || "").trim().toLowerCase() === OWNER_EMAIL;
+  const [confirmingDeleteCard, setConfirmingDeleteCard] = useState(false);
+  const [deletingCard, setDeletingCard] = useState(false);
+
+  const handleDeleteCard = async () => {
+    if (deletingCard) return;
+    setDeletingCard(true);
+    try {
+      const ok = await deleteCandidate(candidate.id);
+      setConfirmingDeleteCard(false);
+      // המאזין החי מסיר את הכרטיס מהמסך לבד, ולכן אין צורך ברענון.
+      showToast(ok ? "הכרטיס נמחק לצמיתות" : "מחיקת כרטיס שמורה למנהלת בלבד");
+    } catch {
+      showToast("לא הצלחנו למחוק את הכרטיס");
+    } finally {
+      setDeletingCard(false);
+    }
   };
 
   const handleDeleteVoiceNote = (voiceNoteId) => {
@@ -741,6 +764,23 @@ export default function ProfileCard({ candidate, onReadMore }) {
                     </div>
                   </>
                 )}
+
+                {/* מחיקת הכרטיס. פעולה בלתי הפיכה, ולכן היא אחרונה באזור
+                    הפנימי, מופרדת בקו, וגלויה לבעלת המערכת בלבד. */}
+                {isOwner && (
+                  <div className="border-t border-[#EAE5E3] pt-3">
+                    <button
+                      onClick={() => setConfirmingDeleteCard(true)}
+                      disabled={deletingCard}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-[#C24545] transition active:scale-95 disabled:opacity-60 hover:bg-red-100"
+                    >
+                      <Trash2 size={15} /> {deletingCard ? "מוחקת..." : "מחיקת הכרטיס"}
+                    </button>
+                    <p className="mt-1.5 text-center text-[11px] text-[#8A8285]">
+                      מחיקה לצמיתות, ללא אפשרות שחזור
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -776,6 +816,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
           message="האם את בטוחה שברצונך למחוק הקלטה זו?"
           onConfirm={() => handleDeleteVoiceNote(pendingDeleteVoiceNoteId)}
           onCancel={() => setPendingDeleteVoiceNoteId(null)}
+        />
+      )}
+      {confirmingDeleteCard && (
+        <ConfirmDialog
+          message={`האם את בטוחה שברצונך למחוק לצמיתות את הכרטיס של ${candidate.name}? הפעולה אינה הפיכה. הצעות השידוך שלו יישמרו בארכיון לפי השם.`}
+          onConfirm={handleDeleteCard}
+          onCancel={() => setConfirmingDeleteCard(false)}
         />
       )}
       {pendingDeleteField && (

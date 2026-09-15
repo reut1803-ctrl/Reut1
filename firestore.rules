@@ -80,6 +80,10 @@ service cloud.firestore {
       allow create: if isStaff();
       allow update: if isStaff()
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availabilityStatus']);
+      // תוספת בלבד, למנהלת בלבד: לא צומצם כלום ממה שהצוות יכול לעשות.
+      // מחיקת כרטיס מועמד/ת מסירה גם את כרטיס הסטטוס הציבורי שלו,
+      // כדי שלא יישאר שם חשוף בקישור אישי של כרטיס שכבר אינו קיים.
+      allow delete: if isAdmin() || isOwner();
     }
 
     // מדיה (הקלטות/PDF) נשמרת בחלקים קטנים, כי רשתות מסוימות לא מעבירות בקשה אחת גדולה.

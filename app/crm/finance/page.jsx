@@ -77,7 +77,9 @@ export default function FinancePage() {
     setChargeCandidateId("");
   };
 
-  const candidateName = (id) => candidates.find((c) => c.id === id)?.name || id;
+  // חיוב של כרטיס שנמחק נשמר ברשומות הכספים, ולכן עדיף להציג
+  // הסבר בעברית מאשר מזהה טכני שלא אומר כלום.
+  const candidateName = (id) => candidates.find((c) => c.id === id)?.name || "כרטיס שנמחק מהמאגר";
   const staffName = (email) => staffList.find((s) => s.email === email)?.name || email;
 
   const filteredCharges = charges.filter((c) => {
