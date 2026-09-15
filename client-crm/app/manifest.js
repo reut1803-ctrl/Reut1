@@ -1,8 +1,8 @@
-import { APP_NAME, APP_SHORT_NAME, APP_SUBTITLE } from "../lib/appConfig";
+import { APP_FULL_TITLE, APP_SHORT_NAME, APP_SUBTITLE } from "../lib/appConfig";
 
 export default function manifest() {
   return {
-    name: `${APP_NAME} – ${APP_SUBTITLE}`,
+    name: APP_FULL_TITLE,
     short_name: APP_SHORT_NAME,
     description: APP_SUBTITLE,
     start_url: "/crm/",

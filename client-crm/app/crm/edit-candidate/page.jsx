@@ -48,20 +48,23 @@ function EditCandidateForm() {
     if (!id || loaded) return;
     const c = findCandidateById(id);
     if (!c) return;
+    // כל שדה מקבל ברירת מחדל. כרטיס שנוצר מהטופס החיצוני אינו מכיל את
+    // השדות הוותיקים, וטעינה שלהם כ-undefined הפילה את השמירה כולה.
+    const gender = c.gender === "male" ? "male" : "female";
     setForm({
-      gender: c.gender,
+      gender,
       name: c.name || "",
       age: String(c.age ?? ""),
       height: String(c.height ?? ""),
       eda: c.eda || "",
-      region: c.region,
+      region: c.region || REGIONS[0],
       city: c.city || "",
-      religiousLevel: c.religiousLevel,
-      education: c.education,
+      religiousLevel: c.religiousLevel || religiousLevelsFor(gender)[0],
+      education: c.education || EDUCATION_OPTIONS[0],
       yeshivaLevel: c.yeshivaLevel || YESHIVA_LEVELS[0],
       currentOccupation: c.currentOccupation || "",
       occupations: candidateOccupations(c),
-      smoking: c.smoking,
+      smoking: c.smoking || smokingOptionsFor(gender)[0],
       tag: normalizeTagName(c.tag) || "",
       phone: c.phone || "",
       bio: c.bio || "",
@@ -203,11 +206,11 @@ function EditCandidateForm() {
         region: form.region,
         city: form.city.trim(),
         religiousLevel: form.religiousLevel,
-        education: form.education,
+        education: form.education || "",
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
         currentOccupation: (form.currentOccupation || "").trim(),
         occupations: form.occupations || [],
-        smoking: form.smoking,
+        smoking: form.smoking || "",
         tag: form.tag || null,
         phone: form.phone.trim(),
         bio: form.bio.trim(),
@@ -358,7 +361,11 @@ function EditCandidateForm() {
 
         <Field label="רמת תורניות">
           <select value={form.religiousLevel} onChange={(e) => set({ religiousLevel: e.target.value })} className="input-crm">
-            {religiousLevelsFor(form.gender).map((r) => (
+            {/* הערך השמור מתווסף לרשימה כשאינו נמצא בה. הטופס החיצוני
+                שומר ניסוח אחיד ("תורני"), והרשימה כאן מנוסחת בלשון
+                נקבה ("תורנית"), ובלי זה הדפדפן היה מציג ערך אחר לגמרי
+                ולחיצה אחת הייתה משנה את הנתון בלי שאיש התכוון. */}
+            {levelOptions(form.gender, form.religiousLevel).map((r) => (
               <option key={r} value={r}>
                 {r}
               </option>
@@ -597,6 +604,13 @@ function Field({ label, children }) {
       {children}
     </div>
   );
+}
+
+// רשימת רמות התורניות להצגה, כולל הערך שכבר שמור בכרטיס גם אם אינו
+// מופיע ברשימה הקבועה. כך שום ערך קיים אינו נעלם מהמסך ואינו נדרס.
+function levelOptions(gender, current) {
+  const base = religiousLevelsFor(gender);
+  return current && !base.includes(current) ? [current, ...base] : base;
 }
 
 export default function EditCandidatePage() {

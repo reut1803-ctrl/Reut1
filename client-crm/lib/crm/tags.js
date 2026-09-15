@@ -111,3 +111,9 @@ export const visibleTags = (content) => resolveTags(content).filter((t) => t.nam
 
 // מציאת התווית לפי שם, לצורך סינון שנשמר לפי שם ולא לפי מזהה
 export const findTagByName = (tags, name) => tags.find((t) => t.name === name) || null;
+
+// כל התוויות שמתאימות לכרטיס: גם זו שסומנה בו ידנית, וגם אלה שנגזרות
+// מהתשובות בשאלון. זו הפונקציה שהכרטיס בממשק משתמש בה, כדי שתווית
+// תופיע מאליה בלי שאיש יסמן אותה.
+export const tagsForCandidate = (tags, candidate) =>
+  (Array.isArray(tags) ? tags : []).filter((t) => tagMatches(candidate, t));

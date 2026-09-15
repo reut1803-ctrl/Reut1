@@ -1,6 +1,6 @@
 import "./globals.css";
 import { Heebo } from "next/font/google";
-import { APP_NAME, APP_SUBTITLE, APP_DESCRIPTION, SITE_URL, OG_IMAGE_SRC } from "@/lib/appConfig";
+import { APP_NAME, APP_FULL_TITLE, APP_SUBTITLE, APP_DESCRIPTION, SITE_URL, OG_IMAGE_SRC } from "@/lib/appConfig";
 
 // הגופן נארז לתוך האתר בזמן הבנייה, ולא נמשך מגוגל בכל טעינה.
 const heebo = Heebo({
@@ -12,7 +12,7 @@ const heebo = Heebo({
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: APP_NAME,
+  title: APP_FULL_TITLE,
   description: APP_SUBTITLE,
   manifest: "/manifest.webmanifest",
   icons: {
@@ -24,14 +24,14 @@ export const metadata = {
     type: "website",
     locale: "he_IL",
     siteName: APP_NAME,
-    title: APP_NAME,
+    title: APP_FULL_TITLE,
     description: APP_SUBTITLE,
     url: SITE_URL,
-    images: [{ url: OG_IMAGE_SRC, width: 1200, height: 630, alt: APP_NAME }],
+    images: [{ url: OG_IMAGE_SRC, width: 1200, height: 630, alt: APP_FULL_TITLE }],
   },
   twitter: {
     card: "summary_large_image",
-    title: APP_NAME,
+    title: APP_FULL_TITLE,
     description: APP_SUBTITLE,
     images: [OG_IMAGE_SRC],
   },

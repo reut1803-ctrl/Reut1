@@ -87,6 +87,22 @@ export const allowlistEmail = (entry) => normalizeEmail(entry?.email || entry?.i
 // רשומה "פגומה" - המזהה שלה אינו זהה לכתובת נקייה, ולכן השרת לא יזהה את הכניסה
 export const isBrokenAllowlistEntry = (entry) => !!entry?.id && allowlistEmail(entry) !== entry.id;
 
+// Firestore דוחה ערך undefined ומפיל את כל הכתיבה. כרטיס שנוצר מהטופס
+// החיצוני אינו מכיל שדות ותיקים כמו education או smoking, ולכן מסך
+// העריכה שלח עליהם undefined והשמירה כולה נכשלה - ולא רק אותו שדה.
+//
+// כאן מושמטים מפתחות שערכם undefined. בעדכון, מפתח שהושמט פשוט משאיר
+// את הערך הקיים במסד הנתונים על כנו, ולכן שום נתון אינו נמחק ואינו
+// נפגע. מחיקה מכוונת נעשית תמיד עם "" או null, ואלה עוברים כרגיל.
+export function stripUndefined(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return data;
+  const out = {};
+  Object.keys(data).forEach((key) => {
+    if (data[key] !== undefined) out[key] = data[key];
+  });
+  return out;
+}
+
 export const useCrmStore = create((set, get) => ({
   // --- מאגר פעיל: בנים / בנות ---
   board: "female",
@@ -894,7 +910,7 @@ export const useCrmStore = create((set, get) => ({
       createdAt: new Date().toISOString(),
       ...candidate,
     };
-    const ref = await addDoc(collection(crmDb, "candidates"), data);
+    const ref = await addDoc(collection(crmDb, "candidates"), stripUndefined(data));
     await setDoc(doc(crmDb, "candidateStatus", ref.id), {
       name: data.name,
       availabilityStatus: data.availabilityStatus,
@@ -1067,7 +1083,7 @@ export const useCrmStore = create((set, get) => ({
   },
 
   updateCandidate: async (id, partial) => {
-    await updateDoc(doc(crmDb, "candidates", id), partial);
+    await updateDoc(doc(crmDb, "candidates", id), stripUndefined(partial));
     // שינוי שם מעדכן גם את מפתח החיפוש של הטופס החיצוני
     if (partial && typeof partial.name === "string") {
       await get().indexCandidateName(id, partial.name);

@@ -1,14 +1,24 @@
 "use client";
 
+import { useMemo } from "react";
 import { X, MapPin, Briefcase, Route, Sparkles, Globe } from "lucide-react";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import { candidateOccupations } from "@/lib/crm/mockData";
 import { humanizeBio } from "@/lib/crm/bioNarrative";
 import MediaImage from "@/components/crm/ui/MediaImage";
+import { useCrmStore } from "@/lib/crm/store";
+import { visibleTags, tagsForCandidate } from "@/lib/crm/tags";
+import { mergeContent } from "@/lib/crm/publicContent";
 
 export default function ProfileDetailModal({ candidate, onClose }) {
   useBackToClose(true, onClose);
+  const publicContent = useCrmStore((s) => s.publicContent);
+  // אותן תוויות שעל הכרטיס המקוצר, נגזרות מהתשובות בשאלון
+  const cardTags = useMemo(
+    () => tagsForCandidate(visibleTags(mergeContent(publicContent)), candidate),
+    [publicContent, candidate]
+  );
   const occupations = candidateOccupations(candidate);
   const photos = candidate.photoUrls?.length > 0 ? candidate.photoUrls : candidate.photoUrl ? [candidate.photoUrl] : [];
 
@@ -51,7 +61,20 @@ export default function ProfileDetailModal({ candidate, onClose }) {
 
         <div className="p-5">
           <h2 className="text-xl font-bold text-[#23414E]">{candidate.name}</h2>
-          <div className="mt-1 flex flex-wrap gap-1.5">
+          {cardTags.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {cardTags.map((t) => (
+                <span
+                  key={t.id}
+                  className="rounded-full px-2.5 py-1 text-[11px] font-bold"
+                  style={{ backgroundColor: t.color, color: t.textColor }}
+                >
+                  {t.name}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
             <span className="tag-chip-detail">{candidate.age}</span>
             <span className="tag-chip-detail">{candidate.height} ס״מ</span>
             {candidate.city && (

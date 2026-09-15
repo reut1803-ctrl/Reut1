@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Heart,
@@ -22,6 +22,8 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
+import { visibleTags, tagsForCandidate } from "@/lib/crm/tags";
+import { mergeContent } from "@/lib/crm/publicContent";
 import { trackBadge } from "@/lib/crm/personalTrack";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
@@ -32,7 +34,6 @@ import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
-import { CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
@@ -45,6 +46,7 @@ export const waDigits = (phone) =>
 
 export default function ProfileCard({ candidate, onReadMore }) {
   const role = useCrmStore((s) => s.role);
+  const publicContent = useCrmStore((s) => s.publicContent);
   const board = useCrmStore((s) => s.board);
   const isFavorite = useCrmStore((s) => s.isFavorite(candidate.id));
   const toggleFavorite = useCrmStore((s) => s.toggleFavorite);
@@ -93,7 +95,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const [recordStatus, setRecordStatus] = useState("");
 
   const availability = getAvailabilityColors(candidate.availabilityStatus);
-  const candidateTag = CANDIDATE_TAGS.find((t) => t.name === normalizeTagName(candidate.tag));
+  // התוויות שמופיעות על הכרטיס. נגזרות אוטומטית מהתשובות בשאלון לפי
+  // השיוך שהוגדר בלוח הבקרה, ובנוסף כוללות תווית שסומנה ידנית. הצוות
+  // אינו צריך לסמן דבר. מוצגות עד שתיים, כדי שפינת הכרטיס לא תתמלא.
+  const cardTags = useMemo(
+    () => tagsForCandidate(visibleTags(mergeContent(publicContent)), candidate).slice(0, 2),
+    [publicContent, candidate]
+  );
   const personalLink = typeof window !== "undefined" ? `${window.location.origin}/status?id=${candidate.id}` : "";
 
   const handleCopyLink = async () => {
@@ -319,14 +327,15 @@ export default function ProfileCard({ candidate, onReadMore }) {
               {badge.label}
             </span>
           )}
-          {candidateTag && (
+          {cardTags.map((t) => (
             <span
+              key={t.id}
               className="rounded-full px-2.5 py-1 text-[11px] font-bold shadow"
-              style={{ backgroundColor: candidateTag.color, color: candidateTag.textColor }}
+              style={{ backgroundColor: t.color, color: t.textColor }}
             >
-              {candidateTag.name}
+              {t.name}
             </span>
-          )}
+          ))}
         </div>
 
         <button
