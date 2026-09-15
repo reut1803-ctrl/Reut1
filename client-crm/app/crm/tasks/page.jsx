@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Check, Megaphone, Phone, ChevronLeft } from "lucide-react";
-import { useCrmStore, allowlistEmail } from "@/lib/crm/store";
+import { useCrmStore } from "@/lib/crm/store";
+import { assigneeOptions as buildAssigneeOptions } from "@/lib/crm/staffDirectory";
 import Button from "@/components/crm/ui/Button";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 
@@ -17,7 +18,9 @@ export default function TasksPage() {
   const markTasksSeenByStaff = useCrmStore((s) => s.markTasksSeenByStaff);
   const allCandidates = useCrmStore((s) => s.allCandidates);
   const candidates_ = useCrmStore((s) => s.candidates);
-  const staffList = useCrmStore((s) => s.staffList());
+  // רשימת ההרשאות המלאה. השיוך נגזר ממנה ישירות, ולא מרשימת הצוות
+  // המסוננת, כדי שמי שיש לו/לה גישה יהיה תמיד זמין/ה לשיוך.
+  const authAllowlist = useCrmStore((s) => s.authAllowlist);
   const currentUser = useCrmStore((s) => s.currentUser);
   const showToast = useCrmStore((s) => s.showToast);
   const candidates = useMemo(
@@ -35,19 +38,14 @@ export default function TasksPage() {
     if (role === "staff") markTasksSeenByStaff(currentStaffEmail);
   }, [role, currentStaffEmail, markTasksSeenByStaff]);
 
-  // אפשרויות השיוך: קודם כל שיוך עצמי למנהלת, ואחריו שאר הצוות.
-  // המנהלת אינה בהכרח מופיעה ברשימת ההרשאות (היא מזוהה מתוך הקוד), ובלי
-  // השורה הזו לא היה לה שום דרך לשייך משימה לעצמה.
-  const myEmail = String(currentUser().email || "").trim().toLowerCase();
-  const assigneeOptions = useMemo(() => {
-    const fromStaff = staffList
-      .map((s) => ({ value: allowlistEmail(s), label: s.name || allowlistEmail(s) }))
-      .filter((o) => o.value);
-    const mine = fromStaff.find((o) => o.value === myEmail);
-    const rest = fromStaff.filter((o) => o.value !== myEmail);
-    if (!myEmail) return rest;
-    return [{ value: myEmail, label: `לעצמי · ${mine?.label || currentUser().name || myEmail}` }, ...rest];
-  }, [staffList, myEmail, currentUser]);
+  // אפשרויות השיוך: שיוך עצמי בראש, ואחריו כל מי שיש לו/לה גישה
+  // למערכת - צוות ומנהלות כאחד. ההרכבה עצמה יושבת במודול טהור
+  // (lib/crm/staffDirectory.js) כדי שאפשר יהיה לבדוק אותה בנפרד.
+  const me = currentUser();
+  const assigneeOptions = useMemo(
+    () => buildAssigneeOptions(authAllowlist, { email: me.email, name: me.name }),
+    [authAllowlist, me.email, me.name]
+  );
 
   // ברירת המחדל היא שיוך עצמי, ואם אין - הנציגה הראשונה ברשימה
   useEffect(() => {

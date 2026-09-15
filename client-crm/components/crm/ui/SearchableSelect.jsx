@@ -33,8 +33,16 @@ export default function SearchableSelect({
     };
   }, [open]);
 
-  const term = query.trim();
-  const matching = term ? options.filter((o) => o.label.includes(term)) : options;
+  // החיפוש עובר גם על הערך עצמו ולא רק על הכיתוב, כדי שאפשר יהיה
+  // למצוא אשת צוות לפי כתובת המייל שלה ולא רק לפי השם שנרשם לה.
+  const term = query.trim().toLowerCase();
+  const matching = term
+    ? options.filter(
+        (o) =>
+          String(o.label || "").toLowerCase().includes(term) ||
+          String(o.value || "").toLowerCase().includes(term)
+      )
+    : options;
   const ordered = [...matching.filter((o) => o.pinned), ...matching.filter((o) => !o.pinned)];
 
   const openList = () => {
