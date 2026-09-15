@@ -21,6 +21,7 @@ import { QUESTION_TYPES, newQuestion, mergeContent } from "@/lib/crm/publicConte
 import {
   resolveItems, movedOrder, orderWithInserted, BUILTIN_BY_ID, CHOICE_WIDGETS, choiceItems, optionsOf,
 } from "@/lib/crm/formSchema";
+import { describeScale } from "@/lib/crm/registerForm";
 import { resolveTags, newTag, TAG_COLORS } from "@/lib/crm/tags";
 import Button from "@/components/crm/ui/Button";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
@@ -651,6 +652,7 @@ export default function FormSettingsPage() {
 function QuestionRow({ item, raw, base, open, onToggleOpen, onPatch, onMove, onDelete, stepTitles }) {
   const off = !item.enabled;
   const isChoice = CHOICE_WIDGETS.has(item.widget);
+  const isScale = item.widget === "scale";
   return (
     <div
       className={`rounded-2xl border bg-white transition ${
@@ -753,6 +755,10 @@ function QuestionRow({ item, raw, base, open, onToggleOpen, onPatch, onMove, onD
             </label>
           )}
 
+          {isScale && (
+            <ScaleEditor low={item.low} high={item.high} label={item.label} onPatch={onPatch} />
+          )}
+
           {isChoice && (
             // optionsOf ולא item.options: בשאלה מובנית שלא נערכה, השדה
             // מחזיק את שם הרשימה ולא את הרשימה עצמה. העברה ישירה שלו
@@ -830,5 +836,63 @@ function OptionsInput({ options, onPatch, builtin = false }) {
         {list.length > 0 ? `${list.length} אפשרויות: ${list.join(" · ")}` : "מפרידים בין האפשרויות בפסיק."}
       </span>
     </label>
+  );
+}
+
+// ===================================================================
+//  עורך סולם דירוג
+// ===================================================================
+// שני הקטבים, ומיד מתחתיהם תצוגה מקדימה של חמשת הניסוחים שייכתבו
+// בכרטיס. זו הנקודה שבה הסולם מפסיק להיות "1 עד 10" ומתחיל לדבר:
+// מה שנכתב כאן הוא מה שיופיע למועמד/ת מעל הפס, ומה שייכנס לתיאור
+// האישי במילים - בלי שום נגיעה בקוד.
+function ScaleEditor({ low, high, label, onPatch }) {
+  const ready = Boolean(String(low || "").trim() && String(high || "").trim());
+  const scale = { label, low, high };
+
+  return (
+    <div className="rounded-xl bg-[#F7FBFD] p-2.5">
+      <span className="mb-1.5 block text-[11.5px] font-semibold text-[#5E7A87]">
+        שני צדי הסולם
+      </span>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block">
+          <span className="mb-1 block text-[10.5px] text-[#5E7A87]">הצד הימני (הכי נמוך)</span>
+          <input
+            className={`${INPUT} text-[13px]`}
+            placeholder="למשל: מעשי"
+            value={low || ""}
+            onChange={(e) => onPatch({ low: e.target.value })}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-[10.5px] text-[#5E7A87]">הצד השמאלי (הכי גבוה)</span>
+          <input
+            className={`${INPUT} text-[13px]`}
+            placeholder="למשל: עיוני"
+            value={high || ""}
+            onChange={(e) => onPatch({ high: e.target.value })}
+          />
+        </label>
+      </div>
+
+      {ready ? (
+        <div className="mt-2 rounded-xl bg-white p-2.5">
+          <span className="mb-1 block text-[10.5px] font-semibold text-[#5E7A87]">
+            ככה זה ייכתב בכרטיס, לפי מה שייבחר:
+          </span>
+          <ul className="space-y-0.5 text-[11.5px] leading-relaxed text-[#23414E]">
+            {[1, 3, 5, 8, 10].map((n) => (
+              <li key={n}>· {describeScale(scale, n)}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="mt-2 text-[11px] leading-relaxed text-[#5E7A87]">
+          כל עוד שני הצדדים ריקים, הסולם יציג מספר בלבד. ברגע שתמלאי אותם הוא יתחיל
+          לדבר במילים — בדיוק כמו שאר שאלות האופי.
+        </p>
+      )}
+    </div>
   );
 }

@@ -142,14 +142,20 @@ export function ChipGroup({ options, value, onChange, multi = false }) {
 // הראשון מוצג מימין, ולכן הקוטב הנמוך חייב להיכתב ראשון. קודם הוא
 // נכתב הפוך, וכך מי שגרר לקצה שכתוב בו "שכלי/ת" קיבל בתיאור "רגשי/ת
 // מאוד" - בדיוק ההפך ממה שהתכוון.
-export function ScaleSlider({ scale, value, onChange, description }) {
+// סולם בלי קטבים מוגדרים (למשל כזה שנוצר לפני שהיה אפשר להגדיר אותם)
+// מציג את שמו במרכז ואת המספר בלבד, במקום שני צדדים ריקים.
+export function ScaleSlider({ scale, value, onChange, description, hint, required }) {
+  const hasPoles = Boolean(scale.low && scale.high);
   return (
     <div className="rounded-2xl border border-[#CFE3EC] bg-white p-3.5">
-      <div className="mb-2 flex items-center justify-between text-[12px] font-semibold text-[#5E7A87]">
-        <span>{scale.low}</span>
-        <span className="text-[13px] font-bold text-[#1F6E88]">{scale.label}</span>
-        <span>{scale.high}</span>
+      <div className="mb-2 flex items-center justify-between gap-2 text-[12px] font-semibold text-[#5E7A87]">
+        {hasPoles && <span className="shrink-0">{scale.low}</span>}
+        <span className="flex-1 text-center text-[13px] font-bold text-[#1F6E88]">
+          {scale.label} {required && <span className="text-[#C4584C]">*</span>}
+        </span>
+        {hasPoles && <span className="shrink-0">{scale.high}</span>}
       </div>
+      {hint && <p className="mb-2 text-center text-[11.5px] leading-relaxed text-[#5E7A87]">{hint}</p>}
       <input
         type="range"
         min={1}

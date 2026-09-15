@@ -25,7 +25,7 @@ const uid = () => `q-${Date.now().toString(36)}-${Math.random().toString(36).sli
 
 export function newQuestion(step = 2) {
   // סדר המפתחות זהה לזה שמחזיר cleanQuestion, כדי שהשוואת "יש שינוי\n  // שלא נשמר" תשווה תפוחים לתפוחים ולא תדליק את עצמה לשווא.
-  return { id: uid(), type: "textarea", label: "", hint: "", options: [], step, required: false, enabled: true };
+  return { id: uid(), type: "textarea", label: "", hint: "", options: [], low: "", high: "", step, required: false, enabled: true };
 }
 
 // ===================================================================
@@ -142,6 +142,9 @@ function cleanOverride(raw) {
   if (typeof raw.required === "boolean") o.required = raw.required;
   if (typeof raw.enabled === "boolean") o.enabled = raw.enabled;
   if (Array.isArray(raw.options)) o.options = raw.options.map((v) => String(v)).filter(Boolean);
+  // קטבי הסולם: הצד שמופיע בערך 1 והצד שמופיע בערך 10
+  if (typeof raw.low === "string") o.low = raw.low;
+  if (typeof raw.high === "string") o.high = raw.high;
   return Object.keys(o).length ? o : null;
 }
 
@@ -154,6 +157,8 @@ function cleanQuestion(raw) {
     label: str(raw.label),
     hint: str(raw.hint),
     options: Array.isArray(raw.options) ? raw.options.map((o) => String(o)).filter(Boolean) : [],
+    low: str(raw.low),
+    high: str(raw.high),
     step: Number.isInteger(Number(raw.step)) ? Number(raw.step) : 2,
     required: raw.required === true,
     enabled: raw.enabled !== false,

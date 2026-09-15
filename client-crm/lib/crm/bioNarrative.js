@@ -67,13 +67,35 @@ const bucketOf = (value) => {
   return 4;
 };
 
-export function characterSentence(form, gender, isOn = () => true) {
-  const parts = ["introExtro", "heartMind", "planFlow"]
-    .filter(isOn)
-    .map((id) => {
-      const b = bucketOf(form[id]);
-      return b === null ? null : SCALE_PHRASES[id][b];
-    })
+// ניסוח מדד אחד. לשלושת המדדים שבקוד יש נוסח כתוב ביד, שנקרא טוב
+// יותר מכל ניסוח אוטומטי - אבל הוא בתוקף רק כל עוד הקטבים לא שונו.
+// ברגע שהמנהלת מנסחת את הקטבים מחדש, או מוסיפה מדד משלה, הניסוח
+// נגזר מהקטבים שלה עצמם. כך מה שכתוב בכרטיס תמיד תואם למה שנשאל.
+export function scalePhrase(scale, value) {
+  const b = bucketOf(value);
+  if (b === null) return "";
+  const written = SCALE_PHRASES[scale?.id];
+  const base = DEFAULT_POLES[scale?.id];
+  if (written && base && scale.low === base.low && scale.high === base.high) return written[b];
+
+  const low = clean(scale?.low);
+  const high = clean(scale?.high);
+  if (!low || !high) return "";
+  return [`${low} מאוד`, `נוטה ל${low}`, `משלב בין ${low} ל${high}`, `נוטה ל${high}`, `${high} מאוד`][b];
+}
+
+// הקטבים המקוריים של שלושת המדדים שבקוד, לצורך ההשוואה שלמעלה בלבד
+const DEFAULT_POLES = {
+  introExtro: { low: "מופנם/ת", high: "מוחצן/ת" },
+  heartMind: { low: "רגשי/ת", high: "שכלי/ת" },
+  planFlow: { low: "מחושב/ת", high: "זורם/ת" },
+};
+
+// משפט האופי, מכל הסולמות שהוצגו בפועל - אלה שבקוד ואלה שנוספו.
+// scales הוא מערך של {id, label, low, high, value}.
+export function characterSentence(scales = [], gender) {
+  const parts = (Array.isArray(scales) ? scales : [])
+    .map((sc) => scalePhrase(sc, sc?.value))
     .filter(Boolean);
   if (parts.length === 0) return "";
   const joined = parts.length > 1 ? `${parts.slice(0, -1).join(", ")}, ו${parts[parts.length - 1]}` : parts[0];
@@ -102,9 +124,17 @@ export function elementSentence(element, why) {
 // activeIds: מזהי השאלות שמוצגות כרגע בטופס. שאלה שכובתה בלוח הבקרה
 // אינה נשאלת, ולכן גם אסור לה להופיע בתיאור האישי - אחרת נוצר טקסט
 // שמתאר תשובה שאיש לא נתן. כשלא מועבר דבר, הכל נכלל (התנהגות קודמת).
-export function narrativeFromForm(form = {}, activeIds = null) {
+export function narrativeFromForm(form = {}, activeIds = null, scales = null) {
   const gender = form.gender === "female" ? "female" : "male";
   const on = activeIds instanceof Set ? (id) => activeIds.has(id) : () => true;
+  // בלי רשימת סולמות מפורשת נופלים לשלושת המדדים שבקוד, כדי שקריאה
+  // ישנה לפונקציה תמשיך להתנהג בדיוק כפי שהתנהגה.
+  const scaleList =
+    Array.isArray(scales)
+      ? scales
+      : ["introExtro", "heartMind", "planFlow"]
+          .filter(on)
+          .map((id) => ({ id, ...DEFAULT_POLES[id], value: form[id] }));
   const val = (id) => (on(id) ? form[id] : "");
   const paragraphs = [];
   const push = (text) => {
@@ -116,7 +146,7 @@ export function narrativeFromForm(form = {}, activeIds = null) {
 
   push(
     [
-      characterSentence(form, gender, on),
+      characterSentence(scaleList, gender),
       on("element") ? elementSentence(form.element, form.elementWhy) : "",
     ]
       .filter(Boolean)

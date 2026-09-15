@@ -22,7 +22,7 @@ import { uploadPhoto } from "@/lib/crm/photoUpload";
 import { APP_NAME, APP_SUBTITLE, LOGO_SRC } from "@/lib/appConfig";
 import { ELEMENTS, describeScale, ageFromBirthDate } from "@/lib/crm/registerForm";
 import {
-  visibleItems, optionsOf, scaleOf, missingItems, customAnswersText, activeBuiltinIds,
+  visibleItems, optionsOf, missingItems, customAnswersText, activeBuiltinIds, scaleAnswers,
 } from "@/lib/crm/formSchema";
 import {
   StepIndicator, Field, TextInput, TextArea, Select, ChipGroup, ScaleSlider,
@@ -38,7 +38,7 @@ const MAX_PHOTOS = 4;
 // כדי שלא ייווצר label בתוך label ושקורא מסך לא יקריא את שם השדה לפני
 // כל כפתור. ראו ההערה ב-Field.
 const GROUP_WIDGETS = new Set([
-  "photos", "consents", "genderChips", "chips", "multiChips", "element", "birthDate", "simpleScale",
+  "photos", "consents", "genderChips", "chips", "multiChips", "element", "birthDate",
 ]);
 const LAST_STEP = 3;
 
@@ -195,7 +195,11 @@ export default function RegisterPage() {
         // רק אילו שאלות נשאלו, ולכן מבנה הכרטיס אינו משתנה.
         // התיאור נבנה אך ורק מהשאלות שמוצגות כרגע. שאלה שכובתה בלוח
         // הבקרה אינה נשאלת, ולכן גם אינה מופיעה כאן.
-        bio: [narrativeFromForm(form, activeBuiltinIds(content)), customAnswersText(content, custom)]
+        bio: [
+          // כל הסולמות - מובנים ומוספים - נכנסים לאותו משפט אופי
+          narrativeFromForm(form, activeBuiltinIds(content), scaleAnswers(content, form, custom)),
+          customAnswersText(content, custom),
+        ]
           .filter(Boolean)
           .join("\n\n"),
         customAnswers: custom,
@@ -361,16 +365,20 @@ function ItemField({ item, form, set, custom, setCustom, content, ...rest }) {
   if (item.widget === "consents") {
     return <Consents item={item} content={content} {...rest} />;
   }
+  // סולם - מובנה או כזה שהמנהלת הוסיפה. שניהם מצוירים מאותו רכיב
+  // ומתורגמים למילים מאותה פונקציה, ולכן סולם חדש מתנהג מיד כמו
+  // הוותיקים בלי נגיעה בקוד.
   if (item.widget === "scale") {
-    const base = scaleOf(item.id);
-    if (!base) return null;
-    const scale = { ...base, label: item.label };
+    const scale = { label: item.label, low: item.low, high: item.high };
+    const current = Number(value) || 5;
     return (
       <ScaleSlider
         scale={scale}
-        value={form[item.id]}
-        onChange={(v) => set({ [item.id]: v })}
-        description={describeScale(scale, form[item.id])}
+        hint={item.hint}
+        required={item.required}
+        value={current}
+        onChange={(v) => onChange(Number(v))}
+        description={scale.low && scale.high ? describeScale(scale, current) : `${current} מתוך 10`}
       />
     );
   }
@@ -491,25 +499,6 @@ function ItemInput({ item, value, onChange, form, set, texts }) {
           placeholder={item.placeholder}
         />
       );
-
-    case "simpleScale": {
-      const n = Number(value) || 5;
-      return (
-        <div className="rounded-2xl border border-[#CFE3EC] bg-white p-3.5">
-          <input
-            type="range"
-            min={1}
-            max={10}
-            step={1}
-            value={n}
-            onChange={(e) => onChange(Number(e.target.value))}
-            aria-label={item.label}
-            className="w-full accent-[#2E8BA8]"
-          />
-          <p className="mt-1 text-center text-[12px] font-semibold text-[#1F6E88]">{n} מתוך 10</p>
-        </div>
-      );
-    }
 
     default:
       return (

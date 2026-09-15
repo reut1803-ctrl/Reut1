@@ -79,9 +79,11 @@ export const BUILTIN_ITEMS = [
   },
 
   // ---------- שלב 3 ----------
-  { id: "introExtro", step: 2, widget: "scale", label: "מופנמות מול מוחצנות" },
-  { id: "heartMind", step: 2, widget: "scale", label: "רגש מול שכל" },
-  { id: "planFlow", step: 2, widget: "scale", label: "מחושב מול זורם" },
+  // הקטבים נשאבים מ-CHARACTER_SCALES כדי שלא יהיו כתובים פעמיים.
+  // מכאן והלאה הם שדה ככל שדה אחר, וניתנים לעריכה בלוח הבקרה.
+  ...CHARACTER_SCALES.map((sc) => ({
+    id: sc.id, step: 2, widget: "scale", label: sc.label, low: sc.low, high: sc.high,
+  })),
   // שאלת היסודות (אש/רוח/מים/עפר). כיבוי כאן מסתיר גם את שאלת ההמשך
   // "התכונה הבולטת שלי", כי בלי היסוד היא חסרת משמעות.
   { id: "element", step: 2, widget: "element", label: "היסוד המרכזי שלי" },
@@ -138,7 +140,7 @@ export const CUSTOM_WIDGET = {
   text: "text",
   textarea: "textarea",
   chips: "chips",
-  scale: "simpleScale",
+  scale: "scale",
 };
 
 // ===================================================================
@@ -166,6 +168,10 @@ export function resolveItems(content) {
       // רשימת הבחירה ניתנת לעריכה גם בשאלות המובנות, כדי שאפשר יהיה
       // להוסיף אפשרות (למשל קהילה נוספת) ולשייך אליה תווית סינון.
       options: Array.isArray(o.options) && o.options.length > 0 ? o.options : base.options,
+      // קטבי הסולם. ריק חוזר לברירת המחדל, ולכן אי אפשר להישאר עם סולם
+      // בלי צדדים בגלל מחיקה בטעות.
+      low: typeof o.low === "string" && o.low.trim() ? o.low.trim() : base.low || "",
+      high: typeof o.high === "string" && o.high.trim() ? o.high.trim() : base.high || "",
     };
   });
 
@@ -182,6 +188,8 @@ export function resolveItems(content) {
     required: q.required === true,
     locked: false,
     rows: 4,
+    low: typeof q.low === "string" ? q.low.trim() : "",
+    high: typeof q.high === "string" ? q.high.trim() : "",
   }));
 
   const all = [...builtins, ...extras];
@@ -268,7 +276,9 @@ export function customAnswersText(content, custom = {}) {
       const raw = custom[q.id];
       const value = Array.isArray(raw) ? raw.join(", ") : String(raw ?? "").trim();
       if (!value) return "";
-      if (q.type === "scale") return `${q.label} — ${value} מתוך 10.`;
+      // סולמות מנוסחים במשפט האופי (ראו scaleAnswers), ולכן אינם
+      // חוזרים כאן בשנית.
+      if (q.widget === "scale") return "";
       const label = q.label.trim().replace(/[:：]$/, "");
       return label ? `${label} — ${value}${/[.!?]$/.test(value) ? "" : "."}` : value;
     })
@@ -326,3 +336,24 @@ export function choiceItems(content) {
     .filter((it) => CHOICE_WIDGETS.has(it.widget))
     .map((it) => ({ id: it.id, label: it.label, enabled: it.enabled, options: optionsOf(it) }));
 }
+
+// ===================================================================
+//  סולמות
+// ===================================================================
+// כל שאלות הסולם שמוצגות כרגע, מובנות ומוספות כאחת, עם הקטבים שלהן
+// והתשובה שניתנה. זה מה שמנוע ניסוח התיאור האישי מקבל, ולכן סולם
+// שהמנהלת הוסיפה נכנס לטקסט בדיוק כמו השלושה שבקוד.
+export function scaleAnswers(content, form = {}, custom = {}) {
+  return resolveItems(content)
+    .filter((it) => it.widget === "scale" && it.enabled)
+    .map((it) => ({
+      id: it.id,
+      label: it.label,
+      low: it.low,
+      high: it.high,
+      value: it.kind === "custom" ? custom[it.id] : form[it.id],
+    }));
+}
+
+// שאלות סולם לעריכה בלוח הבקרה
+export const isScaleItem = (item) => item?.widget === "scale";
