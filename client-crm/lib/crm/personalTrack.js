@@ -16,11 +16,14 @@ export const TRACK_CHOICES = [
 
 // תווית לתצוגה בלוח הבקרה. הצבעים מגיעים מפלטת המערכת.
 export function trackBadge(track) {
+  // זהב הלוגו למי שכבר במסלול האישי, וזהב חולי בהיר למי שרק ביקש/ה
+  // שנחזור אליו/ה. שני המצבים בני אותה משפחה חמה ונבדלים זה מזה במבט,
+  // והטקסט בצבע הדיו של המערכת כדי שייקרא היטב גם מעל תמונה.
   if (track === TRACK_PAID) {
-    return { label: "במסלול האישי", bg: "bg-[#2FA39B]", text: "text-white" };
+    return { label: "במסלול האישי", bg: "bg-gold", text: "text-ink" };
   }
   if (track === TRACK_MESSAGE) {
-    return { label: "ביקש/ה שנחזור", bg: "bg-[#C9A063]", text: "text-white" };
+    return { label: "ביקש/ה שנחזור", bg: "bg-goldSoft", text: "text-ink" };
   }
   return null;
 }

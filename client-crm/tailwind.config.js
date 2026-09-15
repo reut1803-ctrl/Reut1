@@ -6,6 +6,10 @@ module.exports = {
   content: [
     "./app/**/*.{js,jsx}",
     "./components/**/*.{js,jsx}",
+    // גם lib: קבצים כמו personalTrack.js ו-availability.js מחזיקים שמות
+    // מחלקות של צבעים. בלי השורה הזו הם אינם נסרקים, והמחלקות שלהם
+    // נוצרות רק במקרה - אם אותו צבע במקרה מופיע גם ברכיב אחר.
+    "./lib/**/*.{js,jsx}",
   ],
   theme: {
     extend: {
@@ -21,6 +25,7 @@ module.exports = {
         sand: "#CFE3EC",       // קווי מתאר והפרדות
         ink: "#23414E",        // צבע הטקסט – כחול לילה
         gold: "#C9A063",       // זהב הלוגו
+        goldSoft: "#F0E3CB",   // זהב חולי בהיר – מצב רך על רקע חם
         forest: "#1B4F5E",     // כחול עמוק
       },
       fontFamily: {
