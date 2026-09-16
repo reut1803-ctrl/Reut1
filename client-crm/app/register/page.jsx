@@ -20,7 +20,7 @@ import { Check } from "lucide-react";
 import { crmDb } from "@/lib/crm/firebaseClient";
 import { APP_NAME, APP_SUBTITLE, LOGO_SRC } from "@/lib/appConfig";
 import { ageFromBirthDate } from "@/lib/crm/registerForm";
-import { activeBuiltinIds, customAnswersText, scaleAnswers } from "@/lib/crm/formSchema";
+import { narrativeItems } from "@/lib/crm/formSchema";
 import FormBody from "@/components/crm/register/FormBody";
 import PersonalTrackOffer from "@/components/crm/register/PersonalTrackOffer";
 import { cleanTrackMessage } from "@/lib/crm/personalTrack";
@@ -69,13 +69,10 @@ export default function RegisterPage() {
         // --- תשובות העומק, ממוזגות לפסקה אחת ---
         // מבנה הכרטיס קבוע. מה שדינמי הוא רק אילו שאלות נשאלו, ולכן
         // שאלה שכובתה בלוח הבקרה אינה מופיעה כאן כלל.
-        bio: [
-          // כל הסולמות - מובנים ומוספים - נכנסים לאותו משפט אופי
-          narrativeFromForm(form, activeBuiltinIds(content), scaleAnswers(content, form, custom)),
-          customAnswersText(content, custom),
-        ]
-          .filter(Boolean)
-          .join("\n\n"),
+        // התיאור נבנה מהשאלון עצמו: אותן שאלות, באותו סדר ועם אותן
+        // כותרות. שאלה שכובתה אינה מופיעה, שאלה שנוספה נכנסת במקומה,
+        // ושאלה שנוסחה מחדש נושאת את הנוסח החדש.
+        bio: narrativeFromForm(form, narrativeItems(content, form, custom)),
         customAnswers: custom,
 
         consentAccepted: true,

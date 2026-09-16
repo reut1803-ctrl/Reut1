@@ -24,7 +24,7 @@ import {
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
 import { visibleTags, tagsForCandidate } from "@/lib/crm/tags";
 import { mergeContent } from "@/lib/crm/publicContent";
-import { trackBadge } from "@/lib/crm/personalTrack";
+import { trackBadge, TRACK_PAID } from "@/lib/crm/personalTrack";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { viewerActionText } from "@/lib/crm/genderText";
@@ -75,6 +75,27 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // מצב "המסלול האישי" של המועמד/ת, לחיווי ולמעקב של המנהלת
   const track = useCrmStore((s) => s.candidateTrack[candidate.id]);
   const badge = trackBadge(track?.personalTrack);
+  // כרטיס במסלול האישי מקבל מסגרת זהב, כדי שיהיה ניכר במבט אחד שהוא
+  // דורש טיפול אחר. הצבע הוא זהב הלוגו, אותו אחד שעל התווית עצמה.
+  const inPersonalTrack = track?.personalTrack === TRACK_PAID;
+  const setCandidateTrack = useCrmStore((s) => s.setCandidateTrack);
+  const [clearingTrack, setClearingTrack] = useState(false);
+  const [pendingClearTrack, setPendingClearTrack] = useState(false);
+
+  // ניקוי התווית אחרי שהטיפול הסתיים. ההודעה שהמועמד/ת השאירו נמחקת
+  // איתה, כי היא שייכת לאותה פנייה שכבר טופלה.
+  const clearTrack = async () => {
+    setClearingTrack(true);
+    try {
+      await setCandidateTrack(candidate.id, "", "");
+      showToast("התווית הוסרה מהכרטיס");
+    } catch {
+      showToast("לא הצלחנו להסיר את התווית. אפשר לנסות שוב.");
+    } finally {
+      setClearingTrack(false);
+      setPendingClearTrack(false);
+    }
+  };
   const [pendingDeleteCandidate, setPendingDeleteCandidate] = useState(false);
   // תמונה שלא הצליחה להיטען בשום דרך מוצגת כ"ללא תמונה", ולא כאייקון שבור
   const [photoUnavailable, setPhotoUnavailable] = useState(false);
@@ -270,7 +291,13 @@ export default function ProfileCard({ candidate, onReadMore }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-[#CFE3EC] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+    <div
+      className={`overflow-hidden rounded-3xl bg-white transition ${
+        inPersonalTrack
+          ? "border-2 border-gold shadow-[0_6px_22px_rgba(201,160,99,0.35)]"
+          : "border border-[#CFE3EC] shadow-[0_4px_18px_rgba(58,51,53,0.06)]"
+      }`}
+    >
       <div className={`relative aspect-[4/5] w-full bg-gradient-to-br ${getGradientClass(candidate.gradient)}`}>
         {candidate.photoUrl && !photoUnavailable ? (
           <MediaImage
@@ -523,6 +550,22 @@ export default function ProfileCard({ candidate, onReadMore }) {
                   >
                     <PenLine size={15} /> עריכת פרטי הכרטיס
                   </Link>
+                )}
+
+                {badge && role === "admin" && (
+                  <div className="rounded-2xl border border-gold bg-[#FBF5EA] p-3">
+                    <p className="text-[12px] leading-relaxed text-[#8A6A32]">
+                      הכרטיס מסומן <strong>{badge.label}</strong>. אפשר להסיר את הסימון כשהטיפול הסתיים.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPendingClearTrack(true)}
+                      disabled={clearingTrack}
+                      className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gold bg-white px-3 py-2 text-[13px] font-bold text-[#8A6A32] transition active:scale-95 disabled:opacity-60"
+                    >
+                      <Check size={14} /> {clearingTrack ? "מסירה..." : "סיימתי — להסיר את הסימון"}
+                    </button>
+                  </div>
                 )}
 
                 {track?.trackMessage && (
@@ -826,6 +869,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
       `}</style>
 
       {showDetail && <ProfileDetailModal candidate={candidate} onClose={() => setShowDetail(false)} />}
+      {pendingClearTrack && (
+        <ConfirmDialog
+          message={`להסיר את הסימון "${badge?.label || ""}" מהכרטיס? הסימון וההודעה שנלוותה אליו יימחקו. שאר פרטי הכרטיס אינם מושפעים.`}
+          confirmLabel="הסרת הסימון"
+          tone="neutral"
+          onConfirm={clearTrack}
+          onCancel={() => setPendingClearTrack(false)}
+        />
+      )}
+
       {pendingDeleteCandidate && (
         <ConfirmDialog
           message={`למחוק לצמיתות את הכרטיס של ${candidate.name}? הפעולה אינה הפיכה, וכל המידע בכרטיס יימחק.`}

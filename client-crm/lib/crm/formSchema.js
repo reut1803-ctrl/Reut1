@@ -161,6 +161,12 @@ export function resolveItems(content) {
       kind: "builtin",
       locked,
       label: typeof o.label === "string" && o.label.trim() ? o.label.trim() : base.label,
+      // האם המנהלת ניסחה את השאלה מחדש. משמש את מנוע התיאור האישי:
+      // כל עוד הנוסח המקורי בתוקף אפשר להשתמש בפתיח הספרותי שכתוב
+      // בקוד, ומרגע שהיא שינתה אותו - הפתיח חייב להיות מה שהיא כתבה,
+      // אחרת נוצרת כותרת יתומה שאינה קשורה לשאלה שנשאלה.
+      labelChanged:
+        typeof o.label === "string" && o.label.trim() ? o.label.trim() !== base.label : false,
       hint: typeof o.hint === "string" ? o.hint : base.hint || "",
       step: clampStep(o.step, base.step),
       enabled: locked ? true : o.enabled !== false,
@@ -187,6 +193,7 @@ export function resolveItems(content) {
     enabled: q.enabled !== false,
     required: q.required === true,
     locked: false,
+    labelChanged: true,
     rows: 4,
     low: typeof q.low === "string" ? q.low.trim() : "",
     high: typeof q.high === "string" ? q.high.trim() : "",
@@ -359,3 +366,33 @@ export function scaleAnswers(content, form = {}, custom = {}) {
 
 // שאלות סולם לעריכה בלוח הבקרה
 export const isScaleItem = (item) => item?.widget === "scale";
+
+// ===================================================================
+//  מה נכנס לתיאור האישי
+// ===================================================================
+// שדות שהמידע שלהם כבר מוצג בראש הכרטיס כתג נפרד - גיל, גובה, עיר,
+// עדה, רמה תורנית, עיסוק ומצב משפחתי - אינם חוזרים בתוך הטקסט. וגם
+// שדות טכניים שאינם תיאור: טלפון, תמונות ואישורים.
+export const NOT_IN_BIO = new Set([
+  "gender", "name", "phone", "birthDate", "maritalStatus", "height", "eda", "region", "city",
+  "lifestyle", "currentOccupation", "occupations", "referenceContacts", "photos", "consents",
+]);
+
+// השאלות שמרכיבות את התיאור האישי, בסדר שבו הן נשאלו בפועל ועם
+// הנוסח שהמנהלת קבעה. זה מה שמנוע הניסוח מקבל, ולכן הסיכום בכרטיס
+// תמיד תואם לשאלון העדכני: אותן שאלות, באותו סדר, עם אותן כותרות.
+export function narrativeItems(content, form = {}, custom = {}) {
+  return resolveItems(content)
+    .filter((it) => it.enabled && !NOT_IN_BIO.has(it.id))
+    .map((it) => ({
+      id: it.id,
+      kind: it.kind,
+      widget: it.widget,
+      step: it.step,
+      label: it.label,
+      labelChanged: it.labelChanged === true,
+      low: it.low,
+      high: it.high,
+      value: it.kind === "custom" ? custom[it.id] : form[it.id],
+    }));
+}

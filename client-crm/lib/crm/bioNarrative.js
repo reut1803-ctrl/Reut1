@@ -124,68 +124,119 @@ export function elementSentence(element, why) {
 // activeIds: מזהי השאלות שמוצגות כרגע בטופס. שאלה שכובתה בלוח הבקרה
 // אינה נשאלת, ולכן גם אסור לה להופיע בתיאור האישי - אחרת נוצר טקסט
 // שמתאר תשובה שאיש לא נתן. כשלא מועבר דבר, הכל נכלל (התנהגות קודמת).
-export function narrativeFromForm(form = {}, activeIds = null, scales = null) {
-  const gender = form.gender === "female" ? "female" : "male";
-  const on = activeIds instanceof Set ? (id) => activeIds.has(id) : () => true;
-  // בלי רשימת סולמות מפורשת נופלים לשלושת המדדים שבקוד, כדי שקריאה
-  // ישנה לפונקציה תמשיך להתנהג בדיוק כפי שהתנהגה.
-  const scaleList =
-    Array.isArray(scales)
-      ? scales
-      : ["introExtro", "heartMind", "planFlow"]
-          .filter(on)
-          .map((id) => ({ id, ...DEFAULT_POLES[id], value: form[id] }));
-  const val = (id) => (on(id) ? form[id] : "");
+// ===================================================================
+//  הרכבת התיאור מהשאלון
+// ===================================================================
+// פתיחים ספרותיים לשאלות שבקוד. הם נקראים טוב יותר מהשאלה עצמה
+// ("על הבית שלי" במקום "רקע משפחתי"), אבל הם בתוקף אך ורק כל עוד
+// המנהלת לא ניסחה את השאלה מחדש. ברגע שהיא שינתה אותה, הפתיח נגזר
+// מהנוסח שלה - אחרת הכרטיס נושא כותרת שאינה קשורה למה שנשאל.
+const LEAD_IN = {
+  breslov: "הקשר שלי לברסלב",
+  pathStory: "הדרך שעברתי",
+  familyBackground: "על הבית שלי",
+  hobbies: "בזמן הפנוי",
+  importantToKnow: "ומשהו שחשוב לי שתדעו",
+  preferredAges: "הגילאים שנוחים לי",
+  mainRequirements: "חשוב לי במיוחד",
+  breslovInPartner: "קשר לברסלב אצל בן או בת הזוג",
+  smokingSelf: "לגבי עישון",
+};
+
+// פתיח שתלוי במגדר
+const LEAD_IN_BY_GENDER = {
+  lookingFor: { male: "מה שאני מחפש", female: "מה שאני מחפשת" },
+};
+
+// שאלה מנוסחת ככותרת: בלי סימן שאלה ובלי נקודתיים בסוף
+const asLead = (label) => clean(label).replace(/[?？:：]+\s*$/, "").trim();
+
+export function leadFor(item, gender) {
+  if (item?.labelChanged) return asLead(item.label);
+  const byGender = LEAD_IN_BY_GENDER[item?.id];
+  if (byGender) return byGender[gender === "female" ? "female" : "male"];
+  return LEAD_IN[item?.id] || asLead(item?.label);
+}
+
+const valueText = (value) => {
+  if (Array.isArray(value)) return clean(value.filter(Boolean).join(", "));
+  return clean(value);
+};
+
+// התיאור האישי, מורכב מהשאלון עצמו.
+//
+// items הוא הרשימה המסודרת שמחזיר narrativeItems: אותן שאלות, באותו
+// סדר ועם אותן כותרות כמו בטופס שמולא. לכן אין מצב שבו הסיכום מציג
+// כותרת שכבר אינה קיימת בשאלון, או מדלג על שאלה שנוספה.
+//
+// הפסקאות נחתכות לפי שלבי השאלון, וכך הסיכום נקרא באותו קצב שבו
+// השאלות נשאלו.
+export function narrativeFromItems(items = [], gender = "male") {
+  const list = Array.isArray(items) ? items : [];
+  const her = gender === "female" ? "female" : "male";
   const paragraphs = [];
-  const push = (text) => {
-    const t = clean(text);
-    if (t) paragraphs.push(t);
+  let current = [];
+  let currentStep = null;
+  let scalesDone = false;
+
+  const flush = () => {
+    const text = current.filter(Boolean).join(" ").trim();
+    if (text) paragraphs.push(text);
+    current = [];
   };
 
-  push(val("selfDescription"));
+  list.forEach((item) => {
+    if (currentStep !== null && item.step !== currentStep) flush();
+    currentStep = item.step;
 
-  push(
-    [
-      characterSentence(scaleList, gender),
-      on("element") ? elementSentence(form.element, form.elementWhy) : "",
-    ]
-      .filter(Boolean)
-      .join(" ")
-  );
+    // כל הסולמות מתנסחים יחד במשפט אחד, במקום הראשון שבו מופיע סולם
+    if (item.widget === "scale") {
+      if (scalesDone) return;
+      scalesDone = true;
+      const scales = list.filter((x) => x.widget === "scale");
+      const sentence = characterSentence(scales, her);
+      if (sentence) current.push(sentence);
+      return;
+    }
 
-  push(
-    [
-      clean(val("breslov")) ? endSentence(`הקשר שלי לברסלב — ${clean(form.breslov)}`) : "",
-      clean(val("pathStory")) ? endSentence(`הדרך שעברתי — ${clean(form.pathStory)}`) : "",
-    ]
-      .filter(Boolean)
-      .join(" ")
-  );
+    if (item.id === "element") {
+      const sentence = elementSentence(item.value, item.elementWhy ?? item.why ?? "");
+      if (sentence) current.push(sentence);
+      return;
+    }
 
-  push(
-    [
-      clean(val("familyBackground")) ? endSentence(`על הבית שלי — ${clean(form.familyBackground)}`) : "",
-      clean(val("hobbies")) ? endSentence(`בזמן הפנוי — ${clean(form.hobbies)}`) : "",
-      clean(val("importantToKnow")) ? endSentence(`ומשהו שחשוב לי שתדעו — ${clean(form.importantToKnow)}`) : "",
-    ]
-      .filter(Boolean)
-      .join(" ")
-  );
+    const text = valueText(item.value);
+    if (!text) return;
 
-  const wants = [
-    clean(val("lookingFor")) ? endSentence(`מה שאני מחפש${gender === "female" ? "ת" : ""} — ${clean(form.lookingFor)}`) : "",
-    clean(val("preferredAges")) ? endSentence(`הגילאים שנוחים לי — ${clean(form.preferredAges)}`) : "",
-    clean(val("mainRequirements")) ? endSentence(`חשוב לי במיוחד — ${clean(form.mainRequirements)}`) : "",
-    clean(val("breslovInPartner")) ? endSentence(`קשר לברסלב אצל בן או בת הזוג — ${clean(form.breslovInPartner)}`) : "",
-  ].filter(Boolean);
-  push(wants.join(" "));
+    // "לא מעשן/ת" אינו מידע שמוסיף משהו לכרטיס, ולכן אינו נכתב.
+    // רק עישון בפועל מצוין. אם המנהלת מנסחת את השאלה מחדש, הכלל הזה
+    // אינו חל יותר - כי אז אין לנו מושג מה המשמעות של התשובה.
+    if (item.id === "smokingSelf" && !item.labelChanged && text === "לא מעשן/ת") return;
 
-  // עישון מצוין רק כשהוא רלוונטי. "לא מעשן" אינו מידע שמוסיף משהו.
-  if (clean(val("smokingSelf")) && clean(form.smokingSelf) !== "לא מעשן/ת") {
-    push(endSentence(`לגבי עישון — ${clean(form.smokingSelf)}`));
-  }
+    // התיאור החופשי נכתב בלשון המועמד/ת ואינו צריך כותרת מעליו
+    if (item.id === "selfDescription" && !item.labelChanged) {
+      flush();
+      paragraphs.push(text);
+      return;
+    }
 
+    const lead = leadFor(item, her);
+    current.push(lead ? endSentence(`${lead} — ${text}`) : endSentence(text));
+  });
+
+  flush();
   return paragraphs.join("\n\n").trim();
+}
+
+// גרסה נוחה לקריאה מהטופס: מקבלת את הרשימה המסודרת יחד עם היסוד
+// המרכזי, שהוא שאלה עם שאלת המשך משלה.
+export function narrativeFromForm(form = {}, items = null, _legacy = null) {
+  const gender = form.gender === "female" ? "female" : "male";
+  if (!Array.isArray(items)) return "";
+  const withElement = items.map((it) =>
+    it.id === "element" ? { ...it, elementWhy: form.elementWhy } : it
+  );
+  return narrativeFromItems(withElement, gender);
 }
 
 // --- ריכוך תיאורים ישנים, לתצוגה בלבד ---

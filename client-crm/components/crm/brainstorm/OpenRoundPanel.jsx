@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Check, ChevronDown, PenLine, Plus } from "lucide-react";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import { useCrmStore } from "@/lib/crm/store";
-import { QUESTION_BANK } from "@/lib/crm/brainstorm";
+import { questionsFor } from "@/lib/crm/brainstorm";
 
 const CUSTOM = "__custom__";
 // כמה שאלות מוצגות מיד. השאר נפתחות בלחיצה, כדי שהמסך הראשון יישאר קצר.
@@ -30,9 +30,14 @@ export default function OpenRoundPanel({ onOpened }) {
     [allCandidates, candidates_]
   );
 
+  // השאלות נוסחות לפי המגדר של מי שנבחר/ה, כדי שהצוות יקרא משפט
+  // שנשמע טבעי ולא "הוא/היא" בכל שורה.
+  const chosen = people.find((c) => c.id === candidateId) || null;
+  const bank = useMemo(() => questionsFor(chosen?.gender), [chosen?.gender]);
+
   const question = questionKey === CUSTOM ? customQuestion.trim() : questionKey;
   const canOpen = !!candidateId && !!question && !saving;
-  const shown = showAll ? QUESTION_BANK : QUESTION_BANK.slice(0, VISIBLE);
+  const shown = showAll ? bank : bank.slice(0, VISIBLE);
 
   const handleOpen = async () => {
     if (!canOpen) return;
@@ -106,13 +111,13 @@ export default function OpenRoundPanel({ onOpened }) {
           ))}
         </div>
 
-        {!showAll && QUESTION_BANK.length > VISIBLE && (
+        {!showAll && bank.length > VISIBLE && (
           <button
             type="button"
             onClick={() => setShowAll(true)}
             className="mt-1.5 flex w-full items-center justify-center gap-1 py-1.5 text-[12px] font-semibold text-[#2E8BA8]"
           >
-            <ChevronDown size={14} /> עוד {QUESTION_BANK.length - VISIBLE} שאלות
+            <ChevronDown size={14} /> עוד {bank.length - VISIBLE} שאלות
           </button>
         )}
 
