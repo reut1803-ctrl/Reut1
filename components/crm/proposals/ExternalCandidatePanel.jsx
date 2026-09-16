@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Mic, Square, Loader2, Trash2 } from "lucide-react";
+import { Mic, Square, Loader2, Trash2, Camera } from "lucide-react";
 import { saveMedia, deleteMedia } from "@/lib/crm/mediaStore";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+import MediaImage from "@/components/crm/ui/MediaImage";
+import { compressToDataUrl, dataUrlToFile } from "@/lib/crm/imageCompress";
 
 const MAX_RECORD_MS = 60 * 1000;
 
@@ -19,9 +21,10 @@ function AudioPreview({ value }) {
 // "מיני-כרטיס" למועמד/ת שאינו/ה במאגר - מישהו מהמעגל האישי של השדכנית.
 // כל מה שנכתב כאן נשמר אך ורק בתוך ההצעה הזו, ולא נוצר ממנו כרטיס במאגר.
 export default function ExternalCandidatePanel({ value, onChange, genderLabel }) {
-  const data = value || { name: "", notes: "", audioUrl: null };
+  const data = value || { name: "", notes: "", audioUrl: null, photoUrl: null };
   const set = (patch) => onChange({ ...data, ...patch });
 
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,6 +73,32 @@ export default function ExternalCandidatePanel({ value, onChange, genderLabel })
     }
   };
 
+  // תמונה אופציונלית לכרטיס המקוצר. מכווצת לפני השמירה, כדי שמיני-כרטיס
+  // לא ינפח את מסד הנתונים כמו כרטיס מלא במאגר.
+  const handlePhoto = async (file) => {
+    if (!file) return;
+    setError("");
+    setPhotoBusy(true);
+    try {
+      const ref = await saveMedia(dataUrlToFile(await compressToDataUrl(file), "photo.jpg"));
+      set({ photoUrl: ref });
+    } catch (err) {
+      setError(`שמירת התמונה נכשלה: ${err?.message || String(err)}`);
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    const ref = data.photoUrl;
+    set({ photoUrl: null });
+    try {
+      await deleteMedia(ref);
+    } catch {
+      /* אם המחיקה נכשלה, ההפניה כבר הוסרה מההצעה */
+    }
+  };
+
   const removeAudio = async () => {
     const ref = data.audioUrl;
     set({ audioUrl: null });
@@ -104,6 +133,48 @@ export default function ExternalCandidatePanel({ value, onChange, genderLabel })
         placeholder="כמה משפטים עליו/עליה: גיל, רקע, אופי, מה מחפש/ת..."
         className="mt-2 w-full resize-y rounded-xl border border-[#CCBDAB] bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-[#844442]"
       />
+
+      {/* תמונה - אופציונלי לחלוטין. אפשר לשמור את הכרטיס גם בלעדיה. */}
+      <div className="mt-2">
+        {data.photoUrl ? (
+          <div className="flex items-center gap-2 rounded-xl border border-[#CCBDAB] bg-white p-2">
+            <MediaImage
+              src={data.photoUrl}
+              alt="תמונת הכרטיס"
+              className="h-14 w-14 shrink-0 rounded-lg object-cover"
+            />
+            <p className="flex-1 text-[11px] font-semibold text-[#4A6552]">התמונה נשמרה</p>
+            <button
+              type="button"
+              onClick={removePhoto}
+              aria-label="הסרת התמונה"
+              title="הסרת התמונה"
+              className="rounded-xl bg-[#F0E2DE] p-2 text-[#C24545] transition active:scale-90"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        ) : (
+          <label className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#844442] bg-white py-2 text-[12px] font-semibold text-[#844442] transition active:scale-95">
+            {photoBusy ? (
+              <>
+                <Loader2 size={14} className="animate-spin" /> שומר את התמונה...
+              </>
+            ) : (
+              <>
+                <Camera size={14} /> הוספת תמונה (לא חובה)
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={photoBusy}
+              onChange={(e) => handlePhoto(e.target.files?.[0])}
+            />
+          </label>
+        )}
+      </div>
 
       <div className="mt-2">
         {data.audioUrl ? (

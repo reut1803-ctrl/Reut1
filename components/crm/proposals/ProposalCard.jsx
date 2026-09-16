@@ -9,6 +9,7 @@ import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
 import CandidatePhone from "@/components/crm/profiles/CandidatePhone";
 import { downloadMedia } from "@/lib/crm/mediaStore";
+import MediaImage from "@/components/crm/ui/MediaImage";
 import { wasDroppedBefore, lastDropInfo } from "@/lib/crm/attention";
 
 function ExternalContactCard({ data }) {
@@ -16,7 +17,7 @@ function ExternalContactCard({ data }) {
   const showToast = useCrmStore((s) => s.showToast);
   const [copied, setCopied] = useState(false);
 
-  // לכרטיס מהמעגל האישי אין תמונה, אלא הקלטה - ולכן הכפתור כאן הוא הורדת ההקלטה
+  // בכרטיס המקוצר התמונה אופציונלית, ולכן ההקלטה נשארת הכפתור המרכזי
   const handleDownloadAudio = async () => {
     if (!data.audioUrl) return;
     try {
@@ -41,6 +42,16 @@ function ExternalContactCard({ data }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-[#844442] bg-[#E8DCCB] p-3">
       <p className="text-[10px] font-bold text-[#844442]">מהמעגל האישי - לא במאגר</p>
+      {/* תמונה אופציונלית. כרטיס בלי תמונה נראה בדיוק כפי שנראה עד היום. */}
+      {data.photoUrl && (
+        <div className="mt-1.5 overflow-hidden rounded-xl border border-[#CCBDAB] bg-white">
+          <MediaImage
+            src={data.photoUrl}
+            alt={data.name}
+            className="aspect-square w-full object-cover"
+          />
+        </div>
+      )}
       <p className="mt-0.5 text-[13px] font-bold text-[#3A2E26]">{data.name}</p>
       {data.notes && (
         <p className="mt-1 whitespace-pre-line text-[11px] leading-relaxed text-[#3A2E26]">{data.notes}</p>
