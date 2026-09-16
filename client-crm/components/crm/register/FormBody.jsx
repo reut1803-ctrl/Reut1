@@ -88,6 +88,9 @@ export default function FormBody({
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [localError, setLocalError] = useState("");
+  // מה סומן כחסר בניסיון השליחה האחרון, ולאן לגלול
+  const [flagged, setFlagged] = useState([]);
+  const [scrollTo, setScrollTo] = useState("");
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -102,6 +105,23 @@ export default function FormBody({
     () => missingItems(content, form, { photos, custom, agreeTerms, agreePrivacy }),
     [content, form, photos, custom, agreeTerms, agreePrivacy]
   );
+
+  // הסימון האדום נגזר ממה שבאמת חסר ברגע זה, ולא נשמר בנפרד. לכן הוא
+  // נעלם מאליו ברגע שממלאים את השדה, ואי אפשר להיתקע עם שדה מסומן
+  // באדום שכבר מולא.
+  const invalidIds = useMemo(
+    () => flagged.filter((id) => missing.some((m) => m.id === id)),
+    [flagged, missing]
+  );
+
+  // גלילה אל השדה החסר. רצה אחרי שהשלב כבר הוחלף והשדה קיים במסך.
+  useEffect(() => {
+    if (!scrollTo) return;
+    const el = document.getElementById(`field-${scrollTo}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+    setScrollTo("");
+  }, [scrollTo, step]);
 
   // שינוי בתוכן בזמן עריכה יכול להשאיר את התצוגה המקדימה על שלב שכבר
   // אינו קיים. כאן חוזרים לשלב תקין במקום להציג מסך ריק.
@@ -156,17 +176,29 @@ export default function FormBody({
       return;
     }
     if (missing.length > 0) {
-      setLocalError(`עוד רגע ואנחנו שם. חסר: ${missing.map((m) => m.label).join(" · ")}`);
-      setStep(missing[0].step);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const first = missing[0];
+      setLocalError(
+        missing.length === 1
+          ? `עוד רגע ואנחנו שם. חסר: ${first.label}`
+          : `עוד רגע ואנחנו שם. חסרים ${missing.length} פרטים: ${missing.map((m) => m.label).join(" · ")}`
+      );
+      // סימון כל מה שחסר, ומעבר אל הראשון שבהם - לשלב שלו ואל השדה
+      // עצמו, ולא לראש המסך.
+      setFlagged(missing.map((m) => m.id));
+      setStep(first.step);
+      setScrollTo(first.id);
       return;
     }
     setLocalError("");
+    setFlagged([]);
     onSubmit({ form, custom, photos });
   };
 
   const note = content.stepNotes?.[step] || "";
-  const error = externalError || localError;
+  // ההודעה האדומה נעלמת מאליה ברגע שכבר לא חסר דבר. קודם היא נשארה
+  // על המסך גם אחרי שהכל מולא, ואז נראה כאילו הטופס עדיין חוסם - וזה
+  // בדיוק מה שגרם לתחושת הלולאה.
+  const error = externalError || (missing.length > 0 ? localError : "");
 
   return (
     <div className="mx-auto w-full max-w-lg">
@@ -191,6 +223,11 @@ export default function FormBody({
           setPhotoItems={setPhotoItems}
           onPhotos={handlePhotos}
           onRetryPhoto={runUpload}
+          agreeTerms={agreeTerms}
+          setAgreeTerms={setAgreeTerms}
+          agreePrivacy={agreePrivacy}
+          setAgreePrivacy={setAgreePrivacy}
+          invalidIds={invalidIds}
           preview={preview}
           content={content}
         />
@@ -280,17 +317,18 @@ function StepBody({ items, ...rest }) {
   return <div className="space-y-4">{rows}</div>;
 }
 
-function ItemField({ item, form, set, custom, setCustom, content, ...rest }) {
+function ItemField({ item, form, set, custom, setCustom, content, invalidIds = [], ...rest }) {
+  const invalid = invalidIds.includes(item.id);
   const value = item.kind === "custom" ? custom[item.id] : form[item.id];
   const onChange = (v) =>
     item.kind === "custom" ? setCustom({ ...custom, [item.id]: v }) : set({ [item.id]: v });
 
   // שאלות שמביאות איתן מבנה משלהן ואינן עטופות ב-Field רגיל
   if (item.widget === "photos") {
-    return <PhotoUploader item={item} {...rest} />;
+    return <PhotoUploader item={item} invalid={invalid} {...rest} />;
   }
   if (item.widget === "consents") {
-    return <Consents item={item} content={content} {...rest} />;
+    return <Consents item={item} content={content} invalid={invalid} {...rest} />;
   }
   // סולם - מובנה או כזה שהמנהלת הוסיפה. שניהם מצוירים מאותו רכיב
   // ומתורגמים למילים מאותה פונקציה, ולכן סולם חדש מתנהג מיד כמו
@@ -299,19 +337,28 @@ function ItemField({ item, form, set, custom, setCustom, content, ...rest }) {
     const scale = { label: item.label, low: item.low, high: item.high };
     const current = Number(value) || 5;
     return (
-      <ScaleSlider
-        scale={scale}
-        hint={item.hint}
-        required={item.required}
-        value={current}
-        onChange={(v) => onChange(Number(v))}
-        description={scale.low && scale.high ? describeScale(scale, current) : `${current} מתוך 10`}
-      />
+      <div id={`field-${item.id}`} className="scroll-mt-24">
+        <ScaleSlider
+          scale={scale}
+          hint={item.hint}
+          required={item.required}
+          value={current}
+          onChange={(v) => onChange(Number(v))}
+          description={scale.low && scale.high ? describeScale(scale, current) : `${current} מתוך 10`}
+        />
+      </div>
     );
   }
 
   return (
-    <Field label={item.label} hint={item.hint} required={item.required} group={GROUP_WIDGETS.has(item.widget)}>
+    <Field
+      id={`field-${item.id}`}
+      invalid={invalid}
+      label={item.label}
+      hint={item.hint}
+      required={item.required}
+      group={GROUP_WIDGETS.has(item.widget)}
+    >
       <ItemInput item={item} value={value} onChange={onChange} form={form} set={set} texts={content.texts} />
     </Field>
   );
@@ -454,16 +501,28 @@ function Welcome({ content }) {
 }
 
 // מסך הפניה לטופס חיצוני שהמנהלת הגדירה
-function Consents({ item, content, agreeTerms, setAgreeTerms, agreePrivacy, setAgreePrivacy }) {
+function Consents({
+  item, content, agreeTerms, setAgreeTerms, agreePrivacy, setAgreePrivacy, invalid,
+}) {
   const terms = withFee(content.texts.consentTerms, content);
   const privacy = withFee(content.texts.consentPrivacy, content);
   return (
-    <div className="space-y-2.5 rounded-2xl border border-[#CFE3EC] bg-[#F2F8FB] p-3.5">
+    <div
+      id={`field-${item.id}`}
+      className={`scroll-mt-24 space-y-2.5 rounded-2xl border p-3.5 ${
+        invalid ? "border-[#E9B4AD] bg-[#FDECEA]" : "border-[#CFE3EC] bg-[#F2F8FB]"
+      }`}
+    >
+      {invalid && (
+        <p className="text-[12px] font-bold text-[#C4584C]">
+          צריך לסמן את שני האישורים כדי לשלוח
+        </p>
+      )}
       {item.hint && <p className="text-[12px] leading-relaxed text-[#5E7A87]">{item.hint}</p>}
-      <Consent checked={agreeTerms} onChange={setAgreeTerms} href="/terms/">
+      <Consent checked={agreeTerms} onChange={setAgreeTerms} href="/terms/" invalid={invalid && !agreeTerms}>
         {terms}
       </Consent>
-      <Consent checked={agreePrivacy} onChange={setAgreePrivacy} href="/privacy/">
+      <Consent checked={agreePrivacy} onChange={setAgreePrivacy} href="/privacy/" invalid={invalid && !agreePrivacy}>
         {privacy}
       </Consent>
     </div>
@@ -477,18 +536,47 @@ function withFee(text, content) {
   return String(text ?? "").split("{{fee}}").join(fee);
 }
 
-function Consent({ checked, onChange, href, children }) {
+// שורת אישור.
+//
+// שתי הקפדות שנובעות מתקלה אמיתית בשטח:
+//
+// 1. checked הוא תמיד בוליאני. תיבה שמקבלת undefined הופכת בעיני
+//    הדפדפן ל"לא מבוקרת": היא מסמנת את עצמה בלחיצה, אבל המצב במערכת
+//    אינו משתנה - כלומר המסך מראה וי, והטופס עדיין חושב שלא אושר.
+//    !!checked מבטיח שמה שנראה הוא מה שנשמר.
+//
+// 2. גם הטקסט לוחץ, ולא רק הריבוע הקטן. באצבע על טלפון קל להחטיא ריבוע
+//    של חמישה מילימטרים. הקישור "לקריאה מלאה" עוצר את הלחיצה, כדי
+//    שפתיחת הנספח לא תסמן את התיבה בטעות.
+function Consent({ checked, onChange, href, children, invalid = false }) {
+  const toggle = () => {
+    if (typeof onChange === "function") onChange(!checked);
+  };
   return (
     <div className="flex items-start gap-2.5">
       <input
         type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-5 w-5 shrink-0 accent-[#2E8BA8]"
+        checked={!!checked}
+        onChange={(e) => (typeof onChange === "function" ? onChange(e.target.checked) : undefined)}
+        aria-invalid={invalid || undefined}
+        className={`mt-0.5 h-5 w-5 shrink-0 accent-[#2E8BA8] ${
+          invalid ? "outline outline-2 outline-offset-2 outline-[#C4584C]" : ""
+        }`}
       />
-      <p className="text-[12.5px] leading-relaxed text-[#23414E]">
+      <p
+        onClick={toggle}
+        className={`cursor-pointer text-[12.5px] leading-relaxed ${
+          invalid ? "font-semibold text-[#C4584C]" : "text-[#23414E]"
+        }`}
+      >
         {children}{" "}
-        <a href={href} target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2E8BA8] underline">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="font-semibold text-[#2E8BA8] underline"
+        >
           לקריאה מלאה
         </a>
         <span className="text-[#C4584C]"> *</span>
@@ -502,14 +590,14 @@ function Consent({ checked, onChange, href, children }) {
 // כל תמונה מציגה את מצבה בפני עצמה: עולה, עלתה, או נכשלה. תמונה
 // שנכשלה נשארת גלויה עם סיבת הכישלון וכפתור ניסיון חוזר, במקום
 // להיעלם בשקט ולהשאיר את הממלא/ת בטוח/ה שהכל נקלט.
-function PhotoUploader({ item, photoItems, setPhotoItems, onPhotos, onRetryPhoto, preview }) {
+function PhotoUploader({ item, photoItems, setPhotoItems, onPhotos, onRetryPhoto, preview, invalid }) {
   const done = photoItems.filter((p) => p.status === "done").length;
   const failed = photoItems.filter((p) => p.status === "error");
   const busy = photoItems.filter((p) => p.status === "uploading");
   const remove = (id) => setPhotoItems((prev) => prev.filter((p) => p.id !== id));
 
   return (
-    <Field label={item.label} required hint={item.hint} group>
+    <Field id={`field-${item.id}`} invalid={invalid} label={item.label} required hint={item.hint} group>
       <div className="grid grid-cols-4 gap-2">
         {photoItems.map((p, i) => (
           <div

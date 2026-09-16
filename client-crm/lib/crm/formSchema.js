@@ -255,14 +255,16 @@ export function missingItems(content, form, { photos = [], custom = {}, agreeTer
   resolveItems(content).forEach((item) => {
     if (!item.enabled || !item.required) return;
     if (item.id === "consents") {
-      if (!agreeTerms) out.push({ label: "אישור הסכם ההתקשרות", step: item.step });
-      if (!agreePrivacy) out.push({ label: "אישור מדיניות הפרטיות", step: item.step });
+      if (!agreeTerms) out.push({ id: item.id, label: "אישור הסכם ההתקשרות", step: item.step });
+      if (!agreePrivacy) out.push({ id: item.id, label: "אישור מדיניות הפרטיות", step: item.step });
       return;
     }
     // סולם תמיד מגיע עם ערך התחלתי, ולכן אינו יכול להיות חסר
     if (item.widget === "scale" || item.widget === "simpleScale") return;
     if (!filled(valueOf(item, form, custom, photos))) {
-      out.push({ label: item.label, step: item.step });
+      // המזהה נדרש כדי לגלול בדיוק אל השדה החסר ולסמן אותו, ולא רק
+      // לקפוץ לראש השלב ולהשאיר את המשתמש/ת לחפש מה פספסו.
+      out.push({ id: item.id, label: item.label, step: item.step });
     }
   });
   return out;

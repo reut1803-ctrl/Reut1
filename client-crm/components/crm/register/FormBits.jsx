@@ -59,13 +59,26 @@ export function StepIndicator({ steps, current, onJump }) {
 // והאישורים. תווית שעוטפת כפתורים יוצרת שני כשלים: תווית בתוך תווית
 // היא HTML לא חוקי, וקורא מסך מקריא כל כפתור עם שם השדה מודבק לפניו
 // ("אני * בחור" במקום "בחור").
-export function Field({ label, hint, required, children, group = false }) {
+export function Field({ label, hint, required, children, group = false, id, invalid = false }) {
   const Wrap = group ? "div" : "label";
   return (
-    <Wrap className="block">
-      <span className="mb-1 block text-[13px] font-semibold text-[#23414E]">
+    <Wrap
+      id={id}
+      // scroll-mt: כשגוללים אל השדה, הוא לא נצמד לקצה העליון של המסך
+      className={`block scroll-mt-24 ${
+        invalid ? "-mx-2.5 rounded-2xl bg-[#FDECEA] px-2.5 py-2.5 ring-1 ring-[#E9B4AD]" : ""
+      }`}
+    >
+      <span
+        className={`mb-1 block text-[13px] font-semibold ${invalid ? "text-[#C4584C]" : "text-[#23414E]"}`}
+      >
         {label} {required && <span className="text-[#C4584C]">*</span>}
       </span>
+      {invalid && (
+        <span className="mb-1.5 block text-[11.5px] font-bold text-[#C4584C]">
+          חסר — צריך למלא כדי לשלוח
+        </span>
+      )}
       {hint && <span className="mb-1.5 block text-[11.5px] leading-relaxed text-[#5E7A87]">{hint}</span>}
       {children}
     </Wrap>
