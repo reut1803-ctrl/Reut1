@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Check, ChevronDown, PenLine, Plus } from "lucide-react";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import { useCrmStore } from "@/lib/crm/store";
-import { QUESTION_BANK } from "@/lib/crm/brainstorm";
+import { questionBankFor } from "@/lib/crm/brainstorm";
 
 const CUSTOM = "__custom__";
 // כמה שאלות מוצגות מיד. השאר נפתחות בלחיצה, כדי שהמסך הראשון יישאר קצר.
@@ -18,6 +18,9 @@ export default function OpenRoundPanel({ onOpened }) {
   const showToast = useCrmStore((s) => s.showToast);
 
   const [candidateId, setCandidateId] = useState("");
+  // נשמר המספר הסודר של השאלה ולא הטקסט שלה. הניסוח משתנה לפי מגדר
+  // הכרטיס, ולו נשמר הטקסט - החלפת מועמד היתה משאירה בחירה מנוסחת
+  // במגדר הקודם, שכבר אינה קיימת ברשימה.
   const [questionKey, setQuestionKey] = useState("");
   const [customQuestion, setCustomQuestion] = useState("");
   const [secondQuestion, setSecondQuestion] = useState("");
@@ -30,9 +33,17 @@ export default function OpenRoundPanel({ onOpened }) {
     [allCandidates, candidates_]
   );
 
-  const question = questionKey === CUSTOM ? customQuestion.trim() : questionKey;
+  // המגדר של הכרטיס שעליו נפתח הסבב. כל עוד לא נבחר/ה מועמד/ת,
+  // הרשימה מוצגת מעומעת ואינה לחיצה, והניסוח נשאר כפי שהיה עד היום.
+  const selectedGender = useMemo(
+    () => people.find((c) => c.id === candidateId)?.gender || "male",
+    [people, candidateId]
+  );
+  const bank = useMemo(() => questionBankFor(selectedGender), [selectedGender]);
+
+  const question = questionKey === CUSTOM ? customQuestion.trim() : bank[questionKey] || "";
   const canOpen = !!candidateId && !!question && !saving;
-  const shown = showAll ? QUESTION_BANK : QUESTION_BANK.slice(0, VISIBLE);
+  const shown = showAll ? bank : bank.slice(0, VISIBLE);
 
   const handleOpen = async () => {
     if (!canOpen) return;
@@ -90,13 +101,13 @@ export default function OpenRoundPanel({ onOpened }) {
         {step(2, "מה שואלים את הצוות?", !!question)}
 
         <div className="space-y-1.5">
-          {shown.map((q) => (
+          {shown.map((q, index) => (
             <button
-              key={q}
+              key={index}
               type="button"
-              onClick={() => setQuestionKey(q)}
+              onClick={() => setQuestionKey(index)}
               className={`block w-full rounded-2xl border px-3 py-2.5 text-right text-[12.5px] leading-relaxed transition ${
-                questionKey === q
+                questionKey === index
                   ? "border-[#8C4A55] bg-[#F6E4E6] font-semibold text-[#6E3540]"
                   : "border-[#EAE5E3] bg-white text-[#3A3335]"
               }`}
@@ -106,13 +117,13 @@ export default function OpenRoundPanel({ onOpened }) {
           ))}
         </div>
 
-        {!showAll && QUESTION_BANK.length > VISIBLE && (
+        {!showAll && bank.length > VISIBLE && (
           <button
             type="button"
             onClick={() => setShowAll(true)}
             className="mt-1.5 flex w-full items-center justify-center gap-1 py-1.5 text-[12px] font-semibold text-[#8C4A55]"
           >
-            <ChevronDown size={14} /> עוד {QUESTION_BANK.length - VISIBLE} שאלות
+            <ChevronDown size={14} /> עוד {bank.length - VISIBLE} שאלות
           </button>
         )}
 
