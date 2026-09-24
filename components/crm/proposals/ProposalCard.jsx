@@ -10,13 +10,17 @@ import {
   Check,
   Download,
   ImagePlus,
+  Lock,
   PenLine,
+  PlayCircle,
   Sparkles,
   Trash2,
   UserCheck,
   X,
 } from "lucide-react";
-import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
+import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED, PROPOSAL_FROZEN } from "@/lib/crm/store";
+import { ALL_PROPOSAL_STATUSES, isFrozenProposal } from "@/lib/crm/proposalStatus";
+import { releaseAssignmentMode } from "@/lib/crm/assignment";
 import { buildProfileShareText } from "@/lib/crm/shareText";
 import { whatsappNumber } from "@/lib/crm/brainstorm";
 import { daysSinceStatusChange, isProposalStuck, wasNudged } from "@/lib/crm/attention";
@@ -418,6 +422,8 @@ export default function ProposalCard({ proposal }) {
   const candidateExistsInDb = useCrmStore((s) => s.candidateExistsInDb);
   const candidatesLoaded = useCrmStore((s) => s.candidatesLoaded);
   const nudgeProposal = useCrmStore((s) => s.nudgeProposal);
+  const setProposalFrozen = useCrmStore((s) => s.setProposalFrozen);
+  const currentUser = useCrmStore((s) => s.currentUser);
   const authAllowlist = useCrmStore((s) => s.authAllowlist);
   const setAllowlistPhone = useCrmStore((s) => s.setAllowlistPhone);
   const serverOffsetMs = useCrmStore((s) => s.serverOffsetMs);
@@ -425,6 +431,7 @@ export default function ProposalCard({ proposal }) {
   const [note, setNote] = useState("");
   const [rationaleDraft, setRationaleDraft] = useState(proposal.rationale || "");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingRelease, setConfirmingRelease] = useState(false);
   // חותמת הנדנוד נכתבת בשרת ולכן חוזרת אלינו רגע אחרי הלחיצה. עד שהיא מגיעה,
   // הסימון המקומי הזה כבר מעמעם את הכפתור - כדי שלא תישלח לחיצה כפולה.
   const [nudgedNow, setNudgedNow] = useState(false);
@@ -463,6 +470,13 @@ export default function ProposalCard({ proposal }) {
   // ההערה שהוקלדה (אם יש) מצורפת ליומן ומתאפסת אחרי השמירה.
   const handleStageChange = async (stage) => {
     if (stage === proposal.status) return;
+    // הקפאה עוברת בפעולה משלה, כי היא גם זוכרת לאן לחזור אחר כך
+    if (stage === PROPOSAL_FROZEN) {
+      await setProposalFrozen(proposal.id, true, note);
+      setNote("");
+      showToast("ההצעה הוקפאה. המועמדים נשארים פנויים להצעות אחרות");
+      return;
+    }
     await updateProposalStatus(proposal.id, stage, note);
     setNote("");
     // "ירד מהפרק" מוציא את ההצעה מהלוח הפעיל. מסבירים לאן היא הלכה,
@@ -475,7 +489,32 @@ export default function ProposalCard({ proposal }) {
   // הצעה שלא זזה שבוע ומעלה. הצעה שירדה מהפרק אינה "תקועה" - היא נגמרה.
   const now = Date.now() + serverOffsetMs;
   const stuckDays = daysSinceStatusChange(proposal, now);
-  const stuck = proposal.status !== PROPOSAL_DROPPED && isProposalStuck(proposal, now);
+  // הצעה מוקפאת אינה "תקועה" - היא ממתינה בכוונה, וזה בדיוק ההבדל
+  const frozen = isFrozenProposal(proposal);
+  const stuck = proposal.status !== PROPOSAL_DROPPED && !frozen && isProposalStuck(proposal, now);
+
+  // החזרה מהקפאה, ישירות מהכרטיס שבאזור המוקפאים
+  const handleUnfreeze = async () => {
+    await setProposalFrozen(proposal.id, false, note);
+    setNote("");
+    showToast("ההצעה חזרה ללוח הפעיל");
+  };
+
+  // שחרור שיוך - רק בעל/ת התיק, ומנהלת אחרי אישור מפורש (ראו lib/crm/assignment.js)
+  const releaseMode = releaseAssignmentMode(proposal, currentUser(), role);
+  const handleRelease = () => {
+    if (releaseMode === "admin") {
+      setConfirmingRelease(true);
+      return;
+    }
+    assignProposal(proposal.id, null);
+    showToast("השיוך שוחרר. ההצעה חזרה להיות פנויה לכל הצוות");
+  };
+  const releaseByAdmin = async () => {
+    await assignProposal(proposal.id, null);
+    setConfirmingRelease(false);
+    showToast("השיוך שוחרר בסמכות מנהלת");
+  };
   const alreadyNudged = nudgedNow || wasNudged(proposal);
 
   // מציאת רשומת איש/אשת הצוות שמטפל/ת בהצעה, ברשימת ההרשאות.
@@ -596,12 +635,23 @@ export default function ProposalCard({ proposal }) {
         </div>
 
         {proposal.assignee ? (
-          <button
-            onClick={() => assignProposal(proposal.id, null)}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#B5AEB0] hover:text-[#8C4A55]"
-          >
-            <X size={12} /> שחרור שיוך
-          </button>
+          releaseMode === "blocked" ? (
+            // התיק של מישהי אחרת. הכפתור נשאר גלוי כדי שיהיה ברור שהאפשרות
+            // קיימת - אבל נעול, ומסביר במגע אחד למה.
+            <span
+              title={`התיק משויך ל${proposal.assignee}. רק מי שהתיק שלה יכולה לשחרר אותו.`}
+              className="flex cursor-not-allowed items-center gap-1 text-[11px] font-semibold text-[#CFC9C7]"
+            >
+              <Lock size={12} /> שחרור שיוך
+            </span>
+          ) : (
+            <button
+              onClick={handleRelease}
+              className="flex items-center gap-1 text-[11px] font-semibold text-[#B5AEB0] hover:text-[#8C4A55]"
+            >
+              <X size={12} /> שחרור שיוך
+            </button>
+          )
         ) : (
           <button
             onClick={() => assignProposalToSelf(proposal.id)}
@@ -615,6 +665,17 @@ export default function ProposalCard({ proposal }) {
       <div className="relative mt-3">
         <StageFunnel status={proposal.status} onSelect={handleStageChange} />
       </div>
+
+      {/* הצעה בהשהיה: כפתור אחד מחזיר אותה בדיוק לשלב שבו היתה */}
+      {frozen && (
+        <button
+          type="button"
+          onClick={handleUnfreeze}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#B45309] py-2.5 text-[12px] font-bold text-white transition active:scale-95"
+        >
+          <PlayCircle size={14} /> החזרה לפעילות
+        </button>
+      )}
 
       <div className="mt-4 rounded-2xl bg-[#FFF8E7] p-3">
         <p className="mb-1 flex items-center gap-1 text-[11px] font-bold text-[#946200]">
@@ -652,7 +713,7 @@ export default function ProposalCard({ proposal }) {
           <div>
             <p className="mb-1.5 text-[12px] font-semibold text-[#3A3335]">עדכון סטטוס</p>
             <div className="flex flex-wrap gap-1.5">
-              {[...PROPOSAL_STAGES, PROPOSAL_DROPPED].map((stage) => (
+              {ALL_PROPOSAL_STATUSES.map((stage) => (
                 <button
                   key={stage}
                   onClick={() => handleStageChange(stage)}
@@ -696,6 +757,16 @@ export default function ProposalCard({ proposal }) {
             </ul>
           </div>
         </div>
+      )}
+
+      {confirmingRelease && (
+        <ConfirmDialog
+          message={`התיק הזה משויך ל${proposal.assignee}. לשחרר את השיוך בכל זאת? ההצעה תחזור להיות פנויה לכל הצוות.`}
+          confirmLabel="לשחרר את השיוך"
+          tone="neutral"
+          onConfirm={releaseByAdmin}
+          onCancel={() => setConfirmingRelease(false)}
+        />
       )}
 
       {confirmingDelete && (
