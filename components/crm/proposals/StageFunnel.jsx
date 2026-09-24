@@ -1,20 +1,11 @@
 "use client";
 
-import { Check, PauseCircle, X } from "lucide-react";
-import { PROPOSAL_STAGES, PROPOSAL_DROPPED, PROPOSAL_FROZEN } from "@/lib/crm/store";
+import { Check, X } from "lucide-react";
+import { PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
 
 // כשמועבר onSelect, כל שלב הופך לכפתור לחיץ שמעדכן את סטטוס ההצעה.
 // בלי onSelect (למשל בתצוגה המוקטנת בכרטיס המועמד/ת) הסרגל נשאר לתצוגה בלבד.
 export default function StageFunnel({ status, compact = false, onSelect = null }) {
-  // הצעה בהשהיה: מצב ביניים ולא סוף הדרך, ולכן חיווי ענברי ולא אדום
-  if (status === PROPOSAL_FROZEN) {
-    return (
-      <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF3E4] px-3 py-2 text-[12px] font-semibold text-[#B45309]">
-        <PauseCircle size={14} /> {PROPOSAL_FROZEN}
-      </div>
-    );
-  }
-
   if (status === PROPOSAL_DROPPED) {
     return (
       <div className="flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">

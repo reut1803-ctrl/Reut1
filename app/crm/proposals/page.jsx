@@ -8,9 +8,7 @@ import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import VoiceRecorderField from "@/components/crm/ui/VoiceRecorderField";
 import ProposalCard from "@/components/crm/proposals/ProposalCard";
 import MatchHistoryPanel from "@/components/crm/proposals/MatchHistoryPanel";
-import FrozenProposalsPanel from "@/components/crm/proposals/FrozenProposalsPanel";
-import { useCrmStore } from "@/lib/crm/store";
-import { isActiveProposal } from "@/lib/crm/proposalStatus";
+import { useCrmStore, PROPOSAL_DROPPED } from "@/lib/crm/store";
 
 // בחירה קבועה בראש רשימת המועמדים: אדם שאינו רשום במאגר.
 // הפרטים שלו נשמרים אך ורק בתוך ההצעה הזו ואינם יוצרים כרטיס במאגר.
@@ -155,9 +153,8 @@ export default function ProposalsPage() {
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
 
   // הלוח מציג רק הצעות פעילות. הצעה שירדה מהפרק נשמרת במלואה במסד הנתונים
-  // ועוברת לפאנל ההיסטוריה שבתחתית העמוד, והצעה שהוקפאה עוברת לאזור
-  // המוקפאים - כדי שהלוח לא יתמלא בהצעות שאינן דורשות פעולה עכשיו.
-  const activeProposals = useMemo(() => proposals.filter(isActiveProposal), [proposals]);
+  // ועוברת לפאנל ההיסטוריה שבתחתית העמוד, כדי שהלוח לא יתמלא בהצעות סגורות.
+  const activeProposals = useMemo(() => proposals.filter((p) => p.status !== PROPOSAL_DROPPED), [proposals]);
 
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
@@ -298,7 +295,7 @@ export default function ProposalsPage() {
           <p className="text-center text-sm text-[#8A8285]">
             {proposals.length === 0
               ? "עדיין לא הוצעו התאמות"
-              : "אין כרגע הצעות פעילות. מה שהוקפא ומה שירד מהפרק שמורים באזורים שלמטה."}
+              : "אין כרגע הצעות פעילות. כל מה שירד מהפרק שמור בהיסטוריה למטה."}
           </p>
         ) : (
           <div className="space-y-3">
@@ -308,8 +305,6 @@ export default function ProposalsPage() {
           </div>
         )}
       </div>
-
-      <FrozenProposalsPanel />
 
       <MatchHistoryPanel />
 
