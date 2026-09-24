@@ -10,12 +10,56 @@ import StageFunnel from "./StageFunnel";
 import CandidatePhone from "@/components/crm/profiles/CandidatePhone";
 import { downloadMedia } from "@/lib/crm/mediaStore";
 import MediaImage from "@/components/crm/ui/MediaImage";
+import ExternalCandidatePanel from "./ExternalCandidatePanel";
+import { waDigits } from "@/components/crm/profiles/ProfileCard";
+import { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 import { wasDroppedBefore, lastDropInfo } from "@/lib/crm/attention";
 
-function ExternalContactCard({ data }) {
+function ExternalContactCard({ data, proposalId, side }) {
   const { url } = useMediaUrl(data.audioUrl);
   const showToast = useCrmStore((s) => s.showToast);
+  const updateProposalExternal = useCrmStore((s) => s.updateProposalExternal);
   const [copied, setCopied] = useState(false);
+  // מצב עריכה פתוח תמיד ולכל אנשי הצוות, כדי שהעברת טיפול בין שדכנים
+  // לא תיתקל בחסימה. אין כאן שום מגבלת זמן.
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(data);
+  const [saving, setSaving] = useState(false);
+
+  const openEdit = () => {
+    setDraft({
+      name: data.name || "",
+      notes: data.notes || "",
+      audioUrl: data.audioUrl || null,
+      photoUrl: data.photoUrl || null,
+      phone: data.phone || "",
+    });
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await updateProposalExternal(proposalId, side, draft);
+      showToast("הכרטיס המקוצר עודכן");
+      setEditing(false);
+    } catch (err) {
+      showToast(err?.message || "העדכון נכשל, נסי שוב");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDownloadPhoto = async () => {
+    if (!data.photoUrl) return;
+    try {
+      await downloadMedia(data.photoUrl, `${data.name || "תמונה"}.jpg`);
+      showToast("התמונה יורדת למכשיר");
+    } catch {
+      showToast("הורדת התמונה נכשלה, נסי שוב");
+    }
+  };
 
   // בכרטיס המקוצר התמונה אופציונלית, ולכן ההקלטה נשארת הכפתור המרכזי
   const handleDownloadAudio = async () => {
@@ -29,7 +73,13 @@ function ExternalContactCard({ data }) {
   };
 
   const handleCopy = async () => {
-    const text = [`${data.name} (מהמעגל האישי - לא במאגר)`, data.notes || null].filter(Boolean).join("\n");
+    const text = [
+      `${data.name} (מהמעגל האישי - לא במאגר)`,
+      data.phone ? `טלפון לבירורים: ${data.phone}` : null,
+      data.notes || null,
+    ]
+      .filter(Boolean)
+      .join("\n");
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -39,9 +89,43 @@ function ExternalContactCard({ data }) {
     }
   };
 
+  if (editing) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-[#844442] bg-[#E8DCCB] p-2">
+        <ExternalCandidatePanel value={draft} onChange={setDraft} genderLabel={side === "male" ? "בחור" : "בחורה"} />
+        <div className="mt-2 flex gap-1.5">
+          <button
+            onClick={saveEdit}
+            disabled={saving}
+            className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-[#844442] py-2 text-[11px] font-bold text-white transition active:scale-95 disabled:opacity-60"
+          >
+            <Check size={13} /> {saving ? "שומר..." : "שמירה"}
+          </button>
+          <button
+            onClick={() => setEditing(false)}
+            disabled={saving}
+            className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-2 text-[11px] font-semibold text-[#7C6E60] transition active:scale-95"
+          >
+            <X size={13} /> ביטול
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border-2 border-dashed border-[#844442] bg-[#E8DCCB] p-3">
-      <p className="text-[10px] font-bold text-[#844442]">מהמעגל האישי - לא במאגר</p>
+      <div className="flex items-start justify-between gap-1">
+        <p className="text-[10px] font-bold text-[#844442]">מהמעגל האישי - לא במאגר</p>
+        <button
+          onClick={openEdit}
+          aria-label="עריכת הכרטיס המקוצר"
+          title="עריכת הכרטיס"
+          className="-mt-1 shrink-0 rounded-full p-1 text-[#7C6E60] transition hover:bg-white active:scale-90"
+        >
+          <Pencil size={13} />
+        </button>
+      </div>
       {/* תמונה אופציונלית. כרטיס בלי תמונה נראה בדיוק כפי שנראה עד היום. */}
       {data.photoUrl && (
         <div className="mt-1.5 overflow-hidden rounded-xl border border-[#CCBDAB] bg-white">
@@ -53,6 +137,43 @@ function ExternalContactCard({ data }) {
         </div>
       )}
       <p className="mt-0.5 text-[13px] font-bold text-[#3A2E26]">{data.name}</p>
+
+      {/* טלפון לבירורים - שדה מובנה ובולט, ולא מספר שהודבק בתוך ההערות */}
+      {data.phone && (
+        <div className="mt-1.5 rounded-xl border border-[#CCBDAB] bg-white px-2 py-1.5">
+          <p className="text-[10px] font-bold text-[#844442]">טלפון לבירורים</p>
+          <p dir="ltr" className="text-right text-[12px] font-bold text-[#3A2E26]">{prettyPhone(data.phone)}</p>
+          <div className="mt-1 grid grid-cols-3 gap-1">
+            <a
+              href={`tel:${data.phone}`}
+              aria-label={`חיוג לבירורים על ${data.name}`}
+              title="חיוג"
+              className="flex min-w-0 items-center justify-center rounded-lg bg-[#844442] py-1.5 text-white transition active:scale-95"
+            >
+              <Phone size={13} />
+            </a>
+            <a
+              href={`https://wa.me/${waDigits(data.phone)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`וואטסאפ לבירורים על ${data.name}`}
+              title="וואטסאפ"
+              className="flex min-w-0 items-center justify-center rounded-lg bg-[#62826B] py-1.5 text-white transition active:scale-95"
+            >
+              <MessageCircle size={13} />
+            </a>
+            <a
+              href={`sms:${data.phone}`}
+              aria-label={`הודעה לבירורים על ${data.name}`}
+              title="הודעת SMS"
+              className="flex min-w-0 items-center justify-center rounded-lg border border-[#CCBDAB] bg-white py-1.5 text-[#7C6E60] transition active:scale-95"
+            >
+              <MessageSquare size={13} />
+            </a>
+          </div>
+        </div>
+      )}
+
       {data.notes && (
         <p className="mt-1 whitespace-pre-line text-[11px] leading-relaxed text-[#3A2E26]">{data.notes}</p>
       )}
@@ -68,6 +189,15 @@ function ExternalContactCard({ data }) {
         {copied ? <Check size={13} /> : <Copy size={13} />}
         {copied ? "הועתק!" : "העתקת הפרטים"}
       </button>
+
+      {data.photoUrl && (
+        <button
+          onClick={handleDownloadPhoto}
+          className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
+        >
+          <ImageDown size={13} /> הורדת תמונה
+        </button>
+      )}
 
       {data.audioUrl && (
         <button
@@ -384,8 +514,16 @@ export default function ProposalCard({ proposal }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        {male ? <ContactCard candidate={male} /> : <ExternalContactCard data={extMale} />}
-        {female ? <ContactCard candidate={female} /> : <ExternalContactCard data={extFemale} />}
+        {male ? (
+          <ContactCard candidate={male} />
+        ) : (
+          <ExternalContactCard data={extMale} proposalId={proposal.id} side="male" />
+        )}
+        {female ? (
+          <ContactCard candidate={female} />
+        ) : (
+          <ExternalContactCard data={extFemale} proposalId={proposal.id} side="female" />
+        )}
       </div>
 
       {open && (

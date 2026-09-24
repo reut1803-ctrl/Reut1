@@ -21,7 +21,7 @@ function AudioPreview({ value }) {
 // "מיני-כרטיס" למועמד/ת שאינו/ה במאגר - מישהו מהמעגל האישי של השדכנית.
 // כל מה שנכתב כאן נשמר אך ורק בתוך ההצעה הזו, ולא נוצר ממנו כרטיס במאגר.
 export default function ExternalCandidatePanel({ value, onChange, genderLabel }) {
-  const data = value || { name: "", notes: "", audioUrl: null, photoUrl: null };
+  const data = value || { name: "", notes: "", audioUrl: null, photoUrl: null, phone: "" };
   const set = (patch) => onChange({ ...data, ...patch });
 
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -124,6 +124,16 @@ export default function ExternalCandidatePanel({ value, onChange, genderLabel })
         onChange={(e) => set({ name: e.target.value })}
         placeholder="שם או זיהוי (למשל: בחור שפגשתי בשבת)"
         className="mt-2 w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2 text-sm outline-none focus:border-[#844442]"
+      />
+
+      {/* טלפון לבירורים - שדה מובנה, במקום לשרשר מספרים לתוך ההערות */}
+      <input
+        type="tel"
+        dir="ltr"
+        value={data.phone || ""}
+        onChange={(e) => set({ phone: e.target.value })}
+        placeholder="טלפון לבירורים (לא חובה)"
+        className="mt-2 w-full rounded-xl border border-[#CCBDAB] bg-white px-3 py-2 text-right text-sm outline-none focus:border-[#844442]"
       />
 
       <textarea

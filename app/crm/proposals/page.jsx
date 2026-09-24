@@ -55,11 +55,11 @@ export default function ProposalsPage() {
 
   const pickMale = (v) => {
     setSelection("male", v);
-    setExternalMale(v === EXTERNAL ? { name: "", notes: "", audioUrl: null, photoUrl: null } : null);
+    setExternalMale(v === EXTERNAL ? { name: "", notes: "", audioUrl: null, photoUrl: null, phone: "" } : null);
   };
   const pickFemale = (v) => {
     setSelection("female", v);
-    setExternalFemale(v === EXTERNAL ? { name: "", notes: "", audioUrl: null, photoUrl: null } : null);
+    setExternalFemale(v === EXTERNAL ? { name: "", notes: "", audioUrl: null, photoUrl: null, phone: "" } : null);
   };
 
   const sideReady = (sel, ext) => (sel === EXTERNAL ? !!ext?.name.trim() : !!sel);
