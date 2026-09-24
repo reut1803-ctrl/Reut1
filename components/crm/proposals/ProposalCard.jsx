@@ -9,6 +9,8 @@ import {
   Copy,
   Check,
   Download,
+  ImagePlus,
+  PenLine,
   Sparkles,
   Trash2,
   UserCheck,
@@ -21,6 +23,9 @@ import { daysSinceStatusChange, isProposalStuck, wasNudged } from "@/lib/crm/att
 import { WhatsappIcon, PhoneCallIcon, SmsIcon } from "@/components/crm/ui/BrandIcons";
 import { findStaffEntry } from "@/lib/crm/staff";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
+import { optimizedImage } from "@/lib/crm/imageUrl";
+import { uploadToCloudinary } from "@/lib/crm/cloudinary";
+import { compressImage } from "@/lib/crm/compressImage";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
 
@@ -170,17 +175,221 @@ function ContactCard({ candidate }) {
   );
 }
 
-// מועמד/ת שאינו/ה במאגר: הפרטים נשמרו בתוך ההצעה עצמה בלבד
-function ExternalContactCard({ person }) {
+// מועמד/ת שאינו/ה במאגר: הפרטים נשמרו בתוך ההצעה עצמה בלבד.
+//
+// הכרטיס הזה נשאר פתוח לעריכה תמיד - בכל שלב של ההצעה, ולכל אשת צוות,
+// ולא רק למי שפתחה אותה. תיק עובר בין שדכניות, ומי שמקבלת אותו באמצע
+// חייבת להיות מסוגלת להשלים טלפון, תמונה או מספר לבירורים בלי חסימה.
+function ExternalContactCard({ proposal, side, person }) {
+  const updateExternal = useCrmStore((s) => s.updateProposalExternal);
+  const showToast = useCrmStore((s) => s.showToast);
   const { url } = useMediaUrl(person.audioUrl);
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(person);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [referenceCopied, setReferenceCopied] = useState(false);
+
+  const openEditor = () => {
+    setDraft(person);
+    setUploadError("");
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await updateExternal(proposal.id, side, {
+        name: String(draft.name || "").trim() || person.name,
+        phone: String(draft.phone || "").trim(),
+        notes: String(draft.notes || "").trim(),
+        referenceContacts: String(draft.referenceContacts || "").trim(),
+        photoUrl: draft.photoUrl || null,
+      });
+      setEditing(false);
+      showToast("הפרטים נשמרו");
+    } catch {
+      showToast("שמירת הפרטים נכשלה");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // התמונה נדחסת לפני ההעלאה, בדיוק כמו בכרטיס רגיל במאגר
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const compressed = await compressImage(file, { maxDimension: 1200, quality: 0.8 });
+      const blob = await (await fetch(compressed)).blob();
+      const photoUrl = await uploadToCloudinary(blob);
+      setDraft((d) => ({ ...d, photoUrl }));
+    } catch (err) {
+      setUploadError(err?.message || "העלאת התמונה נכשלה");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownloadPhoto = async () => {
+    if (downloading || !person.photoUrl) return;
+    setDownloading(true);
+    await downloadPhoto(person.photoUrl, person.name);
+    setDownloading(false);
+  };
+
+  const handleCopyReferenceContacts = async () => {
+    await navigator.clipboard.writeText(person.referenceContacts || "");
+    setReferenceCopied(true);
+    setTimeout(() => setReferenceCopied(false), 2000);
+  };
+
+  const field =
+    "w-full rounded-xl border border-[#EAE5E3] bg-white px-2.5 py-2 text-[12px] outline-none focus:border-[#8C4A55]";
 
   return (
     <div className="rounded-2xl border border-dashed border-[#C98894] bg-[#FDF7F8] p-3">
-      <p className="text-[13px] font-bold text-[#3A3335]">{person.name}</p>
-      <p className="mt-0.5 text-[10px] font-semibold text-[#8C4A55]">מהמעגל האישי · לא במאגר</p>
-      {person.notes && <p className="mt-1.5 whitespace-pre-line text-[11px] leading-relaxed text-[#3A3335]">{person.notes}</p>}
-      {person.audioUrl &&
-        (url ? <audio controls src={url} className="mt-2 h-9 w-full" /> : <p className="mt-2 text-[11px] text-[#8A8285]">טוען הקלטה...</p>)}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[13px] font-bold text-[#3A3335]">{person.name}</p>
+          <p className="mt-0.5 text-[10px] font-semibold text-[#8C4A55]">מהמעגל האישי · לא במאגר</p>
+        </div>
+        {!editing && (
+          <button
+            type="button"
+            onClick={openEditor}
+            className="flex shrink-0 items-center gap-1 rounded-full border border-[#C98894] bg-white px-2.5 py-1 text-[10px] font-bold text-[#8C4A55] transition active:scale-95"
+          >
+            <PenLine size={11} /> עריכה
+          </button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="mt-2 space-y-2">
+          <input
+            type="text"
+            value={draft.name || ""}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            placeholder="שם"
+            className={field}
+          />
+          <input
+            type="tel"
+            inputMode="tel"
+            dir="ltr"
+            value={draft.phone || ""}
+            onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+            placeholder="טלפון"
+            className={`${field} text-right`}
+          />
+          <textarea
+            value={draft.notes || ""}
+            onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
+            rows={3}
+            placeholder="פרטים על האדם עצמו: גיל, רקע, אופי, ממי הגיע..."
+            className={`${field} resize-y leading-relaxed`}
+          />
+          <textarea
+            value={draft.referenceContacts || ""}
+            onChange={(e) => setDraft({ ...draft, referenceContacts: e.target.value })}
+            rows={2}
+            placeholder="טלפון לבירורים: שם האיש/האשה והמספר"
+            className={`${field} resize-y leading-relaxed`}
+          />
+
+          {draft.photoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={optimizedImage(draft.photoUrl, 400)}
+              alt=""
+              decoding="async"
+              className="h-32 w-full rounded-xl object-cover"
+            />
+          )}
+          <label className="flex cursor-pointer items-center justify-center gap-1 rounded-xl border border-dashed border-[#C98894] bg-white py-2 text-[11px] font-semibold text-[#8C4A55]">
+            <ImagePlus size={13} />
+            {uploading ? "מעלה..." : draft.photoUrl ? "החלפת תמונה" : "העלאת תמונה"}
+            <input type="file" accept="image/*" onChange={handlePhotoChange} disabled={uploading} className="hidden" />
+          </label>
+          {uploadError && <p className="text-[11px] text-[#C24545]">{uploadError}</p>}
+
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="flex-1 rounded-xl border border-[#EAE5E3] bg-white py-2 text-[11px] font-semibold text-[#3A3335]"
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || uploading}
+              className="flex-1 rounded-xl bg-[#8C4A55] py-2 text-[11px] font-semibold text-white transition active:scale-95 disabled:opacity-50"
+            >
+              {saving ? "שומרת..." : "שמירה"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {person.photoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={optimizedImage(person.photoUrl, 400)}
+              alt={person.name}
+              decoding="async"
+              className="mt-2 h-32 w-full rounded-xl object-cover"
+            />
+          )}
+
+          <QuickContactBar phone={person.phone} name={person.name} />
+
+          {person.photoUrl && (
+            <button
+              type="button"
+              onClick={handleDownloadPhoto}
+              disabled={downloading}
+              className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4] disabled:opacity-60"
+            >
+              <Download size={13} /> {downloading ? "מוריד..." : "הורדת תמונה"}
+            </button>
+          )}
+
+          {person.notes && (
+            <p className="mt-1.5 whitespace-pre-line text-[11px] leading-relaxed text-[#3A3335]">{person.notes}</p>
+          )}
+
+          {person.referenceContacts && (
+            <div className="mt-2 rounded-xl border-2 border-[#8C4A55] bg-white p-2">
+              <p className="mb-1 text-[10px] font-bold text-[#8C4A55]">טלפון לבירורים</p>
+              <p className="mb-1.5 whitespace-pre-wrap text-[11px] text-[#3A3335]">{person.referenceContacts}</p>
+              <button
+                onClick={handleCopyReferenceContacts}
+                className="flex w-full items-center justify-center gap-1 rounded-lg bg-[#8C4A55] py-1.5 text-[11px] font-semibold text-white transition active:scale-95"
+              >
+                {referenceCopied ? <Check size={12} /> : <Copy size={12} />}
+                {referenceCopied ? "הועתק!" : "העתקה"}
+              </button>
+            </div>
+          )}
+
+          {person.audioUrl &&
+            (url ? (
+              <audio controls src={url} className="mt-2 h-9 w-full" />
+            ) : (
+              <p className="mt-2 text-[11px] text-[#8A8285]">טוען הקלטה...</p>
+            ))}
+        </>
+      )}
     </div>
   );
 }
@@ -427,14 +636,14 @@ export default function ProposalCard({ proposal }) {
         ) : maleMissing ? (
           <MissingContactCard name={maleName} />
         ) : (
-          <ExternalContactCard person={externalMale} />
+          <ExternalContactCard proposal={proposal} side="male" person={externalMale} />
         )}
         {female ? (
           <ContactCard candidate={female} />
         ) : femaleMissing ? (
           <MissingContactCard name={femaleName} />
         ) : (
-          <ExternalContactCard person={externalFemale} />
+          <ExternalContactCard proposal={proposal} side="female" person={externalFemale} />
         )}
       </div>
 

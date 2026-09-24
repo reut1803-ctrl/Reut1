@@ -15,7 +15,7 @@ import { useCrmStore, PROPOSAL_DROPPED } from "@/lib/crm/store";
 const EXTERNAL_VALUE = "__external__";
 const EXTERNAL_LABEL = "מישהו מהמעגל שלי...";
 
-const EMPTY_EXTERNAL = { name: "", notes: "", audioUrl: null };
+const EMPTY_EXTERNAL = { name: "", notes: "", audioUrl: null, phone: "", referenceContacts: "", photoUrl: null };
 
 // התראת כפילות חוסמת: ההצעה אינה נוצרת עד שמאשרים במפורש. חלה גם על הצעה
 // שירדה מהפרק בתוך המערכת וגם על היסטוריה שהוזנה ידנית על ידי המנהלת.
@@ -79,11 +79,30 @@ function ExternalPersonFields({ title, value, onChange }) {
         className="w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8C4A55]"
       />
 
+      <input
+        type="tel"
+        inputMode="tel"
+        dir="ltr"
+        value={value.phone || ""}
+        onChange={(e) => onChange({ ...value, phone: e.target.value })}
+        placeholder="טלפון שלו/שלה"
+        className="mt-2 w-full rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-right text-sm outline-none focus:border-[#8C4A55]"
+      />
+
       <textarea
         value={value.notes}
         onChange={(e) => onChange({ ...value, notes: e.target.value })}
         rows={3}
         placeholder="פרטים על האדם עצמו: גיל, רקע, אופי, ממי הגיע..."
+        className="mt-2 w-full resize-y rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#8C4A55]"
+      />
+
+      {/* שדה נפרד ומסומן, כדי שמספרי הבירורים לא יידחפו לתוך ההערות */}
+      <textarea
+        value={value.referenceContacts || ""}
+        onChange={(e) => onChange({ ...value, referenceContacts: e.target.value })}
+        rows={2}
+        placeholder="טלפון לבירורים: שם האיש/האשה והמספר"
         className="mt-2 w-full resize-y rounded-xl border border-[#EAE5E3] bg-white px-3 py-2.5 text-sm leading-relaxed outline-none focus:border-[#8C4A55]"
       />
 
@@ -164,10 +183,24 @@ export default function ProposalsPage() {
       rationale.trim(),
       {
         male: isExternalMale
-          ? { name: externalMale.name.trim(), notes: externalMale.notes.trim(), audioUrl: externalMale.audioUrl || null }
+          ? {
+              name: externalMale.name.trim(),
+              notes: externalMale.notes.trim(),
+              audioUrl: externalMale.audioUrl || null,
+              phone: (externalMale.phone || "").trim(),
+              referenceContacts: (externalMale.referenceContacts || "").trim(),
+              photoUrl: externalMale.photoUrl || null,
+            }
           : null,
         female: isExternalFemale
-          ? { name: externalFemale.name.trim(), notes: externalFemale.notes.trim(), audioUrl: externalFemale.audioUrl || null }
+          ? {
+              name: externalFemale.name.trim(),
+              notes: externalFemale.notes.trim(),
+              audioUrl: externalFemale.audioUrl || null,
+              phone: (externalFemale.phone || "").trim(),
+              referenceContacts: (externalFemale.referenceContacts || "").trim(),
+              photoUrl: externalFemale.photoUrl || null,
+            }
           : null,
       }
     );
