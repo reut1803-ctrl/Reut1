@@ -10,14 +10,16 @@ import {
   Check,
   Download,
   ImagePlus,
+  PauseCircle,
   PenLine,
   Sparkles,
   Trash2,
   UserCheck,
   X,
 } from "lucide-react";
-import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
+import { useCrmStore, PROPOSAL_STAGES, PROPOSAL_DROPPED, PROPOSAL_ON_HOLD } from "@/lib/crm/store";
 import { buildProfileShareText } from "@/lib/crm/shareText";
+import { cleanShareText } from "@/lib/crm/shareClean";
 import { whatsappNumber } from "@/lib/crm/brainstorm";
 import { daysSinceStatusChange, isProposalStuck, wasNudged } from "@/lib/crm/attention";
 import { WhatsappIcon, PhoneCallIcon, SmsIcon } from "@/components/crm/ui/BrandIcons";
@@ -124,13 +126,13 @@ function ContactCard({ candidate }) {
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(buildProfileShareText(candidate));
+    await navigator.clipboard.writeText(cleanShareText(buildProfileShareText(candidate)));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleCopyReferenceContacts = async () => {
-    await navigator.clipboard.writeText(candidate.referenceContacts || "");
+    await navigator.clipboard.writeText(cleanShareText(candidate.referenceContacts || ""));
     setReferenceCopied(true);
     setTimeout(() => setReferenceCopied(false), 2000);
   };
@@ -192,6 +194,7 @@ function ExternalContactCard({ proposal, side, person }) {
   const [uploadError, setUploadError] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const openEditor = () => {
     setDraft(person);
@@ -246,9 +249,22 @@ function ExternalContactCard({ proposal, side, person }) {
   };
 
   const handleCopyReferenceContacts = async () => {
-    await navigator.clipboard.writeText(person.referenceContacts || "");
+    await navigator.clipboard.writeText(cleanShareText(person.referenceContacts || ""));
     setReferenceCopied(true);
     setTimeout(() => setReferenceCopied(false), 2000);
+  };
+
+  // טקסט לשליחה הלאה. מכיל את מה שידוע על האדם בלבד, בלי סימונים
+  // פנימיים של הצוות ובלי המספרים לבירורים, שאינם מיועדים לצד שמקבל.
+  const handleCopyText = async () => {
+    const text = cleanShareText(
+      [person.name, person.notes, person.phone ? `טלפון: ${person.phone}` : null]
+        .filter(Boolean)
+        .join("\n")
+    );
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const field =
@@ -353,6 +369,15 @@ function ExternalContactCard({ proposal, side, person }) {
 
           <QuickContactBar phone={person.phone} name={person.name} />
 
+          <button
+            type="button"
+            onClick={handleCopyText}
+            className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4]"
+          >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+            {copied ? "הועתק!" : "העתקת טקסט"}
+          </button>
+
           {person.photoUrl && (
             <button
               type="button"
@@ -412,6 +437,8 @@ export default function ProposalCard({ proposal }) {
   const updateProposalRationale = useCrmStore((s) => s.updateProposalRationale);
   const assignProposal = useCrmStore((s) => s.assignProposal);
   const assignProposalToSelf = useCrmStore((s) => s.assignProposalToSelf);
+  const holdProposal = useCrmStore((s) => s.holdProposal);
+  const currentUser = useCrmStore((s) => s.currentUser);
   const deleteProposal = useCrmStore((s) => s.deleteProposal);
   const showToast = useCrmStore((s) => s.showToast);
   const findCandidateById = useCrmStore((s) => s.findCandidateById);
@@ -482,6 +509,21 @@ export default function ProposalCard({ proposal }) {
   // השם שנשמר בשיוך הוא שם החשבון בגוגל, והוא לא תמיד זהה לשם שברשימה
   // ("דבורה" מול "דבורה כהן"), ולכן מנסים כמה דרכים לפי סדר הדיוק:
   // המייל, שם מלא זהה, שם ללא רגישות לאותיות, ולבסוף שם פרטי.
+  // שחרור שיוך שמור למי שהתיק משויך אליה, כדי שלחיצה שגויה של מישהו
+  // אחר לא תשבש רצף עבודה. המנהלת רשאית גם היא - אחרת תיק של מי שעזבה
+  // את הצוות היה נשאר נעול לנצח ואיש לא היה יכול לקחת אותו.
+  //
+  // השוואה לפי כתובת מייל. בהצעות ותיקות שנשמרו לפני שהמייל נשמר
+  // בשיוך אין כתובת להשוואה, ולכן נופלים להשוואת שם - אחרת הכפתור
+  // היה מת לכולם באותן הצעות.
+  const me = currentUser();
+  const myEmail = String(me?.email || "").trim().toLowerCase();
+  const ownerEmail = String(proposal.assigneeEmail || "").trim().toLowerCase();
+  const canReleaseAssignment =
+    role === "admin" ||
+    (!!ownerEmail && ownerEmail === myEmail) ||
+    (!ownerEmail && !!proposal.assignee && proposal.assignee === me?.name);
+
   const assigneeEntry = findStaffEntry(authAllowlist, proposal.assigneeEmail, proposal.assignee);
   const assigneeWhatsapp = whatsappNumber(assigneeEntry?.phone);
 
@@ -596,12 +638,21 @@ export default function ProposalCard({ proposal }) {
         </div>
 
         {proposal.assignee ? (
-          <button
-            onClick={() => assignProposal(proposal.id, null)}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#B5AEB0] hover:text-[#8C4A55]"
-          >
-            <X size={12} /> שחרור שיוך
-          </button>
+          canReleaseAssignment ? (
+            <button
+              onClick={() => assignProposal(proposal.id, null)}
+              className="flex items-center gap-1 text-[11px] font-semibold text-[#B5AEB0] hover:text-[#8C4A55]"
+            >
+              <X size={12} /> שחרור שיוך
+            </button>
+          ) : (
+            <span
+              title={`רק ${proposal.assignee} יכול/ה לשחרר את התיק הזה`}
+              className="flex cursor-not-allowed items-center gap-1 text-[11px] font-semibold text-[#D8D2D0]"
+            >
+              <X size={12} /> שחרור שיוך
+            </span>
+          )
         ) : (
           <button
             onClick={() => assignProposalToSelf(proposal.id)}
@@ -615,6 +666,21 @@ export default function ProposalCard({ proposal }) {
       <div className="relative mt-3">
         <StageFunnel status={proposal.status} onSelect={handleStageChange} />
       </div>
+
+      {/* הקפאה: מצב ביניים להצעה שממתינה, בלי להוריד אותה מהפרק.
+          ההצעה יוצאת מהפיד הפעיל ונשמרת באזור "מוקפאים / בהשהיה". */}
+      {proposal.status !== PROPOSAL_DROPPED && (
+        <button
+          type="button"
+          onClick={async () => {
+            await holdProposal(proposal.id);
+            showToast('ההצעה הוקפאה ועברה ל"מוקפאים / בהשהיה"');
+          }}
+          className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8A8285] transition active:scale-95 hover:bg-[#F6F5F4] hover:text-[#8C4A55]"
+        >
+          <PauseCircle size={13} /> הקפאה / השהיה
+        </button>
+      )}
 
       <div className="mt-4 rounded-2xl bg-[#FFF8E7] p-3">
         <p className="mb-1 flex items-center gap-1 text-[11px] font-bold text-[#946200]">

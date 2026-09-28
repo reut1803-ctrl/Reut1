@@ -8,7 +8,8 @@ import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import VoiceRecorderField from "@/components/crm/ui/VoiceRecorderField";
 import ProposalCard from "@/components/crm/proposals/ProposalCard";
 import MatchHistoryPanel from "@/components/crm/proposals/MatchHistoryPanel";
-import { useCrmStore, PROPOSAL_DROPPED } from "@/lib/crm/store";
+import OnHoldPanel from "@/components/crm/proposals/OnHoldPanel";
+import { useCrmStore, PROPOSAL_DROPPED, PROPOSAL_ON_HOLD } from "@/lib/crm/store";
 
 // בחירה קבועה בראש רשימת המועמדים: אדם שאינו רשום במאגר.
 // הפרטים שלו נשמרים אך ורק בתוך ההצעה הזו ואינם יוצרים כרטיס במאגר.
@@ -154,7 +155,12 @@ export default function ProposalsPage() {
 
   // הלוח מציג רק הצעות פעילות. הצעה שירדה מהפרק נשמרת במלואה במסד הנתונים
   // ועוברת לפאנל ההיסטוריה שבתחתית העמוד, כדי שהלוח לא יתמלא בהצעות סגורות.
-  const activeProposals = useMemo(() => proposals.filter((p) => p.status !== PROPOSAL_DROPPED), [proposals]);
+  // הפיד הפעיל מציג רק מה שבאמת בטיפול: לא מה שירד מהפרק,
+  // ולא מה שהוקפא. המוקפאים מרוכזים באזור משלהם שלמטה.
+  const activeProposals = useMemo(
+    () => proposals.filter((p) => p.status !== PROPOSAL_DROPPED && p.status !== PROPOSAL_ON_HOLD),
+    [proposals]
+  );
 
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#8A8285]">אזור זה זמין לצוות בלבד</p>;
@@ -305,6 +311,8 @@ export default function ProposalsPage() {
           </div>
         )}
       </div>
+
+      <OnHoldPanel />
 
       <MatchHistoryPanel />
 

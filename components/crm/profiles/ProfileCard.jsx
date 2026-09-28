@@ -22,13 +22,14 @@ import {
   PhoneCall,
   EyeOff,
 } from "lucide-react";
-import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED, OWNER_EMAIL } from "@/lib/crm/store";
+import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED, PROPOSAL_ON_HOLD, OWNER_EMAIL } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
 import { getGradientClass } from "@/components/crm/ui/gradients";
 import { candidateInitials } from "@/lib/crm/initials";
 import { optimizedImage } from "@/lib/crm/imageUrl";
 import { viewerActionText } from "@/lib/crm/genderText";
 import { buildProfileShareText } from "@/lib/crm/shareText";
+import { cleanShareText } from "@/lib/crm/shareClean";
 import { getAvailabilityColors } from "@/lib/crm/availability";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
@@ -90,7 +91,12 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // הצעה שירדה מהפרק מוצגת כאן יומיים בלבד ואז נעלמת, כדי שהכרטיס יישאר נקי.
   // ההצעה עצמה נשמרת במסד הנתונים, והתראת הכפילות ממשיכה לעבוד גם אחרי שהיא
   // כבר אינה מוצגת - ראו droppedProposalFor בחנות הנתונים.
-  const proposals = allProposals.filter((p) => isProposalRowVisible(p, now, PROPOSAL_DROPPED));
+  // הצעה מוקפאת אינה מוצגת כאן כלל: כלפי הצוות המועמד/ת פנוי/ה
+  // להצעות חדשות, ותהליך מוקפא שמופיע כאן היה נראה כמו תהליך פעיל.
+  // ההצעה עצמה שמורה במלואה באזור "מוקפאים / בהשהיה" שבמסך ההצעות.
+  const proposals = allProposals.filter(
+    (p) => p.status !== PROPOSAL_ON_HOLD && isProposalRowVisible(p, now, PROPOSAL_DROPPED)
+  );
   // כרטיס שהגיע מטופס ההרשמה החיצוני. התווית גלויה למנהלת בלבד:
   // כל עוד לא נוצר קשר ראשוני היא בולטת, ואחריו היא הופכת לציון עובדתי שקט.
   const markIntakeContacted = useCrmStore((s) => s.markIntakeContacted);
@@ -242,7 +248,9 @@ export default function ProfileCard({ candidate, onReadMore }) {
   const isExpanded = expandedId === candidate.id;
   const firstName = candidate.name.split(" ")[0];
 
-  const shareText = buildProfileShareText(candidate, { includePhone: canSeeFullProfile });
+  // הטקסט עובר ניקוי לפני העתקה: סימונים פנימיים של הצוות אינם
+  // אמורים להגיע לטקסט שנשלח הלאה.
+  const shareText = cleanShareText(buildProfileShareText(candidate, { includePhone: canSeeFullProfile }));
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(shareText);
@@ -251,7 +259,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
   };
 
   const handleCopyReferenceContacts = async () => {
-    await navigator.clipboard.writeText(candidate.referenceContacts || "");
+    await navigator.clipboard.writeText(cleanShareText(candidate.referenceContacts || ""));
     setReferenceCopied(true);
     setTimeout(() => setReferenceCopied(false), 2000);
   };
