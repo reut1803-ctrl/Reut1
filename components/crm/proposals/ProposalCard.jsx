@@ -26,6 +26,7 @@ import { WhatsappIcon, PhoneCallIcon, SmsIcon } from "@/components/crm/ui/BrandI
 import { findStaffEntry } from "@/lib/crm/staff";
 import { useMediaUrl } from "@/lib/crm/useMediaUrl";
 import { optimizedImage } from "@/lib/crm/imageUrl";
+import { candidatePhotos } from "@/lib/crm/photos";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { compressImage } from "@/lib/crm/compressImage";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
@@ -59,9 +60,60 @@ async function downloadPhoto(url, fileName) {
     }, 1500);
     return true;
   } catch {
-    window.open(forcedDownloadUrl(url), "_blank", "noopener");
+    // גיבוי: כתובת שבה שרת התמונות מסמן את הקובץ כהורדה.
+    //
+    // קודם נפתחה כאן לשונית חדשה. עם הורדה של כמה תמונות זה היה אומר
+    // לנסות לפתוח ארבע לשוניות בבת אחת, וחוסם החלונות של הדפדפן היה
+    // הורג את כולן חוץ מהראשונה. קישור הורדה רגיל עושה את אותו דבר
+    // בלי לפתוח כלום, ולכן הוא עובד גם בלולאה.
+    const fallback = forcedDownloadUrl(url);
+    if (!fallback) return false;
+    const a = document.createElement("a");
+    a.href = fallback;
+    a.download = `${fileName || "תמונה"}.jpg`;
+    a.rel = "noopener";
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 1500);
     return false;
   }
+}
+
+// הורדת כל תמונות הכרטיס, אחת אחרי השנייה.
+//
+// ללא קבצי ZIP ובלי חילוץ: כל תמונה יורדת בהורדה רגילה של הדפדפן,
+// בדיוק כמו שיורדת היום תמונה בודדת, ולכן הן מגיעות ישירות לגלריה.
+//
+// שני דברים חיוניים כאן:
+// 1. שם קובץ שונה לכל תמונה ("הלל וליס 1", "הלל וליס 2"). בלי זה הן
+//    דורסות זו את זו או נשמרות עם סיומת מספר אוטומטית ומבלבלת.
+// 2. השהייה קצרה בין הורדות. דפדפנים מתעלמים מרצף הורדות מהיר מדי
+//    ומפילים את רובן בשקט.
+//
+// כשל בתמונה אחת אינו עוצר את השאר - עדיף לקבל שלוש מתוך ארבע.
+const DOWNLOAD_GAP_MS = 700;
+
+async function downloadPhotos(urls, baseName, onStep) {
+  const list = (urls || []).filter(Boolean);
+  for (let i = 0; i < list.length; i += 1) {
+    onStep?.(i + 1, list.length);
+    const name = list.length > 1 ? `${baseName || "תמונה"} ${i + 1}` : baseName;
+    await downloadPhoto(list[i], name);
+    if (i < list.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, DOWNLOAD_GAP_MS));
+    }
+  }
+  return list.length;
+}
+
+// כיתוב כפתור ההורדה. כשיש יותר מתמונה אחת מוצג המספר מראש,
+// ובזמן ההורדה מוצגת התקדמות - אחרת רצף של ארבע הורדות נראה תקוע.
+function downloadLabel(downloading, step, total) {
+  if (downloading) {
+    return step && step.total > 1 ? `מוריד ${step.i} מתוך ${step.total}...` : "מוריד...";
+  }
+  return total > 1 ? `הורדת ${total} התמונות` : "הורדת תמונה";
 }
 
 // סרגל תקשורת מהיר: חיוג, וואטסאפ ו-SMS ישירות מהכרטיס, בלי להעתיק מספר
@@ -116,13 +168,19 @@ function ContactCard({ candidate }) {
   const [copied, setCopied] = useState(false);
   const [referenceCopied, setReferenceCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const photo = candidate.photoUrl || candidate.photoUrls?.[0] || null;
+  // התקדמות ההורדה, כדי שיהיה ברור שיורדות כמה תמונות ולא נדמה שתקע
+  const [step, setStep] = useState(null);
+  const photos = candidatePhotos(candidate);
 
   const handleDownloadPhoto = async () => {
     if (downloading) return;
     setDownloading(true);
-    await downloadPhoto(photo, candidate.name);
-    setDownloading(false);
+    try {
+      await downloadPhotos(photos, candidate.name, (i, total) => setStep({ i, total }));
+    } finally {
+      setStep(null);
+      setDownloading(false);
+    }
   };
 
   const handleCopy = async () => {
@@ -149,14 +207,14 @@ function ContactCard({ candidate }) {
         {copied ? "הועתק!" : "העתקת כרטיס"}
       </button>
 
-      {photo && (
+      {photos.length > 0 && (
         <button
           type="button"
           onClick={handleDownloadPhoto}
           disabled={downloading}
           className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4] disabled:opacity-60"
         >
-          <Download size={13} /> {downloading ? "מוריד..." : "הורדת תמונה"}
+          <Download size={13} /> {downloadLabel(downloading, step, photos.length)}
         </button>
       )}
 
@@ -193,8 +251,12 @@ function ExternalContactCard({ proposal, side, person }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [step, setStep] = useState(null);
   const [referenceCopied, setReferenceCopied] = useState(false);
   const [copied, setCopied] = useState(false);
+  // אדם שאינו במאגר מחזיק היום תמונה אחת, אבל אותה פונקציה
+  // משמשת אותו - ולכן אם ינוספו לו תמונות בעתיד, ההורדה תעבוד מעצמה.
+  const personPhotos = candidatePhotos(person);
 
   const openEditor = () => {
     setDraft(person);
@@ -242,10 +304,14 @@ function ExternalContactCard({ proposal, side, person }) {
   };
 
   const handleDownloadPhoto = async () => {
-    if (downloading || !person.photoUrl) return;
+    if (downloading || personPhotos.length === 0) return;
     setDownloading(true);
-    await downloadPhoto(person.photoUrl, person.name);
-    setDownloading(false);
+    try {
+      await downloadPhotos(personPhotos, person.name, (i, total) => setStep({ i, total }));
+    } finally {
+      setStep(null);
+      setDownloading(false);
+    }
   };
 
   const handleCopyReferenceContacts = async () => {
@@ -378,14 +444,14 @@ function ExternalContactCard({ proposal, side, person }) {
             {copied ? "הועתק!" : "העתקת טקסט"}
           </button>
 
-          {person.photoUrl && (
+          {personPhotos.length > 0 && (
             <button
               type="button"
               onClick={handleDownloadPhoto}
               disabled={downloading}
               className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#EAE5E3] bg-white py-1.5 text-[11px] font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#F6F5F4] disabled:opacity-60"
             >
-              <Download size={13} /> {downloading ? "מוריד..." : "הורדת תמונה"}
+              <Download size={13} /> {downloadLabel(downloading, step, personPhotos.length)}
             </button>
           )}
 
