@@ -8,12 +8,20 @@ import { buildProfileShareText } from "@/lib/crm/shareText";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import StageFunnel from "./StageFunnel";
 import CandidatePhone from "@/components/crm/profiles/CandidatePhone";
-import { downloadMedia } from "@/lib/crm/mediaStore";
+import { downloadMedia, downloadAllMedia } from "@/lib/crm/mediaStore";
+import { photosOf } from "@/lib/crm/mockData";
 import MediaImage from "@/components/crm/ui/MediaImage";
 import ExternalCandidatePanel from "./ExternalCandidatePanel";
 import { waDigits } from "@/components/crm/profiles/ProfileCard";
 import { prettyPhone } from "@/components/crm/ui/CopyStaffButton";
 import { wasDroppedBefore, lastDropInfo } from "@/lib/crm/attention";
+
+// הודעת סיום אחידה להורדת תמונות, לשני סוגי הכרטיסים.
+function photoDownloadMessage({ done, failed, total }) {
+  if (done === 0) return "הורדת התמונות נכשלה, נסי שוב";
+  if (failed > 0) return `${done} מתוך ${total} תמונות יורדות למכשיר`;
+  return total > 1 ? `${total} תמונות יורדות למכשיר` : "התמונה יורדת למכשיר";
+}
 
 function ExternalContactCard({ data, proposalId, side }) {
   const { url } = useMediaUrl(data.audioUrl);
@@ -53,12 +61,9 @@ function ExternalContactCard({ data, proposalId, side }) {
 
   const handleDownloadPhoto = async () => {
     if (!data.photoUrl) return;
-    try {
-      await downloadMedia(data.photoUrl, `${data.name || "תמונה"}.jpg`);
-      showToast("התמונה יורדת למכשיר");
-    } catch {
-      showToast("הורדת התמונה נכשלה, נסי שוב");
-    }
+    // עובר דרך אותו מנגנון של הכרטיס המלא, כדי ששניהם יתנהגו זהה
+    const result = await downloadAllMedia([data.photoUrl], data.name || "תמונה");
+    showToast(photoDownloadMessage(result));
   };
 
   // בכרטיס המקוצר התמונה אופציונלית, ולכן ההקלטה נשארת הכפתור המרכזי
@@ -222,7 +227,8 @@ function ContactCard({ candidate }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const hasPhoto = !!(candidate.photoUrl || candidate.photoUrls?.length);
+  const photos = photosOf(candidate);
+  const hasPhoto = photos.length > 0;
   const recordingRef = candidate.introAudioUrl || candidate.voiceNotes?.[0]?.audioUrl || null;
 
   const handleDownloadRecording = async () => {
@@ -236,17 +242,14 @@ function ContactCard({ candidate }) {
   };
 
   const handleDownloadPhoto = async () => {
-    const source = candidate.photoUrl || candidate.photoUrls?.[0] || null;
-    if (!source) {
+    // כל התמונות של הכרטיס ולא רק הראשונה, אחת אחרי השנייה
+    if (photos.length === 0) {
       showToast("אין תמונה לכרטיס הזה");
       return;
     }
-    try {
-      await downloadMedia(source, `${candidate.name}.jpg`);
-      showToast("התמונה יורדת למכשיר");
-    } catch {
-      showToast("הורדת התמונה נכשלה, נסי שוב");
-    }
+    showToast(photos.length > 1 ? `מוריד ${photos.length} תמונות...` : "מוריד את התמונה...");
+    const result = await downloadAllMedia(photos, candidate.name);
+    showToast(photoDownloadMessage(result));
   };
 
   const handleCopyReferenceContacts = async () => {
@@ -276,7 +279,7 @@ function ContactCard({ candidate }) {
           onClick={handleDownloadPhoto}
           className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-xl border border-[#CCBDAB] bg-white py-1.5 text-[11px] font-semibold text-[#844442] transition active:scale-95 hover:bg-[#E8DCCB]"
         >
-          <ImageDown size={13} /> הורדת תמונה
+          <ImageDown size={13} /> {photos.length > 1 ? `הורדת ${photos.length} התמונות` : "הורדת תמונה"}
         </button>
       )}
 
