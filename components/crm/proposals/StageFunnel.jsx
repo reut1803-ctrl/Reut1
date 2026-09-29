@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, X } from "lucide-react";
-import { PROPOSAL_STAGES, PROPOSAL_DROPPED } from "@/lib/crm/store";
+import { Check, X, Pause } from "lucide-react";
+import { PROPOSAL_STAGES, PROPOSAL_DROPPED, PROPOSAL_FROZEN } from "@/lib/crm/store";
 
 // מד ההתקדמות של הצעה.
 //
@@ -16,6 +16,15 @@ export default function StageFunnel({ status, compact = false, onSelect = null, 
   const interactive = typeof onSelect === "function";
   const dropped = status === PROPOSAL_DROPPED;
 
+  // תצוגה בלבד, והצעה בהשהיה: שלט קצר משלה
+  if (status === PROPOSAL_FROZEN && !interactive) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-xl bg-[#EFE7DA] px-3 py-2 text-[12px] font-semibold text-[#7C6E60]">
+        <Pause size={14} /> בהשהיה
+      </div>
+    );
+  }
+
   // תצוגה בלבד, והצעה שירדה מהפרק: שלט אדום קצר, בדיוק כפי שהיה
   if (dropped && !interactive) {
     return (
@@ -25,7 +34,8 @@ export default function StageFunnel({ status, compact = false, onSelect = null, 
     );
   }
 
-  const currentIndex = dropped ? -1 : PROPOSAL_STAGES.indexOf(status);
+  const frozen = status === PROPOSAL_FROZEN;
+  const currentIndex = dropped || frozen ? -1 : PROPOSAL_STAGES.indexOf(status);
 
   // עיגול אחד. באותו מבנה בשני המצבים, כדי שהמראה לא ישתנה.
   const Circle = ({ stage, label, cls, icon, active, busy }) => {
@@ -92,8 +102,18 @@ export default function StageFunnel({ status, compact = false, onSelect = null, 
         );
       })}
 
-      {/* "ירד מהפרק" מוצג רק כשאפשר ללחוץ, כדי שיהיה אפשר גם להוריד מהפרק
-          וגם לחזור ממנו לשלב רגיל - בלי לצאת מהכרטיס. */}
+      {/* "בהשהיה" ו"ירד מהפרק" מוצגים רק כשאפשר ללחוץ, כדי שיהיה אפשר
+          לעבור אליהם ולחזור מהם בלי לצאת מהכרטיס. */}
+      {interactive && (
+        <Circle
+          stage={PROPOSAL_FROZEN}
+          label={PROPOSAL_FROZEN}
+          active={frozen}
+          busy={busyStage === PROPOSAL_FROZEN}
+          icon={<Pause size={12} />}
+          cls={frozen ? "bg-[#7C6E60] text-white ring-4 ring-[#7C6E60]/20" : "bg-[#E8DCCB] text-[#A2937F]"}
+        />
+      )}
       {interactive && (
         <Circle
           stage={PROPOSAL_DROPPED}

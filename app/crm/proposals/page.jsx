@@ -9,8 +9,9 @@ import ExternalCandidatePanel from "@/components/crm/proposals/ExternalCandidate
 import { isOnActiveBoard, lastDropInfo, pastProposalsForPair, toMillis } from "@/lib/crm/attention";
 import ProposalCard from "@/components/crm/proposals/ProposalCard";
 import DroppedArchive from "@/components/crm/proposals/DroppedArchive";
+import FrozenShelf from "@/components/crm/proposals/FrozenShelf";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
-import { useCrmStore, PROPOSAL_DROPPED } from "@/lib/crm/store";
+import { useCrmStore, PROPOSAL_DROPPED, PROPOSAL_FROZEN } from "@/lib/crm/store";
 
 function PreselectFromQuery() {
   const searchParams = useSearchParams();
@@ -79,7 +80,12 @@ export default function ProposalsPage() {
   // היא נשמרת במסד הנתונים לתמיד, וזה מה שמאפשר את התראת הכפילות שמתחת.
   // חלון 48 השעות אינו כאן אלא בכרטיס המועמד/ת בלבד.
   const visibleProposals = proposals.filter((p) => isOnActiveBoard(p, PROPOSAL_DROPPED));
-  const archivedProposals = proposals.filter((p) => !isOnActiveBoard(p, PROPOSAL_DROPPED));
+  // מוקפאים ומה שירד מהפרק יורדים שניהם מהלוח, אך לאזורים נפרדים:
+  // מוקפא ממתין וחוזר, ומה שירד מהפרק נסגר ונשמר להתראת הכפילות.
+  const frozenProposals = proposals.filter((p) => p.status === PROPOSAL_FROZEN);
+  const archivedProposals = proposals.filter(
+    (p) => !isOnActiveBoard(p, PROPOSAL_DROPPED) && p.status !== PROPOSAL_FROZEN
+  );
 
   // התראת כפילות: נבדקת מול כל ההיסטוריה, כולל הצעות שכבר אינן מוצגות
   const pastForSelection =
@@ -209,6 +215,7 @@ export default function ProposalsPage() {
             ))}
           </div>
         )}
+        <FrozenShelf proposals={frozenProposals} />
         <DroppedArchive proposals={archivedProposals} />
       </div>
     </div>
