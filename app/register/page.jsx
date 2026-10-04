@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { Search, Check, Camera, Loader2, ArrowRight, Heart, X } from "lucide-react";
 import { crmDb } from "@/lib/crm/firebaseClient";
@@ -11,6 +12,8 @@ import {
   religiousLevelsFor,
   occupationsFor,
 } from "@/lib/crm/mockData";
+import { successFee, formatFee } from "@/lib/crm/agreement";
+import AgreementModal from "@/components/crm/register/AgreementModal";
 
 // עמוד ההרשמה החיצוני. פתוח לכל אחד, בלי התחברות ובלי גישה למאגר עצמו:
 //   * שלב א' בודק שם מדויק אחד מול מפתח השמות (ראו lib/crm/nameKey.js).
@@ -108,6 +111,8 @@ export default function RegisterPage() {
   const [photoError, setPhotoError] = useState("");
   // אישור הצהרת הפרטיות. בלעדיו אי אפשר לשלוח את הטופס.
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const router = useRouter();
+  const [showAgreement, setShowAgreement] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const fileRef = useRef(null);
@@ -260,10 +265,14 @@ export default function RegisterPage() {
         termsAccepted: true,
         termsAcceptedAt: serverTimestamp(),
         termsText: PRIVACY_TEXT,
+        // תיעוד דמי ההצלחה שהוצגו בפועל ברגע ההרשמה, לפי המסלול
+        // שנבחר. כך אם התעריף ישתנה בעתיד, עדיין ידוע מה הוצג לכל נרשם/ת.
+        successFee: successFee(form.tag),
         createdAt: serverTimestamp(),
       });
-      setStep("done");
-      window.scrollTo({ top: 0 });
+      // הפרטים נשמרו בהצלחה - מעבירים לעמוד המתנות.
+      // העמוד פותח באישור שהפנייה התקבלה, כדי שאיש לא יישאר בלי תשובה.
+      router.push("/gifts");
     } catch (err) {
       setSubmitError(`השליחה נכשלה. נסו שוב, ואם זה חוזר - צרו קשר עם המשרד. (${err?.code || ""})`);
     } finally {
@@ -569,6 +578,25 @@ export default function RegisterPage() {
               {photoError && <p className="mt-2 text-[12px] leading-relaxed text-[#C24545]">{photoError}</p>}
             </div>
 
+            {/* עלויות והצטרפות. הסכום נגזר מהשיוך שנבחר למעלה,
+                ומתעדכן מיד כשמשנים אותו. אותו סכום בדיוק מופיע בהסכם המלא. */}
+            <div className="rounded-3xl border border-[#EAE5E3] bg-white p-5">
+              <h2 className="text-[15px] font-bold text-[#8C4A55]">עלויות והצטרפות</h2>
+              <p className="mt-2 text-[13px] leading-relaxed text-[#3A3335]">
+                ההצטרפות למאגר — ללא עלות ובלי התחייבות.
+              </p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-[#3A3335]">
+                דמי הצלחה — <strong>{formatFee(successFee(form.tag))} ₪</strong>, משולמים אך וכאשר נישאים.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowAgreement(true)}
+                className="mt-3 text-[13px] font-semibold text-[#8C4A55] underline underline-offset-4"
+              >
+                לקריאת הסכם ההתקשרות
+              </button>
+            </div>
+
             {/* אישור הצהרת הפרטיות - שדה חובה, ממש לפני השליחה */}
             <label className="flex cursor-pointer items-start gap-3 rounded-3xl border border-[#EAE5E3] bg-white p-4">
               <input
@@ -621,6 +649,8 @@ export default function RegisterPage() {
           </div>
         )}
       </main>
+
+      {showAgreement && <AgreementModal tag={form.tag} onClose={() => setShowAgreement(false)} />}
     </div>
   );
 }
