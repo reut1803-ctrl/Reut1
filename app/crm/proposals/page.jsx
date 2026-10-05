@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Heart, AlertTriangle } from "lucide-react";
+import { Heart, AlertTriangle, X } from "lucide-react";
 import Button from "@/components/crm/ui/Button";
 import SearchableSelect from "@/components/crm/ui/SearchableSelect";
 import ExternalCandidatePanel from "@/components/crm/proposals/ExternalCandidatePanel";
@@ -12,6 +12,10 @@ import DroppedArchive from "@/components/crm/proposals/DroppedArchive";
 import FrozenShelf from "@/components/crm/proposals/FrozenShelf";
 import ConfirmDialog from "@/components/crm/ui/ConfirmDialog";
 import { useCrmStore, PROPOSAL_DROPPED, PROPOSAL_FROZEN } from "@/lib/crm/store";
+
+// מזהה הבחירה "מישהו מהמעגל שלי". יושב כאן ולא בתוך הרכיב, כדי שיהיה
+// זמין גם לחישוב שרץ לפני בדיקת ההרשאה.
+const EXTERNAL = "__external__";
 
 function PreselectFromQuery() {
   const searchParams = useSearchParams();
@@ -46,11 +50,41 @@ export default function ProposalsPage() {
   // אישור לפני הקמה חוזרת של הצעה בין זוג שכבר נוסה בעבר
   const [confirmingRepeat, setConfirmingRepeat] = useState(false);
 
+  // התראת הכפילות.
+  //
+  // קודם היא נגזרה ישירות מהבחירה הנוכחית, ולכן ברגע שההצעה הוקמה
+  // הבחירה התנקתה וההתראה נעלמה מעצמה - לפני שהספיקו לקרוא אותה.
+  // עכשיו היא נשמרת במצב משלה ויורדת מהמסך רק בשתי דרכים: סגירה ידנית,
+  // או בחירת זוג אחר שאין בו היסטוריה. אין כאן שום מונה זמן.
+  const [duplicateNotice, setDuplicateNotice] = useState(null);
+  const [dismissedPair, setDismissedPair] = useState("");
+
+  useEffect(() => {
+    const { male, female } = selection;
+    // הבחירה התנקתה (למשל מיד אחרי ההקמה) - משאירים את ההתראה על המסך
+    if (!male || !female || male === EXTERNAL || female === EXTERNAL) return;
+
+    const pairKey = `${male}|${female}`;
+    if (pairKey === dismissedPair) return;
+
+    const past = pastProposalsForPair(proposals, male, female);
+    if (past.length === 0) {
+      setDuplicateNotice(null);
+      return;
+    }
+    const dropped = past.filter((x) => x.status === PROPOSAL_DROPPED);
+    setDuplicateNotice({
+      pairKey,
+      isDropped: dropped.length > 0,
+      dateMs: toMillis((dropped[0] || past[0]).createdAt),
+      rationale: dropped.length > 0 ? lastDropInfo(dropped[0], PROPOSAL_DROPPED)?.rationale || "" : "",
+    });
+  }, [selection, proposals, dismissedPair]);
+
   if (role !== "staff" && role !== "admin") {
     return <p className="px-4 py-10 text-center text-sm text-[#7C6E60]">אזור זה זמין לצוות בלבד</p>;
   }
 
-  const EXTERNAL = "__external__";
   const externalOption = [{ value: EXTERNAL, label: "מישהו מהמעגל שלי...", highlight: true }];
   const toOptions = (list) => list.map((c) => ({ value: c.id, label: c.name }));
 
@@ -92,8 +126,6 @@ export default function ProposalsPage() {
     selection.male && selection.female && selection.male !== EXTERNAL && selection.female !== EXTERNAL
       ? pastProposalsForPair(proposals, selection.male, selection.female)
       : [];
-  const pastDropped = pastForSelection.filter((p) => p.status === PROPOSAL_DROPPED);
-  const pastRationale = pastDropped.length > 0 ? lastDropInfo(pastDropped[0], PROPOSAL_DROPPED)?.rationale || "" : "";
 
   return (
     <div className="px-4 py-6">
@@ -178,29 +210,50 @@ export default function ProposalsPage() {
       )}
 
       {/* התראת כפילות - נשענת על ההיסטוריה המלאה במסד הנתונים, גם על הצעות
-          שכבר ירדו מהתצוגה. זו הסיבה שהצעות שירדו מהפרק לעולם אינן נמחקות. */}
-      {pastForSelection.length > 0 && (
+          שכבר ירדו מהתצוגה. זו הסיבה שהצעות שירדו מהפרק לעולם אינן נמחקות.
+          ההתראה נשארת על המסך עד סגירה ידנית, גם אחרי שההצעה הוקמה. */}
+      {duplicateNotice && (
         <div className="mt-3 flex items-start gap-2 rounded-2xl border-2 border-[#D9A441] bg-[#FDF6E7] px-3.5 py-3">
           <AlertTriangle size={17} className="mt-0.5 shrink-0 text-[#7A5A18]" />
-          <div className="text-[12px] leading-relaxed text-[#7A5A18]">
+          <div className="min-w-0 flex-1 text-[12px] leading-relaxed text-[#7A5A18]">
             <p className="font-bold">שימו לב - ההתאמה הזו כבר עלתה בעבר</p>
             <p className="mt-0.5">
-              {pastDropped.length > 0
+              {duplicateNotice.isDropped
                 ? `הצעה בין השניים האלה כבר הוצעה וירדה מהפרק (${new Date(
-                    toMillis(pastDropped[0].createdAt)
+                    duplicateNotice.dateMs
                   ).toLocaleDateString("he-IL")}).`
                 : `קיימת כבר הצעה פעילה בין השניים האלה (${new Date(
-                    toMillis(pastForSelection[0].createdAt)
+                    duplicateNotice.dateMs
                   ).toLocaleDateString("he-IL")}).`}
               {" "}
               אפשר להמשיך ולהציע שוב, אבל המערכת תבקש אישור לפני ההקמה.
             </p>
-            {pastDropped.length > 0 && pastRationale && (
+            {duplicateNotice.isDropped && duplicateNotice.rationale && (
               <p className="mt-1">
-                הרציונל שנכתב אז: <span className="font-semibold">{pastRationale}</span>
+                הרציונל שנכתב אז: <span className="font-semibold">{duplicateNotice.rationale}</span>
               </p>
             )}
+            <button
+              onClick={() => {
+                setDismissedPair(duplicateNotice.pairKey);
+                setDuplicateNotice(null);
+              }}
+              className="mt-2 rounded-xl border border-[#D9A441] bg-white px-3 py-1.5 text-[12px] font-bold text-[#7A5A18] transition active:scale-95"
+            >
+              הבנתי
+            </button>
           </div>
+          <button
+            onClick={() => {
+              setDismissedPair(duplicateNotice.pairKey);
+              setDuplicateNotice(null);
+            }}
+            aria-label="סגירת ההתראה"
+            title="סגירה"
+            className="-mt-1 shrink-0 rounded-full p-1 text-[#7A5A18] transition hover:bg-white active:scale-90"
+          >
+            <X size={15} />
+          </button>
         </div>
       )}
 
