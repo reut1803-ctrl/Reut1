@@ -586,7 +586,7 @@ export default function RegisterPage() {
                 ההצטרפות למאגר — ללא עלות ובלי התחייבות.
               </p>
               <p className="mt-1.5 text-[13px] leading-relaxed text-[#3A3335]">
-                דמי הצלחה — <strong>{formatFee(successFee(form.tag))} ₪</strong>, משולמים אך וכאשר נישאים.
+                דמי הצלחה — <strong>{formatFee(successFee(form.tag))} ₪</strong>, משולמים אך ורק כאשר נישאים.
               </p>
               <button
                 type="button"
