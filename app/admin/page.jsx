@@ -17,6 +17,7 @@ import PopupEditor from "../../components/PopupEditor";
 import MazalTovPopup from "../../components/MazalTovPopup";
 import MazalTovEditor from "../../components/MazalTovEditor";
 import TipBanner from "../../components/TipBanner";
+import ContactRoulette from "../../components/ContactRoulette";
 import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
@@ -217,6 +218,8 @@ export default function AdminPage() {
           <div className="space-y-4">
             {/* טיפ בשידוכים - קבוע בראש עמוד המועמדים */}
             <TipBanner popup={data.popup} />
+            {/* רולטת אנשי קשר / אתגר יומי - ווידג'ט מתקפל, מבודד (LocalStorage בלבד) */}
+            {!isViewer && <ContactRoulette ownerId={user.repId || user.role} />}
             {isViewer && (
               <div className="rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
                 👁️ מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
