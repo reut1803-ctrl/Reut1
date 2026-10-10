@@ -54,6 +54,58 @@ body::before {
   }
 }
 
+/* ---- אנימציית חשיפת הלוגו: צבעי מים נשפכים פנימה + הבלחת זהב ---- */
+@keyframes logo-flood {
+  0%   { -webkit-mask-size: 0% 0%; mask-size: 0% 0%; opacity: 0; filter: blur(7px) saturate(1.25); }
+  55%  { opacity: 1; }
+  100% { -webkit-mask-size: 340% 340%; mask-size: 340% 340%; opacity: 1; filter: blur(0) saturate(1); }
+}
+@keyframes logo-shimmer {
+  0%   { background-position: 135% 0; opacity: 0; }
+  25%  { opacity: 0.85; }
+  100% { background-position: -55% 0; opacity: 0; }
+}
+.logo-animate {
+  -webkit-mask-image: radial-gradient(circle at 50% 55%, #000 34%, rgba(0, 0, 0, 0.45) 56%, transparent 74%);
+  mask-image: radial-gradient(circle at 50% 55%, #000 34%, rgba(0, 0, 0, 0.45) 56%, transparent 74%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: 0% 0%;
+  mask-size: 0% 0%;
+  animation: logo-flood 2.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+.logo-gold {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  background-image: linear-gradient(115deg, transparent 38%, rgba(212, 175, 55, 0.6) 50%, transparent 62%);
+  background-repeat: no-repeat;
+  background-size: 250% 100%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: logo-shimmer 2.4s ease-in-out 1s forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .logo-animate {
+    animation: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    -webkit-mask-size: auto;
+    mask-size: auto;
+    opacity: 1;
+    filter: none;
+  }
+  .logo-gold { display: none; }
+}
+
 /* אפקט נצנצים (Confetti) לפופ-אפ מזל טוב */
 @keyframes confetti-fall {
   0% { transform: translateY(-20vh) rotate(0deg); opacity: 1; }

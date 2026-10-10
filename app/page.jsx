@@ -8,7 +8,7 @@ export default function HomePage() {
       <div className="w-full max-w-md text-center">
         {/* לוגו נקי וללא רקע, ממורכז בראש העמוד */}
         <div className="mb-10 flex justify-center">
-          <Logo className="w-72 max-w-[85%]" />
+          <Logo className="w-72 max-w-[85%]" animate />
         </div>
 
         {/* בחירת מסלול: בחור | בחורה - באייקון בצבע הלוגו */}
