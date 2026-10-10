@@ -278,23 +278,25 @@ export default function ContactRoulette({ ownerId }) {
 
 // קלף בודד
 function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus, onChange, onSaveCouple, onAnalyze, onFollowUp, onToggleFreeze }) {
+  const [editPhone, setEditPhone] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+
   const msg = outreachMessage(c);
   const digits = (c.phone || "").replace(/[^0-9]/g, "");
   const hasPhone = digits.length >= 6;
   // המרת מספר ישראלי מקומי לפורמט בינלאומי עבור וואטסאפ.
   const waNum = digits.startsWith("972") ? digits : digits.startsWith("0") ? "972" + digits.slice(1) : digits;
-  const waHref = hasPhone
-    ? `https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`
-    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  const waHref = `https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
 
-  function copyMsg() {
-    try {
-      navigator.clipboard.writeText(msg);
-      alert("ההודעה הועתקה ללוח ✓");
-    } catch (e) {
-      alert(msg);
-    }
+  function openEditPhone() {
+    setPhoneInput(c.phone || "");
+    setEditPhone(true);
   }
+  function savePhone() {
+    onChange({ phone: (phoneInput || "").trim() });
+    setEditPhone(false);
+  }
+  const showPhoneInput = !hasPhone || editPhone;
 
   return (
     <div className={`rounded-2xl border p-4 transition ${c.frozen ? "border-slate-300 bg-slate-50" : c.done ? "border-rose/30 bg-blush/30" : "border-sand bg-white"}`}>
@@ -402,20 +404,41 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
             />
           </div>
 
-          {/* דרכי יצירת קשר — שורת אייקונים עדינה */}
+          {/* דרכי יצירת קשר */}
           <div>
             <p className="mb-1.5 text-xs font-bold text-ink/50">דרכי יצירת קשר</p>
-            <div className="flex flex-wrap items-center gap-2">
-              {hasPhone && (
-                <a className="flex h-9 w-9 items-center justify-center rounded-full bg-blush text-lg transition hover:bg-rose/20" href={`tel:${digits}`} title="שיחה">📞</a>
-              )}
-              {hasPhone && (
-                <a className="flex h-9 w-9 items-center justify-center rounded-full bg-blush text-lg transition hover:bg-rose/20" href={`sms:${digits}`} title="SMS">💬</a>
-              )}
-              <a className="flex h-9 w-9 items-center justify-center rounded-full bg-blush text-lg transition hover:bg-rose/20" href={waHref} target="_blank" rel="noreferrer" title="וואטסאפ">🟢</a>
-              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-blush text-lg transition hover:bg-rose/20" onClick={copyMsg} title="העתק הודעה">📋</button>
-              {!hasPhone && <span className="text-xs text-ink/40">לא נשמר מספר — אפשר להעתיק ולהדביק</span>}
-            </div>
+
+            {/* יש מספר: 3 כפתורים נקיים — שיחה · SMS · וואטסאפ */}
+            {hasPhone && !editPhone && (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a className="btn-soft !px-3" href={`tel:${digits}`} title="שיחה">📞 שיחה</a>
+                  <a className="btn-soft !px-3" href={`sms:${digits}`} title="SMS">💬 SMS</a>
+                  <a className="btn-soft !px-3" href={waHref} target="_blank" rel="noreferrer" title="וואטסאפ">🟢 וואטסאפ</a>
+                </div>
+                <button className="mt-1.5 text-xs text-ink/40 underline-offset-2 hover:text-rose hover:underline" onClick={openEditPhone}>
+                  ✏️ שינוי המספר ({c.phone})
+                </button>
+              </>
+            )}
+
+            {/* אין מספר / עריכה: שדה הקלדה ידני עדין */}
+            {showPhoneInput && (
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  className="field-input !py-2 min-w-[150px] flex-1"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="הקלידי או הדביקי מספר טלפון"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                />
+                <button className="btn-primary !px-4 !py-2" onClick={savePhone}>שמור</button>
+                {editPhone && (
+                  <button className="btn-soft !px-3 !py-2" onClick={() => setEditPhone(false)}>ביטול</button>
+                )}
+              </div>
+            )}
           </div>
 
           <button className="btn-soft w-full" onClick={onToggleFreeze}>
