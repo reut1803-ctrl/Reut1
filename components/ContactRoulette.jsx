@@ -358,36 +358,40 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
         </div>
       )}
 
-      {/* תוצאה שמורה (תמיד גלויה אחרי טיפול) */}
-      {c.done && c.message && (
-        <p className="mt-3 rounded-2xl bg-white/70 px-3 py-2 text-sm font-medium leading-relaxed text-roseDark">{c.message}</p>
-      )}
-      {c.done && c.insight && (
-        <div className="mt-3 rounded-2xl bg-white/70 px-3 py-2">
-          <p className="mb-1 text-xs font-bold text-rose">🧩 תובנת השלמת הפאזל</p>
-          <p className="text-sm leading-relaxed text-ink/90">{c.insight}</p>
+      {/* אחרי טיפול: הקלט של הנציגה הוא התוכן המרכזי; הודעת המערכת — שורה עדינה אחת בלבד */}
+      {c.done && (
+        <div className="mt-3 space-y-2">
+          {c.status === "couple" ? (
+            <div className="rounded-2xl bg-white/70 px-3 py-2 text-sm text-ink/90">
+              <p className="mb-1 text-xs font-bold text-ink/50">📌 מה שמילאת</p>
+              {c.networking?.style && <p>סגנון לשידוך: {c.networking.style}</p>}
+              {c.networking?.consult && <p>להתייעץ על: {c.networking.consult}</p>}
+              {!c.networking?.style && !c.networking?.consult && <p className="text-ink/40">—</p>}
+            </div>
+          ) : (
+            <>
+              {c.trait && (
+                <div className="rounded-2xl bg-white/70 px-3 py-2 text-sm text-ink/90">
+                  <p className="mb-1 text-xs font-bold text-ink/50">📌 מה שמילאת</p>
+                  <p>התכונה שציינת: {c.trait}</p>
+                </div>
+              )}
+              {c.insight && (
+                <div className="rounded-2xl bg-white/70 px-3 py-2">
+                  <p className="mb-1 text-xs font-bold text-rose">🧩 תובנת השלמת הפאזל</p>
+                  <p className="text-sm leading-relaxed text-ink/90">{c.insight}</p>
+                </div>
+              )}
+            </>
+          )}
+          {/* חיווי מערכת כללי — פעם אחת, עדין */}
+          {c.message && <p className="px-1 text-xs italic text-roseDark/70">{c.message}</p>}
         </div>
       )}
 
-      {/* מגירת אקורדיון — מה שמילאת, הערות, הקפאה, ויצירת קשר */}
+      {/* מגירת אקורדיון — הערות, יצירת קשר, הקפאה */}
       {c.done && expanded && (
         <div className="mt-3 space-y-3 border-t border-sand pt-3">
-          {/* הקלט המקורי שהנציגה הקלידה */}
-          <div>
-            <p className="mb-1 text-xs font-bold text-ink/50">📌 מה שמילאת</p>
-            {c.status === "couple" ? (
-              <div className="space-y-0.5 text-sm text-ink/80">
-                {c.networking?.style && <p>סגנון לשידוך: {c.networking.style}</p>}
-                {c.networking?.consult && <p>להתייעץ על: {c.networking.consult}</p>}
-                {!c.networking?.style && !c.networking?.consult && <p className="text-ink/40">—</p>}
-              </div>
-            ) : (
-              <div className="space-y-0.5 text-sm text-ink/80">
-                {c.trait ? <p>התכונה שציינת: {c.trait}</p> : <p className="text-ink/40">—</p>}
-              </div>
-            )}
-          </div>
-
           <div>
             <label className="field-label">הערות אישיות שלי</label>
             <textarea
