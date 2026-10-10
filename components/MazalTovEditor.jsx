@@ -36,7 +36,6 @@ export default function MazalTovEditor({ data }) {
 
   return (
     <div className="card space-y-2">
-      <h2 className="text-lg font-bold text-roseDark">🎉 פופ-אפ מזל טוב</h2>
       <p className="text-xs text-ink/60">הזיני זוג שהשתדך — יופיע פופ-אפ חגיגי עם נצנצים לכל מי שנכנס לאתר.</p>
 
       {mt.enabled && (

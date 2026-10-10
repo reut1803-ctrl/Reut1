@@ -22,7 +22,8 @@ import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
-import { Users, HeartHandshake, ClipboardList, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound } from "lucide-react";
+import { Users, HeartHandshake, ClipboardList, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper } from "lucide-react";
+import Accordion from "../../components/Accordion";
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -380,19 +381,36 @@ export default function AdminPage() {
         {tab === "matches" && <MatchesPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "tasks" && <TasksPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "manage" && isAdmin && (
-          <div className="space-y-8">
-            {isSupervisor && <AdminsManager data={data} />}
-            <EngagementPanel data={data} />
-            <div className="card space-y-2">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><Download className="h-5 w-5" strokeWidth={1.75} /> ייבוא מרוכז</h2>
-              <p className="text-xs text-ink/60">ייבוא מועמדים מגיליון Google Sheets (מפורסם לצפייה) עם מיפוי עמודות וזיהוי כפילויות.</p>
-              <SheetImport data={data} />
-            </div>
-            <RepsManager data={data} />
-            <MazalTovEditor data={data} />
-            <LogViewer data={data} />
-            <PopupEditor data={data} />
-            <QuestionsEditor data={data} />
+          <div className="space-y-3">
+            {isSupervisor && (
+              <Accordion icon={Crown} title="מנהלות וסיסמאות" summary="בקרה" storageKey="admins">
+                <AdminsManager data={data} />
+              </Accordion>
+            )}
+            <Accordion icon={Users} title="ניהול נציגים" summary={`${data.reps.length} נציגים`} storageKey="reps">
+              <RepsManager data={data} />
+            </Accordion>
+            <Accordion icon={BarChart3} title="מעורבות צוות" summary="השבוע" storageKey="engagement">
+              <EngagementPanel data={data} />
+            </Accordion>
+            <Accordion icon={Download} title="ייבוא מרוכז" storageKey="import">
+              <div className="card space-y-2">
+                <p className="text-xs text-ink/60">ייבוא מועמדים מגיליון Google Sheets (מפורסם לצפייה) עם מיפוי עמודות וזיהוי כפילויות.</p>
+                <SheetImport data={data} />
+              </div>
+            </Accordion>
+            <Accordion icon={PartyPopper} title="פופ-אפ מזל טוב" summary={data.mazalTov?.enabled ? "מופעל" : "כבוי"} storageKey="mazaltov">
+              <MazalTovEditor data={data} />
+            </Accordion>
+            <Accordion icon={Megaphone} title="חלונית הודעות וטיפים" summary={`${(data.popup?.tips || []).filter((t) => t && t.trim()).length} טיפים`} storageKey="popup">
+              <PopupEditor data={data} />
+            </Accordion>
+            <Accordion icon={FileText} title="הקדמה ושאלות השאלון" summary={`${(data.openQuestions || []).length} שאלות`} storageKey="questions">
+              <QuestionsEditor data={data} />
+            </Accordion>
+            <Accordion icon={ScrollText} title="יומן פעילות" storageKey="logs">
+              <LogViewer data={data} />
+            </Accordion>
           </div>
         )}
       </main>

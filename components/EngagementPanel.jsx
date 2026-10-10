@@ -1,7 +1,6 @@
 "use client";
 
 import { currentWeekKey } from "../lib/store";
-import { BarChart3 } from "lucide-react";
 
 // יעדים שבועיים (לצורך פס ההתקדמות והצבע). ניתן לעדכן בעתיד.
 const VIEWS_TARGET = 20;
@@ -34,7 +33,6 @@ export default function EngagementPanel({ data }) {
 
   return (
     <div className="space-y-3">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><BarChart3 className="h-5 w-5" strokeWidth={1.75} /> מעורבות צוות (השבוע)</h2>
       <p className="text-xs text-ink/60">מספר הצפיות בכרטיסים וההשמעות של כל נציג/ה מתחילת השבוע (יום ראשון).</p>
       {data.reps.length === 0 && <p className="text-sm text-ink/40">אין נציגים.</p>}
       {data.reps.map((rep) => {

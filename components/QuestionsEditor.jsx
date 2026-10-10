@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { updateOpenQuestions, updateIntro } from "../lib/store";
-import { FileText } from "lucide-react";
 
 // עריכת ההקדמה והשאלות הפתוחות עם ניסוח נפרד לזכר ולנקבה - הרשאת מנהלת בלבד.
 export default function QuestionsEditor({ data }) {
@@ -31,7 +30,6 @@ export default function QuestionsEditor({ data }) {
     <div className="space-y-4">
       {/* עריכת ההקדמה לשאלון */}
       <div className="card space-y-3">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><FileText className="h-5 w-5" strokeWidth={1.75} /> עריכת ההקדמה לשאלון</h2>
         <p className="text-sm text-ink/60">הטקסט שמופיע למעלה בשאלון, אחרי בחירת המסלול.</p>
         <div>
           <label className="field-label">הקדמה לבחור</label>

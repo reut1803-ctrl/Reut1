@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { addRep, updateRep, deleteRep, updateViewerPassword } from "../lib/store";
-import { Users, Plus, Lock, Handshake } from "lucide-react";
+import { Plus, Lock, Handshake } from "lucide-react";
 
 // ניהול נציגים וסיסמאות - הרשאת מנהלת בלבד.
 export default function RepsManager({ data }) {
@@ -44,7 +44,6 @@ export default function RepsManager({ data }) {
         <button className="btn-primary" disabled={!viewerPw.trim()} onClick={saveViewerPw}>{viewerSaved ? "נשמר!" : "עדכון סיסמת צפייה"}</button>
       </div>
 
-      <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><Users className="h-5 w-5" strokeWidth={1.75} /> ניהול נציגים</h2>
 
       {/* הוספת נציג - תמיד זמין למנהלת, בראש הרשימה */}
       <div className="card space-y-2 border-2 border-rose/40">
