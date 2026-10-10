@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Modal from "./Modal";
 import {
   loadRoulette,
   saveRoulette,
   clearRoulette,
   buildDraw,
+  appendNames,
+  outreachMessage,
   DRAW_SIZE_MAX,
   randomEmpower,
   puzzleInsight,
@@ -19,6 +22,9 @@ export default function ContactRoulette({ ownerId }) {
   const [manual, setManual] = useState(false);
   const [manualText, setManualText] = useState("");
   const [analyzingId, setAnalyzingId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+  const [resetModal, setResetModal] = useState(false); // חלון "אתגר חדש"
+  const [addMode, setAddMode] = useState(false); // הוספה לרשימה קיימת (בלי מחיקה)
 
   // טעינת מצב היום מהמכשיר (אם פג תוקף/עבר יום — נתחיל נקי).
   useEffect(() => {
@@ -40,31 +46,34 @@ export default function ContactRoulette({ ownerId }) {
     persist({ ...state, contacts });
   }
 
-  function startFromNames(names) {
-    const draw = buildDraw(names);
-    if (draw.contacts.length === 0) {
+  // קליטת שמות — או יצירת רשימה חדשה, או הוספה לקיימת (addMode) בלי למחוק כלום.
+  function intakeNames(names) {
+    const clean = (names || []).filter(Boolean);
+    if (clean.length === 0) {
       alert("לא נמצאו שמות. נסי לבחור שוב או להקליד ידנית.");
       return;
     }
-    persist(draw);
+    if (addMode && state) {
+      persist(appendNames(state, clean));
+    } else {
+      persist(buildDraw(clean));
+    }
     setManual(false);
     setManualText("");
+    setAddMode(false);
   }
 
   async function pickFromPhone() {
     try {
       const selected = await navigator.contacts.select(["name"], { multiple: true });
-      const names = (selected || [])
-        .map((c) => (c.name && c.name[0]) || "")
-        .filter(Boolean);
+      const names = (selected || []).map((c) => (c.name && c.name[0]) || "").filter(Boolean);
       if (names.length === 0) {
         alert("לא נבחרו אנשי קשר.");
         return;
       }
-      startFromNames(names);
+      intakeNames(names);
     } catch (e) {
-      // המשתמשת ביטלה / הדפדפן חסם — ניפול בעדינות להקלדה ידנית.
-      setManual(true);
+      setManual(true); // ביטול/חסימה — ניפול בעדינות להקלדה ידנית
     }
   }
 
@@ -74,15 +83,25 @@ export default function ContactRoulette({ ownerId }) {
       alert("נא להקליד לפחות שם אחד.");
       return;
     }
-    startFromNames(names);
+    intakeNames(names);
   }
 
-  function resetDraw() {
-    if (!confirm("להתחיל אתגר חדש? הרשימה הנוכחית תימחק מהמכשיר.")) return;
+  // איפוס מלא (מתוך חלון הבחירה — ללא confirm נוסף).
+  function doFullReset() {
     clearRoulette(ownerId);
     setState(null);
     setManual(false);
     setManualText("");
+    setAddMode(false);
+    setExpandedId(null);
+    setResetModal(false);
+  }
+
+  // בחירת "השאר את הקיימים והוסף עוד" — פותח את ממשק ההוספה בלי למחוק.
+  function startAddMore() {
+    setAddMode(true);
+    setManual(!pickerSupported); // אם אין בוחר — ישר להקלדה
+    setResetModal(false);
   }
 
   function saveCouple(c) {
@@ -102,7 +121,6 @@ export default function ContactRoulette({ ownerId }) {
       return;
     }
     setAnalyzingId(c.id);
-    // אנימציית טעינה קצרה ואז הדפסת התובנה (מנוע מקומי — מיידי).
     setTimeout(() => {
       setContact(c.id, { done: true, insight: puzzleInsight(trait) });
       setAnalyzingId(null);
@@ -113,21 +131,46 @@ export default function ContactRoulette({ ownerId }) {
   const handled = contacts.filter((c) => c.done).length;
   const progressPct = contacts.length ? Math.round((handled / contacts.length) * 100) : 0;
 
+  // ממשק הוספת שמות (משמש גם במסך פתיחה וגם בהוספה לרשימה קיימת).
+  const addUI = (
+    <div className="space-y-2">
+      {!manual && (
+        <div className="flex flex-wrap gap-2">
+          {pickerSupported && (
+            <button className="btn-primary" onClick={pickFromPhone}>📇 בחירה מאנשי הקשר</button>
+          )}
+          <button className="btn-soft" onClick={() => setManual(true)}>✍️ הקלדת שמות ידנית</button>
+          {addMode && (
+            <button className="btn-soft" onClick={() => { setAddMode(false); setManual(false); }}>ביטול</button>
+          )}
+        </div>
+      )}
+      {manual && (
+        <div className="space-y-2">
+          <label className="field-label">הקלידי שמות (כל שם בשורה, או מופרדים בפסיק)</label>
+          <textarea
+            className="field-input min-h-[96px]"
+            placeholder={"למשל:\nרבקה כהן\nשרה לוי\nמרים פרידמן"}
+            value={manualText}
+            onChange={(e) => setManualText(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <button className="btn-primary" onClick={submitManual}>{addMode ? "הוסף לרשימה ➕" : "המשך לאתגר ✨"}</button>
+            <button className="btn-soft" onClick={() => { setManual(false); if (addMode) setAddMode(false); }}>ביטול</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="card border-rose/40">
       {/* כותרת מתקפלת */}
-      <button
-        onClick={() => setOpenPanel((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 text-right"
-      >
-        <span className="flex items-center gap-2 text-lg font-bold text-roseDark">
-          🎯 רולטת אנשי קשר — האתגר היומי
-        </span>
+      <button onClick={() => setOpenPanel((v) => !v)} className="flex w-full items-center justify-between gap-2 text-right">
+        <span className="flex items-center gap-2 text-lg font-bold text-roseDark">🎯 רולטת אנשי קשר — האתגר היומי</span>
         <span className="flex items-center gap-2">
           {state && (
-            <span className="rounded-full bg-blush px-2.5 py-0.5 text-sm font-bold text-roseDark">
-              {handled}/{contacts.length}
-            </span>
+            <span className="rounded-full bg-blush px-2.5 py-0.5 text-sm font-bold text-roseDark">{handled}/{contacts.length}</span>
           )}
           <span className="text-ink/40">{openPanel ? "▲" : "▼"}</span>
         </span>
@@ -144,31 +187,7 @@ export default function ContactRoulette({ ownerId }) {
                 <br />
                 <span className="text-xs text-ink/50">🔒 אנשי הקשר נשמרים רק במכשיר שלך ונמחקים אוטומטית אחרי 24 שעות. שום דבר לא נשמר בשרת.</span>
               </p>
-
-              {!manual && (
-                <div className="flex flex-wrap gap-2">
-                  {pickerSupported && (
-                    <button className="btn-primary" onClick={pickFromPhone}>📇 בחירה מאנשי הקשר</button>
-                  )}
-                  <button className="btn-soft" onClick={() => setManual(true)}>✍️ הקלדת שמות ידנית</button>
-                </div>
-              )}
-
-              {manual && (
-                <div className="space-y-2">
-                  <label className="field-label">הקלידי שמות (כל שם בשורה, או מופרדים בפסיק)</label>
-                  <textarea
-                    className="field-input min-h-[96px]"
-                    placeholder={"למשל:\nרבקה כהן\nשרה לוי\nמרים פרידמן"}
-                    value={manualText}
-                    onChange={(e) => setManualText(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <button className="btn-primary" onClick={submitManual}>המשך לאתגר ✨</button>
-                    <button className="btn-soft" onClick={() => setManual(false)}>ביטול</button>
-                  </div>
-                </div>
-              )}
+              {addUI}
             </div>
           )}
 
@@ -182,15 +201,20 @@ export default function ContactRoulette({ ownerId }) {
                   <span>{handled}/{contacts.length}</span>
                 </div>
                 <div className="h-3 w-full overflow-hidden rounded-full bg-sand">
-                  <div
-                    className="h-full rounded-full bg-rose transition-all duration-500"
-                    style={{ width: `${progressPct}%` }}
-                  />
+                  <div className="h-full rounded-full bg-rose transition-all duration-500" style={{ width: `${progressPct}%` }} />
                 </div>
                 {handled === contacts.length && contacts.length > 0 && (
                   <p className="mt-2 text-center text-sm font-bold text-roseDark">🎉 כל הכבוד! סיימת את האתגר היומי</p>
                 )}
               </div>
+
+              {/* ממשק הוספה (כשנבחר "השאר את הקיימים והוסף עוד") */}
+              {addMode && (
+                <div className="rounded-2xl border border-rose/30 bg-blush/30 p-3">
+                  <p className="mb-2 text-sm font-bold text-roseDark">➕ הוספת אנשים לרשימה (בלי למחוק את הקיימים)</p>
+                  {addUI}
+                </div>
+              )}
 
               {/* הקלפים */}
               <div className="space-y-3">
@@ -199,32 +223,88 @@ export default function ContactRoulette({ ownerId }) {
                     key={c.id}
                     c={c}
                     analyzing={analyzingId === c.id}
+                    expanded={expandedId === c.id}
+                    onToggleExpand={() => setExpandedId((id) => (id === c.id ? null : c.id))}
                     onPickStatus={(status) => setContact(c.id, { status })}
                     onChange={(patch) => setContact(c.id, patch)}
                     onSaveCouple={() => saveCouple(c)}
                     onAnalyze={() => analyzeSingle(c)}
-                    onFollowUp={() => setContact(c.id, { followUp: !c.followUp })}
+                    onFollowUp={() => setContact(c.id, { followUp: !c.followUp, frozen: false })}
+                    onToggleFreeze={() => setContact(c.id, { frozen: !c.frozen, followUp: false })}
                   />
                 ))}
               </div>
 
-              <button className="btn-soft w-full text-sm" onClick={resetDraw}>🔄 אתגר חדש</button>
+              {!addMode && (
+                <button className="btn-soft w-full text-sm" onClick={() => setResetModal(true)}>🔄 אתגר חדש</button>
+              )}
             </div>
           )}
         </div>
+      )}
+
+      {/* חלון בחירה ל"אתגר חדש" — מונע מחיקה בטעות */}
+      {resetModal && (
+        <Modal title="🔄 אתגר חדש — מה תרצי לעשות?" onClose={() => setResetModal(false)}>
+          <div className="space-y-3">
+            <button
+              className="w-full rounded-2xl border border-sand bg-white p-4 text-right transition hover:border-rose hover:shadow"
+              onClick={startAddMore}
+            >
+              <p className="font-bold text-roseDark">➕ השאר את הקיימים והוסף עוד אנשים</p>
+              <p className="mt-1 text-sm text-ink/60">מוסיף אנשים חדשים לרשימה הנוכחית ומעדכן את ההתקדמות — בלי למחוק שום מידע קיים.</p>
+            </button>
+            <button
+              className="w-full rounded-2xl border border-sand bg-white p-4 text-right transition hover:border-rose hover:shadow"
+              onClick={() => { if (confirm("לאפס ולמחוק את כל הרשימה הנוכחית מהמכשיר?")) doFullReset(); }}
+            >
+              <p className="font-bold text-ink">🗑️ אפס הכל והתחל אתגר חדש</p>
+              <p className="mt-1 text-sm text-ink/60">מוחק את כל האנשים וההערות הנוכחיים ומתחיל רשימה חדשה לגמרי.</p>
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );
 }
 
 // קלף בודד
-function ContactCardItem({ c, analyzing, onPickStatus, onChange, onSaveCouple, onAnalyze, onFollowUp }) {
+function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus, onChange, onSaveCouple, onAnalyze, onFollowUp, onToggleFreeze }) {
+  function copyMsg() {
+    const msg = outreachMessage(c);
+    try {
+      navigator.clipboard.writeText(msg);
+      alert("ההודעה הועתקה ללוח ✓");
+    } catch (e) {
+      alert(msg);
+    }
+  }
+  function waMsg() {
+    const msg = outreachMessage(c);
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noreferrer");
+  }
+
+  const savedResult = c.message || c.insight;
+
   return (
-    <div className={`rounded-2xl border p-4 transition ${c.done ? "border-rose/30 bg-blush/30" : "border-sand bg-white"}`}>
+    <div className={`rounded-2xl border p-4 transition ${c.frozen ? "border-slate-300 bg-slate-50" : c.done ? "border-rose/30 bg-blush/30" : "border-sand bg-white"}`}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-lg font-bold text-ink">{c.name}</p>
-        {c.followUp && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">👀 במעקב</span>}
-        {c.done && !c.followUp && <span className="text-xl">✓</span>}
+        <div className="flex items-center gap-2">
+          {/* חץ אקורדיון — מוצג רק לקלף שכבר טופל (יש מה להרחיב) */}
+          {c.done && (
+            <button onClick={onToggleExpand} className="text-ink/40 hover:text-rose" title="פרטים נוספים">
+              {expanded ? "▲" : "▼"}
+            </button>
+          )}
+          <p className="text-lg font-bold text-ink">{c.name}</p>
+        </div>
+        {c.frozen ? (
+          <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-bold text-slate-600">🧊 מוקפא/תפוס</span>
+        ) : c.followUp ? (
+          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">👀 במעקב</span>
+        ) : c.done ? (
+          <span className="text-xl">✓</span>
+        ) : null}
       </div>
 
       {/* בחירת סטטוס */}
@@ -240,19 +320,11 @@ function ContactCardItem({ c, analyzing, onPickStatus, onChange, onSaveCouple, o
         <div className="mt-3 space-y-2">
           <div>
             <label className="field-label">לאיזה סגנון נשדך בעזרתם?</label>
-            <input
-              className="field-input"
-              value={c.networking?.style || ""}
-              onChange={(e) => onChange({ networking: { ...(c.networking || {}), style: e.target.value } })}
-            />
+            <input className="field-input" value={c.networking?.style || ""} onChange={(e) => onChange({ networking: { ...(c.networking || {}), style: e.target.value } })} />
           </div>
           <div>
             <label className="field-label">על אילו 2 מועמדים שלנו נתייעץ איתם?</label>
-            <input
-              className="field-input"
-              value={c.networking?.consult || ""}
-              onChange={(e) => onChange({ networking: { ...(c.networking || {}), consult: e.target.value } })}
-            />
+            <input className="field-input" value={c.networking?.consult || ""} onChange={(e) => onChange({ networking: { ...(c.networking || {}), consult: e.target.value } })} />
           </div>
           <button className="btn-primary" onClick={onSaveCouple}>שמירה 💾</button>
         </div>
@@ -263,12 +335,7 @@ function ContactCardItem({ c, analyzing, onPickStatus, onChange, onSaveCouple, o
         <div className="mt-3 space-y-2">
           <div>
             <label className="field-label">מה התכונה שאת הכי מעריכה בו/בה?</label>
-            <input
-              className="field-input"
-              value={c.trait || ""}
-              onChange={(e) => onChange({ trait: e.target.value })}
-              placeholder="למשל: רגישה ואכפתית / שאפתן ונחוש / שמחה ומלאת חיים"
-            />
+            <input className="field-input" value={c.trait || ""} onChange={(e) => onChange({ trait: e.target.value })} placeholder="למשל: רגישה ואכפתית / שאפתן ונחוש / שמחה ומלאת חיים" />
           </div>
           {analyzing ? (
             <div className="flex items-center gap-2 rounded-2xl bg-blush/50 px-4 py-3 text-roseDark">
@@ -281,7 +348,7 @@ function ContactCardItem({ c, analyzing, onPickStatus, onChange, onSaveCouple, o
         </div>
       )}
 
-      {/* תוצאה שמורה */}
+      {/* תוצאה שמורה (תמיד גלויה אחרי טיפול) */}
       {c.done && c.message && (
         <p className="mt-3 rounded-2xl bg-white/70 px-3 py-2 text-sm font-medium leading-relaxed text-roseDark">{c.message}</p>
       )}
@@ -292,12 +359,37 @@ function ContactCardItem({ c, analyzing, onPickStatus, onChange, onSaveCouple, o
         </div>
       )}
 
+      {/* מגירת אקורדיון — הערות, הקפאה, ושליחת הודעה */}
+      {c.done && expanded && (
+        <div className="mt-3 space-y-3 border-t border-sand pt-3">
+          {savedResult && (
+            <div>
+              <p className="mb-1 text-xs font-bold text-ink/50">📌 הניתוח השמור</p>
+              <p className="text-sm leading-relaxed text-ink/80">{savedResult}</p>
+            </div>
+          )}
+          <div>
+            <label className="field-label">הערות אישיות שלי</label>
+            <textarea
+              className="field-input min-h-[72px]"
+              placeholder="כל מה שחשוב לזכור על הקשר הזה…"
+              value={c.notes || ""}
+              onChange={(e) => onChange({ notes: e.target.value })}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn-soft" onClick={onToggleFreeze}>
+              {c.frozen ? "♻️ החזר לפעיל" : "🧊 הקפאה / השהיה"}
+            </button>
+            <button className="btn-soft" onClick={copyMsg}>📋 העתק הודעה</button>
+            <button className="btn-soft" onClick={waMsg}>🟢 וואטסאפ</button>
+          </div>
+        </div>
+      )}
+
       {/* לולאת מעקב */}
-      {c.done && (
-        <button
-          className={`mt-3 text-sm font-semibold ${c.followUp ? "text-amber-700" : "text-ink/50 hover:text-rose"}`}
-          onClick={onFollowUp}
-        >
+      {c.done && !c.frozen && (
+        <button className={`mt-3 text-sm font-semibold ${c.followUp ? "text-amber-700" : "text-ink/50 hover:text-rose"}`} onClick={onFollowUp}>
           {c.followUp ? "✓ מסומן למעקב — בטלי תזכורת" : "⏰ הזכר לי מחר לשאול מה התקדם"}
         </button>
       )}
