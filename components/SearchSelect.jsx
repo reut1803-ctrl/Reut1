@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 
 // בורר עם חיפוש בהקלדה, ואפשרות להוסיף מישהו שאינו במאגר.
 export default function SearchSelect({ value, options, onChange, placeholder, onAddExternal }) {
@@ -35,9 +36,9 @@ export default function SearchSelect({ value, options, onChange, placeholder, on
           {onAddExternal && term && !exists && (
             <button
               type="button"
-              className="block w-full px-4 py-2 text-right text-sm font-semibold text-roseDark hover:bg-blush/40"
+              className="flex w-full items-center gap-1.5 px-4 py-2 text-right text-sm font-semibold text-roseDark hover:bg-blush/40"
               onClick={() => { onAddExternal(q.trim()); setOpen(false); setQ(""); }}
-            >➕ הוספת «{q.trim()}» (מישהו/י מהמעגל שלי, לא במאגר)</button>
+            ><Plus className="h-4 w-4 shrink-0" strokeWidth={2} /> הוספת «{q.trim()}» (מישהו/י מהמעגל שלי, לא במאגר)</button>
           )}
           {filtered.map((o) => (
             <button

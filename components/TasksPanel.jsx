@@ -7,6 +7,8 @@ import SearchSelect from "./SearchSelect";
 import CandidateCard from "./CandidateCard";
 import { toHebrewDate } from "../lib/dates";
 import { addTask, updateTask, deleteTask, updateCandidate } from "../lib/store";
+import { ClipboardList, Trash2, UserRound, Phone } from "lucide-react";
+import WhatsApp from "./icons/WhatsApp";
 
 export default function TasksPanel({ data, user, readOnly = false }) {
   const [adding, setAdding] = useState(false);
@@ -44,7 +46,7 @@ export default function TasksPanel({ data, user, readOnly = false }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-roseDark">📝 משימות</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><ClipboardList className="h-5 w-5" strokeWidth={1.75} /> משימות</h2>
         {!readOnly && <button className="btn-soft" onClick={() => setAdding(true)}>+ משימה חדשה</button>}
       </div>
 
@@ -64,16 +66,16 @@ export default function TasksPanel({ data, user, readOnly = false }) {
                 {t.dueDate && <p className="text-xs text-ink/50">תאריך יעד: {t.dueDate} · {toHebrewDate(t.dueDate)}</p>}
                 {isAdmin && <p className="text-xs text-ink/50">משויך ל: {repName(t.repId)}</p>}
               </div>
-              {!readOnly && <button className="text-roseDark" onClick={() => { if (confirm("למחוק משימה?")) deleteTask(t.id); }}>🗑️</button>}
+              {!readOnly && <button className="text-roseDark" onClick={() => { if (confirm("למחוק משימה?")) deleteTask(t.id); }}><Trash2 className="h-4 w-4" strokeWidth={1.75} /></button>}
             </div>
 
             {/* משימה משויכת למועמד - פרטים בולטים + פעולות מהירות + צפייה בכרטיס */}
             {cand && (
               <div className="rounded-2xl bg-blush/40 p-3">
-                <p className="text-sm font-bold text-roseDark">👤 {cand.fullName}</p>
+                <p className="flex items-center gap-1.5 text-sm font-bold text-roseDark"><UserRound className="h-4 w-4" strokeWidth={1.75} /> {cand.fullName}</p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
-                  {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`tel:${phone}`}>📞 חיוג</a>}
-                  {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">🟢 וואטסאפ</a>}
+                  {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`tel:${phone}`}><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> חיוג</a>}
+                  {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>}
                   {!phone && <span className="text-xs text-ink/40">אין טלפון זמין</span>}
                 </div>
                 <div className="mt-2">

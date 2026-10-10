@@ -6,6 +6,8 @@ import SearchSelect from "./SearchSelect";
 import Recorder from "./Recorder";
 import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep } from "../lib/store";
 import { copyClean, downloadPdf, shareClean } from "../lib/export";
+import { Phone, MessageSquare, Copy, FileText, Share2, HeartHandshake, Handshake, Bell, ChevronDown, ChevronUp, UserRound, X, Send, Check, Sparkles, Pin, Trash2, FolderOpen, Undo2, Heart } from "lucide-react";
+import WhatsApp from "./icons/WhatsApp";
 
 // שלבי ההתקדמות של ההתאמה (מהוצע ועד אירוסין), ובסוף "ירד מהפרק" - שמעביר להיסטוריה.
 const ARCHIVED = "ירד מהפרק";
@@ -165,9 +167,9 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
     const enc = encodeURIComponent(text);
     return (
       <div className="flex flex-wrap gap-1.5">
-        <a className="btn-soft !px-2.5 !py-1 text-xs" href={phone ? `https://wa.me/${phone}?text=${enc}` : `https://wa.me/?text=${enc}`} target="_blank" rel="noreferrer">🟢 וואטסאפ</a>
-        {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`sms:${phone}?body=${enc}`}>💬 SMS</a>}
-        {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`tel:${phone}`}>📞 שיחה</a>}
+        <a className="btn-soft !px-2.5 !py-1 text-xs" href={phone ? `https://wa.me/${phone}?text=${enc}` : `https://wa.me/?text=${enc}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>
+        {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`sms:${phone}?body=${enc}`}><MessageSquare className="h-3.5 w-3.5" strokeWidth={1.75} /> SMS</a>}
+        {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`tel:${phone}`}><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> שיחה</a>}
         {!phone && <span className="text-xs text-ink/40">לא הוגדר טלפון</span>}
       </div>
     );
@@ -182,14 +184,14 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
       <div className="flex-1 rounded-2xl bg-sand/40 p-3">
         <p className="font-bold text-ink">{cand.fullName}</p>
         {canSee && cand.phone ? (
-          <a href={`tel:${phone}`} className="mb-2 mt-0.5 block text-sm text-ink/70">📞 {cand.phone}</a>
+          <a href={`tel:${phone}`} className="mb-2 mt-0.5 flex items-center gap-1 text-sm text-ink/70"><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> {cand.phone}</a>
         ) : (
           <p className="mb-2 mt-0.5 text-xs text-ink/40">הטלפון דרך הנציג/ה</p>
         )}
         <div className="flex flex-wrap gap-1.5">
-          <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={async () => { await copyClean(cand, data.openQuestions, canSee); flash("הכרטיס הועתק ✓"); }}>📋 העתקת כרטיס</button>
-          <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={() => downloadPdf(cand, data.openQuestions, canSee)}>📄 הורד</button>
-          <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={async () => { const r = await shareClean(cand, data.openQuestions, canSee); if (r === "copied") flash("הועתק ללוח לשיתוף ✓"); }}>📤 שתף</button>
+          <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={async () => { await copyClean(cand, data.openQuestions, canSee); flash("הכרטיס הועתק ✓"); }}><Copy className="h-3.5 w-3.5" strokeWidth={1.75} /> העתקת כרטיס</button>
+          <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={() => downloadPdf(cand, data.openQuestions, canSee)}><FileText className="h-3.5 w-3.5" strokeWidth={1.75} /> הורד</button>
+          <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={async () => { const r = await shareClean(cand, data.openQuestions, canSee); if (r === "copied") flash("הועתק ללוח לשיתוף ✓"); }}><Share2 className="h-3.5 w-3.5" strokeWidth={1.75} /> שתף</button>
         </div>
       </div>
     );
@@ -213,7 +215,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-roseDark">💞 הצעות פעילות ({activeMatches.length})</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><HeartHandshake className="h-5 w-5" strokeWidth={1.75} /> הצעות פעילות ({activeMatches.length})</h2>
         {!readOnly && <button className="btn-soft" onClick={() => { setFormError(""); setReWarn(null); setAdding(true); }}>+ הצעת התאמה</button>}
       </div>
 
@@ -236,12 +238,12 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
           <div key={m.id} className="card space-y-3">
             {/* כותרת + חיווי "תקוע" + כיווץ */}
             <div className="flex items-center justify-between gap-2">
-              <p className="font-semibold text-ink">{manLabel} 🤝 {womanLabel}</p>
+              <p className="flex items-center gap-1.5 font-semibold text-ink">{manLabel} <Handshake className="h-4 w-4 shrink-0 text-roseDark" strokeWidth={1.75} /> {womanLabel}</p>
               <div className="flex items-center gap-2">
                 {isStuck(m) && (
-                  <span className="animate-pulse rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700">🔔 תקוע {daysStuck(m)} ימים</span>
+                  <span className="flex animate-pulse items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700"><Bell className="h-3.5 w-3.5" strokeWidth={2} /> תקוע {daysStuck(m)} ימים</span>
                 )}
-                <button className="text-ink/40" onClick={() => setCollapsed((s) => ({ ...s, [m.id]: !isCollapsed }))}>{isCollapsed ? "▼" : "▲"}</button>
+                <button className="text-ink/40" onClick={() => setCollapsed((s) => ({ ...s, [m.id]: !isCollapsed }))}>{isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}</button>
               </div>
             </div>
 
@@ -249,12 +251,12 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
               <>
                 {/* תגית מטפל/ת + שחרור שיוך */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="rounded-full bg-rose/10 px-3 py-1 text-sm font-semibold text-roseDark">
-                    👤 {handler ? `מטופל/ת ע"י ${handler}` : "לא משויך"}
+                  <span className="flex items-center gap-1.5 rounded-full bg-rose/10 px-3 py-1 text-sm font-semibold text-roseDark">
+                    <UserRound className="h-4 w-4" strokeWidth={1.75} /> {handler ? `מטופל/ת ע"י ${handler}` : "לא משויך"}
                   </span>
                   {canManageAssign && (
                     handler
-                      ? <button className="text-xs text-ink/50" onClick={() => updateMatch(m.id, { handledBy: "" })}>✕ שחרור שיוך</button>
+                      ? <button className="flex items-center gap-1 text-xs text-ink/50" onClick={() => updateMatch(m.id, { handledBy: "" })}><X className="h-3.5 w-3.5" strokeWidth={2} /> שחרור שיוך</button>
                       : (!readOnly && user.repId && <button className="text-xs font-semibold text-roseDark" onClick={() => updateMatch(m.id, { handledBy: user.repId })}>+ קבל/י שיוך</button>)
                   )}
                 </div>
@@ -275,7 +277,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                         className="flex shrink-0 flex-col items-center gap-1"
                         style={{ width: "5rem" }}
                       >
-                        <span className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${circle}`}>{isArch ? "✕" : i + 1}</span>
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${circle}`}>{isArch ? <X className="h-4 w-4" strokeWidth={2.5} /> : i + 1}</span>
                         <span className={`text-center text-[11px] leading-tight ${active ? "font-bold text-roseDark" : "text-ink/50"}`}>{s}</span>
                       </button>
                     );
@@ -285,13 +287,13 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                 {/* התראת "הצעה תקועה" - עם כיבוי/איפוס אמיתי */}
                 {isStuck(m) && (
                   <div className="rounded-2xl bg-red-50 p-3">
-                    <p className="mb-2 text-sm font-semibold text-red-700">🔔 ההצעה תקועה {daysStuck(m)} ימים באותו סטטוס.</p>
+                    <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-red-700"><Bell className="h-4 w-4" strokeWidth={2} /> ההצעה תקועה {daysStuck(m)} ימים באותו סטטוס.</p>
                     <div className="flex flex-wrap gap-2">
                       {nudgeSms(m, manLabel, womanLabel) && (
-                        <a className="btn-soft !px-2.5 !py-1 text-xs" href={nudgeSms(m, manLabel, womanLabel)}>📩 תזכורת ליוזם (SMS)</a>
+                        <a className="btn-soft !px-2.5 !py-1 text-xs" href={nudgeSms(m, manLabel, womanLabel)}><Send className="h-3.5 w-3.5" strokeWidth={1.75} /> תזכורת ליוזם (SMS)</a>
                       )}
                       {!readOnly && (
-                        <button className="btn-primary !px-2.5 !py-1 text-xs" onClick={() => updateMatch(m.id, { statusChangedAt: new Date().toISOString(), snoozedUntil: "" })}>✓ טיפלתי — כיבוי התראה</button>
+                        <button className="btn-primary !px-2.5 !py-1 text-xs" onClick={() => updateMatch(m.id, { statusChangedAt: new Date().toISOString(), snoozedUntil: "" })}><Check className="h-3.5 w-3.5" strokeWidth={2} /> טיפלתי — כיבוי התראה</button>
                       )}
                     </div>
                     <p className="mt-1 text-[11px] text-ink/50">הכיבוי מאפס את ספירת הימים. אם ההצעה תישאר תקועה שבועיים נוספים — התזכורת תחזור.</p>
@@ -300,7 +302,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
 
                 {/* הרציונל (הניצוץ) */}
                 <div className="rounded-2xl bg-amber-50 p-3">
-                  <p className="mb-1 text-sm font-bold text-amber-700">✨ הרציונל (הניצוץ)</p>
+                  <p className="mb-1 flex items-center gap-1.5 text-sm font-bold text-amber-700"><Sparkles className="h-4 w-4" strokeWidth={1.75} /> הרציונל (הניצוץ)</p>
                   {m.rationale ? (
                     <p className="whitespace-pre-wrap text-sm text-ink/90">{m.rationale}</p>
                   ) : (
@@ -342,7 +344,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
 
                 {/* יומן מעקב - עדכונים והערות */}
                 <div className="space-y-2 border-t border-sand pt-3">
-                  <p className="text-sm font-bold text-roseDark">📌 עדכונים והערות</p>
+                  <p className="flex items-center gap-1.5 text-sm font-bold text-roseDark"><Pin className="h-4 w-4" strokeWidth={1.75} /> עדכונים והערות</p>
                   {(m.updates && m.updates.length > 0) ? (
                     <div className="space-y-1.5">
                       {[...m.updates].sort((a, b) => (b.at || "").localeCompare(a.at || "")).map((u, i) => (
@@ -371,7 +373,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
 
                 {!readOnly && (
                   <div className="border-t border-sand pt-2">
-                    <button className="btn-soft text-roseDark !px-2.5 !py-1 text-xs" onClick={() => { if (confirm("למחוק התאמה?")) deleteMatch(m.id); }}>🗑️ מחיקת התאמה</button>
+                    <button className="btn-soft text-roseDark !px-2.5 !py-1 text-xs" onClick={() => { if (confirm("למחוק התאמה?")) deleteMatch(m.id); }}><Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} /> מחיקת התאמה</button>
                   </div>
                 )}
               </>
@@ -384,8 +386,8 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
       {historyMatches.length > 0 && (
         <div className="border-t border-sand pt-3">
           <button className="flex w-full items-center justify-between text-right" onClick={() => setHistOpen((v) => !v)}>
-            <span className="text-base font-bold text-roseDark">📁 היסטוריית ההתאמות ({historyMatches.length})</span>
-            <span className="text-sm text-ink/50">{histOpen ? "▲" : "▼"}</span>
+            <span className="flex items-center gap-1.5 text-base font-bold text-roseDark"><FolderOpen className="h-5 w-5" strokeWidth={1.75} /> היסטוריית ההתאמות ({historyMatches.length})</span>
+            {histOpen ? <ChevronUp className="h-5 w-5 text-ink/50" /> : <ChevronDown className="h-5 w-5 text-ink/50" />}
           </button>
           <p className="text-xs text-ink/50">הצעות שירדו מהפרק — גלוי ונגיש לכל הנציגים.</p>
           {histOpen && historyMatches.map((m) => {
@@ -396,13 +398,13 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
             const last = m.updates && m.updates.length ? m.updates[m.updates.length - 1] : null;
             return (
               <div key={m.id} className="mt-2 rounded-2xl bg-sand/30 p-3">
-                <p className="font-semibold text-ink">{manLabel} 🤝 {womanLabel}</p>
-                {m.rationale && <p className="mt-1 text-xs text-ink/60">✨ {m.rationale}</p>}
+                <p className="flex items-center gap-1.5 font-semibold text-ink">{manLabel} <Handshake className="h-4 w-4 shrink-0 text-roseDark" strokeWidth={1.75} /> {womanLabel}</p>
+                {m.rationale && <p className="mt-1 flex items-start gap-1 text-xs text-ink/60"><Sparkles className="mt-0.5 h-3 w-3 shrink-0" strokeWidth={1.75} /> {m.rationale}</p>}
                 {last && <p className="mt-1 text-xs text-ink/50">הערה אחרונה: {last.text} ({last.by})</p>}
                 {!readOnly && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={() => updateMatch(m.id, { status: STAGES[0] })}>↩️ החזרה לפעיל</button>
-                    {user.role === "admin" && <button className="btn-soft text-roseDark !px-2.5 !py-1 text-xs" onClick={() => { if (confirm("למחוק לצמיתות מההיסטוריה?")) deleteMatch(m.id); }}>🗑️</button>}
+                    <button className="btn-soft !px-2.5 !py-1 text-xs" onClick={() => updateMatch(m.id, { status: STAGES[0] })}><Undo2 className="h-3.5 w-3.5" strokeWidth={1.75} /> החזרה לפעיל</button>
+                    {user.role === "admin" && <button className="btn-soft text-roseDark !px-2.5 !py-1 text-xs" onClick={() => { if (confirm("למחוק לצמיתות מההיסטוריה?")) deleteMatch(m.id); }}><Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} /></button>}
                   </div>
                 )}
               </div>
@@ -466,7 +468,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                 placeholder="מה משלים בין הצדדים, למה נוצר החיבור…"
               />
             </div>
-            <button className="btn-primary w-full" onClick={() => create()}>♡ הצע התאמה</button>
+            <button className="btn-primary w-full" onClick={() => create()}><Heart className="h-4 w-4" strokeWidth={1.75} /> הצע התאמה</button>
           </div>
         </Modal>
       )}
@@ -480,7 +482,7 @@ function ExternalForm({ title, value, onChange, onCancel }) {
     <div className="space-y-2 rounded-2xl border border-dashed border-rose/40 bg-blush/20 p-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold text-roseDark">{title}</p>
-        <button type="button" className="text-xs text-ink/50" onClick={onCancel}>✕ ביטול</button>
+        <button type="button" className="flex items-center gap-1 text-xs text-ink/50" onClick={onCancel}><X className="h-3.5 w-3.5" strokeWidth={2} /> ביטול</button>
       </div>
       <p className="text-xs text-ink/60">אדם שאינו במאגר. הפרטים נשמרים רק בתוך ההתאמה הזו ולא נפתח כרטיס במאגר.</p>
       <input className="field-input" value={value.name} onChange={(e) => onChange({ ...value, name: e.target.value })} placeholder="מי זה? (שם או זיהוי, למשל «בחור שפגשתי בשבת»)" />

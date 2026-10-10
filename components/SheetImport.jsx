@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Modal from "./Modal";
+import { Download, Upload } from "lucide-react";
 import { compressImage } from "../lib/image";
 import { classifyHeader, PARSE_FIELD_NAMES } from "../lib/parse";
 import { addCandidate, updateCandidate } from "../lib/store";
@@ -173,7 +174,7 @@ export default function SheetImport({ data }) {
 
   return (
     <div>
-      <button className="btn-soft" onClick={() => setOpen(true)}>📥 ייבוא מ-Google Sheets</button>
+      <button className="btn-soft" onClick={() => setOpen(true)}><Download className="h-4 w-4" strokeWidth={1.75} /> ייבוא מ-Google Sheets</button>
       {open && (
         <Modal title="ייבוא מ-Google Sheets" onClose={() => { setOpen(false); reset(); setUrl(""); }}>
           <div className="space-y-4">
@@ -239,7 +240,7 @@ export default function SheetImport({ data }) {
 
                 <p className="text-xs text-ink/60">סה"כ שורות נתונים בגיליון: {rows.length}</p>
                 <button className="btn-primary w-full" disabled={importing || !gender} onClick={doImport}>
-                  {importing ? "מייבא…" : "🚀 התחלת ייבוא"}
+                  {importing ? "מייבא…" : (<><Upload className="h-4 w-4" strokeWidth={1.75} /> התחלת ייבוא</>)}
                 </button>
                 {result && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-700">{result}</div>}
               </>

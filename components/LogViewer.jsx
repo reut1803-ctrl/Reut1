@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ScrollText } from "lucide-react";
 
 // יומן פעילות - הרשאת מנהלת בלבד. מציג מי עשה מה ומתי, מהחדש לישן.
 export default function LogViewer({ data }) {
@@ -32,7 +33,7 @@ export default function LogViewer({ data }) {
         className="flex w-full items-center justify-between text-lg font-bold text-roseDark"
         onClick={() => setOpen((v) => !v)}
       >
-        <span>🧾 יומן פעילות</span>
+        <span className="flex items-center gap-2"><ScrollText className="h-5 w-5" strokeWidth={1.75} /> יומן פעילות</span>
         <span className="text-sm text-ink/50">{open ? "▲" : "▼"}</span>
       </button>
       <p className="text-xs text-ink/60">כל פעולה נרשמת עם שם המבצע/ת והשעה. לצפייה בלבד.</p>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DateField from "./DateField";
+import { Camera, MessageCircle, Contact, FileText, Lock, EyeOff } from "lucide-react";
 import { compressImage } from "../lib/image";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 
@@ -125,7 +126,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
           </div>
         ))}
         <div>
-          <label className="field-label">📷 תמונה</label>
+          <label className="field-label flex items-center gap-1.5"><Camera className="h-4 w-4" strokeWidth={1.75} /> תמונה</label>
           <input className="field-input" type="file" accept="image/*" onChange={onPhoto} />
           {form.photo && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -135,7 +136,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       </section>
 
       <section className="space-y-4">
-        <h3 className="font-semibold text-ink">💬 שאלות</h3>
+        <h3 className="flex items-center gap-2 font-semibold text-ink"><MessageCircle className="h-5 w-5 text-rose" strokeWidth={1.75} /> שאלות</h3>
         {(openQuestions || []).map((q) => (
           <div key={q.key}>
             <label className="field-label">{genderLabel(q, form.gender)}</label>
@@ -149,7 +150,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
       </section>
 
       <section className="space-y-4">
-        <h3 className="font-semibold text-ink">🌈 אנשי קשר</h3>
+        <h3 className="flex items-center gap-2 font-semibold text-ink"><Contact className="h-5 w-5 text-rose" strokeWidth={1.75} /> אנשי קשר</h3>
         <p className="text-xs text-ink/60">{REFERENCES_QUESTION}</p>
         {form.references.map((r, i) => (
           <div key={i} className="space-y-2 rounded-2xl bg-blush/40 p-3">
@@ -171,7 +172,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
           </select>
         </div>
         <div>
-          <label className="field-label">📝 תיאור אישי / טקסט מקורי</label>
+          <label className="field-label flex items-center gap-1.5"><FileText className="h-4 w-4" strokeWidth={1.75} /> תיאור אישי / טקסט מקורי</label>
           <textarea
             className="field-input min-h-[90px]"
             placeholder="תיאור חופשי או הטקסט המקורי שהודבק/הוכתב"
@@ -180,7 +181,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
           />
         </div>
         <div>
-          <label className="field-label">🔒 מידע רגיש (גלוי רק לנציג ולמנהלת)</label>
+          <label className="field-label flex items-center gap-1.5"><Lock className="h-4 w-4" strokeWidth={1.75} /> מידע רגיש (גלוי רק לנציג ולמנהלת)</label>
           <textarea
             className="field-input min-h-[80px]"
             placeholder="מסקנות אישיות ומספרי טלפון לבירורים"
@@ -190,13 +191,13 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
         </div>
         <label className="flex items-center gap-3 rounded-2xl bg-blush/40 p-3">
           <input type="checkbox" className="h-5 w-5 accent-rose" checked={!!form.restricted} onChange={(e) => set("restricted", e.target.checked)} />
-          <span className="text-sm font-medium text-ink">🔒 כרטיס מוגבל — גלוי רק למנהלת ולנציג המשויך (מוסתר משאר הנציגים)</span>
+          <span className="flex items-center gap-1.5 text-sm font-medium text-ink"><Lock className="h-4 w-4 shrink-0" strokeWidth={1.75} /> כרטיס מוגבל — גלוי רק למנהלת ולנציג המשויך (מוסתר משאר הנציגים)</span>
         </label>
 
         {/* הסתרה נקודתית מנציגים מסוימים - למנהלת בלבד */}
         {isAdmin && (
           <div className="rounded-2xl bg-amber-50 p-3">
-            <p className="mb-1 text-sm font-semibold text-amber-800">🙈 הסתרה מנציגים מסוימים (למנהלת בלבד)</p>
+            <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-amber-800"><EyeOff className="h-4 w-4" strokeWidth={1.75} /> הסתרה מנציגים מסוימים (למנהלת בלבד)</p>
             <p className="mb-2 text-xs text-ink/60">סמני נציגים שמהם כרטיס זה יוסתר (למשל מטעמי רגישות או קרבת משפחה). שאר הנציגים ימשיכו לראות כרגיל.</p>
             <div className="space-y-1">
               {(reps || []).map((r) => {

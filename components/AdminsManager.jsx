@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateAdmin2, updateAdminPassword } from "../lib/store";
+import { KeyRound, Crown } from "lucide-react";
 
 // ניהול מנהלות (Admins) + סיסמת המנהלת הראשית - נגיש לבקרה (Supervisor) בלבד.
 export default function AdminsManager({ data }) {
@@ -46,7 +47,7 @@ export default function AdminsManager({ data }) {
     <div className="space-y-3">
       {/* שינוי סיסמת המנהלת הראשית - מאובטח */}
       <div className="card space-y-2">
-        <h2 className="text-lg font-bold text-roseDark">🔐 סיסמת המנהלת הראשית שלך</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><KeyRound className="h-5 w-5" strokeWidth={1.75} /> סיסמת המנהלת הראשית שלך</h2>
         <p className="text-xs text-ink/60">מטעמי אבטחה הסיסמה הנוכחית אינה מוצגת. להחלפה — הזיני את הנוכחית ואת החדשה.</p>
         <input className="field-input" type="password" autoComplete="current-password" value={curPw} onChange={(e) => setCurPw(e.target.value)} placeholder="סיסמה נוכחית" />
         <input className="field-input" type="password" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="סיסמה חדשה" />
@@ -57,7 +58,7 @@ export default function AdminsManager({ data }) {
 
       {/* ניהול מנהלת נוספת */}
       <div className="card space-y-2">
-        <h2 className="text-lg font-bold text-roseDark">👑 ניהול מנהלות (בקרה עליונה)</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><Crown className="h-5 w-5" strokeWidth={1.75} /> ניהול מנהלות (בקרה עליונה)</h2>
         <p className="text-xs text-ink/60">
           את מוגדרת כ<b>מנהלת ראשית ובקרה (Supervisor)</b>. כאן אפשר להוסיף <b>מנהלת נוספת</b> עם גישת ניהול מלאה לצידך.
           רק את (הבקרה) רואה ומנהלת את המסך הזה — ולמנהלת הנוספת אין גישה לסיסמאות שלך.

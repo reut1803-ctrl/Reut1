@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updatePopup } from "../lib/store";
+import { Megaphone, Plus } from "lucide-react";
 
 // עריכת חלונית ההודעות והטיפים - הרשאת מנהלת בלבד.
 export default function PopupEditor({ data }) {
@@ -33,7 +34,7 @@ export default function PopupEditor({ data }) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-bold text-roseDark">📢 חלונית הודעות וטיפים</h2>
+      <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><Megaphone className="h-5 w-5" strokeWidth={1.75} /> חלונית הודעות וטיפים</h2>
       <p className="text-xs text-ink/60">חלונית שקופצת לנציגים פעם אחת ביום. אפשר להפעיל/לכבות, לערוך את ההודעה ולהוסיף טיפים שיתחלפו.</p>
 
       <div className="card space-y-3">
@@ -56,7 +57,7 @@ export default function PopupEditor({ data }) {
               <button className="btn-soft !px-3 text-roseDark" onClick={() => removeTip(i)}>🗑️</button>
             </div>
           ))}
-          <button className="btn-soft" onClick={addTip}>➕ הוספת טיפ</button>
+          <button className="btn-soft" onClick={addTip}><Plus className="h-4 w-4" strokeWidth={2} /> הוספת טיפ</button>
         </div>
 
         <button className="btn-primary" onClick={save}>{saved ? "נשמר!" : "שמירה"}</button>

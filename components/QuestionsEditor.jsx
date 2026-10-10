@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateOpenQuestions, updateIntro } from "../lib/store";
+import { FileText } from "lucide-react";
 
 // עריכת ההקדמה והשאלות הפתוחות עם ניסוח נפרד לזכר ולנקבה - הרשאת מנהלת בלבד.
 export default function QuestionsEditor({ data }) {
@@ -30,14 +31,14 @@ export default function QuestionsEditor({ data }) {
     <div className="space-y-4">
       {/* עריכת ההקדמה לשאלון */}
       <div className="card space-y-3">
-        <h2 className="text-lg font-bold text-roseDark">☕ עריכת ההקדמה לשאלון</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><FileText className="h-5 w-5" strokeWidth={1.75} /> עריכת ההקדמה לשאלון</h2>
         <p className="text-sm text-ink/60">הטקסט שמופיע למעלה בשאלון, אחרי בחירת המסלול.</p>
         <div>
-          <label className="field-label">הקדמה לבחור 👤</label>
+          <label className="field-label">הקדמה לבחור</label>
           <textarea className="field-input min-h-[80px]" value={intro.male || ""} onChange={(e) => setIntroState({ ...intro, male: e.target.value })} />
         </div>
         <div>
-          <label className="field-label">הקדמה לבחורה 👤</label>
+          <label className="field-label">הקדמה לבחורה</label>
           <textarea className="field-input min-h-[80px]" value={intro.female || ""} onChange={(e) => setIntroState({ ...intro, female: e.target.value })} />
         </div>
         <button className="btn-primary" onClick={saveIntro}>{introSaved ? "נשמר!" : "שמירת הקדמה"}</button>
@@ -49,11 +50,11 @@ export default function QuestionsEditor({ data }) {
         <div key={q.key} className="card space-y-3">
           <p className="text-sm font-semibold text-ink">שאלה {i + 1}</p>
           <div>
-            <label className="field-label">ניסוח לבחור 👤</label>
+            <label className="field-label">ניסוח לבחור</label>
             <textarea className="field-input min-h-[70px]" value={q.male || ""} onChange={(e) => setText(i, "male", e.target.value)} />
           </div>
           <div>
-            <label className="field-label">ניסוח לבחורה 👤</label>
+            <label className="field-label">ניסוח לבחורה</label>
             <textarea className="field-input min-h-[70px]" value={q.female || ""} onChange={(e) => setText(i, "female", e.target.value)} />
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { addRep, updateRep, deleteRep, updateViewerPassword } from "../lib/store";
+import { Users, Plus, Lock, Handshake } from "lucide-react";
 
 // ניהול נציגים וסיסמאות - הרשאת מנהלת בלבד.
 export default function RepsManager({ data }) {
@@ -43,11 +44,11 @@ export default function RepsManager({ data }) {
         <button className="btn-primary" disabled={!viewerPw.trim()} onClick={saveViewerPw}>{viewerSaved ? "נשמר!" : "עדכון סיסמת צפייה"}</button>
       </div>
 
-      <h2 className="text-lg font-bold text-roseDark">👥 ניהול נציגים</h2>
+      <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><Users className="h-5 w-5" strokeWidth={1.75} /> ניהול נציגים</h2>
 
       {/* הוספת נציג - תמיד זמין למנהלת, בראש הרשימה */}
       <div className="card space-y-2 border-2 border-rose/40">
-        <p className="text-base font-bold text-roseDark">➕ הוספת נציג חדש</p>
+        <p className="flex items-center gap-1.5 text-base font-bold text-roseDark"><Plus className="h-4 w-4" strokeWidth={2} /> הוספת נציג חדש</p>
         <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="שם הנציג" />
         <input className="field-input" value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="שם המוסד" />
         <input className="field-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="טלפון (לשיחה / SMS / וואטסאפ)" />
@@ -77,7 +78,7 @@ export default function RepsManager({ data }) {
             {/* מצב חופשה / קריאה בלבד */}
             <label className={`flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium ${r.readOnly ? "bg-amber-100 text-amber-800" : "bg-sand/60 text-ink/70"}`}>
               <input type="checkbox" checked={!!r.readOnly} onChange={(e) => updateRep(r.id, { readOnly: e.target.checked })} className="h-5 w-5 accent-rose" />
-              🔒 חופשה / קריאה בלבד (הנציג/ה יוכל/תוכל לצפות אך לא לערוך)
+              <Lock className="h-4 w-4 shrink-0" strokeWidth={1.75} /> חופשה / קריאה בלבד (הנציג/ה יוכל/תוכל לצפות אך לא לערוך)
             </label>
 
             {/* ניהול משותף - רשימה מכווצת עם חץ להרחבה */}
@@ -86,8 +87,8 @@ export default function RepsManager({ data }) {
                 className="flex w-full items-center justify-between text-right"
                 onClick={() => setOpenRepId(coverOpen ? null : r.id)}
               >
-                <span className="text-sm font-semibold text-roseDark">
-                  🤝 ניהול משותף{coverCount > 0 ? ` (${coverCount})` : ""}
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-roseDark">
+                  <Handshake className="h-4 w-4" strokeWidth={1.75} /> ניהול משותף{coverCount > 0 ? ` (${coverCount})` : ""}
                 </span>
                 <span className="text-sm text-ink/40">{coverOpen ? "▲" : "▼"}</span>
               </button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useData } from "../lib/useData";
+import { Headphones, Trash2, Play, Square, Mic } from "lucide-react";
 import { addRecording, getRecordingAudio, deleteRecording, trackEngagement } from "../lib/store";
 
 const MAX_SECONDS = 600; // עד 10 דקות
@@ -146,18 +147,18 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
         {list.map((r, i) => (
           <div key={r.id} className="rounded-xl bg-white p-2">
             <div className="flex items-center justify-between gap-2 text-sm">
-              <span className="text-ink/70">
-                🎧 הקלטה {i + 1} · {fmt(r.durationSec || 0)}
+              <span className="flex items-center gap-1.5 text-ink/70">
+                <Headphones className="h-4 w-4 shrink-0" strokeWidth={1.75} /> הקלטה {i + 1} · {fmt(r.durationSec || 0)}
                 {r.createdAt ? ` · ${new Date(r.createdAt).toLocaleDateString("he-IL")}` : ""}
               </span>
-              {canRecord && <button className="text-roseDark" onClick={() => remove(r.id)}>🗑️</button>}
+              {canRecord && <button className="text-roseDark" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" strokeWidth={1.75} /></button>}
             </div>
             {urls[r.id] ? (
               // eslint-disable-next-line jsx-a11y/media-has-caption
               <audio className="mt-1 w-full" controls autoPlay src={urls[r.id]} />
             ) : (
               <button className="btn-soft mt-1 !py-1.5 text-sm" disabled={loadingId === r.id} onClick={() => play(r.id, r.mime)}>
-                {loadingId === r.id ? "טוען…" : "▶️ האזנה"}
+                {loadingId === r.id ? "טוען…" : (<><Play className="h-4 w-4" strokeWidth={1.75} /> האזנה</>)}
               </button>
             )}
           </div>
@@ -170,11 +171,11 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
           <div className="mt-3">
             {recording ? (
               <button className="btn-primary w-full" onClick={stop}>
-                ⏹️ עצור והקלט ({fmt(elapsed)})
+                <Square className="h-4 w-4" strokeWidth={2} fill="currentColor" /> עצור והקלט ({fmt(elapsed)})
               </button>
             ) : (
               <button className="btn-soft w-full" disabled={saving} onClick={start}>
-                {saving ? "שומר…" : "➕ הקלטה חדשה"}
+                {saving ? "שומר…" : (<><Mic className="h-4 w-4" strokeWidth={1.75} /> הקלטה חדשה</>)}
               </button>
             )}
           </div>

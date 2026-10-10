@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toHebrewDate } from "../lib/dates";
+import { Calendar } from "lucide-react";
 import { hebrewToISO, isoToHebrew, civilMonths, lastDayOfHebrewMonth, hebrewNumeral, hebrewYearNumeral } from "../lib/hebrew";
 
 // שדה תאריך עם בחירה בין עברי (ברירת מחדל) ללועזי. הערך נשמר כתאריך לועזי (ISO).
@@ -75,8 +76,8 @@ export default function DateField({ value, onChange }) {
       )}
 
       {value && (
-        <p className="mt-1 text-sm text-roseDark">
-          {mode === "hebrew" ? `לועזי: ${value}` : `📅 עברי: ${toHebrewDate(value)}`}
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-roseDark">
+          {mode === "hebrew" ? `לועזי: ${value}` : (<><Calendar className="h-4 w-4" strokeWidth={1.75} /> עברי: {toHebrewDate(value)}</>)}
         </p>
       )}
     </div>
