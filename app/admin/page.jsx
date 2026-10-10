@@ -22,6 +22,7 @@ import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
+import { Users, HeartHandshake, ClipboardList, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound } from "lucide-react";
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -196,19 +197,25 @@ export default function AdminPage() {
   }
 
   // צופה רואה רק את המועמדים (קריאה בלבד); שאר הלשוניות מוסתרות ממנו.
-  const tabs = [{ id: "candidates", icon: "👤", label: "מועמדים" }];
+  const tabs = [{ id: "candidates", icon: Users, label: "מועמדים" }];
   if (!isViewer) {
-    tabs.push({ id: "matches", icon: "💞", label: "התאמות" });
-    tabs.push({ id: "tasks", icon: "📝", label: "משימות" });
+    tabs.push({ id: "matches", icon: HeartHandshake, label: "התאמות" });
+    tabs.push({ id: "tasks", icon: ClipboardList, label: "משימות" });
   }
-  if (isAdmin) tabs.push({ id: "manage", icon: "⚙️", label: "ניהול" });
+  if (isAdmin) tabs.push({ id: "manage", icon: Settings, label: "ניהול" });
 
   return (
     <div>
       <MazalTovPopup mazalTov={data.mazalTov} />
       <Header>
-        <span className="text-sm text-ink/70">
-          {isAdmin ? (isSupervisor ? "מנהלת · בקרה 👑" : (data.admin2Name || "מנהלת")) : isViewer ? "👁️ צפייה בלבד" : `${myRep?.name} · ${myRep?.institution}`}
+        <span className="flex items-center gap-1.5 text-sm text-ink/70">
+          {isAdmin ? (
+            isSupervisor ? (<><Crown className="h-4 w-4 text-rose" strokeWidth={1.75} /> מנהלת · בקרה</>) : (data.admin2Name || "מנהלת")
+          ) : isViewer ? (
+            <><Eye className="h-4 w-4" strokeWidth={1.75} /> צפייה בלבד</>
+          ) : (
+            `${myRep?.name} · ${myRep?.institution}`
+          )}
         </span>
         <button className="btn-soft !px-3 !py-1.5 text-sm" onClick={() => setCurrentUser(null)}>יציאה</button>
       </Header>
@@ -221,24 +228,27 @@ export default function AdminPage() {
             {/* רולטת אנשי קשר / אתגר יומי - ווידג'ט מתקפל, מבודד (LocalStorage בלבד) */}
             {!isViewer && <ContactRoulette ownerId={user.repId || user.role} />}
             {isViewer && (
-              <div className="rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
-                👁️ מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
+              <div className="flex items-center justify-center gap-2 rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
+                <Eye className="h-4 w-4 shrink-0" strokeWidth={1.75} /> מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
               </div>
             )}
             {myReadOnly && (
-              <div className="rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
-                🔒 את/ה במצב חופשה / קריאה בלבד — אפשר לצפות אך לא לבצע פעולות.
+              <div className="flex items-center justify-center gap-2 rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
+                <Lock className="h-4 w-4 shrink-0" strokeWidth={1.75} /> את/ה במצב חופשה / קריאה בלבד — אפשר לצפות אך לא לבצע פעולות.
               </div>
             )}
             <div className="flex flex-wrap items-center gap-2">
-              <input
-                data-tour="search"
-                className="field-input min-w-[150px] flex-1"
-                type="search"
-                placeholder="🔍 חיפוש מועמד (שם, מקום, עדה...)"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+              <div className="relative min-w-[150px] flex-1">
+                <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" strokeWidth={1.75} />
+                <input
+                  data-tour="search"
+                  className="field-input w-full pr-9"
+                  type="search"
+                  placeholder="חיפוש מועמד (שם, מקום, עדה...)"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
               {/* מתג סינון מגדרי (Segmented Control) - משפיע רק על "מועמדים קודמים" */}
               <div data-tour="gender" className="flex shrink-0 rounded-full border border-sand bg-white p-0.5 text-sm">
                 <button
@@ -257,11 +267,11 @@ export default function AdminPage() {
               {isRep && (
                 <button
                   onClick={() => setMineOnly((v) => !v)}
-                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${mineOnly ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
-                >👤 {mineOnly ? "המועמדים שלי ✓" : "המועמדים שלי"}</button>
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition ${mineOnly ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
+                ><UserRound className="h-4 w-4" strokeWidth={1.75} /> {mineOnly ? "המועמדים שלי ✓" : "המועמדים שלי"}</button>
               )}
               {!isViewer && !myReadOnly && (
-                <button data-tour="add" className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}>+ הוספת מועמד</button>
+                <button data-tour="add" className="btn-primary whitespace-nowrap" onClick={() => setAddingCand(true)}><Plus className="h-5 w-5" strokeWidth={2} /> הוספת מועמד</button>
               )}
             </div>
 
@@ -269,8 +279,8 @@ export default function AdminPage() {
             <div data-tour="candviews" className="flex gap-2">
               <button
                 onClick={() => setCandView("new")}
-                className={`flex-1 rounded-2xl px-4 py-2.5 text-sm font-bold transition ${candView === "new" ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
-              >✨ מועמדים חדשים</button>
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-2xl px-4 py-2.5 text-sm font-bold transition ${candView === "new" ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
+              ><Sparkles className="h-4 w-4" strokeWidth={1.75} /> מועמדים חדשים</button>
               <button
                 onClick={() => setCandView("previous")}
                 className={`flex-1 rounded-2xl px-4 py-2.5 text-sm font-bold transition ${candView === "previous" ? "bg-rose text-white" : "bg-blush text-roseDark"}`}
@@ -281,7 +291,7 @@ export default function AdminPage() {
             {candView === "new" && !term && (
               <section className="space-y-3">
                 <div className="rounded-2xl bg-blush px-4 py-2">
-                  <p className="font-bold text-roseDark">✨ המצטרפים החדשים</p>
+                  <p className="flex items-center gap-1.5 font-bold text-roseDark"><Sparkles className="h-4 w-4" strokeWidth={1.75} /> המצטרפים החדשים</p>
                   <p className="text-xs text-ink/60">חמשת המועמדים האחרונים שהצטרפו למאגר.</p>
                 </div>
                 {newCands.length === 0 && <p className="text-sm text-ink/40">אין מועמדים חדשים.</p>}
@@ -374,7 +384,7 @@ export default function AdminPage() {
             {isSupervisor && <AdminsManager data={data} />}
             <EngagementPanel data={data} />
             <div className="card space-y-2">
-              <h2 className="text-lg font-bold text-roseDark">📥 ייבוא מרוכז</h2>
+              <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><Download className="h-5 w-5" strokeWidth={1.75} /> ייבוא מרוכז</h2>
               <p className="text-xs text-ink/60">ייבוא מועמדים מגיליון Google Sheets (מפורסם לצפייה) עם מיפוי עמודות וזיהוי כפילויות.</p>
               <SheetImport data={data} />
             </div>
@@ -410,9 +420,9 @@ export default function AdminPage() {
               key={t.id}
               data-tour={`nav-${t.id}`}
               onClick={() => setTab(t.id)}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition ${tab === t.id ? "text-rose" : "text-ink/50"}`}
+              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition ${tab === t.id ? "text-rose" : "text-ink/50"}`}
             >
-              <span className="text-2xl leading-none">{t.icon}</span>
+              <t.icon className="h-6 w-6" strokeWidth={1.75} />
               <span>{t.label}</span>
             </button>
           ))}

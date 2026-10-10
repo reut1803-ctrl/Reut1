@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
+import { Target, RefreshCw, Gem, Hand, Puzzle, Snowflake, Clock, Eye, Sparkles, BookUser, Phone, MessageSquare, Pencil, Plus, RotateCcw, ChevronDown, ChevronUp, Pin, Trash2, Check } from "lucide-react";
+import WhatsApp from "./icons/WhatsApp";
 import {
   loadRoulette,
   saveRoulette,
@@ -145,9 +147,9 @@ export default function ContactRoulette({ ownerId }) {
       {!manual && (
         <div className="flex flex-wrap gap-2">
           {pickerSupported && (
-            <button className="btn-primary" onClick={pickFromPhone}>📇 בחירה מאנשי הקשר</button>
+            <button className="btn-primary" onClick={pickFromPhone}><BookUser className="h-4 w-4" strokeWidth={1.75} /> בחירה מאנשי הקשר</button>
           )}
-          <button className="btn-soft" onClick={() => setManual(true)}>✍️ הקלדת שמות ידנית</button>
+          <button className="btn-soft" onClick={() => setManual(true)}><Pencil className="h-4 w-4" strokeWidth={1.75} /> הקלדת שמות ידנית</button>
           {addMode && (
             <button className="btn-soft" onClick={() => { setAddMode(false); setManual(false); }}>ביטול</button>
           )}
@@ -163,7 +165,7 @@ export default function ContactRoulette({ ownerId }) {
             onChange={(e) => setManualText(e.target.value)}
           />
           <div className="flex gap-2">
-            <button className="btn-primary" onClick={submitManual}>{addMode ? "הוסף לרשימה ➕" : "המשך לאתגר ✨"}</button>
+            <button className="btn-primary" onClick={submitManual}>{addMode ? (<><Plus className="h-4 w-4" strokeWidth={2} /> הוסף לרשימה</>) : (<><Sparkles className="h-4 w-4" strokeWidth={1.75} /> המשך לאתגר</>)}</button>
             <button className="btn-soft" onClick={() => { setManual(false); if (addMode) setAddMode(false); }}>ביטול</button>
           </div>
         </div>
@@ -175,12 +177,12 @@ export default function ContactRoulette({ ownerId }) {
     <div className="card border-rose/40">
       {/* כותרת מתקפלת */}
       <button onClick={() => setOpenPanel((v) => !v)} className="flex w-full items-center justify-between gap-2 text-right">
-        <span className="flex items-center gap-2 text-lg font-bold text-roseDark">🎯 רולטת אנשי קשר — האתגר היומי</span>
+        <span className="flex items-center gap-2 text-lg font-bold text-roseDark"><Target className="h-5 w-5" strokeWidth={1.75} /> רולטת אנשי קשר — האתגר היומי</span>
         <span className="flex items-center gap-2">
           {state && (
             <span className="rounded-full bg-blush px-2.5 py-0.5 text-sm font-bold text-roseDark">{handled}/{contacts.length}</span>
           )}
-          <span className="text-ink/40">{openPanel ? "▲" : "▼"}</span>
+          {openPanel ? <ChevronUp className="h-5 w-5 text-ink/40" /> : <ChevronDown className="h-5 w-5 text-ink/40" />}
         </span>
       </button>
 
@@ -219,7 +221,7 @@ export default function ContactRoulette({ ownerId }) {
               {/* ממשק הוספה (כשנבחר "השאר את הקיימים והוסף עוד") */}
               {addMode && (
                 <div className="rounded-2xl border border-rose/30 bg-blush/30 p-3">
-                  <p className="mb-2 text-sm font-bold text-roseDark">➕ הוספת אנשים לרשימה (בלי למחוק את הקיימים)</p>
+                  <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-roseDark"><Plus className="h-4 w-4" strokeWidth={2} /> הוספת אנשים לרשימה (בלי למחוק את הקיימים)</p>
                   {addUI}
                 </div>
               )}
@@ -244,7 +246,7 @@ export default function ContactRoulette({ ownerId }) {
               </div>
 
               {!addMode && (
-                <button className="btn-soft w-full text-sm" onClick={() => setResetModal(true)}>🔄 אתגר חדש</button>
+                <button className="btn-soft w-full text-sm" onClick={() => setResetModal(true)}><RefreshCw className="h-4 w-4" strokeWidth={1.75} /> אתגר חדש</button>
               )}
             </div>
           )}
@@ -253,20 +255,20 @@ export default function ContactRoulette({ ownerId }) {
 
       {/* חלון בחירה ל"אתגר חדש" — מונע מחיקה בטעות */}
       {resetModal && (
-        <Modal title="🔄 אתגר חדש — מה תרצי לעשות?" onClose={() => setResetModal(false)}>
+        <Modal title="אתגר חדש — מה תרצי לעשות?" onClose={() => setResetModal(false)}>
           <div className="space-y-3">
             <button
               className="w-full rounded-2xl border border-sand bg-white p-4 text-right transition hover:border-rose hover:shadow"
               onClick={startAddMore}
             >
-              <p className="font-bold text-roseDark">➕ השאר את הקיימים והוסף עוד אנשים</p>
+              <p className="flex items-center gap-1.5 font-bold text-roseDark"><Plus className="h-4 w-4" strokeWidth={2} /> השאר את הקיימים והוסף עוד אנשים</p>
               <p className="mt-1 text-sm text-ink/60">מוסיף אנשים חדשים לרשימה הנוכחית ומעדכן את ההתקדמות — בלי למחוק שום מידע קיים.</p>
             </button>
             <button
               className="w-full rounded-2xl border border-sand bg-white p-4 text-right transition hover:border-rose hover:shadow"
               onClick={() => { if (confirm("לאפס ולמחוק את כל הרשימה הנוכחית מהמכשיר?")) doFullReset(); }}
             >
-              <p className="font-bold text-ink">🗑️ אפס הכל והתחל אתגר חדש</p>
+              <p className="flex items-center gap-1.5 font-bold text-ink"><Trash2 className="h-4 w-4" strokeWidth={1.75} /> אפס הכל והתחל אתגר חדש</p>
               <p className="mt-1 text-sm text-ink/60">מוחק את כל האנשים וההערות הנוכחיים ומתחיל רשימה חדשה לגמרי.</p>
             </button>
           </div>
@@ -305,25 +307,25 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
           {/* חץ אקורדיון — מוצג רק לקלף שכבר טופל (יש מה להרחיב) */}
           {c.done && (
             <button onClick={onToggleExpand} className="text-ink/40 hover:text-rose" title="פרטים נוספים">
-              {expanded ? "▲" : "▼"}
+              {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </button>
           )}
           <p className="text-lg font-bold text-ink">{c.name}</p>
         </div>
         {c.frozen ? (
-          <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-bold text-slate-600">🧊 מוקפא/תפוס</span>
+          <span className="flex items-center gap-1 rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-bold text-slate-600"><Snowflake className="h-3.5 w-3.5" strokeWidth={2} /> מוקפא/תפוס</span>
         ) : c.followUp ? (
-          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">👀 במעקב</span>
+          <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800"><Eye className="h-3.5 w-3.5" strokeWidth={2} /> במעקב</span>
         ) : c.done ? (
-          <span className="text-xl">✓</span>
+          <Check className="h-5 w-5 text-rose" strokeWidth={2.25} />
         ) : null}
       </div>
 
       {/* בחירת סטטוס */}
       {!c.status && !c.done && (
         <div className="mt-3 flex flex-wrap gap-2">
-          <button className="btn-soft" onClick={() => onPickStatus("couple")}>💍 בזוגיות</button>
-          <button className="btn-soft" onClick={() => onPickStatus("single")}>🙋 רווק/ה · הורה</button>
+          <button className="btn-soft" onClick={() => onPickStatus("couple")}><Gem className="h-4 w-4" strokeWidth={1.75} /> בזוגיות</button>
+          <button className="btn-soft" onClick={() => onPickStatus("single")}><Hand className="h-4 w-4" strokeWidth={1.75} /> רווק/ה · הורה</button>
         </div>
       )}
 
@@ -355,7 +357,7 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
               <span className="text-sm font-medium">מנתח/ת את הפאזל…</span>
             </div>
           ) : (
-            <button className="btn-primary" onClick={onAnalyze}>✨ נתח/י לי את ההתאמה</button>
+            <button className="btn-primary" onClick={onAnalyze}><Sparkles className="h-4 w-4" strokeWidth={1.75} /> נתח/י לי את ההתאמה</button>
           )}
         </div>
       )}
@@ -365,7 +367,7 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
         <div className="mt-3 space-y-2">
           {c.status === "couple" ? (
             <div className="rounded-2xl bg-white/70 px-3 py-2 text-sm text-ink/90">
-              <p className="mb-1 text-xs font-bold text-ink/50">📌 מה שמילאת</p>
+              <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-ink/50"><Pin className="h-3.5 w-3.5" strokeWidth={2} /> מה שמילאת</p>
               {c.networking?.style && <p>סגנון לשידוך: {c.networking.style}</p>}
               {c.networking?.consult && <p>להתייעץ על: {c.networking.consult}</p>}
               {!c.networking?.style && !c.networking?.consult && <p className="text-ink/40">—</p>}
@@ -374,13 +376,13 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
             <>
               {c.trait && (
                 <div className="rounded-2xl bg-white/70 px-3 py-2 text-sm text-ink/90">
-                  <p className="mb-1 text-xs font-bold text-ink/50">📌 מה שמילאת</p>
+                  <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-ink/50"><Pin className="h-3.5 w-3.5" strokeWidth={2} /> מה שמילאת</p>
                   <p>התכונה שציינת: {c.trait}</p>
                 </div>
               )}
               {c.insight && (
                 <div className="rounded-2xl bg-white/70 px-3 py-2">
-                  <p className="mb-1 text-xs font-bold text-rose">🧩 תובנת השלמת הפאזל</p>
+                  <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-rose"><Puzzle className="h-3.5 w-3.5" strokeWidth={2} /> תובנת השלמת הפאזל</p>
                   <p className="text-sm leading-relaxed text-ink/90">{c.insight}</p>
                 </div>
               )}
@@ -412,12 +414,12 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
             {hasPhone && !editPhone && (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <a className="btn-soft !px-3" href={`tel:${digits}`} title="שיחה">📞 שיחה</a>
-                  <a className="btn-soft !px-3" href={`sms:${digits}`} title="SMS">💬 SMS</a>
-                  <a className="btn-soft !px-3" href={waHref} target="_blank" rel="noreferrer" title="וואטסאפ">🟢 וואטסאפ</a>
+                  <a className="btn-soft !px-3" href={`tel:${digits}`} title="שיחה"><Phone className="h-4 w-4" strokeWidth={1.75} /> שיחה</a>
+                  <a className="btn-soft !px-3" href={`sms:${digits}`} title="SMS"><MessageSquare className="h-4 w-4" strokeWidth={1.75} /> SMS</a>
+                  <a className="btn-soft !px-3" href={waHref} target="_blank" rel="noreferrer" title="וואטסאפ"><WhatsApp size={16} className="text-green-600" /> וואטסאפ</a>
                 </div>
-                <button className="mt-1.5 text-xs text-ink/40 underline-offset-2 hover:text-rose hover:underline" onClick={openEditPhone}>
-                  ✏️ שינוי המספר ({c.phone})
+                <button className="mt-1.5 flex items-center gap-1 text-xs text-ink/40 underline-offset-2 hover:text-rose hover:underline" onClick={openEditPhone}>
+                  <Pencil className="h-3 w-3" strokeWidth={1.75} /> שינוי המספר ({c.phone})
                 </button>
               </>
             )}
@@ -442,15 +444,15 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
           </div>
 
           <button className="btn-soft w-full" onClick={onToggleFreeze}>
-            {c.frozen ? "♻️ החזר לפעיל" : "🧊 הקפאה / השהיה"}
+            {c.frozen ? (<><RotateCcw className="h-4 w-4" strokeWidth={1.75} /> החזר לפעיל</>) : (<><Snowflake className="h-4 w-4" strokeWidth={1.75} /> הקפאה / השהיה</>)}
           </button>
         </div>
       )}
 
       {/* לולאת מעקב */}
       {c.done && !c.frozen && (
-        <button className={`mt-3 text-sm font-semibold ${c.followUp ? "text-amber-700" : "text-ink/50 hover:text-rose"}`} onClick={onFollowUp}>
-          {c.followUp ? "✓ מסומן למעקב — בטלי תזכורת" : "⏰ הזכר לי מחר לשאול מה התקדם"}
+        <button className={`mt-3 flex items-center gap-1.5 text-sm font-semibold ${c.followUp ? "text-amber-700" : "text-ink/50 hover:text-rose"}`} onClick={onFollowUp}>
+          {c.followUp ? (<><Check className="h-4 w-4" strokeWidth={2} /> מסומן למעקב — בטלי תזכורת</>) : (<><Clock className="h-4 w-4" strokeWidth={1.75} /> הזכר לי מחר לשאול מה התקדם</>)}
         </button>
       )}
     </div>

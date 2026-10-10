@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Lightbulb } from "lucide-react";
 
 // קופסת טיפ בראש עמוד המועמדים - קרוסלה הניתנת להחלקה בין כל הטיפים הפעילים.
 export default function TipBanner({ popup }) {
@@ -38,7 +39,7 @@ export default function TipBanner({ popup }) {
     >
       <div className="mb-1.5 flex items-center justify-end gap-2">
         <span className="text-sm font-bold text-amber-700">טיפ בשידוכים</span>
-        <span className="text-lg">💡</span>
+        <Lightbulb className="h-5 w-5 text-amber-500" strokeWidth={1.75} />
       </div>
 
       <p className="min-h-[2.5rem] whitespace-pre-wrap text-sm leading-relaxed text-ink/90">{tips[cur]}</p>

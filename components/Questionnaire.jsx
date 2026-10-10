@@ -7,6 +7,7 @@ import DateField from "./DateField";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 import { loadData, addCandidate } from "../lib/store";
 import { compressImage } from "../lib/image";
+import { User, Camera, MessageCircle, Contact, Lightbulb } from "lucide-react";
 
 export default function Questionnaire({ gender }) {
   const router = useRouter();
@@ -156,8 +157,8 @@ export default function Questionnaire({ gender }) {
         )}
 
         {inApp && (
-          <div className="mb-4 rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-800">
-            💡 פתחתם מתוך אפליקציה (וואטסאפ/אינסטגרם). כדי שהשליחה תעבוד חלק, מומלץ לפתוח את הדף בדפדפן: לחצו על ⋮ (או על כפתור השיתוף) ובחרו <b>"פתח בדפדפן"</b>.
+          <div className="mb-4 flex items-start gap-2 rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-800">
+            <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} /> <span>פתחתם מתוך אפליקציה (וואטסאפ/אינסטגרם). כדי שהשליחה תעבוד חלק, מומלץ לפתוח את הדף בדפדפן: לחצו על ⋮ (או על כפתור השיתוף) ובחרו <b>"פתח בדפדפן"</b>.</span>
           </div>
         )}
 
@@ -170,7 +171,7 @@ export default function Questionnaire({ gender }) {
         <form onSubmit={onSubmit} className="space-y-5">
           {/* פרטים אישיים */}
           <section className="card space-y-4">
-            <h2 className="text-lg font-semibold text-ink">👤 פרטים אישיים</h2>
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-ink"><User className="h-5 w-5 text-rose" strokeWidth={1.75} /> פרטים אישיים</h2>
             {PERSONAL_FIELDS.map((f) => (
               <div key={f.key}>
                 <label className="field-label">{genderLabel(f, gender)}</label>
@@ -187,7 +188,7 @@ export default function Questionnaire({ gender }) {
               </div>
             ))}
             <div>
-              <label className="field-label">📷 הוספת תמונה</label>
+              <label className="field-label flex items-center gap-1.5"><Camera className="h-4 w-4" strokeWidth={1.75} /> הוספת תמונה</label>
               <input className="field-input" type="file" accept="image/*" onChange={onPhoto} />
               {photo && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -198,7 +199,7 @@ export default function Questionnaire({ gender }) {
 
           {/* שאלות פתוחות */}
           <section className="card space-y-4">
-            <h2 className="text-lg font-semibold text-ink">💬 קצת עליך</h2>
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-ink"><MessageCircle className="h-5 w-5 text-rose" strokeWidth={1.75} /> קצת עליך</h2>
             {openQuestions.map((q) => (
               <div key={q.key}>
                 <label className="field-label">{genderLabel(q, gender)}</label>
@@ -213,7 +214,7 @@ export default function Questionnaire({ gender }) {
 
           {/* אנשי קשר */}
           <section className="card space-y-4">
-            <h2 className="text-lg font-semibold text-ink">🌈 אנשי קשר</h2>
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-ink"><Contact className="h-5 w-5 text-rose" strokeWidth={1.75} /> אנשי קשר</h2>
             <p className="text-sm text-ink/70">{REFERENCES_QUESTION}</p>
             {refs.map((r, i) => (
               <div key={i} className="space-y-2 rounded-2xl bg-blush/40 p-3">
