@@ -65,13 +65,21 @@ export default function ContactRoulette({ ownerId }) {
 
   async function pickFromPhone() {
     try {
-      const selected = await navigator.contacts.select(["name"], { multiple: true });
-      const names = (selected || []).map((c) => (c.name && c.name[0]) || "").filter(Boolean);
-      if (names.length === 0) {
+      // מבקשים גם מספר טלפון אם הדפדפן תומך (כדי לאפשר שיחה/SMS/וואטסאפ).
+      let props = ["name"];
+      try {
+        const supported = await navigator.contacts.getProperties();
+        if (supported.includes("tel")) props = ["name", "tel"];
+      } catch (e) {}
+      const selected = await navigator.contacts.select(props, { multiple: true });
+      const items = (selected || [])
+        .map((c) => ({ name: (c.name && c.name[0]) || "", phone: (c.tel && c.tel[0]) || "" }))
+        .filter((x) => x.name);
+      if (items.length === 0) {
         alert("לא נבחרו אנשי קשר.");
         return;
       }
-      intakeNames(names);
+      intakeNames(items);
     } catch (e) {
       setManual(true); // ביטול/חסימה — ניפול בעדינות להקלדה ידנית
     }
@@ -270,8 +278,16 @@ export default function ContactRoulette({ ownerId }) {
 
 // קלף בודד
 function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus, onChange, onSaveCouple, onAnalyze, onFollowUp, onToggleFreeze }) {
+  const msg = outreachMessage(c);
+  const digits = (c.phone || "").replace(/[^0-9]/g, "");
+  const hasPhone = digits.length >= 6;
+  // המרת מספר ישראלי מקומי לפורמט בינלאומי עבור וואטסאפ.
+  const waNum = digits.startsWith("972") ? digits : digits.startsWith("0") ? "972" + digits.slice(1) : digits;
+  const waHref = hasPhone
+    ? `https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
   function copyMsg() {
-    const msg = outreachMessage(c);
     try {
       navigator.clipboard.writeText(msg);
       alert("ההודעה הועתקה ללוח ✓");
@@ -279,12 +295,6 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
       alert(msg);
     }
   }
-  function waMsg() {
-    const msg = outreachMessage(c);
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noreferrer");
-  }
-
-  const savedResult = c.message || c.insight;
 
   return (
     <div className={`rounded-2xl border p-4 transition ${c.frozen ? "border-slate-300 bg-slate-50" : c.done ? "border-rose/30 bg-blush/30" : "border-sand bg-white"}`}>
@@ -359,15 +369,25 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
         </div>
       )}
 
-      {/* מגירת אקורדיון — הערות, הקפאה, ושליחת הודעה */}
+      {/* מגירת אקורדיון — מה שמילאת, הערות, הקפאה, ויצירת קשר */}
       {c.done && expanded && (
         <div className="mt-3 space-y-3 border-t border-sand pt-3">
-          {savedResult && (
-            <div>
-              <p className="mb-1 text-xs font-bold text-ink/50">📌 הניתוח השמור</p>
-              <p className="text-sm leading-relaxed text-ink/80">{savedResult}</p>
-            </div>
-          )}
+          {/* הקלט המקורי שהנציגה הקלידה */}
+          <div>
+            <p className="mb-1 text-xs font-bold text-ink/50">📌 מה שמילאת</p>
+            {c.status === "couple" ? (
+              <div className="space-y-0.5 text-sm text-ink/80">
+                {c.networking?.style && <p>סגנון לשידוך: {c.networking.style}</p>}
+                {c.networking?.consult && <p>להתייעץ על: {c.networking.consult}</p>}
+                {!c.networking?.style && !c.networking?.consult && <p className="text-ink/40">—</p>}
+              </div>
+            ) : (
+              <div className="space-y-0.5 text-sm text-ink/80">
+                {c.trait ? <p>התכונה שציינת: {c.trait}</p> : <p className="text-ink/40">—</p>}
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="field-label">הערות אישיות שלי</label>
             <textarea
@@ -377,13 +397,26 @@ function ContactCardItem({ c, analyzing, expanded, onToggleExpand, onPickStatus,
               onChange={(e) => onChange({ notes: e.target.value })}
             />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button className="btn-soft" onClick={onToggleFreeze}>
-              {c.frozen ? "♻️ החזר לפעיל" : "🧊 הקפאה / השהיה"}
-            </button>
-            <button className="btn-soft" onClick={copyMsg}>📋 העתק הודעה</button>
-            <button className="btn-soft" onClick={waMsg}>🟢 וואטסאפ</button>
+
+          {/* דרכי יצירת קשר — שורת אייקונים עדינה */}
+          <div>
+            <p className="mb-1.5 text-xs font-bold text-ink/50">דרכי יצירת קשר</p>
+            <div className="flex flex-wrap items-center gap-2">
+              {hasPhone && (
+                <a className="flex h-9 w-9 items-center justify-center rounded-full bg-blush text-lg transition hover:bg-rose/20" href={`tel:${digits}`} title="שיחה">📞</a>
+              )}
+              {hasPhone && (
+                <a className="flex h-9 w-9 items-center justify-center rounded-full bg-blush text-lg transition hover:bg-rose/20" href={`sms:${digits}`} title="SMS">💬</a>
+              )}
+              <a className="flex h-9 w-9 items-center justify-center rounded-full bg-blush text-lg transition hover:bg-rose/20" href={waHref} target="_blank" rel="noreferrer" title="וואטסאפ">🟢</a>
+              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-blush text-lg transition hover:bg-rose/20" onClick={copyMsg} title="העתק הודעה">📋</button>
+              {!hasPhone && <span className="text-xs text-ink/40">לא נשמר מספר — אפשר להעתיק ולהדביק</span>}
+            </div>
           </div>
+
+          <button className="btn-soft w-full" onClick={onToggleFreeze}>
+            {c.frozen ? "♻️ החזר לפעיל" : "🧊 הקפאה / השהיה"}
+          </button>
         </div>
       )}
 
