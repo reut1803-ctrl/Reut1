@@ -28,7 +28,7 @@ export default function Accordion({ icon: Icon, title, summary, defaultOpen = fa
     <div>
       <button
         onClick={toggle}
-        className="flex w-full items-center justify-between gap-2 rounded-2xl border border-white/60 bg-white/75 px-5 py-3.5 text-right shadow-soft backdrop-blur-sm transition hover:bg-white/90"
+        className="flex w-full items-center justify-between gap-2 rounded-2xl border border-white/50 bg-white/75 px-5 py-3.5 text-right shadow-soft backdrop-blur-md transition hover:bg-white/90"
       >
         <span className="flex items-center gap-2 text-base font-bold text-roseDark">
           {Icon && <Icon className="h-5 w-5" strokeWidth={1.75} />} {title}

@@ -18,21 +18,27 @@ body {
   box-sizing: border-box;
 }
 
-/* ---- שכבת רקע/טקסטורה גלובלית (שלב 1) ----
-   תשתית מוכנה: כשמוסיפים תמונת רקע, מגדירים את המשתנה --bg-texture על body
-   (למשל: body{ --bg-texture: url('/Reut1/bg-texture.jpg'); }). כברירת מחדל - ללא,
-   כך שאין שום סיכון עד שהתמונה תסופק. השקיפות על השכבה בלבד - הטקסט תמיד חד. */
+/* ---- רקע גלובלי: טקסטורת צבעי מים פסטל + זהב, קבוע, בשכבה התחתונה ---- */
 body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image: url("/Reut1/assets/bg-texture.jpg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+/* שכבת הלבנה עדינה מעל הרקע - מרככת את הטקסטורה ושומרת על קריאות, בלי להעלים את הזהב */
+body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: var(--bg-texture, none);
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  opacity: 0.06;
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 @layer components {
@@ -48,9 +54,9 @@ body::before {
   .btn-soft {
     @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-blush px-4 py-2.5 font-medium text-roseDark transition active:scale-95 hover:bg-rose/20;
   }
-  /* כרטיס אלגנטי עם אפקט זכוכית עדין (Glassmorphism) ואוויר נדיב */
+  /* כרטיס אלגנטי עם אפקט זכוכית (Glassmorphism) ואוויר נדיב */
   .card {
-    @apply rounded-3xl border border-white/60 bg-white/75 p-6 shadow-soft backdrop-blur-sm;
+    @apply rounded-3xl border border-white/50 bg-white/75 p-6 shadow-soft backdrop-blur-md;
   }
 }
 

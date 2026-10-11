@@ -18,7 +18,7 @@ module.exports = {
         sans: ["Heebo", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 8px 30px rgba(167, 79, 79, 0.08)",
+        soft: "0 10px 34px rgba(167, 79, 79, 0.10)",
       },
     },
   },
