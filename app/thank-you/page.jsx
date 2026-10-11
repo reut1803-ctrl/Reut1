@@ -9,7 +9,7 @@ import { HeartHandshake, Phone, Check } from "lucide-react";
 
 // מחיר המסלול האישי ופרטי התשלום בביט. BIT_TARGET - למילוי (מספר/שם ביט).
 const PERSONAL_PRICE = "60 ₪ לכל שיחה";
-const BIT_TARGET = ""; // למשל: "050-0000000"
+const BIT_TARGET = "054-308-5242"; // מספר הביט לתשלום המסלול האישי
 
 function ThankYouInner() {
   const id = useSearchParams().get("id");
