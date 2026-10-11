@@ -202,12 +202,12 @@ export default function AdminPage() {
   // צופה רואה רק את המועמדים (קריאה בלבד); שאר הלשוניות מוסתרות ממנו.
   const pendingCount = isAdmin ? (data.intake || []).length : 0;
   const tabs = [{ id: "candidates", icon: Users, label: "מועמדים" }];
-  if (isAdmin) tabs.push({ id: "intake", icon: ClipboardCheck, label: "קליטה", badge: pendingCount });
   if (!isViewer) {
     tabs.push({ id: "matches", icon: HeartHandshake, label: "התאמות" });
     tabs.push({ id: "tasks", icon: ClipboardList, label: "משימות" });
   }
-  if (isAdmin) tabs.push({ id: "manage", icon: Settings, label: "ניהול" });
+  // הקליטה מוטמעת בתוך לשונית הניהול (גלויה למנהלת בלבד); המונה מופיע על הלשונית.
+  if (isAdmin) tabs.push({ id: "manage", icon: Settings, label: "ניהול", badge: pendingCount });
 
   return (
     <div>
@@ -382,19 +382,19 @@ export default function AdminPage() {
           </div>
         )}
 
-        {tab === "intake" && isAdmin && (
-          <div className="space-y-4">
-            <div className="rounded-2xl bg-blush px-4 py-2">
-              <p className="flex items-center gap-1.5 font-bold text-roseDark"><ClipboardCheck className="h-4 w-4" strokeWidth={1.75} /> קליטת נרשמים</p>
-              <p className="text-xs text-ink/60">הרשמות חדשות מהטופס הציבורי — יצירת קשר, שיוך, משימות ואישור למאגר.</p>
-            </div>
-            <IntakePanel data={data} />
-          </div>
-        )}
         {tab === "matches" && <MatchesPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "tasks" && <TasksPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "manage" && isAdmin && (
           <div className="space-y-3">
+            {/* קליטת נרשמים - מוטמעת בראש לוח הבקרה (מנהלת בלבד) */}
+            <div className="space-y-2 rounded-3xl border-2 border-rose/40 bg-rose/5 p-4">
+              <p className="flex items-center gap-2 text-base font-bold text-roseDark">
+                <ClipboardCheck className="h-5 w-5" strokeWidth={1.75} /> פניות ממתינות לאישור{pendingCount ? ` (${pendingCount})` : ""}
+              </p>
+              <p className="text-xs text-ink/60">הרשמות חדשות מהטופס הציבורי — יצירת קשר, שיוך לנציג/ה, פתיחת משימה, סיווג ואישור למאגר.</p>
+              <IntakePanel data={data} />
+            </div>
+
             {isSupervisor && (
               <Accordion icon={Crown} title="מנהלות וסיסמאות" summary="בקרה" storageKey="admins">
                 <AdminsManager data={data} />

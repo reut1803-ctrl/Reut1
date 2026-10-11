@@ -5,7 +5,7 @@ import Modal from "./Modal";
 import CandidateEditor from "./CandidateEditor";
 import DateField from "./DateField";
 import { updateIntake, approveIntake, deleteIntake, addTask } from "../lib/store";
-import { ClipboardCheck, Check, X, Pencil, Phone, MessageSquare, Crown, UserPlus, ListPlus } from "lucide-react";
+import { Check, X, Pencil, Phone, MessageSquare, Crown, UserPlus, ListPlus } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
 
 // תור קליטה (intakeSubmissions) ככלי CRM: יצירת קשר מהירה, שיוך נציג, פתיחת משימה, סיווג ואישור.
@@ -14,20 +14,14 @@ export default function IntakePanel({ data }) {
 
   if (items.length === 0) {
     return (
-      <div className="card text-center text-sm text-ink/50">
+      <p className="rounded-2xl bg-white/70 px-4 py-3 text-center text-sm text-ink/50">
         אין כרגע הרשמות הממתינות לאישור. הרשמות חדשות מהטופס יופיעו כאן.
-      </div>
+      </p>
     );
   }
 
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl bg-blush/50 px-4 py-3">
-        <p className="flex items-center gap-2 text-base font-bold text-roseDark">
-          <ClipboardCheck className="h-5 w-5" strokeWidth={1.75} /> ממתינים לאישור ({items.length})
-        </p>
-        <p className="mt-0.5 text-xs text-ink/60">צרו קשר לקביעת שיחת קליטה, שייכו לנציג/ה, פתחו משימה, סווגו, ואשרו למאגר.</p>
-      </div>
       {items.map((c) => (
         <IntakeRow key={c.id} c={c} reps={data.reps} openQuestions={data.openQuestions} />
       ))}
