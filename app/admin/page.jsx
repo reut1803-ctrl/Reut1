@@ -21,9 +21,10 @@ import ContactRoulette from "../../components/ContactRoulette";
 import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
-import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
-import { Users, HeartHandshake, ClipboardList, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper } from "lucide-react";
+import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, approveCandidate, displayRep, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
+import { Users, HeartHandshake, ClipboardList, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, ClipboardCheck, Check, X, UserPlus } from "lucide-react";
 import Accordion from "../../components/Accordion";
+import RegistrationEditor from "../../components/RegistrationEditor";
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -175,9 +176,15 @@ export default function AdminPage() {
   // סינון מגדרי - חל רק על "מועמדים קודמים" (לא על "חדשים").
   const genderOk = (c) => genderFilter === "all" || c.gender === genderFilter;
 
+  // נרשמים חדשים מהטופס נשמרים כ"ממתין לאישור" ואינם מופיעים במאגר עד שהמנהלת מאשרת.
+  // מועמדים ותיקים (ללא status) נחשבים מאושרים - כך שום דבר קיים לא נעלם.
+  const notPending = (c) => c.status !== "pending";
+  const pending = isAdmin ? data.candidates.filter((c) => c.status === "pending") : [];
+  const trackLabel = (t) => (t === "gold" ? "מסגרת זהב" : t === "callback" ? "שיחזרו אליי" : "מסלול אישי");
+
   // 5 המועמדים האחרונים שהצטרפו (מבין אלה שהמשתמש/ת רשאי/ת לראות) - לפי מועד ההוספה.
   const viewableSorted = data.candidates
-    .filter((c) => canViewCandidate(c) && mineOk(c))
+    .filter((c) => canViewCandidate(c) && mineOk(c) && notPending(c))
     .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
   const newIds = new Set(viewableSorted.slice(0, 5).map((c) => c.id));
   const newCands = viewableSorted.filter((c) => newIds.has(c.id) && matchSearch(c));
@@ -186,7 +193,7 @@ export default function AdminPage() {
   // בתצוגת "קודמים" מחריגים את 5 החדשים (הם מופיעים בלשונית "חדשים").
   const unassigned = data.candidates.filter((c) => {
     const dr = displayRep(c, data.reps);
-    return (!dr || !visibleRepIds.has(dr.id)) && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c);
+    return (!dr || !visibleRepIds.has(dr.id)) && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c) && notPending(c);
   });
 
   async function handleAdd(form) {
@@ -228,6 +235,40 @@ export default function AdminPage() {
             <TipBanner popup={data.popup} />
             {/* רולטת אנשי קשר / אתגר יומי - ווידג'ט מתקפל, מבודד (LocalStorage בלבד) */}
             {!isViewer && <ContactRoulette ownerId={user.repId || user.role} />}
+
+            {/* תור ממתינים לאישור - נרשמים חדשים מהטופס (למנהלת בלבד) */}
+            {isAdmin && pending.length > 0 && (
+              <section className="space-y-3 rounded-3xl border-2 border-rose/40 bg-rose/5 p-4">
+                <p className="flex items-center gap-2 text-base font-bold text-roseDark">
+                  <ClipboardCheck className="h-5 w-5" strokeWidth={1.75} /> ממתינים לאישור ({pending.length})
+                </p>
+                <p className="text-xs text-ink/60">נרשמים חדשים מהטופס. בדקי את הפרטים, אשרי את התשלום, והכניסי למאגר — או דחי.</p>
+                {pending.map((c) => (
+                  <div key={c.id} className="space-y-2 rounded-2xl bg-white/70 p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-ink">{c.fullName}</span>
+                      <span className="text-sm text-ink/60">· {c.gender === "female" ? "בחורה" : "בחור"}{c.age ? ` · גיל ${c.age}` : ""}</span>
+                      {c.track && <span className="rounded-full bg-blush px-2 py-0.5 text-xs font-semibold text-roseDark">{trackLabel(c.track)}</span>}
+                      {c.phone && <a href={`tel:${c.phone}`} className="text-sm text-roseDark">{c.phone}</a>}
+                    </div>
+                    <CandidateCard
+                      candidate={c}
+                      openQuestions={data.openQuestions}
+                      reps={data.reps}
+                      canEdit
+                      canSeeSensitive
+                      currentRepId="admin"
+                      isAdmin
+                      onUpdate={updateCandidate}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <button className="btn-primary !py-2" onClick={() => approveCandidate(c.id)}><Check className="h-4 w-4" strokeWidth={2} /> אשר והכנס למאגר</button>
+                      <button className="btn-soft !py-2 text-roseDark" onClick={() => { if (confirm(`לדחות ולמחוק את "${c.fullName}"?`)) deleteCandidate(c.id); }}><X className="h-4 w-4" strokeWidth={2} /> דחייה</button>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
             {isViewer && (
               <div className="flex items-center justify-center gap-2 rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
                 <Eye className="h-4 w-4 shrink-0" strokeWidth={1.75} /> מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
@@ -318,7 +359,7 @@ export default function AdminPage() {
             )}
 
             {(candView === "previous" || term) && visibleReps.map((rep) => {
-              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c));
+              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c) && notPending(c));
               if (cands.length === 0) return null; // אין מציגים מדור ריק של נציג
               return (
                 <section key={rep.id} className="space-y-2">
@@ -387,6 +428,9 @@ export default function AdminPage() {
                 <AdminsManager data={data} />
               </Accordion>
             )}
+            <Accordion icon={UserPlus} title="דף ההרשמה" summary="מסלולים ותשלום" storageKey="registration">
+              <RegistrationEditor data={data} />
+            </Accordion>
             <Accordion icon={Users} title="ניהול נציגים" summary={`${data.reps.length} נציגים`} storageKey="reps">
               <RepsManager data={data} />
             </Accordion>
