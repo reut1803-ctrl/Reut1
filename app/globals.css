@@ -121,6 +121,15 @@ body::after {
   animation: fadeInUp 0.35s ease-out both;
 }
 
+/* ריחוף עדין ורציף (לאיור הקפה/קרואסון) */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.animate-float {
+  animation: floaty 3s ease-in-out infinite;
+}
+
 /* אפקט נצנצים (Confetti) לפופ-אפ מזל טוב */
 @keyframes confetti-fall {
   0% { transform: translateY(-20vh) rotate(0deg); opacity: 1; }

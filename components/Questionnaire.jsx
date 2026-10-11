@@ -7,10 +7,14 @@ import DateField from "./DateField";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 import { loadData, addIntake } from "../lib/store";
 import { compressImage } from "../lib/image";
-import { User, Briefcase, Camera, MessageCircle, Contact, Lightbulb, ChevronRight, ChevronLeft, ShieldCheck, Heart } from "lucide-react";
+import { User, Briefcase, Camera, MessageCircle, Contact, Lightbulb, ChevronRight, ChevronLeft, ShieldCheck, Heart, Coffee, Croissant, FileText } from "lucide-react";
+import AgreementModal from "./AgreementModal";
 
 const CORE_FIELDS = PERSONAL_FIELDS.slice(0, 6);
 const OCC_FIELDS = PERSONAL_FIELDS.slice(6);
+
+// הסרת אימוג'ים מטקסט (כדי להחליף את הקפה/קרואסון באיור מונפש).
+const stripEmoji = (s) => (s || "").replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{200D}]/gu, "").trim();
 
 export default function Questionnaire({ gender }) {
   const router = useRouter();
@@ -31,6 +35,7 @@ export default function Questionnaire({ gender }) {
   const [intro, setIntro] = useState("");
   const [inApp, setInApp] = useState(false);
   const [started, setStarted] = useState(false); // מסך פתיחה (ברכה) לפני הטופס
+  const [showAgreement, setShowAgreement] = useState(false);
   const [step, setStep] = useState(0);
   const [agree, setAgree] = useState(false);
   const [form, setForm] = useState(() => loadDraft()?.form || {});
@@ -157,23 +162,29 @@ export default function Questionnaire({ gender }) {
       <div>
         <Header />
         <main className="mx-auto max-w-md px-4 py-8">
-          <div className="card animate-fadein space-y-4 text-center">
-            <h1 className="text-xl font-bold leading-relaxed text-roseDark">
+          <div className="card space-y-4 text-center">
+            <h1 className="animate-fadein text-xl font-bold leading-relaxed text-roseDark" style={{ animationDelay: "0ms" }}>
               ברוכים הבאים למערכת ההרשמה של מיזם שידוכים "הקהילה איתך"
             </h1>
-            <p className="text-sm font-medium text-ink/60">לתלמידי הרב הלומדים מתורתו</p>
-            <p className="text-base leading-relaxed text-ink/80">
+            <p className="animate-fadein text-sm font-medium text-ink/60" style={{ animationDelay: "150ms" }}>לתלמידי הרב הלומדים מתורתו</p>
+            <p className="animate-fadein text-base leading-relaxed text-ink/80" style={{ animationDelay: "300ms" }}>
               אנו רואים זכות גדולה ללוות אתכם בתהליך המשמעותי הזה, באכפתיות, במסירות ובלב פתוח.
             </p>
-            <blockquote className="mx-auto rounded-2xl border-r-4 border-rose/50 bg-blush/50 px-5 py-4 text-right text-base italic leading-relaxed text-ink/90">
+            <blockquote className="animate-fadein mx-auto rounded-2xl border-r-4 border-rose/50 bg-blush/50 px-5 py-4 text-right text-base italic leading-relaxed text-ink/90" style={{ animationDelay: "450ms" }}>
               "ברכה להצלחה רבה במיזם השידוכים על טהרת הקדש. שירבו בתים נאמנים בישראל! ברכת כוח"ט לשנה טובה ומתוקה!"
               <footer className="mt-2 text-sm font-bold not-italic text-roseDark">— הרב יצחק גינזבורג</footer>
             </blockquote>
-            <button onClick={() => setStarted(true)} className="btn-primary w-full text-lg">
-              <Heart className="h-5 w-5" strokeWidth={1.75} /> קראתי, ואני רוצה להתחיל
-            </button>
+            <div className="animate-fadein space-y-2" style={{ animationDelay: "600ms" }}>
+              <button onClick={() => setStarted(true)} className="btn-primary w-full text-lg">
+                <Heart className="h-5 w-5" strokeWidth={1.75} /> קראתי, ואני רוצה להתחיל
+              </button>
+              <button type="button" onClick={() => setShowAgreement(true)} className="mx-auto flex items-center justify-center gap-1.5 text-sm text-ink/55 underline underline-offset-4 hover:text-rose">
+                <FileText className="h-4 w-4" strokeWidth={1.75} /> לקריאת הסכם ההתקשרות ומדיניות הפרטיות
+              </button>
+            </div>
           </div>
         </main>
+        {showAgreement && <AgreementModal onClose={() => setShowAgreement(false)} />}
       </div>
     );
   }
@@ -201,7 +212,13 @@ export default function Questionnaire({ gender }) {
         </div>
 
         {step === 0 && intro && (
-          <div className="mb-5 rounded-3xl bg-blush/60 px-5 py-4 text-center text-base font-medium leading-relaxed text-ink">{intro}</div>
+          <div className="mb-5 rounded-3xl bg-blush/60 px-5 py-5 text-center">
+            <div className="mb-2 flex items-center justify-center gap-3 text-rose">
+              <Coffee className="animate-float h-9 w-9" strokeWidth={1.5} />
+              <Croissant className="animate-float h-9 w-9" strokeWidth={1.5} style={{ animationDelay: "600ms" }} />
+            </div>
+            <p className="text-base font-medium leading-relaxed text-ink">{stripEmoji(intro)}</p>
+          </div>
         )}
         {step === 0 && inApp && (
           <div className="mb-4 flex items-start gap-2 rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-800">
@@ -275,13 +292,16 @@ export default function Questionnaire({ gender }) {
                   <p className="mb-2 text-base font-bold text-roseDark">עלויות והצטרפות</p>
                   <p className="text-sm leading-relaxed text-ink/80">ההצטרפות למאגר — <b>ללא עלות ובלי התחייבות</b>.</p>
                   <p className="mt-1.5 text-sm leading-relaxed text-ink/80">דמי הצלחה — <b>2,000 ₪ מכל צד</b>, משולמים בווארט אך ורק כאשר קיבלתם החלטה להינשא בעז"ה.</p>
+                  <button type="button" onClick={() => setShowAgreement(true)} className="mt-3 flex items-center gap-1.5 text-sm font-medium text-roseDark underline underline-offset-4 hover:text-rose">
+                    <FileText className="h-4 w-4" strokeWidth={1.75} /> לקריאת הסכם ההתקשרות ומדיניות הפרטיות
+                  </button>
                 </div>
 
                 {/* בלוק B: אישור פרטיות (חובה) */}
                 <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-sand bg-white/70 p-4 transition hover:border-rose/40">
                   <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-rose" checked={agree} onChange={(e) => { setAgree(e.target.checked); setError(""); }} />
                   <span className="text-sm leading-relaxed text-ink/80">
-                    ידוע לי שהפרטים שאני מוסר/ת נועדו אך ורק לצורך התאמות שידוך. המידע מגיע להנהלת המיזם ול"שגרירים" – בקהילה שפועלים באכפתיות ובלב פתוח למעני. אני מאשר/ת שהמידע יישמר במאגר סגור בדיסקרטיות מלאה, ולא יועבר לאף גורם חיצוני ללא אישור מראש. <span className="text-roseDark">*</span>
+                    ידוע לי שהפרטים נועדו אך ורק לצורך התאמות שידוך. המידע מגיע להנהלת המיזם ול"שגרירים" שפועלים באכפתיות. אני מאשר/ת שהמידע יישמר במאגר סגור בדיסקרטיות מלאה, ולא יועבר לצד שלישי. <span className="text-roseDark">*</span>
                   </span>
                 </label>
               </>
@@ -301,6 +321,7 @@ export default function Questionnaire({ gender }) {
           )}
         </div>
       </main>
+      {showAgreement && <AgreementModal onClose={() => setShowAgreement(false)} />}
     </div>
   );
 }
