@@ -200,7 +200,9 @@ export default function AdminPage() {
   }
 
   // צופה רואה רק את המועמדים (קריאה בלבד); שאר הלשוניות מוסתרות ממנו.
+  const pendingCount = isAdmin ? (data.intake || []).length : 0;
   const tabs = [{ id: "candidates", icon: Users, label: "מועמדים" }];
+  if (isAdmin) tabs.push({ id: "intake", icon: ClipboardCheck, label: "קליטה", badge: pendingCount });
   if (!isViewer) {
     tabs.push({ id: "matches", icon: HeartHandshake, label: "התאמות" });
     tabs.push({ id: "tasks", icon: ClipboardList, label: "משימות" });
@@ -230,8 +232,6 @@ export default function AdminPage() {
             <TipBanner popup={data.popup} />
             {/* רולטת אנשי קשר / אתגר יומי - ווידג'ט מתקפל, מבודד (LocalStorage בלבד) */}
             {!isViewer && <ContactRoulette ownerId={user.repId || user.role} />}
-            {/* תור ממתינים לאישור - הרשמות מהטופס הציבורי (למנהלת בלבד) */}
-            {isAdmin && <IntakePanel data={data} />}
             {isViewer && (
               <div className="flex items-center justify-center gap-2 rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
                 <Eye className="h-4 w-4 shrink-0" strokeWidth={1.75} /> מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
@@ -382,6 +382,15 @@ export default function AdminPage() {
           </div>
         )}
 
+        {tab === "intake" && isAdmin && (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-blush px-4 py-2">
+              <p className="flex items-center gap-1.5 font-bold text-roseDark"><ClipboardCheck className="h-4 w-4" strokeWidth={1.75} /> קליטת נרשמים</p>
+              <p className="text-xs text-ink/60">הרשמות חדשות מהטופס הציבורי — יצירת קשר, שיוך, משימות ואישור למאגר.</p>
+            </div>
+            <IntakePanel data={data} />
+          </div>
+        )}
         {tab === "matches" && <MatchesPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "tasks" && <TasksPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "manage" && isAdmin && (
@@ -445,9 +454,14 @@ export default function AdminPage() {
               key={t.id}
               data-tour={`nav-${t.id}`}
               onClick={() => setTab(t.id)}
-              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition ${tab === t.id ? "text-rose" : "text-ink/50"}`}
+              className={`relative flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition ${tab === t.id ? "text-rose" : "text-ink/50"}`}
             >
-              <t.icon className="h-6 w-6" strokeWidth={1.75} />
+              <span className="relative">
+                <t.icon className="h-6 w-6" strokeWidth={1.75} />
+                {t.badge > 0 && (
+                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose px-1 text-[10px] font-bold text-white">{t.badge}</span>
+                )}
+              </span>
               <span>{t.label}</span>
             </button>
           ))}

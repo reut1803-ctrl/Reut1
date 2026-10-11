@@ -6,8 +6,8 @@ import DateField from "./DateField";
 import SearchSelect from "./SearchSelect";
 import CandidateCard from "./CandidateCard";
 import { toHebrewDate } from "../lib/dates";
-import { addTask, updateTask, deleteTask, updateCandidate } from "../lib/store";
-import { ClipboardList, Trash2, UserRound, Phone } from "lucide-react";
+import { addTask, updateTask, deleteTask, updateCandidate, updateIntake } from "../lib/store";
+import { ClipboardList, Trash2, UserRound, Phone, MessageSquare } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
 
 export default function TasksPanel({ data, user, readOnly = false }) {
@@ -54,9 +54,14 @@ export default function TasksPanel({ data, user, readOnly = false }) {
 
       {visibleTasks.map((t) => {
         const cand = t.candidateId ? candById(t.candidateId) : null;
-        const canSee = isAdmin || managedByMe(cand);
-        const rep = cand ? data.reps.find((r) => r.id === cand.assignedRep) : null;
-        const phone = ((canSee && cand?.phone) ? cand.phone : rep?.phone || "").replace(/[^0-9]/g, "");
+        // משימת קליטה - משויכת לנרשם/ת שעדיין בתור הממתינים (intakeSubmissions).
+        const intakeItem = t.intakeId ? (data.intake || []).find((x) => x.id === t.intakeId) : null;
+        const person = cand || intakeItem;
+        const isIntake = !cand && !!intakeItem;
+        const canSee = isAdmin || managedByMe(person);
+        const rep = person ? data.reps.find((r) => r.id === person.assignedRep) : null;
+        const phone = ((canSee && person?.phone) ? person.phone : rep?.phone || "").replace(/[^0-9]/g, "");
+        const waNum = phone.startsWith("972") ? phone : phone.startsWith("0") ? "972" + phone.slice(1) : phone;
         return (
           <div key={t.id} className="card space-y-2">
             <div className="flex items-center gap-3">
@@ -69,29 +74,36 @@ export default function TasksPanel({ data, user, readOnly = false }) {
               {!readOnly && <button className="text-roseDark" onClick={() => { if (confirm("למחוק משימה?")) deleteTask(t.id); }}><Trash2 className="h-4 w-4" strokeWidth={1.75} /></button>}
             </div>
 
-            {/* משימה משויכת למועמד - פרטים בולטים + פעולות מהירות + צפייה בכרטיס */}
-            {cand && (
+            {/* משימה משויכת לאדם (מועמד/ת במאגר או נרשם/ת בקליטה) - פרטים + קשר מהיר + צפייה בכרטיס */}
+            {person && (
               <div className="rounded-2xl bg-blush/40 p-3">
-                <p className="flex items-center gap-1.5 text-sm font-bold text-roseDark"><UserRound className="h-4 w-4" strokeWidth={1.75} /> {cand.fullName}</p>
+                <p className="flex flex-wrap items-center gap-1.5 text-sm font-bold text-roseDark">
+                  <UserRound className="h-4 w-4" strokeWidth={1.75} /> {person.fullName}
+                  {isIntake && <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-bold text-amber-800">בקליטה</span>}
+                </p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`tel:${phone}`}><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> חיוג</a>}
-                  {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>}
+                  {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`sms:${phone}`}><MessageSquare className="h-3.5 w-3.5" strokeWidth={1.75} /> SMS</a>}
+                  {phone && <a className="btn-soft !px-2.5 !py-1 text-xs" href={`https://wa.me/${waNum}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>}
                   {!phone && <span className="text-xs text-ink/40">אין טלפון זמין</span>}
                 </div>
                 <div className="mt-2">
                   <CandidateCard
-                    candidate={cand}
+                    candidate={person}
                     openQuestions={data.openQuestions}
                     reps={data.reps}
-                    canEdit={isAdmin || (managedByMe(cand) && !readOnly)}
+                    canEdit={isAdmin || (managedByMe(person) && !readOnly)}
                     canSeeSensitive={canSee}
                     currentRepId={user.repId || "admin"}
                     isAdmin={isAdmin}
-                    locked={!!cand.restricted && !(isAdmin || managedByMe(cand))}
-                    onUpdate={updateCandidate}
+                    locked={!isIntake && !!person.restricted && !(isAdmin || managedByMe(person))}
+                    onUpdate={isIntake ? updateIntake : updateCandidate}
                   />
                 </div>
               </div>
+            )}
+            {!person && (t.candidateId || t.intakeId) && (
+              <p className="rounded-2xl bg-sand/40 p-3 text-xs text-ink/40">הכרטיס אינו זמין (ייתכן שאושר למאגר או נמחק).</p>
             )}
           </div>
         );
