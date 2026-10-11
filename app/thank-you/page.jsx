@@ -17,6 +17,8 @@ function ThankYouInner() {
   const [chosen, setChosen] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [request, setRequest] = useState("");
+  const [reqSaved, setReqSaved] = useState(false);
 
   const personalLink = id && typeof window !== "undefined"
     ? `${window.location.origin}${BASE}/status?id=${id}`
@@ -66,8 +68,8 @@ function ThankYouInner() {
           <button onClick={() => choose("callback")} disabled={busy} className="card flex w-full items-center gap-4 text-right transition hover:border-rose hover:shadow-lg">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blush text-roseDark"><Phone className="h-6 w-6" strokeWidth={1.75} /></span>
             <span className="min-w-0 flex-1">
-              <span className="font-bold text-ink">נא לחזור אליי</span>
-              <span className="mt-0.5 block text-sm text-ink/60">נחזור אליכם בהקדם לתיאום.</span>
+              <span className="font-bold text-ink">אשמח למשהו אחר</span>
+              <span className="mt-0.5 block text-sm text-ink/60">כתוב כאן את הבקשה</span>
             </span>
           </button>
         </div>
@@ -82,9 +84,21 @@ function ThankYouInner() {
         </div>
       )}
       {chosen === "callback" && (
-        <div className="mt-6 card text-center">
-          <p className="font-bold text-roseDark">תודה! 🌸</p>
-          <p className="mt-1 text-sm text-ink/80">נחזור אליכם בהקדם לתיאום.</p>
+        <div className="mt-6 card space-y-2">
+          <p className="text-center font-bold text-roseDark">נשמח לשמוע 🌸</p>
+          <label className="field-label">כתוב כאן את הבקשה</label>
+          <textarea
+            className="field-input min-h-[90px]"
+            placeholder="מה היה נוח לך שנדע? אפשר לכתוב כאן כל בקשה או הערה…"
+            value={request}
+            onChange={(e) => { setRequest(e.target.value); setReqSaved(false); }}
+          />
+          <button
+            className="btn-primary w-full"
+            disabled={busy}
+            onClick={async () => { setBusy(true); try { if (id) await setStatusTrack(id, "callback", request.trim()); } catch (e) {} setBusy(false); setReqSaved(true); }}
+          >שליחת הבקשה</button>
+          {reqSaved && <p className="text-center text-sm font-semibold text-green-600">נשלח, תודה! נחזור אליכם בהקדם 💗</p>}
         </div>
       )}
 

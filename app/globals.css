@@ -112,6 +112,15 @@ body::after {
   .logo-gold { display: none; }
 }
 
+/* מעבר רך (Fade-in) בין שלבי האשף וברכיבים נכנסים */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-fadein {
+  animation: fadeInUp 0.35s ease-out both;
+}
+
 /* אפקט נצנצים (Confetti) לפופ-אפ מזל טוב */
 @keyframes confetti-fall {
   0% { transform: translateY(-20vh) rotate(0deg); opacity: 1; }

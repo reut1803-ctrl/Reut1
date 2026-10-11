@@ -69,6 +69,11 @@ function IntakeRow({ c, reps, openQuestions }) {
         {c.goldFrame && <span className="flex items-center gap-1 rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-bold text-amber-800"><Crown className="h-3.5 w-3.5" strokeWidth={2} /> מסגרת זהב</span>}
       </div>
 
+      {/* בקשה חופשית שהמועמד/ת כתב/ה במסך הסיום */}
+      {c.trackMessage && (
+        <p className="rounded-xl bg-blush/40 px-3 py-2 text-sm text-ink/80"><span className="font-semibold text-roseDark">בקשה: </span>{c.trackMessage}</p>
+      )}
+
       {/* יצירת קשר מהירה */}
       {digits ? (
         <div className="flex flex-wrap items-center gap-2">
