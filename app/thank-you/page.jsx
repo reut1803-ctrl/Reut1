@@ -1,18 +1,112 @@
+"use client";
+
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Logo from "../../components/Logo";
 import { THANK_YOU_TEXT } from "../../lib/questions";
+import { updateIntake } from "../../lib/store";
+import { HeartHandshake, Phone, Check } from "lucide-react";
+
+// מחיר המסלול האישי ופרטי התשלום בביט. BIT_TARGET - למילוי (מספר/שם ביט).
+const PERSONAL_PRICE = "60 ₪ לכל שיחה";
+const BIT_TARGET = ""; // למשל: "050-0000000"
+
+function ThankYouInner() {
+  const id = useSearchParams().get("id");
+  const [chosen, setChosen] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function choose(track) {
+    setBusy(true);
+    try {
+      if (id) await updateIntake(id, { track, trackChosenAt: new Date().toISOString() });
+    } catch (e) {}
+    setBusy(false);
+    setChosen(track);
+  }
+
+  return (
+    <div className="w-full max-w-md">
+      <div className="mb-6 flex justify-center">
+        <Logo className="h-24 w-auto" />
+      </div>
+
+      <div className="card text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blush">
+          <Check className="h-7 w-7 text-rose" strokeWidth={2} />
+        </div>
+        <p className="whitespace-pre-line text-lg font-medium leading-relaxed text-ink">{THANK_YOU_TEXT}</p>
+      </div>
+
+      {/* בחירת מסלול */}
+      {!chosen && (
+        <div className="mt-6 space-y-3">
+          <p className="text-center text-sm font-semibold text-ink/70">איך תרצו להמשיך מכאן?</p>
+
+          <button
+            onClick={() => choose("personal")}
+            disabled={busy}
+            className="card flex w-full items-center gap-4 text-right transition hover:border-rose hover:shadow-lg"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blush text-roseDark">
+              <HeartHandshake className="h-6 w-6" strokeWidth={1.75} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2 font-bold text-ink">
+                מסלול אישי
+                <span className="rounded-full bg-rose/10 px-2 py-0.5 text-xs font-semibold text-roseDark">{PERSONAL_PRICE}</span>
+              </span>
+              <span className="mt-0.5 block text-sm text-ink/60">ליווי אישי וצמוד. התשלום מתבצע בביט.</span>
+            </span>
+          </button>
+
+          <button
+            onClick={() => choose("callback")}
+            disabled={busy}
+            className="card flex w-full items-center gap-4 text-right transition hover:border-rose hover:shadow-lg"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blush text-roseDark">
+              <Phone className="h-6 w-6" strokeWidth={1.75} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="font-bold text-ink">נא לחזור אליי</span>
+              <span className="mt-0.5 block text-sm text-ink/60">נחזור אליכם בהקדם לתיאום.</span>
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* מסלול אישי נבחר - פרטי תשלום בביט */}
+      {chosen === "personal" && (
+        <div className="mt-6 card space-y-2 text-center">
+          <p className="font-bold text-roseDark">בחרתם במסלול האישי 💛</p>
+          <p className="text-sm text-ink/80">עלות: <b>{PERSONAL_PRICE}</b></p>
+          {BIT_TARGET ? (
+            <p className="text-sm text-ink/80">לתשלום בביט (Bit), אל: <b>{BIT_TARGET}</b></p>
+          ) : (
+            <p className="text-sm text-ink/80">התשלום מתבצע באפליקציית ביט — ניצור איתכם קשר עם הפרטים המדויקים.</p>
+          )}
+          <p className="text-xs text-ink/50">קיבלנו את בחירתכם. ניצור קשר בהקדם 🌸</p>
+        </div>
+      )}
+
+      {/* ביקשו שנחזור */}
+      {chosen === "callback" && (
+        <div className="mt-6 card text-center">
+          <p className="font-bold text-roseDark">תודה! 🌸</p>
+          <p className="mt-1 text-sm text-ink/80">נחזור אליכם בהקדם לתיאום.</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ThankYouPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-      <div className="w-full max-w-md">
-        <div className="mb-6 flex justify-center">
-          <Logo className="h-28 w-auto" />
-        </div>
-        <div className="mb-4 text-5xl">☕</div>
-        <p className="text-xl font-medium leading-relaxed text-ink">
-          {THANK_YOU_TEXT}
-        </p>
-      </div>
+    <main className="flex min-h-screen flex-col items-center px-6 py-12 text-center">
+      <Suspense fallback={null}>
+        <ThankYouInner />
+      </Suspense>
     </main>
   );
 }

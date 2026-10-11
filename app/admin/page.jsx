@@ -18,6 +18,7 @@ import MazalTovPopup from "../../components/MazalTovPopup";
 import MazalTovEditor from "../../components/MazalTovEditor";
 import TipBanner from "../../components/TipBanner";
 import ContactRoulette from "../../components/ContactRoulette";
+import IntakePanel from "../../components/IntakePanel";
 import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
@@ -228,6 +229,8 @@ export default function AdminPage() {
             <TipBanner popup={data.popup} />
             {/* רולטת אנשי קשר / אתגר יומי - ווידג'ט מתקפל, מבודד (LocalStorage בלבד) */}
             {!isViewer && <ContactRoulette ownerId={user.repId || user.role} />}
+            {/* תור ממתינים לאישור - הרשמות מהטופס הציבורי (למנהלת בלבד) */}
+            {isAdmin && <IntakePanel data={data} />}
             {isViewer && (
               <div className="flex items-center justify-center gap-2 rounded-2xl bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-800">
                 <Eye className="h-4 w-4 shrink-0" strokeWidth={1.75} /> מצב צפייה בלבד — ניתן לצפות במועמדים אך לא לערוך, להוסיף או למחוק.
