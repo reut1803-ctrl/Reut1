@@ -1,44 +1,45 @@
 import Link from "next/link";
+import { Users } from "lucide-react";
 import Logo from "../components/Logo";
 import PersonIcon from "../components/PersonIcon";
 import TrustSection from "../components/TrustSection";
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md text-center">
-        {/* לוגו נקי וללא רקע, ממורכז בראש העמוד */}
-        <div className="mb-10 flex justify-center">
+    <main className="relative flex min-h-screen flex-col items-center px-4 pb-16">
+      {/* הדר עליון דיסקרטי - גישה מהירה לצוות, מעל הכל */}
+      <Link
+        href="/admin"
+        className="fixed left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-white/50 bg-white/55 px-3.5 py-1.5 text-xs font-medium text-ink/55 shadow-sm backdrop-blur-md transition-all duration-300 hover:text-roseDark hover:shadow"
+      >
+        <Users className="h-3.5 w-3.5" strokeWidth={1.75} />
+        כניסת צוות
+      </Link>
+
+      <div className="w-full max-w-md">
+        {/* אזור פתיחה - לוגו בלבד, עם המון אוויר */}
+        <div className="flex justify-center pt-24 pb-4">
           <Logo className="w-72 max-w-[85%]" animate />
         </div>
 
-        {/* בחירת מסלול: בחור | בחורה - באייקון בצבע הלוגו */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* אזור היכרות (TrustSection) - מיד אחרי הלוגו */}
+        <TrustSection />
+
+        {/* כפתורי הפעולה - פרימיום, אליפטיים, אחרי ההיכרות */}
+        <div className="mt-20 grid grid-cols-2 gap-4">
           <Link
             href="/form/male"
-            className="card flex flex-col items-center gap-2 border-rose/40 py-8 shadow-[0_8px_24px_rgba(199,106,106,0.22)] ring-2 ring-rose/25 transition duration-200 hover:-translate-y-0.5 hover:border-rose hover:shadow-[0_12px_30px_rgba(199,106,106,0.3)] hover:ring-4 hover:ring-rose/40 focus:outline-none focus-visible:border-rose focus-visible:ring-4 focus-visible:ring-rose/50 active:scale-[0.98] active:border-rose active:ring-4 active:ring-rose/60"
+            className="group flex flex-col items-center gap-2.5 rounded-full border border-rose/15 bg-white/50 py-8 shadow-[0_8px_24px_rgba(167,79,79,0.08)] backdrop-blur-sm transition-all duration-500 ease-out hover:scale-[1.02] hover:border-rose/30 hover:bg-blush/40 hover:shadow-[0_14px_34px_rgba(167,79,79,0.16)] active:scale-[0.99]"
           >
-            <PersonIcon className="h-12 w-12 text-rose" />
-            <span className="text-xl font-semibold text-roseDark">בחור</span>
+            <PersonIcon className="h-11 w-11 text-rose/80 transition-colors duration-500 group-hover:text-rose" />
+            <span className="text-lg font-light tracking-wide text-[#6E4B4B]">בחור</span>
           </Link>
           <Link
             href="/form/female"
-            className="card flex flex-col items-center gap-2 border-rose/40 py-8 shadow-[0_8px_24px_rgba(199,106,106,0.22)] ring-2 ring-rose/25 transition duration-200 hover:-translate-y-0.5 hover:border-rose hover:shadow-[0_12px_30px_rgba(199,106,106,0.3)] hover:ring-4 hover:ring-rose/40 focus:outline-none focus-visible:border-rose focus-visible:ring-4 focus-visible:ring-rose/50 active:scale-[0.98] active:border-rose active:ring-4 active:ring-rose/60"
+            className="group flex flex-col items-center gap-2.5 rounded-full border border-rose/15 bg-white/50 py-8 shadow-[0_8px_24px_rgba(167,79,79,0.08)] backdrop-blur-sm transition-all duration-500 ease-out hover:scale-[1.02] hover:border-rose/30 hover:bg-blush/40 hover:shadow-[0_14px_34px_rgba(167,79,79,0.16)] active:scale-[0.99]"
           >
-            <PersonIcon className="h-12 w-12 text-rose" />
-            <span className="text-xl font-semibold text-roseDark">בחורה</span>
-          </Link>
-        </div>
-
-        {/* אזור אמון והיכרות - אחרי אזור הפתיחה */}
-        <TrustSection />
-
-        <div className="mt-10">
-          <Link
-            href="/admin"
-            className="text-sm text-ink/50 underline-offset-4 hover:underline"
-          >
-            כניסת צוות
+            <PersonIcon className="h-11 w-11 text-rose/80 transition-colors duration-500 group-hover:text-rose" />
+            <span className="text-lg font-light tracking-wide text-[#6E4B4B]">בחורה</span>
           </Link>
         </div>
       </div>
