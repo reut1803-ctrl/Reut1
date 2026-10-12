@@ -8,8 +8,9 @@ import { genderLabel } from "../lib/questions";
 import { toHebrewDate } from "../lib/dates";
 import { copyClean, downloadPdf } from "../lib/export";
 import { displayRep, trackEngagement } from "../lib/store";
-import { Phone, MessageSquare, Copy, FileText, Pencil, Trash2, Lock, User } from "lucide-react";
+import { Phone, MessageSquare, Copy, FileText, Pencil, Trash2, Lock, User, MessageCircle, Contact } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
+import Accordion from "./Accordion";
 
 // כרטיס מועמד: תצוגה מקוצרת + תצוגה מורחבת (טופס מלא).
 // locked = כרטיס מוגבל שהמשתמש/ת אינו/ה מורשה/ית לפרטים המלאים: מוצגים שם/גיל/נציג + מנעול בלבד.
@@ -130,42 +131,48 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
                 </div>
               )}
 
-              {/* הנרטיב האישי - כל התוכן והעומק בגוש אחד זורם ונעים לעין */}
+              {/* ---- התוכן הארוך באקורדיונים (סגורים כברירת מחדל) למניעת גלילה ארוכה ---- */}
+
+              {/* הנרטיב האישי */}
               {hasNarrative && (
-                <div className="space-y-3 rounded-2xl bg-blush/40 p-4">
-                  <p className="text-base font-bold text-roseDark">{aboutTitle}</p>
-                  {candidate.description && (
-                    <p className="whitespace-pre-wrap text-lg leading-relaxed text-ink/90">{candidate.description}</p>
-                  )}
-                  {candidate.parentsWork && (
-                    <p className="text-lg leading-relaxed text-ink/90">רקע משפחתי: {candidate.parentsWork}</p>
-                  )}
-                  {(openQuestions || []).map((q) =>
-                    candidate.answers?.[q.key] ? (
-                      <div key={q.key}>
-                        <p className="mb-0.5 text-xs text-ink/45">{genderLabel(q, candidate.gender)}</p>
-                        <p className="whitespace-pre-wrap text-lg leading-relaxed text-ink/90">{candidate.answers[q.key]}</p>
-                      </div>
-                    ) : null
-                  )}
-                </div>
+                <Accordion icon={MessageCircle} title={aboutTitle}>
+                  <div className="space-y-3 rounded-2xl bg-blush/40 p-4">
+                    {candidate.description && (
+                      <p className="whitespace-pre-wrap text-lg leading-relaxed text-ink/90">{candidate.description}</p>
+                    )}
+                    {candidate.parentsWork && (
+                      <p className="text-lg leading-relaxed text-ink/90">רקע משפחתי: {candidate.parentsWork}</p>
+                    )}
+                    {(openQuestions || []).map((q) =>
+                      candidate.answers?.[q.key] ? (
+                        <div key={q.key}>
+                          <p className="mb-0.5 text-xs text-ink/45">{genderLabel(q, candidate.gender)}</p>
+                          <p className="whitespace-pre-wrap text-lg leading-relaxed text-ink/90">{candidate.answers[q.key]}</p>
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                </Accordion>
               )}
 
+              {/* אנשי קשר */}
               {candidate.references?.length > 0 && (
-                <div className="border-t border-sand pt-3">
-                  <p className="mb-1 text-base font-bold text-roseDark">אנשי קשר</p>
-                  {candidate.references.map((r, i) => (
-                    <p key={i} className="text-lg text-ink/90">{i + 1}. {r.name} — {r.relation} {canSeeSensitive ? `(${r.phone})` : ""}</p>
-                  ))}
-                </div>
+                <Accordion icon={Contact} title="אנשי קשר" summary={`${candidate.references.length}`}>
+                  <div className="rounded-2xl bg-white/70 p-3">
+                    {candidate.references.map((r, i) => (
+                      <p key={i} className="text-lg text-ink/90">{i + 1}. {r.name} — {r.relation} {canSeeSensitive ? `(${r.phone})` : ""}</p>
+                    ))}
+                  </div>
+                </Accordion>
               )}
 
               {/* מידע רגיש - גלוי רק לנציג ולמנהלת */}
               {canSeeSensitive && (
-                <div className="rounded-2xl bg-rose/10 p-3">
-                  <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-roseDark"><Lock className="h-4 w-4" strokeWidth={1.75} /> מידע רגיש (לנציג ולמנהלת בלבד)</p>
-                  <p className="whitespace-pre-wrap text-sm text-ink/80">{candidate.sensitiveInfo || "—"}</p>
-                </div>
+                <Accordion icon={Lock} title="מידע רגיש (לנציג ולמנהלת בלבד)">
+                  <div className="rounded-2xl bg-rose/10 p-3">
+                    <p className="whitespace-pre-wrap text-sm text-ink/80">{candidate.sensitiveInfo || "—"}</p>
+                  </div>
+                </Accordion>
               )}
 
               {/* הקלטות קוליות - כל הצוות מאזין; רק הנציג של המועמד והמנהלת מקליטים/מוחקים */}

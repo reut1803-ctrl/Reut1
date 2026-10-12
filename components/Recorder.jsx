@@ -2,19 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useData } from "../lib/useData";
-import { Headphones, Trash2, Play, Square, Mic } from "lucide-react";
+import { Mic, Square, Upload, Trash2, Play } from "lucide-react";
 import { addRecording, getRecordingAudio, deleteRecording, trackEngagement } from "../lib/store";
 
 const MAX_SECONDS = 600; // עד 10 דקות
-const MAX_BYTES = 980000; // מגבלת גודל לשמירה בטוחה
+const MAX_BYTES = 980000; // מגבלת גודל לשמירה בטוחה (מסמך Firestore)
 
 function pickMime() {
   if (typeof window === "undefined" || !window.MediaRecorder) return "";
   const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/mpeg"];
   for (const t of types) {
-    try {
-      if (MediaRecorder.isTypeSupported(t)) return t;
-    } catch (e) {}
+    try { if (MediaRecorder.isTypeSupported(t)) return t; } catch (e) {}
   }
   return "";
 }
@@ -25,13 +23,25 @@ function fmt(sec) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function audioDuration(file) {
+  return new Promise((resolve) => {
+    try {
+      const a = new Audio();
+      a.preload = "metadata";
+      a.onloadedmetadata = () => { resolve(a.duration || 0); URL.revokeObjectURL(a.src); };
+      a.onerror = () => resolve(0);
+      a.src = URL.createObjectURL(file);
+    } catch (e) { resolve(0); }
+  });
+}
+
 export default function Recorder({ candidateId, repId, canRecord = false }) {
   const data = useData();
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [urls, setUrls] = useState({}); // id -> object url (לאחר טעינה להשמעה)
+  const [urls, setUrls] = useState({});
   const [loadingId, setLoadingId] = useState("");
 
   const mr = useRef(null);
@@ -43,9 +53,10 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
     .filter((r) => r.candidateId === candidateId)
     .sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
 
+  const repName = (id) => (id === "admin" ? "מנהלת" : (data?.reps || []).find((x) => x.id === id)?.name || "");
+
   useEffect(() => {
     return () => {
-      // ניקוי במעבר בין כרטיסים
       if (timer.current) clearInterval(timer.current);
       if (stream.current) stream.current.getTracks().forEach((t) => t.stop());
       Object.values(urls).forEach((u) => URL.revokeObjectURL(u));
@@ -63,19 +74,14 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
       if (mime) opts.mimeType = mime;
       const rec = new MediaRecorder(s, opts);
       chunks.current = [];
-      rec.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) chunks.current.push(e.data);
-      };
+      rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.current.push(e.data); };
       rec.onstop = finalize;
       mr.current = rec;
       rec.start();
       setRecording(true);
       setElapsed(0);
       timer.current = setInterval(() => {
-        setElapsed((x) => {
-          if (x + 1 >= MAX_SECONDS) stop();
-          return x + 1;
-        });
+        setElapsed((x) => { if (x + 1 >= MAX_SECONDS) stop(); return x + 1; });
       }, 1000);
     } catch (e) {
       setError("לא ניתן לגשת למיקרופון. נא לאשר הרשאת מיקרופון בדפדפן.");
@@ -86,9 +92,7 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
     if (timer.current) clearInterval(timer.current);
     timer.current = null;
     setRecording(false);
-    try {
-      if (mr.current && mr.current.state !== "inactive") mr.current.stop();
-    } catch (e) {}
+    try { if (mr.current && mr.current.state !== "inactive") mr.current.stop(); } catch (e) {}
   }
 
   async function finalize() {
@@ -98,34 +102,42 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
     chunks.current = [];
     if (blob.size === 0) return;
     if (blob.size > MAX_BYTES) {
-      setError("ההקלטה ארוכה/כבדה מדי לשמירה. אפשר להקליט הקלטה נוספת קצרה יותר (כפתור +).");
+      setError("ההקלטה ארוכה/כבדה מדי לשמירה. אפשר להקליט הקלטה נוספת קצרה יותר.");
       return;
     }
     setSaving(true);
     try {
       const bytes = new Uint8Array(await blob.arrayBuffer());
       await addRecording({ candidateId, repId, mime, durationSec: elapsed, bytes });
-    } catch (e) {
-      setError("שמירת ההקלטה נכשלה. בדקו חיבור ונסו שוב.");
-    }
+    } catch (e) { setError("שמירת ההקלטה נכשלה. בדקו חיבור ונסו שוב."); }
     setSaving(false);
   }
 
-  async function play(id, mime) {
-    if (urls[id]) return; // כבר נטען
-    trackEngagement("play"); // ספירת השמעת הקלטה למעקב מעורבות
+  async function onFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setError("");
+    if (file.size > MAX_BYTES) { setError("הקובץ כבד מדי לשמירה (עד ~950KB). אפשר להעלות קטע קצר יותר."); return; }
+    setSaving(true);
+    try {
+      const dur = await audioDuration(file);
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      await addRecording({ candidateId, repId, mime: file.type || "audio/mpeg", durationSec: Math.round(dur), bytes });
+    } catch (e2) { setError("העלאת הקובץ נכשלה. נסו קובץ אחר."); }
+    setSaving(false);
+  }
+
+  async function loadAudio(id, mime) {
+    if (urls[id]) return;
     setLoadingId(id);
     try {
       const bytes = await getRecordingAudio(id);
       if (bytes) {
         const url = URL.createObjectURL(new Blob([bytes], { type: mime || "audio/webm" }));
         setUrls((u) => ({ ...u, [id]: url }));
-      } else {
-        setError("ההקלטה לא נמצאה.");
-      }
-    } catch (e) {
-      setError("טעינת ההקלטה נכשלה.");
-    }
+      } else setError("ההקלטה לא נמצאה.");
+    } catch (e) { setError("טעינת ההקלטה נכשלה."); }
     setLoadingId("");
   }
 
@@ -137,51 +149,61 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
 
   return (
     <div className="rounded-2xl bg-blush/40 p-4">
-      <p className="mb-2 text-base font-bold text-roseDark">🎙️ הקלטות קוליות</p>
-
-      {error && <p className="mb-2 text-sm font-medium text-roseDark">{error}</p>}
-
-      {/* רשימת הקלטות */}
-      {list.length === 0 && <p className="mb-2 text-sm text-ink/50">אין הקלטות עדיין.</p>}
-      <div className="space-y-2">
-        {list.map((r, i) => (
-          <div key={r.id} className="rounded-xl bg-white p-2">
-            <div className="flex items-center justify-between gap-2 text-sm">
-              <span className="flex items-center gap-1.5 text-ink/70">
-                <Headphones className="h-4 w-4 shrink-0" strokeWidth={1.75} /> הקלטה {i + 1} · {fmt(r.durationSec || 0)}
-                {r.createdAt ? ` · ${new Date(r.createdAt).toLocaleDateString("he-IL")}` : ""}
-              </span>
-              {canRecord && <button className="text-roseDark" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" strokeWidth={1.75} /></button>}
-            </div>
-            {urls[r.id] ? (
-              // eslint-disable-next-line jsx-a11y/media-has-caption
-              <audio className="mt-1 w-full" controls autoPlay src={urls[r.id]} />
+      {/* כותרת + פעולות */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-base font-bold text-roseDark">
+          <Mic className="h-5 w-5" strokeWidth={1.75} /> הקלטות שמע
+        </p>
+        {canRecord && (
+          <div className="flex items-center gap-2">
+            {recording ? (
+              <button className="btn-primary !px-3 !py-1.5 text-sm" onClick={stop}>
+                <Square className="h-3.5 w-3.5" strokeWidth={2} fill="currentColor" /> עצור ({fmt(elapsed)})
+              </button>
             ) : (
-              <button className="btn-soft mt-1 !py-1.5 text-sm" disabled={loadingId === r.id} onClick={() => play(r.id, r.mime)}>
-                {loadingId === r.id ? "טוען…" : (<><Play className="h-4 w-4" strokeWidth={1.75} /> האזנה</>)}
+              <button className="btn-primary !px-3 !py-1.5 text-sm" disabled={saving} onClick={start}>
+                <Mic className="h-3.5 w-3.5" strokeWidth={1.75} /> הקלטה נוספת
               </button>
             )}
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-2xl border border-rose/60 bg-white px-3 py-1.5 text-sm font-medium text-roseDark transition active:scale-95 hover:bg-rose/5">
+              <Upload className="h-3.5 w-3.5" strokeWidth={1.75} /> הוספת קובץ
+              <input type="file" accept="audio/*" className="hidden" onChange={onFile} />
+            </label>
           </div>
-        ))}
+        )}
       </div>
 
-      {/* כפתור הקלטה - רק לנציג של המועמד ולמנהלת */}
-      {canRecord && (
-        <>
-          <div className="mt-3">
-            {recording ? (
-              <button className="btn-primary w-full" onClick={stop}>
-                <Square className="h-4 w-4" strokeWidth={2} fill="currentColor" /> עצור והקלט ({fmt(elapsed)})
-              </button>
-            ) : (
-              <button className="btn-soft w-full" disabled={saving} onClick={start}>
-                {saving ? "שומר…" : (<><Mic className="h-4 w-4" strokeWidth={1.75} /> הקלטה חדשה</>)}
-              </button>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-ink/50">עד 10 דקות להקלטה. אפשר להוסיף כמה הקלטות שרוצים.</p>
-        </>
+      {error && <p className="mt-2 text-sm font-medium text-roseDark">{error}</p>}
+      {saving && <p className="mt-2 text-sm text-ink/60">שומר…</p>}
+
+      {/* רשימת הקלטות */}
+      {list.length === 0 ? (
+        <p className="mt-3 text-sm text-ink/50">אין הקלטות עדיין.</p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {list.map((r) => (
+            <div key={r.id} className="rounded-2xl bg-white p-3 shadow-sm">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-ink">{repName(r.repId) || "הקלטה"}</span>
+                <span className="flex items-center gap-2">
+                  <span className="text-xs text-ink/50">{r.createdAt ? new Date(r.createdAt).toLocaleDateString("he-IL") : ""}{r.durationSec ? ` · ${fmt(r.durationSec)}` : ""}</span>
+                  {canRecord && <button className="text-red-600 hover:text-red-700" title="מחיקה" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" strokeWidth={1.75} /></button>}
+                </span>
+              </div>
+              {urls[r.id] ? (
+                // eslint-disable-next-line jsx-a11y/media-has-caption
+                <audio className="w-full" controls autoPlay src={urls[r.id]} onPlay={() => trackEngagement("play")} />
+              ) : (
+                <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-blush/60 py-2.5 text-sm font-semibold text-roseDark transition hover:bg-blush disabled:opacity-60" disabled={loadingId === r.id} onClick={() => loadAudio(r.id, r.mime)}>
+                  {loadingId === r.id ? "טוען…" : (<><Play className="h-4 w-4" strokeWidth={2} fill="currentColor" /> האזנה</>)}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
+
+      {canRecord && <p className="mt-2 text-xs text-ink/50">עד 10 דקות להקלטה. אפשר להוסיף כמה הקלטות שרוצים.</p>}
     </div>
   );
 }
