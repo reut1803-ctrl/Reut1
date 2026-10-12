@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "../components/Logo";
 import PersonIcon from "../components/PersonIcon";
+import TrustSection from "../components/TrustSection";
 
 export default function HomePage() {
   return (
@@ -29,7 +30,10 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-8">
+        {/* אזור אמון והיכרות - אחרי אזור הפתיחה */}
+        <TrustSection />
+
+        <div className="mt-10">
           <Link
             href="/admin"
             className="text-sm text-ink/50 underline-offset-4 hover:underline"
