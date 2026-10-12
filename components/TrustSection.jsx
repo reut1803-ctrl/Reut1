@@ -75,8 +75,6 @@ function StoryTimeline() {
 
   return (
     <div className="mx-auto max-w-md">
-      <p className="mb-6 text-center text-xs font-light tracking-wide text-[#5A4A48]/45">גללו כדי לעבור בין התחנות</p>
-
       <div className="relative pr-1">
         {/* קו הציר האנכי */}
         <div className="absolute bottom-6 right-6 top-6 w-px bg-gradient-to-b from-rose/10 via-rose/25 to-rose/10" aria-hidden="true" />
@@ -133,7 +131,7 @@ function StoryTimeline() {
 }
 
 export default function TrustSection() {
-  const [illusRef, illusVis] = useInView({ threshold: 0.2 });
+  const [headRef, headVis] = useInView({ threshold: 0.25 });
   const [carRef, carVis] = useInView({ threshold: 0.2 });
 
   const [index, setIndex] = useState(0);
@@ -150,14 +148,20 @@ export default function TrustSection() {
   }
 
   return (
-    <section className="font-elegant mt-10">
-      {/* ---- האיור — מוטמע ברקע הפסטל (רקע שקוף, ללא קופסה) ---- */}
+    <section className="font-elegant mt-14">
+      {/* ---- כותרת ההיכרות: פורטרט קטן ועגול + "הסיפור שלי" (חתימת השדכנית) ---- */}
       <div
-        ref={illusRef}
-        className={`mb-12 flex justify-center transition-all duration-700 ease-out ${illusVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+        ref={headRef}
+        className={`mb-10 flex flex-col items-center gap-4 text-center transition-all duration-700 ease-out ${headVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`${BASE}/assets/rep-illustration.png`} alt="רעות פריד" className="h-56 w-auto object-contain" />
+        <div className="relative h-20 w-20 overflow-hidden rounded-full bg-blush/50 ring-1 ring-rose/15 shadow-[0_6px_18px_rgba(167,79,79,0.12)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${BASE}/assets/rep-illustration.png`} alt="רעות פריד" className="h-full w-full scale-110 object-cover object-top" />
+        </div>
+        <div>
+          <p className="text-2xl font-normal text-[#6E4B4B]">הסיפור שלי</p>
+          <p className="mt-1.5 text-xs font-light tracking-wide text-[#5A4A48]/45">גללו כדי לעבור בין התחנות</p>
+        </div>
       </div>
 
       {/* ---- ציר הזמן — הסיפור שלי ---- */}
