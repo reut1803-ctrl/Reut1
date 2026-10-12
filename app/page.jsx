@@ -15,14 +15,14 @@ export default function HomePage() {
         <div className="grid grid-cols-2 gap-4">
           <Link
             href="/form/male"
-            className="card flex flex-col items-center gap-2 py-8 transition hover:border-rose hover:shadow-lg"
+            className="card flex flex-col items-center gap-2 py-8 transition duration-200 hover:border-rose hover:shadow-lg hover:-translate-y-0.5 hover:ring-4 hover:ring-rose/25 focus:outline-none focus-visible:border-rose focus-visible:ring-4 focus-visible:ring-rose/40 active:scale-[0.98] active:border-rose active:ring-4 active:ring-rose/50"
           >
             <PersonIcon className="h-12 w-12 text-rose" />
             <span className="text-xl font-semibold text-roseDark">בחור</span>
           </Link>
           <Link
             href="/form/female"
-            className="card flex flex-col items-center gap-2 py-8 transition hover:border-rose hover:shadow-lg"
+            className="card flex flex-col items-center gap-2 py-8 transition duration-200 hover:border-rose hover:shadow-lg hover:-translate-y-0.5 hover:ring-4 hover:ring-rose/25 focus:outline-none focus-visible:border-rose focus-visible:ring-4 focus-visible:ring-rose/40 active:scale-[0.98] active:border-rose active:ring-4 active:ring-rose/50"
           >
             <PersonIcon className="h-12 w-12 text-rose" />
             <span className="text-xl font-semibold text-roseDark">בחורה</span>
