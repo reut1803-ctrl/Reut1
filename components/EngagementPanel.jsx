@@ -1,23 +1,40 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { currentWeekKey } from "../lib/store";
 
-// יעדים שבועיים (לצורך פס ההתקדמות והצבע). ניתן לעדכן בעתיד.
+// יעדים שבועיים (לצורך פס ההתקדמות). ניתן לעדכן בעתיד.
 const VIEWS_TARGET = 20;
 const PLAYS_TARGET = 10;
 
+// צבע הבורדו של המותג למילוי הפעיל (זהה לכפתור ההקלטה). נשמר כ-style ישיר
+// כדי שהמילוי תמיד יוצג, ללא תלות במחלקות Tailwind שעלולות להיחסם.
+const BRAND_BURGUNDY = "#7a2e3b";
+
 function Metric({ label, actual, target }) {
-  const pct = target > 0 ? actual / target : 0;
-  const width = Math.min(100, Math.round(pct * 100));
-  const color = pct >= 1 ? "bg-emerald-500" : pct >= 0.5 ? "bg-amber-500" : "bg-rose-500";
+  // חישוב בטוח: מגינים מפני ערכים חסרים/לא-מספריים, יעד 0, וחריגה מ-100%.
+  const safeActual = Number(actual) || 0;
+  const safeTarget = Number(target) > 0 ? Number(target) : 1;
+  const pct = Math.max(0, Math.min(100, Math.round((safeActual / safeTarget) * 100)));
+
+  // אנימציית מילוי בטעינת המסך: הפס מתחיל מ-0 ומתמלא בחלקות לרוחב האמיתי.
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setWidth(pct), 80);
+    return () => clearTimeout(t);
+  }, [pct]);
+
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-sm">
         <span className="font-bold text-ink">{target} / {actual}</span>
         <span className="text-ink/60">{label}</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-sand">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${width}%` }} />
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-sand">
+        <div
+          className="h-full rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${width}%`, backgroundColor: BRAND_BURGUNDY }}
+        />
       </div>
     </div>
   );
