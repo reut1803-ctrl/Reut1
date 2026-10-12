@@ -4,16 +4,16 @@ import { useState, useRef, useEffect } from "react";
 import { Quote } from "lucide-react";
 
 // עמוד הבית — אזור ההיכרות:
-// איור מוטמע + ציר זמן אנכי מונחה-גלילה (תחנה אחת פעילה בכל רגע: המספר נדלק
-// והכרטיסייה נשלפת מהצד; השאר נשארות ככותרות קצרות) + קרוסלת המלצות.
+// ציר זמן אנכי שהפורטרט הוא "תחנת המוצא" שלו (הקו יוצא מתחתיו וזורם מטה),
+// תחנה אחת פעילה בכל רגע (המספר נדלק והכרטיסייה נשלפת מהצד) + קרוסלת המלצות.
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 const STATIONS = [
-  { title: "נעים להכיר", text: `נעים להכיר, אני רעות פריד מקהילת חב"ד יצהר. אני מרכזת כאן את צוות השגרירים של 'הקהילה איתך'. את הדרך לזוגיות שלנו, בעלי ואני עשינו לאור תורתו של הרב יצחק גינזבורג.` },
-  { title: "הרעיון שלנו", text: `מי שילווה אותך יהיה מישהו שמכיר את הראש שלך – שגריר מהיישוב, מהמוסד שלמדת בו, או צוות ההנהלה.` },
-  { title: "הדרך שלנו", text: `מאגר ואתר פנימי להצלבות והתאמות, ערבי סיעור מוחות יחד עם הקהילה, שיחות אישיות, וסדנאות ופאנלים בנושא היקר הזה.` },
-  { title: "ההכשרה מהשטח", text: `זכיתי עד היום לשדך מעל 20 זוגות וללוות מאות חבר'ה בעולם הדייטים.` },
-  { title: "הממשק החדש", text: `המערכת כאן היא חדשה, אבל המטרה נשארה אותה מטרה – לעזור לכם למצוא את החצי השני באכפתיות, במסירות והקשבה.` },
+  { title: "נעים להכיר", text: `נעים מאוד, אני רעות פריד מקהילת חב"ד יצהר. יחד עם צוות השגרירים של 'הקהילה איתך', אני כאן כדי ללוות אתכם — בדרך שבנינו, בעלי ואני, לאור תורתו של הרב יצחק גינזבורג.` },
+  { title: "מי שמלווה אתכם", text: `חשוב לנו שמי שמלווה אתכם יכיר באמת את העולם שלכם — שגריר מהיישוב, מהמקום שבו למדתם, או אנחנו מההנהלה. מישהו קרוב, שמקשיב, ושאכפת לו.` },
+  { title: "הדרך שלנו", text: `הדרך שלנו נבנתה מתוך הקשבה: מערכת פנימית להתאמות מדויקות, ערבי סיעור מוחות עם הקהילה, ושיחות אישיות וסדנאות — כי מאחורי כל התאמה עומד אדם, לא נתון.` },
+  { title: "מהשטח, מהלב", text: `הניסיון שלי מגיע מהשטח: עד היום זכיתי לשדך יותר מ-20 זוגות וללוות מאות צעירים וצעירות. כל מפגש לימד אותי שהקשבה אמיתית עושה את ההבדל.` },
+  { title: "הלב נשאר אותו לב", text: `הכלים כאן חדשים, אבל הלב נשאר אותו לב: ללוות אתכם באכפתיות, בסבלנות ובהקשבה — עד שתפגשו את מי שמחכה לכם.` },
 ];
 
 const SLIDES = [0, 1, 2];
@@ -74,24 +74,39 @@ function StoryTimeline() {
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="relative pr-1">
-        {/* קו הציר האנכי */}
-        <div className="absolute bottom-6 right-6 top-6 w-px bg-gradient-to-b from-rose/10 via-rose/25 to-rose/10" aria-hidden="true" />
+    <div className="relative mx-auto max-w-md">
+      {/* קו הציר — יוצא מתחת לפורטרט וזורם מטה דרך התחנות */}
+      <div className="absolute bottom-10 right-8 top-12 w-px bg-gradient-to-b from-rose/30 via-rose/25 to-rose/5" aria-hidden="true" />
 
-        {STATIONS.map((s, i) => {
-          const on = i === active;
-          return (
-            <div
-              key={i}
-              ref={(el) => (rows.current[i] = el)}
-              className="relative flex items-start gap-4 py-4"
-            >
-              {/* מספר התחנה — נדלק כשהתחנה פעילה */}
+      {/* תחנת המוצא: הפורטרט + הכותרת — ממנה "נובע" הסיפור */}
+      <div className="relative flex items-center gap-5 pb-10">
+        <div className="relative z-10 flex w-16 shrink-0 justify-center">
+          <div className="h-16 w-16 overflow-hidden rounded-full bg-blush/40 ring-2 ring-rose/20 shadow-[0_8px_22px_rgba(167,79,79,0.16)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`${BASE}/assets/rep-illustration.png`} alt="רעות פריד" className="h-full w-full scale-110 object-cover object-top" />
+          </div>
+        </div>
+        <div className="flex-1 text-right">
+          <p className="text-2xl font-semibold text-[#6E4B4B]">הסיפור שלי</p>
+          <p className="mt-1 text-xs font-light tracking-wide text-[#5A4A48]/45">גללו כדי לעבור בין התחנות</p>
+        </div>
+      </div>
+
+      {/* התחנות */}
+      {STATIONS.map((s, i) => {
+        const on = i === active;
+        return (
+          <div
+            key={i}
+            ref={(el) => (rows.current[i] = el)}
+            className="relative flex items-start gap-5 pb-10 last:pb-0"
+          >
+            {/* מספר התחנה — נדלק כשהתחנה פעילה */}
+            <div className="relative z-10 flex w-16 shrink-0 justify-center">
               <button
                 onClick={() => focusRow(i)}
                 aria-label={`תחנה ${i + 1}: ${s.title}`}
-                className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-500 ease-out ${
+                className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold transition-all duration-500 ease-out ${
                   on
                     ? "scale-110 bg-[#7a2e3b] text-white shadow-[0_8px_20px_rgba(122,46,59,0.35)]"
                     : "bg-blush text-roseDark/45"
@@ -99,39 +114,38 @@ function StoryTimeline() {
               >
                 {String(i + 1).padStart(2, "0")}
               </button>
+            </div>
 
-              {/* תוכן: כותרת תמיד גלויה; גוף נשלף מהצד רק בתחנה הפעילה */}
-              <div className="min-w-0 flex-1 pt-1.5">
-                <p className={`text-base transition-colors duration-500 ${on ? "font-semibold text-[#6E4B4B]" : "font-light text-[#5A4A48]/55"}`}>
-                  {s.title}
-                </p>
+            {/* תוכן: כותרת תמיד גלויה; גוף נשלף מהצד רק בתחנה הפעילה */}
+            <div className="min-w-0 flex-1 pt-2.5">
+              <p className={`text-base transition-colors duration-500 ${on ? "font-semibold text-[#6E4B4B]" : "font-light text-[#5A4A48]/55"}`}>
+                {s.title}
+              </p>
 
-                {/* מעבר גובה חלק (grid-rows) + שליפה מהצד */}
-                <div
-                  className="grid"
-                  style={{ gridTemplateRows: on ? "1fr" : "0fr", transition: "grid-template-rows 0.5s cubic-bezier(0.4,0,0.2,1)" }}
-                >
-                  <div className="overflow-hidden">
-                    <div
-                      className={`mt-3 rounded-2xl border border-rose/10 bg-white/75 p-4 shadow-[0_10px_28px_rgba(167,79,79,0.10)] backdrop-blur-sm transition-all duration-500 ease-out ${
-                        on ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
-                      }`}
-                    >
-                      <p className="text-[15px] font-light leading-loose text-[#5A4A48]">{s.text}</p>
-                    </div>
+              {/* מעבר גובה חלק (grid-rows) + שליפה מהצד */}
+              <div
+                className="grid"
+                style={{ gridTemplateRows: on ? "1fr" : "0fr", transition: "grid-template-rows 0.5s cubic-bezier(0.4,0,0.2,1)" }}
+              >
+                <div className="overflow-hidden">
+                  <div
+                    className={`mt-3 rounded-2xl border border-rose/10 bg-white/75 p-5 shadow-[0_10px_28px_rgba(167,79,79,0.10)] backdrop-blur-sm transition-all duration-500 ease-out ${
+                      on ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
+                    }`}
+                  >
+                    <p className="text-[15px] font-light leading-loose text-[#5A4A48]">{s.text}</p>
                   </div>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 export default function TrustSection() {
-  const [headRef, headVis] = useInView({ threshold: 0.25 });
   const [carRef, carVis] = useInView({ threshold: 0.2 });
 
   const [index, setIndex] = useState(0);
@@ -148,29 +162,14 @@ export default function TrustSection() {
   }
 
   return (
-    <section className="font-elegant mt-14">
-      {/* ---- כותרת ההיכרות: פורטרט קטן ועגול + "הסיפור שלי" (חתימת השדכנית) ---- */}
-      <div
-        ref={headRef}
-        className={`mb-10 flex flex-col items-center gap-4 text-center transition-all duration-700 ease-out ${headVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
-      >
-        <div className="relative h-20 w-20 overflow-hidden rounded-full bg-blush/50 ring-1 ring-rose/15 shadow-[0_6px_18px_rgba(167,79,79,0.12)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE}/assets/rep-illustration.png`} alt="רעות פריד" className="h-full w-full scale-110 object-cover object-top" />
-        </div>
-        <div>
-          <p className="text-2xl font-normal text-[#6E4B4B]">הסיפור שלי</p>
-          <p className="mt-1.5 text-xs font-light tracking-wide text-[#5A4A48]/45">גללו כדי לעבור בין התחנות</p>
-        </div>
-      </div>
-
-      {/* ---- ציר הזמן — הסיפור שלי ---- */}
+    <section className="font-elegant mt-12">
+      {/* ---- ציר הזמן — הסיפור שלנו ---- */}
       <StoryTimeline />
 
       {/* ---- קרוסלת המלצות ---- */}
       <div
         ref={carRef}
-        className={`mx-auto mt-16 max-w-sm select-none px-2 transition-all duration-700 ease-out ${carVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+        className={`mx-auto mt-20 max-w-sm select-none px-2 transition-all duration-700 ease-out ${carVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
       >
         <div className="mb-5 flex items-center justify-center gap-2 text-[#6E4B4B]">
           <Quote className="h-4 w-4 text-rose/70" strokeWidth={1.75} />

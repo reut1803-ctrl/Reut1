@@ -18,7 +18,7 @@ export default function HomePage() {
 
       <div className="w-full max-w-md">
         {/* אזור פתיחה - לוגו בלבד, עם המון אוויר */}
-        <div className="flex justify-center pt-24 pb-4">
+        <div className="flex justify-center pt-20 pb-2">
           <Logo className="w-72 max-w-[85%]" animate />
         </div>
 
