@@ -157,11 +157,11 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
         {canRecord && (
           <div className="flex items-center gap-2">
             {recording ? (
-              <button className="btn-primary !px-3 !py-1.5 text-sm" onClick={stop}>
+              <button className="inline-flex items-center gap-1.5 rounded-2xl bg-[#7a2e3b] px-3 py-1.5 text-sm font-semibold text-white shadow-soft transition active:scale-95 hover:bg-[#672433]" onClick={stop}>
                 <Square className="h-3.5 w-3.5" strokeWidth={2} fill="currentColor" /> עצור ({fmt(elapsed)})
               </button>
             ) : (
-              <button className="btn-primary !px-3 !py-1.5 text-sm" disabled={saving} onClick={start}>
+              <button className="inline-flex items-center gap-1.5 rounded-2xl bg-[#7a2e3b] px-3 py-1.5 text-sm font-semibold text-white shadow-soft transition active:scale-95 hover:bg-[#672433] disabled:opacity-60" disabled={saving} onClick={start}>
                 <Mic className="h-3.5 w-3.5" strokeWidth={1.75} /> הקלטה נוספת
               </button>
             )}
@@ -191,8 +191,10 @@ export default function Recorder({ candidateId, repId, canRecord = false }) {
                 </span>
               </div>
               {urls[r.id] ? (
-                // eslint-disable-next-line jsx-a11y/media-has-caption
-                <audio className="w-full" controls autoPlay src={urls[r.id]} onPlay={() => trackEngagement("play")} />
+                <div className="rounded-xl bg-sand/50 p-1.5">
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <audio className="w-full" controls autoPlay src={urls[r.id]} onPlay={() => trackEngagement("play")} />
+                </div>
               ) : (
                 <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-blush/60 py-2.5 text-sm font-semibold text-roseDark transition hover:bg-blush disabled:opacity-60" disabled={loadingId === r.id} onClick={() => loadAudio(r.id, r.mime)}>
                   {loadingId === r.id ? "טוען…" : (<><Play className="h-4 w-4" strokeWidth={2} fill="currentColor" /> האזנה</>)}
