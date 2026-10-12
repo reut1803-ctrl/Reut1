@@ -113,18 +113,11 @@ function StoryTimeline() {
                 >
                   <div className="overflow-hidden">
                     <div
-                      className={`mt-3 flex items-center gap-3 rounded-2xl border border-rose/10 bg-white/75 p-4 shadow-[0_10px_28px_rgba(167,79,79,0.10)] backdrop-blur-sm transition-all duration-500 ease-out ${
+                      className={`mt-3 rounded-2xl border border-rose/10 bg-white/75 p-4 shadow-[0_10px_28px_rgba(167,79,79,0.10)] backdrop-blur-sm transition-all duration-500 ease-out ${
                         on ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
                       }`}
                     >
-                      <p className="flex-1 text-[15px] font-light leading-loose text-[#5A4A48]">{s.text}</p>
-                      {/* הפורטרט בתוך הכרטיס (בצד שמאל) — כמו באתר ההשראה */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`${BASE}/assets/rep-illustration.png`}
-                        alt="רעות פריד"
-                        className="h-28 w-20 shrink-0 rounded-xl bg-blush/30 object-cover object-top"
-                      />
+                      <p className="text-[15px] font-light leading-loose text-[#5A4A48]">{s.text}</p>
                     </div>
                   </div>
                 </div>
@@ -159,14 +152,16 @@ export default function TrustSection() {
       {/* ---- כותרת ההיכרות: פורטרט קטן ועגול + "הסיפור שלי" (חתימת השדכנית) ---- */}
       <div
         ref={headRef}
-        className={`mb-10 text-center transition-all duration-700 ease-out ${headVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+        className={`mb-10 flex flex-col items-center gap-4 text-center transition-all duration-700 ease-out ${headVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
       >
-        {/* כותרת בשתי שורות בסגנון מגזין — השורה השנייה בתוך הדגשה מעוגלת */}
-        <p className="text-3xl font-bold leading-tight text-ink">הנה, בקצרה,</p>
-        <span className="mt-2 inline-block rounded-2xl bg-[#DCB868] px-5 py-1.5 text-3xl font-bold text-ink shadow-[0_6px_16px_rgba(220,184,104,0.35)]">
-          הסיפור שלנו:
-        </span>
-        <p className="mt-4 text-xs font-light tracking-wide text-[#5A4A48]/45">גללו כדי לעבור בין התחנות</p>
+        <div className="relative h-20 w-20 overflow-hidden rounded-full bg-blush/50 ring-1 ring-rose/15 shadow-[0_6px_18px_rgba(167,79,79,0.12)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${BASE}/assets/rep-illustration.png`} alt="רעות פריד" className="h-full w-full scale-110 object-cover object-top" />
+        </div>
+        <div>
+          <p className="text-2xl font-normal text-[#6E4B4B]">הסיפור שלי</p>
+          <p className="mt-1.5 text-xs font-light tracking-wide text-[#5A4A48]/45">גללו כדי לעבור בין התחנות</p>
+        </div>
       </div>
 
       {/* ---- ציר הזמן — הסיפור שלי ---- */}
