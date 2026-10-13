@@ -87,7 +87,7 @@ function StoryTimeline() {
           </div>
         </div>
         <div className="flex-1 text-right">
-          <p className="text-2xl font-semibold text-[#6E4B4B]">הסיפור שלי</p>
+          <p className="text-2xl font-semibold text-[#6E4B4B]">קצת עליי</p>
           <p className="mt-1 text-xs font-light tracking-wide text-[#5A4A48]/45">גללו כדי לעבור בין התחנות</p>
         </div>
       </div>
