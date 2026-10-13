@@ -10,6 +10,10 @@ import { addTask, updateTask, deleteTask, updateCandidate, updateIntake } from "
 import { ClipboardList, Trash2, UserRound, Phone, MessageSquare } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
 
+// ===== שליטה בהדגשה: משימות המשויכות למזהה הזה יודגשו בבירור בלוח =====
+// "admin2" = המנהלת הנוספת · "admin" = המנהלת הראשית · מזהה נציג/ה · "" = בלי הדגשה.
+const HIGHLIGHT_REP_ID = "admin2";
+
 export default function TasksPanel({ data, user, readOnly = false }) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
@@ -41,7 +45,10 @@ export default function TasksPanel({ data, user, readOnly = false }) {
   }
 
   const candById = (id) => data.candidates.find((c) => c.id === id);
-  const repName = (id) => (id === "admin" ? "מנהלת" : data.reps.find((r) => r.id === id)?.name || "—");
+  const hasAdmin2 = !!(data.admin2Name || data.admin2Password);
+  const admin2Label = data.admin2Name || "מנהלת נוספת";
+  const repName = (id) =>
+    id === "admin" ? "מנהלת" : id === "admin2" ? admin2Label : data.reps.find((r) => r.id === id)?.name || "—";
 
   return (
     <div className="space-y-3">
@@ -62,14 +69,40 @@ export default function TasksPanel({ data, user, readOnly = false }) {
         const rep = person ? data.reps.find((r) => r.id === person.assignedRep) : null;
         const phone = ((canSee && person?.phone) ? person.phone : rep?.phone || "").replace(/[^0-9]/g, "");
         const waNum = phone.startsWith("972") ? phone : phone.startsWith("0") ? "972" + phone.slice(1) : phone;
+        // הדגשה: משימה המשויכת למזהה שבחרנו ב-HIGHLIGHT_REP_ID (למשל המנהלת הנוספת).
+        const highlighted = !!HIGHLIGHT_REP_ID && t.repId === HIGHLIGHT_REP_ID;
         return (
-          <div key={t.id} className="card space-y-2">
+          <div
+            key={t.id}
+            className={`card space-y-2 transition-shadow ${
+              highlighted
+                ? "ring-2 ring-[#7a2e3b]/55 shadow-[0_0_0_4px_rgba(231,166,122,0.3),0_10px_26px_rgba(122,46,59,0.16)]"
+                : ""
+            }`}
+          >
             <div className="flex items-center gap-3">
               <input type="checkbox" checked={t.done} disabled={readOnly} onChange={(e) => updateTask(t.id, { done: e.target.checked })} className="h-5 w-5 accent-rose" />
               <div className="flex-1">
                 <p className={`font-medium ${t.done ? "text-ink/40 line-through" : "text-ink"}`}>{t.title}</p>
                 {t.dueDate && <p className="text-xs text-ink/50">תאריך יעד: {t.dueDate} · {toHebrewDate(t.dueDate)}</p>}
-                {isAdmin && <p className="text-xs text-ink/50">משויך ל: {repName(t.repId)}</p>}
+                {isAdmin && (
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-ink/50">
+                    <span className="shrink-0">משויך ל:</span>
+                    {readOnly ? (
+                      <span>{repName(t.repId)}</span>
+                    ) : (
+                      <select
+                        value={t.repId || "admin"}
+                        onChange={(e) => updateTask(t.id, { repId: e.target.value })}
+                        className="rounded-lg border border-sand bg-white/80 px-1.5 py-0.5 text-xs text-ink outline-none focus:border-rose"
+                      >
+                        <option value="admin">מנהלת</option>
+                        {hasAdmin2 && <option value="admin2">{admin2Label}</option>}
+                        {data.reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    )}
+                  </div>
+                )}
               </div>
               {!readOnly && <button className="text-roseDark" onClick={() => { if (confirm("למחוק משימה?")) deleteTask(t.id); }}><Trash2 className="h-4 w-4" strokeWidth={1.75} /></button>}
             </div>
@@ -121,6 +154,7 @@ export default function TasksPanel({ data, user, readOnly = false }) {
                 <label className="field-label">שיוך לנציג/ה</label>
                 <select className="field-input" value={assignRep} onChange={(e) => setAssignRep(e.target.value)}>
                   <option value="admin">כללי / לעצמי (מנהלת)</option>
+                  {hasAdmin2 && <option value="admin2">{admin2Label} (מנהלת נוספת)</option>}
                   {data.reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
