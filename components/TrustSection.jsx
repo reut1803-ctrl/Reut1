@@ -2,20 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Quote } from "lucide-react";
+import { useData } from "../lib/useData";
+import { DEFAULT_HOME_STORY } from "../lib/store";
 
-// עמוד הבית — אזור ההיכרות:
-// ציר זמן אנכי שהפורטרט הוא "תחנת המוצא" שלו (הקו יוצא מתחתיו וזורם מטה),
-// תחנה אחת פעילה בכל רגע (המספר נדלק והכרטיסייה נשלפת מהצד) + קרוסלת המלצות.
+// עמוד הבית — אזור ההיכרות. הטקסטים נמשכים דינמית מההגדרות (ניתן לעריכה
+// מלוח הבקרה), עם נפילה חלקה לברירת מחדל. ציר הזמן נפתח תחנה-אחר-תחנה
+// בעדינות כשכל צומת מגיע למרכז המסך (IntersectionObserver יציב).
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
-
-const STATIONS = [
-  { title: "נעים להכיר", text: `שמי רעות פריד, בת 26 — נשואה לזכריה ואמא למנוחה רחל וחיה מושקא. אנחנו גרים בקהילת חב"ד ביצהר, וברוך השם אני זוכה לעמוד מאחורי 'הקהילה איתך' ולרכז את צוות השגרירים.` },
-  { title: "מי שלצידכם", text: `חשוב לנו שמי שמלווה אתכם יכיר באמת את העולם שלכם — שגריר מהיישוב, מהמקום שבו למדתם, או אנחנו מההנהלה. מישהו קרוב, שמקשיב, ושאכפת לו.` },
-  { title: "הדרך שלנו", text: `בנינו אותה מתוך הקשבה: מערכת פנימית להתאמות מדויקות, ערבי סיעור מוחות עם הקהילה, שיחות אישיות וסדנאות — כי מאחורי כל התאמה עומד אדם, לא נתון.` },
-  { title: "מהשטח, מהלב", text: `עד היום זכיתי לשדך יותר מ-20 זוגות וללוות מאות צעירים וצעירות, וכל מפגש לימד אותי שהקשבה אמיתית עושה את ההבדל.` },
-  { title: "מכאן והלאה", text: `הכלים כאן חדשים, אבל הלב נשאר אותו לב: ללוות אתכם באכפתיות, בסבלנות ובהקשבה — עד שתפגשו את מי שמחכה לכם.` },
-];
-
 const SLIDES = [0, 1, 2];
 
 function useInView(options) {
@@ -35,24 +28,66 @@ function useInView(options) {
   return [ref, vis];
 }
 
-function StoryTimeline() {
-  const rows = useRef([]);
+// תחנה בודדת: הכרטיס תמיד בגובהו הטבעי (ללא שינוי גובה בגלילה -> אין קפיצות).
+// חשיפה רכה (fade + עלייה) פעם אחת כשנכנסת לתצוגה; המספר נדלק כשהתחנה פעילה.
+function Station({ i, num, title, text, active, setNodeRef, onFocus }) {
+  const [cardRef, shown] = useInView({ threshold: 0.18 });
+  const on = i === active;
+  return (
+    <div className="relative flex items-start gap-4 pb-12 last:pb-0">
+      <div className="relative z-10 flex w-14 shrink-0 justify-center">
+        <button
+          ref={setNodeRef}
+          data-idx={i}
+          onClick={onFocus}
+          aria-label={`תחנה ${i + 1}: ${title || ""}`}
+          className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold transition-all duration-500 ease-out ${
+            on
+              ? "scale-110 bg-[#7a2e3b] text-white shadow-[0_8px_20px_rgba(122,46,59,0.35)]"
+              : "bg-blush text-roseDark/45"
+          }`}
+        >
+          {num}
+        </button>
+      </div>
+
+      <div className="min-w-0 flex-1 pt-2.5">
+        <p className={`text-lg transition-colors duration-500 ${on ? "font-semibold text-[#6E4B4B]" : "font-medium text-[#6E4B4B]/80"}`}>
+          {title}
+        </p>
+        <div
+          ref={cardRef}
+          className={`mt-3 rounded-2xl border border-rose/10 bg-white/75 p-6 shadow-[0_10px_28px_rgba(167,79,79,0.10)] backdrop-blur-sm transition-all duration-700 ease-out ${
+            shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+          }`}
+        >
+          <p className="whitespace-pre-wrap text-lg font-light leading-loose text-[#5A4A48]">{text}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StoryTimeline({ heading, subtitle, stations }) {
+  const nodeRefs = useRef([]);
   const [active, setActive] = useState(0);
   const ticking = useRef(false);
 
+  // תחנה פעילה = הצומת האחרון שכבר חצה את קו האמצע של המסך.
+  // מונוטוני וחלק: הגובה של הכרטיסים קבוע (לא משתנה בגלילה), ולכן אין
+  // קפיצות, אין "אזורים מתים" ואין דילוג לתחנה 5.
   useEffect(() => {
     function compute() {
       ticking.current = false;
-      const line = (window.innerHeight || 700) * 0.42; // קו ה"הפעלה" בתצוגה
-      let best = 0, bestDist = Infinity;
-      rows.current.forEach((el, i) => {
-        if (!el) return;
+      const line = (window.innerHeight || 700) * 0.5;
+      let idx = 0;
+      for (let i = 0; i < nodeRefs.current.length; i++) {
+        const el = nodeRefs.current[i];
+        if (!el) continue;
         const r = el.getBoundingClientRect();
-        const c = r.top + r.height / 2;
-        const d = Math.abs(c - line);
-        if (d < bestDist) { bestDist = d; best = i; }
-      });
-      setActive(best);
+        if (r.top + r.height / 2 <= line) idx = i;
+      }
+      setActive(idx);
     }
     function onScroll() {
       if (ticking.current) return;
@@ -66,86 +101,56 @@ function StoryTimeline() {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, []);
+  }, [stations.length]);
 
-  function focusRow(i) {
-    const el = rows.current[i];
+  function focusNode(i) {
+    const el = nodeRefs.current[i];
     if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   return (
-    <div className="relative mx-auto max-w-md">
+    <div className="relative mx-auto max-w-lg">
       {/* קו הציר — יוצא מתחת לפורטרט וזורם מטה דרך התחנות */}
-      <div className="absolute bottom-10 right-8 top-12 w-px bg-gradient-to-b from-rose/30 via-rose/25 to-rose/5" aria-hidden="true" />
+      <div className="absolute bottom-10 right-7 top-12 w-px bg-gradient-to-b from-rose/30 via-rose/25 to-rose/5" aria-hidden="true" />
 
-      {/* תחנת המוצא: הפורטרט + הכותרת — ממנה "נובע" הסיפור */}
-      <div className="relative flex items-center gap-5 pb-10">
-        <div className="relative z-10 flex w-16 shrink-0 justify-center">
-          <div className="h-16 w-16 overflow-hidden rounded-full bg-blush/40 ring-2 ring-rose/20 shadow-[0_8px_22px_rgba(167,79,79,0.16)]">
+      {/* תחנת המוצא: הפורטרט + הכותרת */}
+      <div className="relative flex items-center gap-4 pb-12">
+        <div className="relative z-10 flex w-14 shrink-0 justify-center">
+          <div className="h-14 w-14 overflow-hidden rounded-full bg-blush/40 ring-2 ring-rose/20 shadow-[0_8px_22px_rgba(167,79,79,0.16)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`${BASE}/assets/rep-illustration.png`} alt="רעות פריד" className="h-full w-full scale-110 object-cover object-top" />
           </div>
         </div>
         <div className="flex-1 text-right">
-          <p className="text-2xl font-semibold text-[#6E4B4B]">קצת עליי</p>
-          <p className="mt-1 text-xs font-light tracking-wide text-[#5A4A48]/45">גללו כדי לעבור בין התחנות</p>
+          <p className="text-2xl font-semibold text-[#6E4B4B]">{heading}</p>
+          {subtitle && <p className="mt-1 text-sm font-light tracking-wide text-[#5A4A48]/45">{subtitle}</p>}
         </div>
       </div>
 
       {/* התחנות */}
-      {STATIONS.map((s, i) => {
-        const on = i === active;
-        return (
-          <div
-            key={i}
-            ref={(el) => (rows.current[i] = el)}
-            className="relative flex items-start gap-5 pb-10 last:pb-0"
-          >
-            {/* מספר התחנה — נדלק כשהתחנה פעילה */}
-            <div className="relative z-10 flex w-16 shrink-0 justify-center">
-              <button
-                onClick={() => focusRow(i)}
-                aria-label={`תחנה ${i + 1}: ${s.title}`}
-                className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold transition-all duration-500 ease-out ${
-                  on
-                    ? "scale-110 bg-[#7a2e3b] text-white shadow-[0_8px_20px_rgba(122,46,59,0.35)]"
-                    : "bg-blush text-roseDark/45"
-                }`}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </button>
-            </div>
-
-            {/* תוכן: כותרת תמיד גלויה; גוף נשלף מהצד רק בתחנה הפעילה */}
-            <div className="min-w-0 flex-1 pt-2.5">
-              <p className={`text-base transition-colors duration-500 ${on ? "font-semibold text-[#6E4B4B]" : "font-light text-[#5A4A48]/55"}`}>
-                {s.title}
-              </p>
-
-              {/* מעבר גובה חלק (grid-rows) + שליפה מהצד */}
-              <div
-                className="grid"
-                style={{ gridTemplateRows: on ? "1fr" : "0fr", transition: "grid-template-rows 0.5s cubic-bezier(0.4,0,0.2,1)" }}
-              >
-                <div className="overflow-hidden">
-                  <div
-                    className={`mt-3 rounded-2xl border border-rose/10 bg-white/75 p-5 shadow-[0_10px_28px_rgba(167,79,79,0.10)] backdrop-blur-sm transition-all duration-500 ease-out ${
-                      on ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
-                    }`}
-                  >
-                    <p className="text-[15px] font-light leading-loose text-[#5A4A48]">{s.text}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+      {stations.map((s, i) => (
+        <Station
+          key={i}
+          i={i}
+          num={String(i + 1).padStart(2, "0")}
+          title={s.title}
+          text={s.text}
+          active={active}
+          setNodeRef={(el) => (nodeRefs.current[i] = el)}
+          onFocus={() => focusNode(i)}
+        />
+      ))}
     </div>
   );
 }
 
 export default function TrustSection() {
+  const data = useData();
+  const story = (data && data.homeStory) || DEFAULT_HOME_STORY;
+  const heading = story.heading || DEFAULT_HOME_STORY.heading;
+  const subtitle = story.subtitle ?? DEFAULT_HOME_STORY.subtitle;
+  const stations = (Array.isArray(story.stations) && story.stations.length) ? story.stations : DEFAULT_HOME_STORY.stations;
+
   const [carRef, carVis] = useInView({ threshold: 0.2 });
 
   const [index, setIndex] = useState(0);
@@ -163,8 +168,8 @@ export default function TrustSection() {
 
   return (
     <section className="font-elegant mt-12">
-      {/* ---- ציר הזמן — הסיפור שלנו ---- */}
-      <StoryTimeline />
+      {/* ---- ציר הזמן — הסיפור שלי ---- */}
+      <StoryTimeline heading={heading} subtitle={subtitle} stations={stations} />
 
       {/* ---- קרוסלת המלצות ---- */}
       <div
@@ -178,7 +183,7 @@ export default function TrustSection() {
         </div>
 
         <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          <div className="mx-auto w-full max-w-[220px]">
+          <div className="mx-auto w-full max-w-[230px]">
             <div className="relative flex aspect-[9/16] flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-dashed border-rose/25 bg-white/50 p-5 text-center shadow-[0_10px_30px_rgba(167,79,79,0.08)] transition-all duration-500 ease-out hover:scale-[1.02] hover:shadow-[0_16px_38px_rgba(167,79,79,0.14)]">
               <Quote className="h-7 w-7 text-rose/30" strokeWidth={1.5} />
               <p className="text-sm font-light text-[#6E4B4B]">המלצה {cur + 1}</p>

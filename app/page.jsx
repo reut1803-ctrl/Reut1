@@ -16,7 +16,7 @@ export default function HomePage() {
         כניסת צוות
       </Link>
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-lg">
         {/* אזור פתיחה - לוגו בלבד, עם המון אוויר */}
         <div className="flex justify-center pt-20 pb-2">
           <Logo className="w-72 max-w-[85%]" animate />
@@ -26,7 +26,7 @@ export default function HomePage() {
         <TrustSection />
 
         {/* כפתורי הפעולה - פרימיום, אליפטיים, אחרי ההיכרות */}
-        <div className="mt-20 grid grid-cols-2 gap-4">
+        <div className="mx-auto mt-20 grid max-w-md grid-cols-2 gap-4">
           <Link
             href="/form/male"
             className="group flex flex-col items-center gap-2.5 rounded-full border border-rose/15 bg-white/50 py-8 shadow-[0_8px_24px_rgba(167,79,79,0.08)] backdrop-blur-sm transition-all duration-500 ease-out hover:scale-[1.02] hover:border-rose/30 hover:bg-blush/40 hover:shadow-[0_14px_34px_rgba(167,79,79,0.16)] active:scale-[0.99]"
