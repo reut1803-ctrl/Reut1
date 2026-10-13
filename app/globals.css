@@ -4,10 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* האתר תמיד בהיר: מצהירים לדפדפן "light בלבד" כדי שכפיית מצב כהה (Force Dark)
+   במכשיר לא תהפוך את צבעי השמנת/הבורדו. */
+:root {
+  color-scheme: light;
+}
+
 html,
 body {
   padding: 0;
   margin: 0;
+  color-scheme: light;
   background-color: #fbf7f2;
   color: #4a4039;
   -webkit-font-smoothing: antialiased;

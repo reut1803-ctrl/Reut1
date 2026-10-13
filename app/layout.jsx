@@ -26,9 +26,15 @@ export const metadata = {
   },
 };
 
+// מאלץ את הדפדפן להישאר במצב בהיר (מונע Force Dark / Auto Dark של מערכת ההפעלה).
+export const viewport = {
+  colorScheme: "light",
+  themeColor: "#FBF7F2",
+};
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="he" dir="rtl">
+    <html lang="he" dir="rtl" className="light" style={{ colorScheme: "light" }}>
       <body className="min-h-screen font-sans">{children}</body>
     </html>
   );

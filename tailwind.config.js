@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // נועלים את מצב ה-dark ל"class" בלבד (לא נוסיף אף פעם את המחלקה) כדי ששום
+  // dark: לא יופעל אוטומטית לפי הגדרת מערכת ההפעלה. האתר תמיד בהיר.
+  darkMode: "class",
   content: [
     "./app/**/*.{js,jsx}",
     "./components/**/*.{js,jsx}",
