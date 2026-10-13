@@ -18,8 +18,9 @@ export default function RepsManager({ data }) {
   const [openRepId, setOpenRepId] = useState(null);
 
   function add() {
-    if (!name.trim()) return;
-    addRep({ name, institution, phone, password: password || "1234" });
+    // חובה סיסמה אמיתית — אין יותר ברירת מחדל "1234" (דלת אחורית).
+    if (!name.trim() || !password.trim()) return;
+    addRep({ name, institution, phone, password: password.trim() });
     setName("");
     setInstitution("");
     setPhone("");
@@ -51,8 +52,9 @@ export default function RepsManager({ data }) {
         <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="שם הנציג" />
         <input className="field-input" value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="שם המוסד" />
         <input className="field-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="טלפון (לשיחה / SMS / וואטסאפ)" />
-        <input className="field-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="סיסמת הנציג" />
-        <button className="btn-primary w-full" onClick={add}>הוספת נציג</button>
+        <input className="field-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="סיסמת הנציג (חובה)" />
+        <p className="text-xs text-ink/50">יש להגדיר סיסמה אישית וחזקה לכל נציג/ה. בלי סיסמה — לא ניתן להוסיף.</p>
+        <button className="btn-primary w-full" disabled={!name.trim() || !password.trim()} onClick={add}>הוספת נציג</button>
       </div>
 
       <p className="pt-2 text-sm font-semibold text-ink/70">נציגים קיימים:</p>
