@@ -9,7 +9,6 @@ import { DEFAULT_HOME_STORY } from "../lib/store";
 // מלוח הבקרה), עם נפילה חלקה לברירת מחדל. ציר הזמן נפתח תחנה-אחר-תחנה
 // בעדינות כשכל צומת מגיע למרכז המסך (IntersectionObserver יציב).
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
-const SLIDES = [0, 1, 2];
 
 function useInView(options) {
   const ref = useRef(null);
@@ -153,10 +152,15 @@ export default function TrustSection() {
 
   const [carRef, carVis] = useInView({ threshold: 0.2 });
 
+  // המלצות דינמיות מלוח הבקרה (צילומי מסך). אם ריק — הקרוסלה כלל לא מוצגת.
+  const testimonials = (data && Array.isArray(data.testimonials) ? data.testimonials : [])
+    .slice()
+    .sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+  const m = testimonials.length;
+
   const [index, setIndex] = useState(0);
   const touchX = useRef(null);
-  const n = SLIDES.length;
-  const cur = ((index % n) + n) % n;
+  const cur = m > 0 ? (((index % m) + m) % m) : 0;
   function go(delta) { setIndex((i) => i + delta); }
   function onTouchStart(e) { touchX.current = e.touches[0].clientX; }
   function onTouchEnd(e) {
@@ -171,43 +175,46 @@ export default function TrustSection() {
       {/* ---- ציר הזמן — הסיפור שלי ---- */}
       <StoryTimeline heading={heading} subtitle={subtitle} stations={stations} />
 
-      {/* ---- קרוסלת המלצות ---- */}
-      <div
-        ref={carRef}
-        className={`mx-auto mt-20 max-w-sm select-none px-2 transition-all duration-700 ease-out ${carVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
-      >
-        <div className="mb-5 flex items-center justify-center gap-2 text-[#6E4B4B]">
-          <Quote className="h-4 w-4 text-rose/70" strokeWidth={1.75} />
-          <span className="text-sm font-light tracking-wide">מה מספרים עלינו</span>
-          <Quote className="h-4 w-4 text-rose/70" strokeWidth={1.75} />
-        </div>
+      {/* ---- קרוסלת המלצות (דינמית; מוצגת רק אם הועלו צילומי מסך) ---- */}
+      {m > 0 && (
+        <div
+          ref={carRef}
+          className={`mx-auto mt-20 max-w-sm select-none px-2 transition-all duration-700 ease-out ${carVis ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+        >
+          <div className="mb-5 flex items-center justify-center gap-2 text-[#6E4B4B]">
+            <Quote className="h-4 w-4 text-rose/70" strokeWidth={1.75} />
+            <span className="text-sm font-light tracking-wide">מה מספרים עלינו</span>
+            <Quote className="h-4 w-4 text-rose/70" strokeWidth={1.75} />
+          </div>
 
-        <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          <div className="mx-auto w-full max-w-[230px]">
-            <div className="relative flex aspect-[9/16] flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-dashed border-rose/25 bg-white/50 p-5 text-center shadow-[0_10px_30px_rgba(167,79,79,0.08)] transition-all duration-500 ease-out hover:scale-[1.02] hover:shadow-[0_16px_38px_rgba(167,79,79,0.14)]">
-              <Quote className="h-7 w-7 text-rose/30" strokeWidth={1.5} />
-              <p className="text-sm font-light text-[#6E4B4B]">המלצה {cur + 1}</p>
-              <p className="text-xs font-light leading-relaxed text-[#5A4A48]/50">
-                כאן תתווסף המלצה אמיתית
-                <br />
-                מצילום מסך של וואטסאפ
-              </p>
+          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+            <div className="mx-auto w-full max-w-[300px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={testimonials[cur].image}
+                alt={`המלצה ${cur + 1}`}
+                className="mx-auto block w-full max-h-[72vh] rounded-3xl bg-white object-contain p-2 shadow-[0_14px_34px_rgba(167,79,79,0.16)]"
+              />
             </div>
           </div>
-        </div>
 
-        <div className="mt-5 flex items-center justify-center gap-1.5">
-          {SLIDES.map((_, i) => (
-            <button
-              key={i}
-              aria-label={`המלצה ${i + 1}`}
-              onClick={() => setIndex(i)}
-              className={`h-1.5 rounded-full transition-all duration-500 ${i === cur ? "w-5 bg-rose/80" : "w-1.5 bg-rose/25"}`}
-            />
-          ))}
+          {m > 1 && (
+            <>
+              <div className="mt-5 flex items-center justify-center gap-1.5">
+                {testimonials.map((_, i) => (
+                  <button
+                    key={i}
+                    aria-label={`המלצה ${i + 1}`}
+                    onClick={() => setIndex(i)}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${i === cur ? "w-5 bg-rose/80" : "w-1.5 bg-rose/25"}`}
+                  />
+                ))}
+              </div>
+              <p className="mt-3 text-center text-xs font-light tracking-wide text-[#5A4A48]/40">אפשר להחליק ימינה ושמאלה</p>
+            </>
+          )}
         </div>
-        <p className="mt-3 text-center text-xs font-light tracking-wide text-[#5A4A48]/40">אפשר להחליק ימינה ושמאלה</p>
-      </div>
+      )}
     </section>
   );
 }
