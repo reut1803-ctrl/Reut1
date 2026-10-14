@@ -323,37 +323,74 @@ export default function AdminPage() {
               </section>
             )}
 
-            {(candView === "previous" || term) && visibleReps.map((rep) => {
-              const cands = data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c));
-              if (cands.length === 0) return null; // אין מציגים מדור ריק של נציג
-              return (
-                <section key={rep.id} className="space-y-2">
-                  {/* בראש העמודה: שם הנציג ושם המוסד */}
-                  <div className="rounded-2xl bg-blush px-4 py-2">
-                    <p className="font-bold text-roseDark">{rep.name}</p>
-                    <p className="text-xs text-ink/60">{rep.institution}</p>
+            {(candView === "previous" || term) && (() => {
+              // המועמדים של נציג/ה בודד/ת — לוגיקת השיוך (displayRep לפי rep.id) נשמרת בדיוק כפי שהיתה.
+              const candsForRep = (rep) => data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c));
+
+              // מדור של נציג/ה בודד/ת (כותרת שם+מוסד + גלילת כרטיסים). מחזיר null אם אין מועמדים.
+              const renderRep = (rep) => {
+                const cands = candsForRep(rep);
+                if (cands.length === 0) return null;
+                return (
+                  <div key={rep.id} className="space-y-2">
+                    <div className="rounded-2xl bg-blush px-4 py-2">
+                      <p className="font-bold text-roseDark">{rep.name}</p>
+                      <p className="text-xs text-ink/60">{rep.institution}</p>
+                    </div>
+                    <div className="flex snap-x gap-3 overflow-x-auto pb-2">
+                      {cands.map((c) => (
+                        <div key={c.id} className="w-64 shrink-0 snap-start">
+                        <CandidateCard
+                          candidate={c}
+                          openQuestions={data.openQuestions}
+                          reps={data.reps}
+                          canEdit={canEditOf(c)}
+                          canSeeSensitive={canSeeSensitiveOf(c)}
+                          currentRepId={user.repId || "admin"}
+                          isAdmin={isAdmin}
+                          locked={lockedFor(c)}
+                          onUpdate={updateCandidate}
+                          onDelete={isAdmin ? deleteCandidate : undefined}
+                        />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex snap-x gap-3 overflow-x-auto pb-2">
-                    {cands.map((c) => (
-                      <div key={c.id} className="w-64 shrink-0 snap-start">
-                      <CandidateCard
-                        candidate={c}
-                        openQuestions={data.openQuestions}
-                        reps={data.reps}
-                        canEdit={canEditOf(c)}
-                        canSeeSensitive={canSeeSensitiveOf(c)}
-                        currentRepId={user.repId || "admin"}
-                        isAdmin={isAdmin}
-                        locked={lockedFor(c)}
-                        onUpdate={updateCandidate}
-                        onDelete={isAdmin ? deleteCandidate : undefined}
-                      />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
+                );
+              };
+
+              // קיבוץ הנציגים ליחידות לפי שם צוות (agency_name), בסדר ההופעה הראשונה.
+              const units = [];
+              const teamIndex = {};
+              visibleReps.forEach((rep) => {
+                const team = (rep.agency_name || "").trim();
+                if (team) {
+                  if (teamIndex[team] === undefined) { teamIndex[team] = units.length; units.push({ type: "team", name: team, reps: [rep] }); }
+                  else { units[teamIndex[team]].reps.push(rep); }
+                } else {
+                  units.push({ type: "solo", rep });
+                }
+              });
+
+              return units.map((u) => {
+                if (u.type === "solo") {
+                  const inner = renderRep(u.rep);
+                  return inner ? <section key={`solo-${u.rep.id}`} className="space-y-2">{inner}</section> : null;
+                }
+                // צוות — מסגרת אחת עם כותרת שם הצוות, וכל חבר/ת צוות עם המועמדים שלו/ה בפנים.
+                const inners = u.reps.map(renderRep).filter(Boolean);
+                if (inners.length === 0) return null; // אין מציגים מסגרת צוות ריקה
+                return (
+                  <section key={`team-${u.name}`} className="space-y-3 rounded-3xl border-2 border-rose/30 bg-rose/5 p-3">
+                    <div className="flex items-center gap-1.5 rounded-2xl bg-roseDark/10 px-4 py-2">
+                      <Users className="h-4 w-4 text-roseDark" strokeWidth={1.75} />
+                      <p className="font-bold text-roseDark">צוות {u.name}</p>
+                    </div>
+                    <div className="space-y-3">{inners}</div>
+                  </section>
+                );
+              });
+            })()}
 
             {/* מועמדים ללא שיוך נציג (בתצוגת קודמים או בחיפוש) */}
             {(candView === "previous" || term) && unassigned.length > 0 && (

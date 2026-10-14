@@ -10,6 +10,7 @@ export default function RepsManager({ data }) {
   const [institution, setInstitution] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [agency, setAgency] = useState(""); // שם צוות (אופציונלי) — לקיבוץ נציגים
 
   const [viewerPw, setViewerPw] = useState(""); // לא טוענים את הסיסמה הקיימת - שינוי בלבד
   const [viewerSaved, setViewerSaved] = useState(false);
@@ -20,11 +21,12 @@ export default function RepsManager({ data }) {
   function add() {
     // חובה סיסמה אמיתית — אין יותר ברירת מחדל "1234" (דלת אחורית).
     if (!name.trim() || !password.trim()) return;
-    addRep({ name, institution, phone, password: password.trim() });
+    addRep({ name, institution, phone, password: password.trim(), agency_name: agency.trim() });
     setName("");
     setInstitution("");
     setPhone("");
     setPassword("");
+    setAgency("");
   }
 
   function saveViewerPw() {
@@ -51,6 +53,7 @@ export default function RepsManager({ data }) {
         <p className="flex items-center gap-1.5 text-base font-bold text-roseDark"><Plus className="h-4 w-4" strokeWidth={2} /> הוספת נציג חדש</p>
         <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="שם הנציג" />
         <input className="field-input" value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="שם המוסד" />
+        <input className="field-input" value={agency} onChange={(e) => setAgency(e.target.value)} placeholder="שם צוות (אופציונלי — למשל: צוות ירושלים)" />
         <input className="field-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="טלפון (לשיחה / SMS / וואטסאפ)" />
         <input className="field-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="סיסמת הנציג (חובה)" />
         <p className="text-xs text-ink/50">יש להגדיר סיסמה אישית וחזקה לכל נציג/ה. בלי סיסמה — לא ניתן להוסיף.</p>
@@ -73,6 +76,7 @@ export default function RepsManager({ data }) {
             {/* פרטי הנציג/ה - גלויים ישירות */}
             <input className="field-input" value={r.name} onChange={(e) => updateRep(r.id, { name: e.target.value })} placeholder="שם הנציג" />
             <input className="field-input" value={r.institution || ""} onChange={(e) => updateRep(r.id, { institution: e.target.value })} placeholder="שם המוסד" />
+            <input className="field-input" value={r.agency_name || ""} onChange={(e) => updateRep(r.id, { agency_name: e.target.value })} placeholder="שם צוות (אופציונלי — נציגים עם אותו שם יקובצו יחד)" />
             <input className="field-input" value={r.phone || ""} onChange={(e) => updateRep(r.id, { phone: e.target.value })} placeholder="טלפון (לשיחה / SMS / וואטסאפ)" />
             <input className="field-input" value={r.password || ""} onChange={(e) => updateRep(r.id, { password: e.target.value })} placeholder="סיסמת הנציג" />
 

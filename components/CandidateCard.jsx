@@ -115,21 +115,52 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
                 </div>
               )}
 
-              {/* הטלפון האישי מוסתר משאר הנציגים - יצירת קשר דרך הנציג/ה */}
-              {!canSeeSensitive && rep && (
-                <div className="rounded-2xl bg-blush/60 p-4">
-                  <p className="mb-2 text-base font-semibold text-roseDark">לפרטים ולבירורים — דרך הנציג/ה: {rep.name}</p>
-                  {rep.phone ? (
+              {/* הטלפון האישי מוסתר משאר הנציגים - יצירת קשר דרך הנציג/ה (או דרך הצוות) */}
+              {!canSeeSensitive && rep && (() => {
+                // כפתורי יצירת קשר לנציג/ה בודד/ת — משתמשים בטלפון האישי שלו/ה בדיוק כמו קודם.
+                const contactButtons = (phone) =>
+                  phone ? (
                     <div className="flex flex-wrap gap-2">
-                      <a className="btn-soft" href={`tel:${rep.phone}`}><Phone className="h-4 w-4" strokeWidth={1.75} /> שיחה</a>
-                      <a className="btn-soft" href={`sms:${rep.phone}`}><MessageSquare className="h-4 w-4" strokeWidth={1.75} /> SMS</a>
-                      <a className="btn-soft" href={`https://wa.me/${rep.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer"><WhatsApp size={16} className="text-green-600" /> וואטסאפ</a>
+                      <a className="btn-soft" href={`tel:${phone}`}><Phone className="h-4 w-4" strokeWidth={1.75} /> שיחה</a>
+                      <a className="btn-soft" href={`sms:${phone}`}><MessageSquare className="h-4 w-4" strokeWidth={1.75} /> SMS</a>
+                      <a className="btn-soft" href={`https://wa.me/${phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer"><WhatsApp size={16} className="text-green-600" /> וואטסאפ</a>
                     </div>
                   ) : (
                     <p className="text-sm text-ink/60">לא הוגדר טלפון לנציג זה.</p>
-                  )}
-                </div>
-              )}
+                  );
+
+                // קיבוץ לפי שם צוות (agency_name). אם לנציג/ה המלווה יש שם צוות
+                // וקיים/ת לפחות עוד חבר/ת צוות אחד/ת עם אותו שם — מציגים מסגרת צוות אחת.
+                const teamName = (rep.agency_name || "").trim();
+                const teamMembers = teamName
+                  ? (reps || []).filter((x) => (x.agency_name || "").trim() === teamName)
+                  : [];
+                if (teamName && teamMembers.length >= 2) {
+                  // הנציג/ה המלווה מופיע/ה ראשון/ה, אחר כך שאר חברי הצוות.
+                  const ordered = [...teamMembers].sort((a, b) => (a.id === rep.id ? -1 : b.id === rep.id ? 1 : 0));
+                  return (
+                    <div className="rounded-2xl border-2 border-rose/30 bg-blush/60 p-4">
+                      <p className="mb-3 text-base font-semibold text-roseDark">לפרטים ולבירורים — צוות {teamName}</p>
+                      <div className="space-y-3">
+                        {ordered.map((m) => (
+                          <div key={m.id} className="rounded-xl bg-cream/70 p-3">
+                            <p className="mb-1.5 text-sm font-medium text-ink">{m.name}{m.institution ? ` · ${m.institution}` : ""}</p>
+                            {contactButtons(m.phone)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // ברירת מחדל — נציג/ה בודד/ת, בדיוק כמו קודם.
+                return (
+                  <div className="rounded-2xl bg-blush/60 p-4">
+                    <p className="mb-2 text-base font-semibold text-roseDark">לפרטים ולבירורים — דרך הנציג/ה: {rep.name}</p>
+                    {contactButtons(rep.phone)}
+                  </div>
+                );
+              })()}
 
               {/* ---- התוכן הארוך באקורדיונים (סגורים כברירת מחדל) למניעת גלילה ארוכה ---- */}
 
