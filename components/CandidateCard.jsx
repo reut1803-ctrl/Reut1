@@ -7,7 +7,7 @@ import Recorder from "./Recorder";
 import { genderLabel } from "../lib/questions";
 import { toHebrewDate } from "../lib/dates";
 import { copyClean, downloadPdf } from "../lib/export";
-import { displayRep, trackEngagement } from "../lib/store";
+import { displayRep, trackEngagement, teamMembers } from "../lib/store";
 import { Phone, MessageSquare, Copy, FileText, Pencil, Trash2, Lock, User, MessageCircle, Contact } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
 import Accordion from "./Accordion";
@@ -130,19 +130,16 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
                   );
 
                 // קיבוץ לפי שם צוות (agency_name). אם לנציג/ה המלווה יש שם צוות
-                // וקיים/ת לפחות עוד חבר/ת צוות אחד/ת עם אותו שם — מציגים מסגרת צוות אחת.
+                // וקיים/ת לפחות עוד חבר/ת צוות אחד/ת עם אותו שם — מציגים מסגרת צוות אחת
+                // עם כפתורי יצירת קשר לכל חברי הצוות (שליפה מרוכזת ב-teamMembers).
                 const teamName = (rep.agency_name || "").trim();
-                const teamMembers = teamName
-                  ? (reps || []).filter((x) => (x.agency_name || "").trim() === teamName)
-                  : [];
-                if (teamName && teamMembers.length >= 2) {
-                  // הנציג/ה המלווה מופיע/ה ראשון/ה, אחר כך שאר חברי הצוות.
-                  const ordered = [...teamMembers].sort((a, b) => (a.id === rep.id ? -1 : b.id === rep.id ? 1 : 0));
+                const members = teamMembers(rep, reps);
+                if (teamName && members.length >= 2) {
                   return (
                     <div className="rounded-2xl border-2 border-rose/30 bg-blush/60 p-4">
                       <p className="mb-3 text-base font-semibold text-roseDark">לפרטים ולבירורים — צוות {teamName}</p>
                       <div className="space-y-3">
-                        {ordered.map((m) => (
+                        {members.map((m) => (
                           <div key={m.id} className="rounded-xl bg-cream/70 p-3">
                             <p className="mb-1.5 text-sm font-medium text-ink">{m.name}{m.institution ? ` · ${m.institution}` : ""}</p>
                             {contactButtons(m.phone)}

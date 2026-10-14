@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "./Modal";
 import SearchSelect from "./SearchSelect";
 import Recorder from "./Recorder";
-import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep } from "../lib/store";
+import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep, teamMembers } from "../lib/store";
 import { copyClean, downloadPdf, shareClean } from "../lib/export";
 import { Phone, MessageSquare, Copy, FileText, Share2, HeartHandshake, Handshake, Bell, ChevronDown, ChevronUp, UserRound, X, Send, Check, Sparkles, Pin, Trash2, FolderOpen, Undo2, Heart } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
@@ -318,13 +318,34 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                   const showManC = manRep && (user.role === "admin" || manRep.id !== user.repId);
                   const showWomanC = womanRep && (user.role === "admin" || womanRep.id !== user.repId);
                   const showInit = initRep && initRep.id !== manRep?.id && initRep.id !== womanRep?.id && (user.role === "admin" || initRep.id !== user.repId);
-                  const repBlock = (rep, role) => (
-                    <div className="rounded-2xl bg-blush/40 p-2.5">
-                      <p className="text-sm font-semibold text-ink">{rep.name}</p>
-                      <p className="mb-1 text-[11px] text-ink/50">{role}{rep.institution ? ` · ${rep.institution}` : ""}</p>
-                      {contactButtons(rep, manLabel, womanLabel)}
-                    </div>
-                  );
+                  const repBlock = (rep, role) => {
+                    // קיבוץ לפי שם צוות (agency_name) — אם לנציג/ה יש צוות עם עוד חבר/ה,
+                    // מציגים מסגרת צוות אחת עם כפתורי יצירת קשר לכל חברי הצוות.
+                    const team = (rep.agency_name || "").trim();
+                    const members = teamMembers(rep, data.reps);
+                    if (team && members.length >= 2) {
+                      return (
+                        <div className="rounded-2xl border border-rose/30 bg-blush/40 p-2.5">
+                          <p className="mb-2 text-[11px] font-semibold text-roseDark">{role} · צוות {team}</p>
+                          <div className="space-y-2">
+                            {members.map((mem) => (
+                              <div key={mem.id} className="rounded-xl bg-cream/70 p-2">
+                                <p className="text-sm font-semibold text-ink">{mem.name}{mem.institution ? ` · ${mem.institution}` : ""}</p>
+                                {contactButtons(mem, manLabel, womanLabel)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="rounded-2xl bg-blush/40 p-2.5">
+                        <p className="text-sm font-semibold text-ink">{rep.name}</p>
+                        <p className="mb-1 text-[11px] text-ink/50">{role}{rep.institution ? ` · ${rep.institution}` : ""}</p>
+                        {contactButtons(rep, manLabel, womanLabel)}
+                      </div>
+                    );
+                  };
                   return (
                     <>
                       <div className="grid grid-cols-2 items-start gap-2">
