@@ -10,3 +10,7 @@ yarn-error.log*
 .env*.local
 .vercel
 *.tsbuildinfo
+
+# Python / watch-video skill
+__pycache__/
+watch_output/
