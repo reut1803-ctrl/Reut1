@@ -22,7 +22,13 @@ export default function HomePage() {
           <Logo className="w-72 max-w-[85%]" animate />
         </div>
 
-        {/* אזור היכרות (TrustSection) - מיד אחרי הלוגו */}
+        {/* ברכת הרב יצחק גינזבורג — מתחת ללוגו, לפני ציר הזמן (עיצוב זהה לקיים) */}
+        <blockquote className="mx-auto mb-2 mt-4 max-w-md rounded-2xl border-r-4 border-rose/50 bg-blush/50 px-5 py-4 text-right text-base italic leading-relaxed text-ink/90">
+          "ברכה להצלחה רבה במיזם השידוכים על טהרת הקדש. שירבו בתים נאמנים בישראל! ברכת כוח"ט לשנה טובה ומתוקה!"
+          <footer className="mt-2 text-sm font-bold not-italic text-roseDark">— הרב יצחק גינזבורג</footer>
+        </blockquote>
+
+        {/* אזור היכרות (TrustSection) - מיד אחרי הברכה */}
         <TrustSection />
 
         {/* כפתורי הפעולה - פרימיום, אליפטיים, אחרי ההיכרות */}
