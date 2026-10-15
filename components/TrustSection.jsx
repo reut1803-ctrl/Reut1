@@ -176,6 +176,8 @@ export default function TrustSection() {
               <img
                 src={testimonials[cur].image}
                 alt={`המלצה ${cur + 1}`}
+                loading="lazy"
+                decoding="async"
                 className="mx-auto block w-full max-h-[72vh] rounded-3xl bg-white object-contain p-2 shadow-[0_14px_34px_rgba(167,79,79,0.16)]"
               />
             </div>

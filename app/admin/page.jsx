@@ -1,33 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Header from "../../components/Header";
 import Modal from "../../components/Modal";
 import CandidateCard from "../../components/CandidateCard";
 import CandidateEditor from "../../components/CandidateEditor";
-import MatchesPanel from "../../components/MatchesPanel";
-import TasksPanel from "../../components/TasksPanel";
-import QuestionsEditor from "../../components/QuestionsEditor";
-import RepsManager from "../../components/RepsManager";
-import AdminsManager from "../../components/AdminsManager";
-import EngagementPanel from "../../components/EngagementPanel";
-import SheetImport from "../../components/SheetImport";
-import LogViewer from "../../components/LogViewer";
-import PopupEditor from "../../components/PopupEditor";
 import MazalTovPopup from "../../components/MazalTovPopup";
-import MazalTovEditor from "../../components/MazalTovEditor";
 import TipBanner from "../../components/TipBanner";
 import ContactRoulette from "../../components/ContactRoulette";
-import IntakePanel from "../../components/IntakePanel";
 import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
-import { useData, useUser } from "../../lib/useData";
-import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, teamRepIds, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
-import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Home, Images } from "lucide-react";
 import Accordion from "../../components/Accordion";
-import EventsEditor from "../../components/EventsEditor";
-import HomeStoryEditor from "../../components/HomeStoryEditor";
-import TestimonialsManager from "../../components/TestimonialsManager";
+import { useData, useUser } from "../../lib/useData";
+import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, teamRepIds, ensureFullData, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
+import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Home, Images } from "lucide-react";
+
+// פיצול קוד (Code Splitting): הפאנלים הכבדים של לוח הבקרה נטענים לפי דרישה,
+// רק כשנכנסים ללשונית/אקורדיון שלהם — כך מסך ההתחברות ולשונית המועמדים עולים קלים ומהר.
+const dyn = (loader) => dynamic(loader, { ssr: false, loading: () => <div className="p-6 text-center text-sm text-ink/40">טוען…</div> });
+const MatchesPanel = dyn(() => import("../../components/MatchesPanel"));
+const TasksPanel = dyn(() => import("../../components/TasksPanel"));
+const QuestionsEditor = dyn(() => import("../../components/QuestionsEditor"));
+const RepsManager = dyn(() => import("../../components/RepsManager"));
+const AdminsManager = dyn(() => import("../../components/AdminsManager"));
+const EngagementPanel = dyn(() => import("../../components/EngagementPanel"));
+const SheetImport = dyn(() => import("../../components/SheetImport"));
+const LogViewer = dyn(() => import("../../components/LogViewer"));
+const PopupEditor = dyn(() => import("../../components/PopupEditor"));
+const MazalTovEditor = dyn(() => import("../../components/MazalTovEditor"));
+const IntakePanel = dyn(() => import("../../components/IntakePanel"));
+const EventsEditor = dyn(() => import("../../components/EventsEditor"));
+const HomeStoryEditor = dyn(() => import("../../components/HomeStoryEditor"));
+const TestimonialsManager = dyn(() => import("../../components/TestimonialsManager"));
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -119,6 +124,9 @@ function Login({ data }) {
 export default function AdminPage() {
   const data = useData();
   const user = useUser();
+  // רק כאן מתחילים להאזין לנתונים הכבדים (מועמדים/משימות/התאמות…),
+  // כך שהעמודים הציבוריים ומסך ההתחברות נשארים קלים ומהירים.
+  useEffect(() => { ensureFullData(); }, []);
   const [tab, setTab] = useState("candidates");
   const [addingCand, setAddingCand] = useState(false);
   const [search, setSearch] = useState("");
@@ -128,6 +136,9 @@ export default function AdminPage() {
   const [genderFilter, setGenderFilter] = useState("all");
   // "המועמדים שלי" - נציג רואה רק את המשויכים אליו (בלחיצה אחת).
   const [mineOnly, setMineOnly] = useState(false);
+  // טעינה הדרגתית (Pagination): כמה כרטיסים להציג בכל מדור, עם "הצג עוד".
+  const [shownPer, setShownPer] = useState({});
+  const CARD_PAGE = 12;
 
   if (!data) return <main className="p-8 text-center text-ink/50">טוען…</main>;
   if (!user) return <Login data={data} />;
@@ -328,38 +339,38 @@ export default function AdminPage() {
             )}
 
             {(candView === "previous" || term) && (() => {
-              // המועמדים של נציג/ה בודד/ת — לוגיקת השיוך (displayRep לפי rep.id) נשמרת בדיוק כפי שהיתה.
+              // המועמדים של נציג/ה — לוגיקת השיוך (displayRep לפי rep.id) נשמרת בדיוק כפי שהיתה.
               const candsForRep = (rep) => data.candidates.filter((c) => displayRep(c, data.reps)?.id === rep.id && (term || !newIds.has(c.id)) && matchSearch(c) && canViewCandidate(c) && genderOk(c) && mineOk(c));
 
-              // מדור של נציג/ה בודד/ת (כותרת שם+מוסד + גלילת כרטיסים). מחזיר null אם אין מועמדים.
-              const renderRep = (rep) => {
-                const cands = candsForRep(rep);
-                if (cands.length === 0) return null;
+              // רצועת כרטיסים עם טעינה הדרגתית: מציג CARD_PAGE כרטיסים, עם כפתור "הצג עוד".
+              const renderCards = (cands, key) => {
+                const limit = shownPer[key] || CARD_PAGE;
                 return (
-                  <div key={rep.id} className="space-y-2">
-                    <div className="rounded-2xl bg-blush px-4 py-2">
-                      <p className="font-bold text-roseDark">{rep.name}</p>
-                      <p className="text-xs text-ink/60">{rep.institution}</p>
-                    </div>
+                  <>
                     <div className="flex snap-x gap-3 overflow-x-auto pb-2">
-                      {cands.map((c) => (
+                      {cands.slice(0, limit).map((c) => (
                         <div key={c.id} className="w-64 shrink-0 snap-start">
-                        <CandidateCard
-                          candidate={c}
-                          openQuestions={data.openQuestions}
-                          reps={data.reps}
-                          canEdit={canEditOf(c)}
-                          canSeeSensitive={canSeeSensitiveOf(c)}
-                          currentRepId={user.repId || "admin"}
-                          isAdmin={isAdmin}
-                          locked={lockedFor(c)}
-                          onUpdate={updateCandidate}
-                          onDelete={isAdmin ? deleteCandidate : undefined}
-                        />
+                          <CandidateCard
+                            candidate={c}
+                            openQuestions={data.openQuestions}
+                            reps={data.reps}
+                            canEdit={canEditOf(c)}
+                            canSeeSensitive={canSeeSensitiveOf(c)}
+                            currentRepId={user.repId || "admin"}
+                            isAdmin={isAdmin}
+                            locked={lockedFor(c)}
+                            onUpdate={updateCandidate}
+                            onDelete={isAdmin ? deleteCandidate : undefined}
+                          />
                         </div>
                       ))}
                     </div>
-                  </div>
+                    {cands.length > limit && (
+                      <button className="btn-soft mx-auto !px-4 !py-1.5 text-xs text-roseDark" onClick={() => setShownPer((s) => ({ ...s, [key]: limit + CARD_PAGE }))}>
+                        הצג עוד {Math.min(CARD_PAGE, cands.length - limit)} (מתוך {cands.length})
+                      </button>
+                    )}
+                  </>
                 );
               };
 
@@ -378,19 +389,32 @@ export default function AdminPage() {
 
               return units.map((u) => {
                 if (u.type === "solo") {
-                  const inner = renderRep(u.rep);
-                  return inner ? <section key={`solo-${u.rep.id}`} className="space-y-2">{inner}</section> : null;
+                  const cands = candsForRep(u.rep);
+                  if (cands.length === 0) return null;
+                  return (
+                    <section key={`solo-${u.rep.id}`} className="space-y-2">
+                      <div className="rounded-2xl bg-blush px-4 py-2">
+                        <p className="font-bold text-roseDark">{u.rep.name}</p>
+                        <p className="text-xs text-ink/60">{u.rep.institution}</p>
+                      </div>
+                      {renderCards(cands, `solo-${u.rep.id}`)}
+                    </section>
+                  );
                 }
-                // צוות — מסגרת אחת עם כותרת שם הצוות, וכל חבר/ת צוות עם המועמדים שלו/ה בפנים.
-                const inners = u.reps.map(renderRep).filter(Boolean);
-                if (inners.length === 0) return null; // אין מציגים מסגרת צוות ריקה
+                // צוות — כותרת משותפת אחת (שמות הנציגים מחוברים ב-"&"), וכל המועמדים של
+                // כולם יחד ללא תת-חלוקה. חוק ברזל: כל כרטיס עדיין משתמש ב-assignedRep המקורי
+                // שלו (agent_code) לכל פעולה/קשר — הקרדיט לא מתערבב.
+                const teamCands = u.reps.flatMap((rep) => candsForRep(rep));
+                if (teamCands.length === 0) return null;
+                const title = u.reps.map((r) => r.name).join(" & ");
+                const institutions = [...new Set(u.reps.map((r) => (r.institution || "").trim()).filter(Boolean))].join(" · ");
                 return (
-                  <section key={`team-${u.name}`} className="space-y-3 rounded-3xl border-2 border-rose/30 bg-rose/5 p-3">
-                    <div className="flex items-center gap-1.5 rounded-2xl bg-roseDark/10 px-4 py-2">
-                      <Users className="h-4 w-4 text-roseDark" strokeWidth={1.75} />
-                      <p className="font-bold text-roseDark">צוות {u.name}</p>
+                  <section key={`team-${u.name}`} className="space-y-2">
+                    <div className="rounded-2xl bg-blush px-4 py-2">
+                      <p className="flex items-center gap-1.5 font-bold text-roseDark"><Users className="h-4 w-4 shrink-0" strokeWidth={1.75} /> {title}</p>
+                      <p className="text-xs text-ink/60">{institutions ? `${institutions} · ` : ""}צוות {u.name}</p>
                     </div>
-                    <div className="space-y-3">{inners}</div>
+                    {renderCards(teamCands, `team-${u.name}`)}
                   </section>
                 );
               });

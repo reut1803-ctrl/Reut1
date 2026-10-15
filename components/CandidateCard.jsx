@@ -51,7 +51,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
         <div className="flex items-center gap-3">
           {candidate.photo && !locked ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={candidate.photo} alt={candidate.fullName} className="h-14 w-14 rounded-2xl object-cover" />
+            <img src={candidate.photo} alt={candidate.fullName} loading="lazy" decoding="async" className="h-14 w-14 rounded-2xl object-cover" />
           ) : (
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blush text-roseDark">{locked ? <Lock className="h-6 w-6" strokeWidth={1.75} /> : <User className="h-7 w-7" strokeWidth={1.5} />}</div>
           )}
@@ -94,7 +94,7 @@ export default function CandidateCard({ candidate, openQuestions, reps, canEdit,
               <div className="flex items-start gap-3">
                 {candidate.photo && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={candidate.photo} alt={candidate.fullName} className="h-24 w-24 shrink-0 rounded-2xl object-cover" />
+                  <img src={candidate.photo} alt={candidate.fullName} loading="lazy" decoding="async" className="h-24 w-24 shrink-0 rounded-2xl object-cover" />
                 )}
                 {/* נתוני ליבה כתגיות נקיות למבט מהיר */}
                 <div className="flex flex-wrap gap-1.5">
