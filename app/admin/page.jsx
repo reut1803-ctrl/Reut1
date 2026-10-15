@@ -22,7 +22,7 @@ import IntakePanel from "../../components/IntakePanel";
 import GuidedTour from "../../components/GuidedTour";
 import Logo from "../../components/Logo";
 import { useData, useUser } from "../../lib/useData";
-import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
+import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, teamRepIds, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
 import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Home, Images } from "lucide-react";
 import Accordion from "../../components/Accordion";
 import EventsEditor from "../../components/EventsEditor";
@@ -148,10 +148,14 @@ export default function AdminPage() {
   const visibleReps = data.reps.filter((r) => !r.readOnly);
   const visibleRepIds = new Set(visibleReps.map((r) => r.id));
 
-  // מועמד "מנוהל על ידי" - הנציג המשויך, או נציג/ה שמכסה את הנציג המשויך (Co-Management).
+  // מרחב עבודה משותף לצוות: המזהים ש"נחשבים אני" — הנציג/ה וכל חברי הצוות (agency_name).
+  // בלי שם צוות זה בדיוק { user.repId } — כלומר ההתנהגות הקיימת, ללא שינוי.
+  const myTeamIds = teamRepIds(user.repId, data.reps);
+  // מועמד "מנוהל על ידי" - משויך אליי או לחבר/ת צוות שלי (agency_name),
+  // או נציג/ה שמכסה אותי אישית (Co-Management — נשאר אישי, כפי שהיה).
   const managedByMe = (c) => {
     if (!user.repId) return false;
-    if (c.assignedRep === user.repId) return true;
+    if (myTeamIds.has(c.assignedRep)) return true;
     const owner = data.reps.find((r) => r.id === c.assignedRep);
     return !!(owner && (owner.coveredBy || []).includes(user.repId));
   };

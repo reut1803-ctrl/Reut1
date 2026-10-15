@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "./Modal";
 import SearchSelect from "./SearchSelect";
 import Recorder from "./Recorder";
-import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep, teamMembers } from "../lib/store";
+import { addMatch, updateMatch, deleteMatch, addMatchUpdate, displayRep, teamMembers, teamRepIds } from "../lib/store";
 import { copyClean, downloadPdf, shareClean } from "../lib/export";
 import { Phone, MessageSquare, Copy, FileText, Share2, HeartHandshake, Handshake, Bell, ChevronDown, ChevronUp, UserRound, X, Send, Check, Sparkles, Pin, Trash2, FolderOpen, Undo2, Heart } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
@@ -50,10 +50,12 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
     } catch (e) { return iso; }
   }
 
-  // האם הנציג הנוכחי מנהל את המועמד (משויך ישירות או מכסה את הנציג המשויך)
+  // מרחב עבודה משותף לצוות: המזהים ש"נחשבים אני" (הנציג/ה + חברי הצוות לפי agency_name).
+  const myTeamIds = teamRepIds(user.repId, data.reps);
+  // האם הנציג הנוכחי מנהל את המועמד — משויך אליי/לחבר צוות, או מכסה אותי אישית.
   const managedByMe = (c) => {
     if (!user.repId) return false;
-    if (c && c.assignedRep === user.repId) return true;
+    if (c && myTeamIds.has(c.assignedRep)) return true;
     const owner = c && data.reps.find((r) => r.id === c.assignedRep);
     return !!(owner && (owner.coveredBy || []).includes(user.repId));
   };

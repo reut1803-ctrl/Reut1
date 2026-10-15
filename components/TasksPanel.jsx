@@ -6,7 +6,7 @@ import DateField from "./DateField";
 import SearchSelect from "./SearchSelect";
 import CandidateCard from "./CandidateCard";
 import { toHebrewDate } from "../lib/dates";
-import { addTask, updateTask, deleteTask, updateCandidate, updateIntake } from "../lib/store";
+import { addTask, updateTask, deleteTask, updateCandidate, updateIntake, teamRepIds } from "../lib/store";
 import { ClipboardList, Trash2, UserRound, Phone, MessageSquare } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
 
@@ -22,16 +22,20 @@ export default function TasksPanel({ data, user, readOnly = false }) {
   const [candidateId, setCandidateId] = useState("");
 
   const isAdmin = user.role === "admin";
+  // מרחב עבודה משותף לצוות: המזהים ש"נחשבים אני" (הנציג/ה + חברי הצוות לפי agency_name).
+  // בלי שם צוות זה בדיוק { user.repId } — ההתנהגות הקיימת ללא שינוי.
+  const myTeamIds = teamRepIds(user.repId, data.reps);
   const managedByMe = (c) => {
     if (!user.repId || !c) return false;
-    if (c.assignedRep === user.repId) return true;
+    if (myTeamIds.has(c.assignedRep)) return true;
     const owner = data.reps.find((r) => r.id === c.assignedRep);
     return !!(owner && (owner.coveredBy || []).includes(user.repId));
   };
 
-  // מנהלת רואה הכל; נציג רואה משימות המשויכות אליו (כולל כאלה שהמנהלת שייכה לו).
+  // מנהלת רואה הכל; נציג רואה משימות המשויכות אליו או לחבר/ת צוות שלו (agency_name).
+  // משימות המשויכות למנהלת/מנהלת-נוספת (admin/admin2) נשארות אצלן בלבד.
   const visibleTasks = data.tasks.filter((t) =>
-    isAdmin ? true : t.repId === user.repId
+    isAdmin ? true : myTeamIds.has(t.repId)
   );
 
   function create() {
