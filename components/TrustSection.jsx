@@ -8,7 +8,6 @@ import { DEFAULT_HOME_STORY } from "../lib/store";
 // עמוד הבית — אזור ההיכרות. הטקסטים נמשכים דינמית מההגדרות (ניתן לעריכה
 // מלוח הבקרה), עם נפילה חלקה לברירת מחדל. ציר הזמן נפתח תחנה-אחר-תחנה
 // בעדינות כשכל צומת מגיע למרכז המסך (IntersectionObserver יציב).
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 function useInView(options) {
   const ref = useRef(null);
@@ -67,7 +66,7 @@ function Station({ i, num, title, text, active, setNodeRef, onFocus }) {
   );
 }
 
-function StoryTimeline({ heading, subtitle, stations }) {
+function StoryTimeline({ stations }) {
   const nodeRefs = useRef([]);
   const [active, setActive] = useState(0);
   const ticking = useRef(false);
@@ -108,23 +107,9 @@ function StoryTimeline({ heading, subtitle, stations }) {
   }
 
   return (
-    <div className="relative mx-auto max-w-lg">
-      {/* קו הציר — יוצא מתחת לפורטרט וזורם מטה דרך התחנות */}
-      <div className="absolute bottom-10 right-7 top-12 w-px bg-gradient-to-b from-rose/30 via-rose/25 to-rose/5" aria-hidden="true" />
-
-      {/* תחנת המוצא: הפורטרט + הכותרת */}
-      <div className="relative flex items-center gap-4 pb-12">
-        <div className="relative z-10 flex w-14 shrink-0 justify-center">
-          <div className="h-14 w-14 overflow-hidden rounded-full bg-blush/40 ring-2 ring-rose/20 shadow-[0_8px_22px_rgba(167,79,79,0.16)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${BASE}/assets/rep-illustration.png`} alt="רעות פריד" className="h-full w-full scale-110 object-cover object-top" />
-          </div>
-        </div>
-        <div className="flex-1 text-right">
-          <p className="text-2xl font-semibold text-[#6E4B4B]">{heading}</p>
-          {subtitle && <p className="mt-1 text-sm font-light tracking-wide text-[#5A4A48]/45">{subtitle}</p>}
-        </div>
-      </div>
+    <div className="relative mx-auto max-w-lg pt-8">
+      {/* קו הציר — זורם מטה דרך התחנות, מתחיל במרכז הצומת הראשון */}
+      <div className="absolute bottom-10 right-7 top-14 w-px bg-gradient-to-b from-rose/30 via-rose/25 to-rose/5" aria-hidden="true" />
 
       {/* התחנות */}
       {stations.map((s, i) => (
@@ -146,8 +131,6 @@ function StoryTimeline({ heading, subtitle, stations }) {
 export default function TrustSection() {
   const data = useData();
   const story = (data && data.homeStory) || DEFAULT_HOME_STORY;
-  const heading = story.heading || DEFAULT_HOME_STORY.heading;
-  const subtitle = story.subtitle ?? DEFAULT_HOME_STORY.subtitle;
   const stations = (Array.isArray(story.stations) && story.stations.length) ? story.stations : DEFAULT_HOME_STORY.stations;
 
   const [carRef, carVis] = useInView({ threshold: 0.2 });
@@ -173,7 +156,7 @@ export default function TrustSection() {
   return (
     <section className="font-elegant mt-12">
       {/* ---- ציר הזמן — הסיפור שלי ---- */}
-      <StoryTimeline heading={heading} subtitle={subtitle} stations={stations} />
+      <StoryTimeline stations={stations} />
 
       {/* ---- קרוסלת המלצות (דינמית; מוצגת רק אם הועלו צילומי מסך) ---- */}
       {m > 0 && (
