@@ -14,7 +14,7 @@ import Logo from "../../components/Logo";
 import Accordion from "../../components/Accordion";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, teamRepIds, ensureFullData, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
-import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Home, Images } from "lucide-react";
+import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Home, Images, Bell } from "lucide-react";
 
 // פיצול קוד (Code Splitting): הפאנלים הכבדים של לוח הבקרה נטענים לפי דרישה,
 // רק כשנכנסים ללשונית/אקורדיון שלהם — כך מסך ההתחברות ולשונית המועמדים עולים קלים ומהר.
@@ -33,6 +33,7 @@ const IntakePanel = dyn(() => import("../../components/IntakePanel"));
 const EventsEditor = dyn(() => import("../../components/EventsEditor"));
 const HomeStoryEditor = dyn(() => import("../../components/HomeStoryEditor"));
 const TestimonialsManager = dyn(() => import("../../components/TestimonialsManager"));
+const MyCandidatesPanel = dyn(() => import("../../components/MyCandidatesPanel"));
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -220,6 +221,7 @@ export default function AdminPage() {
   const pendingCount = isAdmin ? (data.intake || []).length : 0;
   const tabs = [{ id: "candidates", icon: Users, label: "מועמדים" }];
   if (!isViewer) {
+    tabs.push({ id: "follow", icon: Bell, label: "המועמדים שלי" });
     tabs.push({ id: "matches", icon: HeartHandshake, label: "התאמות" });
     tabs.push({ id: "tasks", icon: ClipboardList, label: "משימות" });
   }
@@ -449,6 +451,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {tab === "follow" && <MyCandidatesPanel data={data} user={user} />}
         {tab === "matches" && <MatchesPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "tasks" && <TasksPanel data={data} user={user} readOnly={myReadOnly} />}
         {tab === "manage" && isAdmin && (
