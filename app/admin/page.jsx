@@ -14,7 +14,7 @@ import Logo from "../../components/Logo";
 import Accordion from "../../components/Accordion";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, teamRepIds, ensureFullData, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
-import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Home, Images, Bell } from "lucide-react";
+import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Home, Images, Bell, HelpCircle } from "lucide-react";
 
 // פיצול קוד (Code Splitting): הפאנלים הכבדים של לוח הבקרה נטענים לפי דרישה,
 // רק כשנכנסים ללשונית/אקורדיון שלהם — כך מסך ההתחברות ולשונית המועמדים עולים קלים ומהר.
@@ -34,6 +34,7 @@ const EventsEditor = dyn(() => import("../../components/EventsEditor"));
 const HomeStoryEditor = dyn(() => import("../../components/HomeStoryEditor"));
 const TestimonialsManager = dyn(() => import("../../components/TestimonialsManager"));
 const MyCandidatesPanel = dyn(() => import("../../components/MyCandidatesPanel"));
+const FaqManager = dyn(() => import("../../components/FaqManager"));
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -478,6 +479,9 @@ export default function AdminPage() {
             </Accordion>
             <Accordion icon={Images} title="ניהול המלצות" summary={`${(data.testimonials || []).length} תמונות`} storageKey="testimonials">
               <TestimonialsManager data={data} />
+            </Accordion>
+            <Accordion icon={HelpCircle} title="שאלות ותשובות (FAQ לשגרירים)" summary={`${(data.faq || []).length} שאלות`} storageKey="faq">
+              <FaqManager data={data} />
             </Accordion>
             <Accordion icon={BarChart3} title="מעורבות צוות" summary="השבוע" storageKey="engagement">
               <EngagementPanel data={data} />
