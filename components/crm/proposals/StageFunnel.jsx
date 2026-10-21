@@ -66,6 +66,39 @@ export default function StageFunnel({ status, compact = false, onSelect = null }
           </button>
         );
       })}
+
+      {/* "ירד מהפרק" בקצה הסרגל - קיצור דרך בלבד.
+          הוא מפעיל בדיוק את אותה פונקציה (onSelect) שמפעיל התפריט למטה,
+          ולכן הלוגיקה בשרת זהה לחלוטין ולא שונתה בכלל.
+
+          מוצג רק כשהסרגל לחיץ: בתצוגה המוקטנת שבכרטיס המועמד/ת הסרגל
+          משמש לתצוגה בלבד, ועיגול פעולה שלא עושה כלום היה מבלבל.
+
+          עיצוב: אפור נייטרלי שנצבע ביין רך במגע - מובדל במכוון מהמסלול
+          הירוק ומעיגול השלב הפעיל, כי זו עצירה ולא התקדמות.
+
+          רוחב: shrink-0 ולא flex-1, כדי שהעיגול יתפוס רק את מה שהוא צריך
+          ושששת השלבים ימשיכו לחלוק ביניהם את השאר במובייל. */}
+      {clickable && (
+        <>
+          <span aria-hidden="true" className="mt-1 h-6 w-px shrink-0 self-start bg-[#EAE5E3]" />
+          <button
+            type="button"
+            onClick={() => onSelect(PROPOSAL_DROPPED)}
+            aria-label={`עדכון סטטוס ל${PROPOSAL_DROPPED}`}
+            className="group flex shrink-0 cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-1 transition hover:bg-[#F6E4E6] active:scale-95"
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#EAE5E3] bg-[#F6F5F4] text-[#B5AEB0] transition group-hover:border-[#C98894] group-hover:bg-white group-hover:text-[#8C4A55]">
+              <X size={12} />
+            </span>
+            {!compact && (
+              <span className="text-center text-[9px] leading-tight text-[#B5AEB0] transition group-hover:text-[#8C4A55]">
+                {PROPOSAL_DROPPED}
+              </span>
+            )}
+          </button>
+        </>
+      )}
     </div>
   );
 }
