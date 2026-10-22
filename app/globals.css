@@ -250,3 +250,22 @@ html, body { overflow-x: clip; }
 /* כשהמקלדת פתוחה והדפדפן גולל לשדה שמקלידים בו — שהשדה לא ייעצר מתחת
    לפס הכפתורים הדביק או לסרגל הניווט התחתון. */
 html { scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+
+/* ===== כותרת עם "מרקר באלכסון" (Skewed Highlight) ===== */
+/* פס ורוד רך מוטה באלכסון מאחורי חלקה התחתון של הכותרת; הטקסט עצמו בבורדו, ישר. */
+.title-skew {
+  position: relative;
+  z-index: 0;
+  display: inline-block;
+  padding: 0 0.3em;
+  color: #7a2e3b;
+}
+.title-skew::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 42% -0.08em 2% -0.08em;
+  background: #F6D3D1;
+  border-radius: 3px;
+  transform: skewX(-14deg);
+}
