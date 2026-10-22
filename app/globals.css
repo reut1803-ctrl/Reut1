@@ -185,3 +185,16 @@ body::after {
   animation-iteration-count: infinite;
   will-change: transform;
 }
+
+/* ===== מודאל: כפתורי פעולה דביקים בתחתית (שמירה/ביטול) ===== */
+/* האלמנט נצמד לתחתית אזור הגלילה של המודאל, עם רקע קרם, כך שהכפתורים תמיד גלויים. */
+.modal-body .modal-footer {
+  position: sticky;
+  bottom: -1.25rem; /* מכסה גם את הריפוד התחתון של אזור הגלילה — שום תוכן לא מציץ מתחת */
+  z-index: 5;
+  margin: 0 -1.25rem -1.25rem;
+  padding: 0.75rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  background: #FBF7F2;
+  border-top: 1px solid rgba(239, 231, 220, 0.9);
+  box-shadow: 0 -8px 18px -12px rgba(74, 64, 57, 0.18);
+}

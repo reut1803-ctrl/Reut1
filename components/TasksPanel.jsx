@@ -176,7 +176,9 @@ export default function TasksPanel({ data, user, readOnly = false }) {
               <label className="field-label">תאריך יעד</label>
               <DateField value={dueDate} onChange={(v) => setDueDate(v)} />
             </div>
-            <button className="btn-primary w-full" onClick={create}>הוספה</button>
+            <div className="modal-footer">
+              <button className="btn-primary w-full" onClick={create}>הוספה</button>
+            </div>
           </div>
         </Modal>
       )}

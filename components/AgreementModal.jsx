@@ -41,11 +41,13 @@ function Section({ title, items }) {
 export default function AgreementModal({ onClose }) {
   return (
     <Modal title="הסכם התקשרות ומדיניות פרטיות" onClose={onClose}>
-      <div className="max-h-[70vh] space-y-6 overflow-y-auto pl-1">
+      <div className="space-y-6">
         <Section title="נספח 1 — הסכם התקשרות" items={TERMS} />
         <div className="border-t border-sand" />
         <Section title="נספח 2 — מדיניות הפרטיות" items={PRIVACY} />
-        <button className="btn-primary w-full" onClick={onClose}>סגירה</button>
+        <div className="modal-footer">
+          <button className="btn-primary w-full" onClick={onClose}>סגירה</button>
+        </div>
       </div>
     </Modal>
   );
