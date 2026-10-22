@@ -36,6 +36,7 @@ const MyCandidatesPanel = dyn(() => import("../../components/MyCandidatesPanel")
 const FaqManager = dyn(() => import("../../components/FaqManager"));
 const ReflectionsViewer = dyn(() => import("../../components/ReflectionsViewer"));
 const ReflectionFormEditor = dyn(() => import("../../components/ReflectionFormEditor"));
+const VisionBoardEditor = dyn(() => import("../../components/VisionBoardEditor"));
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -474,6 +475,9 @@ export default function AdminPage() {
             )}
             <Accordion icon={Users} title="ניהול נציגים" summary={`${data.reps.length} נציגים`} storageKey="reps">
               <RepsManager data={data} />
+            </Accordion>
+            <Accordion icon={Sparkles} title="עמוד השער — לוח החזון" summary={`${(data.visionBoard?.items || []).length} כרטיסים`} storageKey="visionboard">
+              <VisionBoardEditor data={data} />
             </Accordion>
             <Accordion icon={Images} title="ניהול המלצות" summary={`${(data.testimonials || []).length} תמונות`} storageKey="testimonials">
               <TestimonialsManager data={data} />

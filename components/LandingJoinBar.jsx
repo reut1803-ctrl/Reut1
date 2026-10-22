@@ -4,15 +4,28 @@ import { useState } from "react";
 import Link from "next/link";
 import Modal from "./Modal";
 import PersonIcon from "./PersonIcon";
+import AgreementModal from "./AgreementModal";
+import { FileText } from "lucide-react";
 
 // סרגל הצטרפות דביק בתחתית עמוד השער. במרכזו כפתור אליפטי בולט שחוצה את
 // הגבול העליון של הסרגל (חצי בפנים, חצי בחוץ). לחיצה פותחת בחירת מסלול.
 export default function LandingJoinBar() {
   const [choose, setChoose] = useState(false);
+  const [agreement, setAgreement] = useState(false);
 
   return (
     <>
       <div className="fixed inset-x-0 bottom-0 z-50 h-[calc(3.6rem+env(safe-area-inset-bottom))] border-t border-sand bg-cream/95 backdrop-blur">
+        {/* קישור להסכם ההתקשרות — ממש מעל הכפתור המרחף, תמיד גלוי */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-full mb-[2.7rem] flex justify-center">
+          <button
+            type="button"
+            onClick={() => setAgreement(true)}
+            className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-cream/90 px-3.5 py-1 text-[12px] text-ink/60 underline underline-offset-4 shadow-sm backdrop-blur hover:text-rose"
+          >
+            <FileText className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} /> לקריאת הסכם ההתקשרות ומדיניות הפרטיות
+          </button>
+        </div>
         <div className="absolute inset-x-0 top-0 flex -translate-y-1/2 justify-center">
           <button
             type="button"
@@ -26,6 +39,7 @@ export default function LandingJoinBar() {
         </div>
       </div>
 
+      {agreement && <AgreementModal onClose={() => setAgreement(false)} />}
       {choose && (
         <Modal title="להצטרפות למאגר" onClose={() => setChoose(false)}>
           <p className="mb-4 text-sm text-ink/60">בחרו את המסלול שלכם:</p>

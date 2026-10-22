@@ -8,7 +8,7 @@ import LandingJoinBar from "../components/LandingJoinBar";
 
 export default function HomePage() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center px-4 pb-[calc(7rem+env(safe-area-inset-bottom))]">
+    <main className="relative flex min-h-screen flex-col items-center px-4 pb-[calc(9.5rem+env(safe-area-inset-bottom))]">
       {/* הדר עליון דיסקרטי - גישה מהירה לצוות, מעל הכל */}
       <Link
         href="/admin"

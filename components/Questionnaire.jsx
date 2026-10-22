@@ -7,7 +7,7 @@ import DateField from "./DateField";
 import { PERSONAL_FIELDS, REFERENCES_QUESTION, genderLabel } from "../lib/questions";
 import { loadData, addIntake } from "../lib/store";
 import { compressImage } from "../lib/image";
-import { User, Briefcase, Camera, MessageCircle, Contact, Lightbulb, ChevronRight, ChevronLeft, ShieldCheck, Heart, Coffee, Croissant, FileText } from "lucide-react";
+import { User, Briefcase, Camera, MessageCircle, Contact, Lightbulb, ChevronRight, ChevronLeft, ShieldCheck, Coffee, Croissant, FileText } from "lucide-react";
 import AgreementModal from "./AgreementModal";
 
 const CORE_FIELDS = PERSONAL_FIELDS.slice(0, 6);
@@ -34,7 +34,6 @@ export default function Questionnaire({ gender }) {
   const [openQuestions, setOpenQuestions] = useState([]);
   const [intro, setIntro] = useState("");
   const [inApp, setInApp] = useState(false);
-  const [started, setStarted] = useState(false); // מסך פתיחה (ברכה) לפני הטופס
   const [showAgreement, setShowAgreement] = useState(false);
   const [step, setStep] = useState(0);
   const [agree, setAgree] = useState(false);
@@ -156,47 +155,6 @@ export default function Questionnaire({ gender }) {
     router.push(`/thank-you?id=${ref.id}`);
   }
 
-  // ----- מסך פתיחה (ברכה) -----
-  if (!started) {
-    return (
-      <div>
-        <Header />
-        <main className="mx-auto max-w-md px-4 pb-20 pt-8">
-          <div className="card relative space-y-4 pb-14 text-center">
-            <h1 className="animate-fadein text-xl font-bold leading-relaxed text-roseDark" style={{ animationDelay: "0ms" }}>
-              ברוכים הבאים למערכת ההרשמה של מיזם שידוכים "הקהילה איתך"
-            </h1>
-            <p className="animate-fadein text-sm font-medium text-ink/60" style={{ animationDelay: "150ms" }}>לתלמידי הרב הלומדים מתורתו</p>
-            <p className="animate-fadein text-base leading-relaxed text-ink/80" style={{ animationDelay: "300ms" }}>
-              אנו רואים זכות גדולה ללוות אתכם בתהליך המשמעותי הזה, באכפתיות, במסירות ובלב פתוח.
-            </p>
-            <blockquote className="animate-fadein mx-auto rounded-2xl border-r-4 border-rose/50 bg-blush/50 px-5 py-4 text-right text-base italic leading-relaxed text-ink/90" style={{ animationDelay: "450ms" }}>
-              "ברכה להצלחה רבה במיזם השידוכים על טהרת הקדש. שירבו בתים נאמנים בישראל! ברכת כוח"ט לשנה טובה ומתוקה!"
-              <footer className="mt-2 text-sm font-bold not-italic text-roseDark">— הרב יצחק גינזבורג</footer>
-            </blockquote>
-            <div className="animate-fadein" style={{ animationDelay: "600ms" }}>
-              <button type="button" onClick={() => setShowAgreement(true)} className="mx-auto flex items-center justify-center gap-1.5 text-sm text-ink/55 underline underline-offset-4 hover:text-rose">
-                <FileText className="h-4 w-4" strokeWidth={1.75} /> לקריאת הסכם ההתקשרות ומדיניות הפרטיות
-              </button>
-            </div>
-
-            {/* כפתור "שובר מסגרת": חצי בתוך הכרטיס, חצי מחוצה לו */}
-            <div className="absolute inset-x-0 bottom-0 flex translate-y-1/2 justify-center">
-              <button
-                onClick={() => setStarted(true)}
-                className="animate-fadein rounded-full border border-[#CBB089]/60 px-10 py-3.5 text-center shadow-[0_18px_34px_-10px_rgba(70,18,30,0.7),0_4px_10px_rgba(70,18,30,0.2)] transition active:scale-[0.98]"
-                style={{ animationDelay: "650ms", background: "linear-gradient(155deg,#8a3344,#551828)" }}
-              >
-                <span className="flex items-center justify-center gap-2 text-lg font-bold text-[#FBF3E6]"><Heart className="h-5 w-5" strokeWidth={1.75} /> להצטרפות למאגר</span>
-                <span className="mt-0.5 block text-[11px] font-medium tracking-[0.25em] text-[#E6CF9F]">הקהילה איתך</span>
-              </button>
-            </div>
-          </div>
-        </main>
-        {showAgreement && <AgreementModal onClose={() => setShowAgreement(false)} />}
-      </div>
-    );
-  }
 
   const StepIcon = steps[step].icon;
 
@@ -319,7 +277,12 @@ export default function Questionnaire({ gender }) {
         </div>
 
         {/* ----- ניווט בין שלבים ----- */}
-        <div className="sticky-actions -mx-4 mt-5 flex items-center gap-3 px-4">
+        <div className="sticky-actions -mx-4 mt-5 px-4">
+          {/* קישור להסכם ההתקשרות — תמיד גלוי, ממש מעל כפתור "הבא" */}
+          <button type="button" onClick={() => setShowAgreement(true)} className="mx-auto mb-2.5 flex items-center justify-center gap-1.5 text-xs text-ink/55 underline underline-offset-4 hover:text-rose">
+            <FileText className="h-3.5 w-3.5" strokeWidth={1.75} /> לקריאת הסכם ההתקשרות ומדיניות הפרטיות
+          </button>
+          <div className="flex items-center gap-3">
           {step > 0 && (
             <button type="button" onClick={goPrev} className="btn-soft flex-1"><ChevronRight className="h-4 w-4" strokeWidth={2} /> הקודם</button>
           )}
@@ -328,6 +291,7 @@ export default function Questionnaire({ gender }) {
           ) : (
             <button type="button" onClick={onSubmit} disabled={submitting} className="btn-primary flex-1">{submitting ? "שולח…" : "שליחה"}</button>
           )}
+          </div>
         </div>
       </main>
       {showAgreement && <AgreementModal onClose={() => setShowAgreement(false)} />}

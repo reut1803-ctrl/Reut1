@@ -249,7 +249,7 @@ html, body { overflow-x: clip; }
 }
 /* כשהמקלדת פתוחה והדפדפן גולל לשדה שמקלידים בו — שהשדה לא ייעצר מתחת
    לפס הכפתורים הדביק או לסרגל הניווט התחתון. */
-html { scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+html { scroll-padding-bottom: calc(7.5rem + env(safe-area-inset-bottom)); }
 
 /* ===== כותרת עם "מרקר באלכסון" (Skewed Highlight) ===== */
 /* פס ורוד רך מוטה באלכסון מאחורי חלקה התחתון של הכותרת; הטקסט עצמו בבורדו, ישר. */
