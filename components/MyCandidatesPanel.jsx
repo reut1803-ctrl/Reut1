@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { DEFAULT_FAQ, saveReflection, monthKey } from "../lib/store";
+import { DEFAULT_FAQ, DEFAULT_REFLECTION_FORM, saveReflection, monthKey, teamMembers } from "../lib/store";
 import {
   Eye, Phone, MessageSquare, Clock, ChevronDown,
   Users, PlayCircle, FileDown, Pin, BellOff, NotebookPen, Check,
@@ -22,7 +22,9 @@ const WRAP_URL = `${BASE}/assets/harlequin-pink.jpg`;
 
 const WINE = "#6d2433";
 
-const DEMO_TEAM = { partner: "שריה ניצן" };
+// רשימת "טעון חידוש קשר" עדיין על נתוני דמה — מוסתרת באתר החי עד שיחובר
+// מנגנון ה-30 יום האמיתי (שלב ב'). להצגת הדמו: true.
+const SHOW_DEMO_ALERTS = false;
 const DEMO_ALERTS = [
   { id: "a1", name: "שמואל אהרון צחור", gender: "male", age: 22, phone: "052-463-0704", lastContact: 34, place: "ירושלים", work: "אברך, כולל 'תורת חיים'" },
   { id: "a2", name: "רבקה כהן",          gender: "female", age: 21, phone: "054-234-2558", lastContact: 31, place: "צפת", work: "גננת" },
@@ -124,25 +126,29 @@ function GiftBox({ gift, flipped, onToggle }) {
   );
 }
 
-// ---------- סיכום חודשי ("איך עבר החודש?") ----------
+// ---------- סיכום חודשי ("איך עבר החודש?") — השאלות נשלפות מלוח הבקרה ----------
 function ReflectionModal({ user, data, onClose }) {
   const month = monthKey();
   const repId = user?.repId;
   const rep = (data?.reps || []).find((r) => r.id === repId);
+  const form = data?.reflectionForm || DEFAULT_REFLECTION_FORM;
+  const questions = form.questions || [];
   const existing = (data?.reflections || []).find((r) => r.id === `${repId}_${month}`);
-  const [f, setF] = useState({ howWasIt: "", challenges: "", focusNext: "" });
+  const [answers, setAnswers] = useState({});
   const [state, setState] = useState("idle"); // idle | saving | saved | error
 
   useEffect(() => {
-    if (existing) setF({ howWasIt: existing.howWasIt || "", challenges: existing.challenges || "", focusNext: existing.focusNext || "" });
+    if (existing) setAnswers(existing.answers || {});
   }, [existing?.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const canSave = !!repId && (f.howWasIt.trim() || f.challenges.trim() || f.focusNext.trim());
+  const canSave = !!repId && questions.some((q) => (answers[q.id] || "").trim());
   async function save() {
     if (!canSave) return;
     setState("saving");
     try {
-      await saveReflection({ repId, repName: rep?.name || "", month, howWasIt: f.howWasIt.trim(), challenges: f.challenges.trim(), focusNext: f.focusNext.trim() });
+      const clean = {};
+      questions.forEach((q) => { clean[q.id] = (answers[q.id] || "").trim(); });
+      await saveReflection({ repId, repName: rep?.name || "", month, answers: clean, questions });
       setState("saved");
       setTimeout(onClose, 900);
     } catch (e) {
@@ -150,21 +156,18 @@ function ReflectionModal({ user, data, onClose }) {
     }
   }
 
-  const Q = ({ k, label, ph }) => (
-    <div>
-      <label className="field-label">{label}</label>
-      <textarea className="field-input min-h-[96px] text-sm" placeholder={ph} value={f[k]} onChange={(e) => setF((s) => ({ ...s, [k]: e.target.value }))} />
-    </div>
-  );
-
   return (
     <Modal title={`איך עבר החודש? · ${monthLabel(month)}`} onClose={onClose}>
       <div className="space-y-4">
-        <p className="text-sm leading-relaxed text-ink/65">כמה מילים בכנות — זה עוזר לנו לדייק את הליווי שלך ואת המפגש הקרוב. נקרא רק על ידי ההנהלה.</p>
+        {form.intro && <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink/65">{form.intro}</p>}
         {!repId && <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">הטופס מיועד לשגרירים. (מחוברת כמנהלת — אפשר לראות איך הוא נראה, השמירה פתוחה לשגרירים בלבד.)</p>}
-        {Q({ k: "howWasIt", label: "איך היה לך החודש?", ph: "מה שימח אותך, מה הרגשת…" })}
-        {Q({ k: "challenges", label: "באילו אתגרים נתקלת שניקח לתשומת ליבנו?", ph: "משהו שהיה קשה, חסר, או שהיית רוצה עזרה בו…" })}
-        {Q({ k: "focusNext", label: "מה נרצה לדייק למפגש הקרוב?", ph: "נושא לשיחה, כלי שחסר, שאלה…" })}
+        {questions.map((q) => (
+          <div key={q.id}>
+            <label className="field-label">{q.label}</label>
+            <textarea className="field-input min-h-[96px] text-sm" placeholder={q.hint || ""} value={answers[q.id] || ""}
+              onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} />
+          </div>
+        ))}
         {existing && <p className="text-xs text-ink/45">כבר מילאת החודש — אפשר לעדכן, הגרסה החדשה תחליף את הקודמת.</p>}
         <div className="modal-footer flex gap-3">
           <button className="btn-primary flex-1" disabled={!canSave || state === "saving"} onClick={save}>
@@ -188,6 +191,9 @@ export default function MyCandidatesPanel({ data, user }) {
   const [reflecting, setReflecting] = useState(false);
 
   const active = DEMO_ALERTS.filter((c) => !snoozed[c.id]);
+  // באנר צוות — רק כשלשגריר המחובר יש באמת שותפים לצוות (agency_name משותף)
+  const myRep = (data?.reps || []).find((r) => r.id === user?.repId);
+  const partners = myRep ? teamMembers(myRep, data?.reps || []).filter((r) => r.id !== myRep.id) : [];
   const faqList = (data && Array.isArray(data.faq) && data.faq.length) ? data.faq : DEFAULT_FAQ;
   const month = monthKey();
   const myReflection = user?.repId ? (data?.reflections || []).find((r) => r.id === `${user.repId}_${month}`) : null;
@@ -197,12 +203,12 @@ export default function MyCandidatesPanel({ data, user }) {
   return (
     <div className="space-y-5">
       {/* ===== באנר חלוקת עומס לצוות ===== */}
-      <div className="rounded-[26px] bg-[#F3E2DF] p-5">
+      {partners.length > 0 && <div className="rounded-[26px] bg-[#F3E2DF] p-5">
         <p className="flex items-center gap-2 text-base font-bold text-[#7a2e3b]"><Users className="h-5 w-5" strokeWidth={1.75} /> עבודת צוות מנצחת</p>
         <p className="mt-1.5 text-sm leading-relaxed text-ink/70">
-          חילקנו את רשימת המועמדים לתחזוקת קשר שווה בשווה בינך לבין {DEMO_TEAM.partner} — כך אף אחד לא נופל בין הכיסאות.
+          חילקנו את רשימת המועמדים לתחזוקת קשר שווה בשווה בינך לבין {partners.map((r) => r.name).join(" ו")} — כך אף אחד לא נופל בין הכיסאות.
         </p>
-      </div>
+      </div>}
 
       {/* ===== סיכום חודשי ===== */}
       <button type="button" onClick={() => setReflecting(true)}
@@ -219,7 +225,8 @@ export default function MyCandidatesPanel({ data, user }) {
         </span>
       </button>
 
-      {/* ===== רשימת עבודה: התראות 30 יום ===== */}
+      {/* ===== רשימת עבודה: התראות 30 יום (מוסתרת עד חיבור הנתונים האמיתיים) ===== */}
+      {SHOW_DEMO_ALERTS && (<>
       <div className="px-1">
         <div className="flex items-center justify-between">
           <SkewTitle>טעון חידוש קשר</SkewTitle>
@@ -283,6 +290,7 @@ export default function MyCandidatesPanel({ data, user }) {
           <div className={`p-7 text-center text-sm text-ink/55 ${CARD}`}>🎉 כל הכבוד! אין כרגע מועמדים שממתינים לחידוש קשר.</div>
         )}
       </div>
+      </>)}
 
       {/* ===== מרכז הכשרה וקהילה — חלון ראווה ===== */}
       <div className="mt-8 space-y-4 border-t border-[#7a2e3b]/10 pt-7">

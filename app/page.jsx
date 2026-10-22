@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
 import Logo from "../components/Logo";
-import PersonIcon from "../components/PersonIcon";
+import InkBlessing from "../components/InkBlessing";
+import VisionBoard from "../components/VisionBoard";
 import TrustSection from "../components/TrustSection";
+import LandingJoinBar from "../components/LandingJoinBar";
 
 export default function HomePage() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center px-4 pb-16">
+    <main className="relative flex min-h-screen flex-col items-center px-4 pb-[calc(7rem+env(safe-area-inset-bottom))]">
       {/* הדר עליון דיסקרטי - גישה מהירה לצוות, מעל הכל */}
       <Link
         href="/admin"
@@ -18,37 +20,22 @@ export default function HomePage() {
 
       <div className="w-full max-w-lg">
         {/* אזור פתיחה - לוגו בלבד, עם המון אוויר */}
-        <div className="flex justify-center pt-20 pb-2">
+        <div className="flex justify-center pb-2 pt-20">
           <Logo className="w-72 max-w-[85%]" animate />
         </div>
 
-        {/* ברכת הרב יצחק גינזבורג — מתחת ללוגו, לפני ציר הזמן (עיצוב זהה לקיים) */}
-        <blockquote className="mx-auto mb-2 mt-4 max-w-md rounded-2xl border-r-4 border-rose/50 bg-blush/50 px-5 py-4 text-right text-base italic leading-relaxed text-ink/90">
-          "ברכה להצלחה רבה במיזם השידוכים על טהרת הקדש. שירבו בתים נאמנים בישראל! ברכת כוח"ט לשנה טובה ומתוקה!"
-          <footer className="mt-2 text-sm font-bold not-italic text-roseDark">— הרב יצחק גינזבורג</footer>
-        </blockquote>
+        {/* ברכת הרב יצחק גינזבורג — נכתבת בדיו לפי הגלילה (GSAP + ScrollTrigger) */}
+        <InkBlessing />
 
-        {/* אזור היכרות (TrustSection) - מיד אחרי הברכה */}
+        {/* לוח חזון — משבצות אווירה ומשפטי השראה */}
+        <VisionBoard />
+
+        {/* המלצות (צילומי מסך מלוח הבקרה) */}
         <TrustSection />
-
-        {/* כפתורי הפעולה - פרימיום, אליפטיים, אחרי ההיכרות */}
-        <div className="mx-auto mt-20 grid max-w-md grid-cols-2 gap-4">
-          <Link
-            href="/form/male"
-            className="group flex flex-col items-center gap-2.5 rounded-full border border-rose/15 bg-white/50 py-8 shadow-[0_8px_24px_rgba(167,79,79,0.08)] backdrop-blur-sm transition-all duration-500 ease-out hover:scale-[1.02] hover:border-rose/30 hover:bg-blush/40 hover:shadow-[0_14px_34px_rgba(167,79,79,0.16)] active:scale-[0.99]"
-          >
-            <PersonIcon className="h-11 w-11 text-rose/80 transition-colors duration-500 group-hover:text-rose" />
-            <span className="text-lg font-light tracking-wide text-[#6E4B4B]">בחור</span>
-          </Link>
-          <Link
-            href="/form/female"
-            className="group flex flex-col items-center gap-2.5 rounded-full border border-rose/15 bg-white/50 py-8 shadow-[0_8px_24px_rgba(167,79,79,0.08)] backdrop-blur-sm transition-all duration-500 ease-out hover:scale-[1.02] hover:border-rose/30 hover:bg-blush/40 hover:shadow-[0_14px_34px_rgba(167,79,79,0.16)] active:scale-[0.99]"
-          >
-            <PersonIcon className="h-11 w-11 text-rose/80 transition-colors duration-500 group-hover:text-rose" />
-            <span className="text-lg font-light tracking-wide text-[#6E4B4B]">בחורה</span>
-          </Link>
-        </div>
       </div>
+
+      {/* סרגל הצטרפות דביק — כפתור "להצטרפות למאגר" שחוצה את הגבול העליון */}
+      <LandingJoinBar />
     </main>
   );
 }

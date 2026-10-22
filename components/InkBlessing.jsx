@@ -47,7 +47,7 @@ export default function InkBlessing() {
             start: "top top",
             end: () => "+=" + Math.round(window.innerHeight * 2.8),
             pin: true,
-            scrub: 1, // סנכרון מלא לגלילה, עם החלקה עדינה של שנייה
+            scrub: true, // הכתיבה צמודה במדויק למיקום הגלילה
             anticipatePin: 1,
             invalidateOnRefresh: true,
           },

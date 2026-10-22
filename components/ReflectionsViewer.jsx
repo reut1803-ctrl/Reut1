@@ -42,7 +42,7 @@ export default function ReflectionsViewer({ data }) {
                 {items.map((r) => (
                   <div key={r.id} className="rounded-2xl bg-blush/30 p-3 text-sm">
                     <p className="mb-2 font-bold text-ink">{repName(r)}</p>
-                    {[["איך היה החודש", r.howWasIt], ["אתגרים לתשומת ליבנו", r.challenges], ["לדייק למפגש הקרוב", r.focusNext]].map(([label, text]) => (
+                    {(r.questions || []).map((q) => [q.label, (r.answers || {})[q.id]]).map(([label, text]) => (
                       <div key={label} className="mb-2 last:mb-0">
                         <p className="text-xs font-semibold text-roseDark">{label}</p>
                         <p className="whitespace-pre-wrap text-ink/80">{text || <span className="text-ink/35">—</span>}</p>

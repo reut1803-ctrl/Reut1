@@ -14,7 +14,7 @@ import Logo from "../../components/Logo";
 import Accordion from "../../components/Accordion";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, teamRepIds, ensureFullData, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
-import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Home, Images, Bell, HelpCircle, NotebookPen } from "lucide-react";
+import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Images, Bell, HelpCircle, NotebookPen } from "lucide-react";
 
 // פיצול קוד (Code Splitting): הפאנלים הכבדים של לוח הבקרה נטענים לפי דרישה,
 // רק כשנכנסים ללשונית/אקורדיון שלהם — כך מסך ההתחברות ולשונית המועמדים עולים קלים ומהר.
@@ -31,11 +31,11 @@ const PopupEditor = dyn(() => import("../../components/PopupEditor"));
 const MazalTovEditor = dyn(() => import("../../components/MazalTovEditor"));
 const IntakePanel = dyn(() => import("../../components/IntakePanel"));
 const EventsEditor = dyn(() => import("../../components/EventsEditor"));
-const HomeStoryEditor = dyn(() => import("../../components/HomeStoryEditor"));
 const TestimonialsManager = dyn(() => import("../../components/TestimonialsManager"));
 const MyCandidatesPanel = dyn(() => import("../../components/MyCandidatesPanel"));
 const FaqManager = dyn(() => import("../../components/FaqManager"));
 const ReflectionsViewer = dyn(() => import("../../components/ReflectionsViewer"));
+const ReflectionFormEditor = dyn(() => import("../../components/ReflectionFormEditor"));
 
 function Login({ data }) {
   const [password, setPassword] = useState("");
@@ -475,9 +475,6 @@ export default function AdminPage() {
             <Accordion icon={Users} title="ניהול נציגים" summary={`${data.reps.length} נציגים`} storageKey="reps">
               <RepsManager data={data} />
             </Accordion>
-            <Accordion icon={Home} title='דף הבית — "קצת עליי"' summary="עריכת טקסטים" storageKey="homestory">
-              <HomeStoryEditor data={data} />
-            </Accordion>
             <Accordion icon={Images} title="ניהול המלצות" summary={`${(data.testimonials || []).length} תמונות`} storageKey="testimonials">
               <TestimonialsManager data={data} />
             </Accordion>
@@ -486,6 +483,9 @@ export default function AdminPage() {
             </Accordion>
             <Accordion icon={NotebookPen} title="סיכומים חודשיים של השגרירים" summary={`${(data.reflections || []).length} סיכומים`} storageKey="reflections">
               <ReflectionsViewer data={data} />
+            </Accordion>
+            <Accordion icon={NotebookPen} title='טופס "איך עבר החודש?" — עריכת שאלות' summary={`${(data.reflectionForm?.questions || []).length} שאלות`} storageKey="reflectionform">
+              <ReflectionFormEditor data={data} />
             </Accordion>
             <Accordion icon={BarChart3} title="מעורבות צוות" summary="השבוע" storageKey="engagement">
               <EngagementPanel data={data} />
