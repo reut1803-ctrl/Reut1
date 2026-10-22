@@ -71,7 +71,7 @@ export default function GuidedTour({ role, onBeforeStart }) {
       data-tour="help"
       aria-label="עזרה - סיור מודרך"
       onClick={start}
-      className="fixed bottom-20 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-roseDark text-xl font-bold text-white shadow-soft"
+      className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-roseDark text-xl font-bold text-white shadow-soft"
     >?</button>
   );
 }

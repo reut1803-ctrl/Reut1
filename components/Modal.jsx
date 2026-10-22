@@ -1,35 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-
-// נעילת גלילת הרקע — עם מונה, כדי שמודאל בתוך מודאל לא ישחרר את הנעילה מוקדם.
-// משתמשים ב-position:fixed על ה-body (ולא רק overflow:hidden) כי ב-iOS Safari
-// overflow:hidden לבדו לא עוצר את גלילת הרקע. בסגירה מחזירים את המשתמש לאותה נקודה.
-let lockCount = 0;
-let savedScrollY = 0;
-function lockBody() {
-  if (lockCount++ > 0) return;
-  savedScrollY = window.scrollY;
-  const b = document.body.style;
-  b.position = "fixed";
-  b.top = `-${savedScrollY}px`;
-  b.left = "0";
-  b.right = "0";
-  b.width = "100%";
-  b.overflow = "hidden";
-}
-function unlockBody() {
-  if (--lockCount > 0) return;
-  lockCount = 0;
-  const b = document.body.style;
-  b.position = "";
-  b.top = "";
-  b.left = "";
-  b.right = "";
-  b.width = "";
-  b.overflow = "";
-  window.scrollTo(0, savedScrollY);
-}
+import { lockBodyScroll, unlockBodyScroll } from "../lib/scrollLock";
 
 // מעטפת מודאל גלובלית.
 // - גובה דינמי (100dvh) כדי שסרגל הדפדפן במובייל לא יסתיר את התחתית.
@@ -37,8 +9,8 @@ function unlockBody() {
 // - כפתורי פעולה דביקים: עטפו אותם ב-className="modal-footer" (ראו globals.css).
 export default function Modal({ title, onClose, children }) {
   useEffect(() => {
-    lockBody();
-    return unlockBody;
+    lockBodyScroll();
+    return unlockBodyScroll;
   }, []);
 
   return (

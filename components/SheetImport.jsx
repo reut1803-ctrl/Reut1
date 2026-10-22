@@ -219,7 +219,7 @@ export default function SheetImport({ data }) {
                 <div className="space-y-1">
                   <p className="text-sm font-bold text-roseDark">3. עמודות לתיאור האישי (סימון מרובה)</p>
                   <p className="text-xs text-ink/60">התוכן ישולב ברצף בשדה «תיאור אישי», ללא כותרות השאלות.</p>
-                  <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl bg-sand/30 p-2">
+                  <div className="max-h-40 space-y-1 overflow-y-auto overscroll-contain rounded-xl bg-sand/30 p-2">
                     {headers.map((h, i) => (
                       <label key={i} className="flex items-center gap-2 text-sm text-ink/80">
                         <input type="checkbox" className="h-4 w-4 accent-rose" checked={descCols.has(i)} onChange={() => toggleDesc(i)} />

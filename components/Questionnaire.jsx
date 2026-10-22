@@ -310,7 +310,7 @@ export default function Questionnaire({ gender }) {
         </div>
 
         {/* ----- ניווט בין שלבים ----- */}
-        <div className="mt-5 flex items-center gap-3">
+        <div className="sticky-actions -mx-4 mt-5 flex items-center gap-3 px-4">
           {step > 0 && (
             <button type="button" onClick={goPrev} className="btn-soft flex-1"><ChevronRight className="h-4 w-4" strokeWidth={2} /> הקודם</button>
           )}
