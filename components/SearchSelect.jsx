@@ -23,7 +23,7 @@ export default function SearchSelect({ value, options, onChange, placeholder, on
         <span className="text-ink/40">▾</span>
       </button>
       {open && (
-        <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-2xl border border-sand bg-white shadow-soft">
+        <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto overscroll-contain rounded-2xl border border-sand bg-white shadow-soft">
           <div className="sticky top-0 bg-white p-2">
             <input
               autoFocus

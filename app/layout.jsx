@@ -30,6 +30,9 @@ export const metadata = {
 export const viewport = {
   colorScheme: "light",
   themeColor: "#FBF7F2",
+  // מאפשר להשתמש ב-env(safe-area-inset-bottom) — כדי שסרגלים בתחתית לא יוסתרו
+  // מתחת לפס הבית של האייפון.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }) {

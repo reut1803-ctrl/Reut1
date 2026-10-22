@@ -198,3 +198,31 @@ body::after {
   border-top: 1px solid rgba(239, 231, 220, 0.9);
   box-shadow: 0 -8px 18px -12px rgba(74, 64, 57, 0.18);
 }
+
+/* ===== גלילה חלקה במובייל — בכל המסכים באתר ===== */
+/* גובה דינמי: כל min-h-screen / h-screen באתר (עמוד הבית, תודה, אזור אישי, כניסה,
+   ה-body עצמו) מחושב לפי 100dvh — הגובה האמיתי שנשאר אחרי סרגל הדפדפן במובייל.
+   דפדפן ישן שלא מכיר dvh פשוט נשאר עם 100vh (ללא שבירה). */
+@supports (height: 100dvh) {
+  .min-h-screen { min-height: 100dvh; }
+  .h-screen { height: 100dvh; }
+}
+/* בלי "רעידה" לצדדים במובייל. clip (ולא hidden) — כדי לא לשבור אלמנטים דביקים. */
+html, body { overflow-x: clip; }
+
+/* פס פעולות דביק בתחתית המסך (למשל "הבא / שליחה" בטופס ההרשמה):
+   תמיד גלוי בזמן גלילה של שלב ארוך, מעל אזור פס הבית של האייפון. */
+.sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: rgba(251, 247, 242, 0.96);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(239, 231, 220, 0.9);
+  padding-top: 0.75rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+/* כשהמקלדת פתוחה והדפדפן גולל לשדה שמקלידים בו — שהשדה לא ייעצר מתחת
+   לפס הכפתורים הדביק או לסרגל הניווט התחתון. */
+html { scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }

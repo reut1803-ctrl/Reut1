@@ -25,7 +25,7 @@ export default function LogViewer({ data }) {
   return (
     <div className="card space-y-2">
       <p className="text-xs text-ink/60">כל פעולה נרשמת עם שם המבצע/ת והשעה. לצפייה בלבד.</p>
-      <div className="max-h-96 space-y-1.5 overflow-y-auto pt-1">
+      <div className="max-h-96 space-y-1.5 overflow-y-auto overscroll-contain pt-1">
         {logs.length === 0 && <p className="text-sm text-ink/40">אין רישומים עדיין.</p>}
         {logs.map((l) => (
           <div key={l.id} className="rounded-xl bg-blush/40 px-3 py-2 text-sm">

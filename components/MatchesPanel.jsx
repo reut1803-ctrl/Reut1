@@ -264,7 +264,7 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                 </div>
 
                 {/* פס שלבי התקדמות */}
-                <div className="flex gap-1 overflow-x-auto pb-1">
+                <div className="flex gap-1 overflow-x-auto overscroll-x-contain pb-1">
                   {STAGES.map((s, i) => {
                     const active = i === curStage;
                     const isArch = s === ARCHIVED;

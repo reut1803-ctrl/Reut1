@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { lockBodyScroll, unlockBodyScroll } from "../lib/scrollLock";
 
 const COLORS = ["#E8A0BF", "#A84F4F", "#F6C90E", "#7ED957", "#5AA9E6", "#C77DFF", "#FF9F45"];
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -40,10 +41,17 @@ export default function MazalTovPopup({ mazalTov }) {
     setShow(false);
   }
 
+  // כשהפופ-אפ פתוח — הרקע לא נגלל מאחוריו
+  useEffect(() => {
+    if (!show) return;
+    lockBodyScroll();
+    return unlockBodyScroll;
+  }, [show]);
+
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={close}>
+    <div className="fixed inset-0 z-[60] flex h-[100dvh] items-center justify-center overscroll-contain bg-black/40 p-4" onClick={close}>
       {/* נצנצים */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         {pieces.map((p, i) => (
@@ -62,7 +70,7 @@ export default function MazalTovPopup({ mazalTov }) {
         ))}
       </div>
 
-      <div className="relative w-full max-w-md rounded-3xl bg-cream p-7 text-center shadow-soft" onClick={(e) => e.stopPropagation()}>
+      <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-3xl bg-cream p-7 text-center shadow-soft" onClick={(e) => e.stopPropagation()}>
         <button onClick={close} className="absolute left-4 top-3 text-2xl leading-none text-ink/40 hover:text-ink">×</button>
         <div className="mb-2 text-5xl">🎉💍🎉</div>
         <h2 className="mb-3 text-3xl font-extrabold text-roseDark">מזל טוב!</h2>

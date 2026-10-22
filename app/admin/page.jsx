@@ -242,7 +242,7 @@ export default function AdminPage() {
         <button className="btn-soft !px-3 !py-1.5 text-sm" onClick={() => setCurrentUser(null)}>יציאה</button>
       </Header>
 
-      <main className="mx-auto max-w-3xl px-4 py-5 pb-28">
+      <main className="mx-auto max-w-3xl px-4 py-5 pb-[calc(7rem+env(safe-area-inset-bottom))]">
         {tab === "candidates" && (
           <div className="space-y-4">
             {/* טיפ בשידוכים - קבוע בראש עמוד המועמדים */}
@@ -317,7 +317,7 @@ export default function AdminPage() {
                   <p className="text-xs text-ink/60">חמשת המועמדים האחרונים שהצטרפו למאגר.</p>
                 </div>
                 {newCands.length === 0 && <p className="text-sm text-ink/40">אין מועמדים חדשים.</p>}
-                <div className="flex snap-x gap-3 overflow-x-auto pb-2">
+                <div className="flex snap-x gap-3 overflow-x-auto overscroll-x-contain pb-2">
                   {newCands.map((c) => (
                     <div key={c.id} className="w-64 shrink-0 snap-start">
                     <CandidateCard
@@ -347,7 +347,7 @@ export default function AdminPage() {
                 const limit = shownPer[key] || CARD_PAGE;
                 return (
                   <>
-                    <div className="flex snap-x gap-3 overflow-x-auto pb-2">
+                    <div className="flex snap-x gap-3 overflow-x-auto overscroll-x-contain pb-2">
                       {cands.slice(0, limit).map((c) => (
                         <div key={c.id} className="w-64 shrink-0 snap-start">
                           <CandidateCard
@@ -426,7 +426,7 @@ export default function AdminPage() {
                 <div className="rounded-2xl bg-sand px-4 py-2">
                   <p className="font-bold text-ink">ללא שיוך נציג</p>
                 </div>
-                <div className="flex snap-x gap-3 overflow-x-auto pb-2">
+                <div className="flex snap-x gap-3 overflow-x-auto overscroll-x-contain pb-2">
                   {unassigned.map((c) => (
                     <div key={c.id} className="w-64 shrink-0 snap-start">
                     <CandidateCard
@@ -520,7 +520,7 @@ export default function AdminPage() {
       {!isViewer && <GuidedTour role={user.role} onBeforeStart={() => setTab("candidates")} />}
 
       {/* ניווט קבוע בתחתית העמוד - קטגוריות הפעולה */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-sand bg-cream/95 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-sand bg-cream/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-stretch justify-around">
           {tabs.map((t) => (
             <button
