@@ -161,8 +161,8 @@ export default function Questionnaire({ gender }) {
     return (
       <div>
         <Header />
-        <main className="mx-auto max-w-md px-4 py-8">
-          <div className="card space-y-4 text-center">
+        <main className="mx-auto max-w-md px-4 pb-20 pt-8">
+          <div className="card relative space-y-4 pb-14 text-center">
             <h1 className="animate-fadein text-xl font-bold leading-relaxed text-roseDark" style={{ animationDelay: "0ms" }}>
               ברוכים הבאים למערכת ההרשמה של מיזם שידוכים "הקהילה איתך"
             </h1>
@@ -174,12 +174,21 @@ export default function Questionnaire({ gender }) {
               "ברכה להצלחה רבה במיזם השידוכים על טהרת הקדש. שירבו בתים נאמנים בישראל! ברכת כוח"ט לשנה טובה ומתוקה!"
               <footer className="mt-2 text-sm font-bold not-italic text-roseDark">— הרב יצחק גינזבורג</footer>
             </blockquote>
-            <div className="animate-fadein space-y-2" style={{ animationDelay: "600ms" }}>
-              <button onClick={() => setStarted(true)} className="btn-primary w-full text-lg">
-                <Heart className="h-5 w-5" strokeWidth={1.75} /> קראתי, ואני רוצה להתחיל
-              </button>
+            <div className="animate-fadein" style={{ animationDelay: "600ms" }}>
               <button type="button" onClick={() => setShowAgreement(true)} className="mx-auto flex items-center justify-center gap-1.5 text-sm text-ink/55 underline underline-offset-4 hover:text-rose">
                 <FileText className="h-4 w-4" strokeWidth={1.75} /> לקריאת הסכם ההתקשרות ומדיניות הפרטיות
+              </button>
+            </div>
+
+            {/* כפתור "שובר מסגרת": חצי בתוך הכרטיס, חצי מחוצה לו */}
+            <div className="absolute inset-x-0 bottom-0 flex translate-y-1/2 justify-center">
+              <button
+                onClick={() => setStarted(true)}
+                className="animate-fadein rounded-full border border-[#CBB089]/60 px-10 py-3.5 text-center shadow-[0_18px_34px_-10px_rgba(70,18,30,0.7),0_4px_10px_rgba(70,18,30,0.2)] transition active:scale-[0.98]"
+                style={{ animationDelay: "650ms", background: "linear-gradient(155deg,#8a3344,#551828)" }}
+              >
+                <span className="flex items-center justify-center gap-2 text-lg font-bold text-[#FBF3E6]"><Heart className="h-5 w-5" strokeWidth={1.75} /> להצטרפות למאגר</span>
+                <span className="mt-0.5 block text-[11px] font-medium tracking-[0.25em] text-[#E6CF9F]">הקהילה איתך</span>
               </button>
             </div>
           </div>

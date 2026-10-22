@@ -521,8 +521,13 @@ export default function AdminPage() {
 
       {/* ניווט קבוע בתחתית העמוד - קטגוריות הפעולה */}
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-sand bg-cream/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-stretch justify-around">
-          {tabs.map((t) => (
+        {(() => {
+          // "התאמות" — הכפתור המרכזי והבולט: עגול, חוצה את הגבול העליון של הסרגל.
+          // שאר הלשוניות מתחלקות שווה לשני צדדיו (מימין המועמדים, כמו קודם).
+          const center = tabs.find((t) => t.id === "matches");
+          const others = tabs.filter((t) => t.id !== "matches");
+          const half = Math.ceil(others.length / 2);
+          const tabBtn = (t) => (
             <button
               key={t.id}
               data-tour={`nav-${t.id}`}
@@ -535,10 +540,34 @@ export default function AdminPage() {
                   <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose px-1 text-[10px] font-bold text-white">{t.badge}</span>
                 )}
               </span>
-              <span>{t.label}</span>
+              <span className="leading-tight">{t.label}</span>
             </button>
-          ))}
-        </div>
+          );
+          if (!center) {
+            return <div className="mx-auto flex max-w-3xl items-stretch justify-around">{tabs.map(tabBtn)}</div>;
+          }
+          const on = tab === "matches";
+          return (
+            <div className="mx-auto flex max-w-3xl items-stretch">
+              <div className="flex flex-1">{others.slice(0, half).map(tabBtn)}</div>
+              <button
+                data-tour="nav-matches"
+                onClick={() => setTab("matches")}
+                aria-label="התאמות"
+                className="relative flex w-24 shrink-0 flex-col items-center justify-end pb-3"
+              >
+                <span
+                  className={`absolute -top-7 left-1/2 flex h-[66px] w-[66px] -translate-x-1/2 items-center justify-center rounded-full ring-[5px] transition active:scale-95 ${on ? "ring-[#E6CF9F]" : "ring-cream"} shadow-[0_14px_26px_-8px_rgba(85,24,40,0.75),0_4px_10px_rgba(85,24,40,0.25)]`}
+                  style={{ background: "linear-gradient(155deg,#8a3344,#551828)" }}
+                >
+                  <center.icon className="h-8 w-8 text-[#FBF3E6]" strokeWidth={1.6} />
+                </span>
+                <span className={`text-xs font-bold ${on ? "text-rose" : "text-[#7a2e3b]"}`}>{center.label}</span>
+              </button>
+              <div className="flex flex-1">{others.slice(half).map(tabBtn)}</div>
+            </div>
+          );
+        })()}
       </nav>
     </div>
   );

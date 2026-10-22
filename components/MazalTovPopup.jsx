@@ -51,7 +51,7 @@ export default function MazalTovPopup({ mazalTov }) {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex h-[100dvh] items-center justify-center overscroll-contain bg-black/40 p-4" onClick={close}>
+    <div className="fixed inset-0 z-[60] !m-0 flex h-[100dvh] items-center justify-center overscroll-contain bg-black/40 p-4" onClick={close}>
       {/* נצנצים */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         {pieces.map((p, i) => (
