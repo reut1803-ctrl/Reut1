@@ -491,7 +491,9 @@ export default function MatchesPanel({ data, user, readOnly = false }) {
                 placeholder="מה משלים בין הצדדים, למה נוצר החיבור…"
               />
             </div>
-            <button className="btn-primary w-full" onClick={() => create()}><Heart className="h-4 w-4" strokeWidth={1.75} /> הצע התאמה</button>
+            <div className="modal-footer">
+              <button className="btn-primary w-full" onClick={() => create()}><Heart className="h-4 w-4" strokeWidth={1.75} /> הצע התאמה</button>
+            </div>
           </div>
         </Modal>
       )}

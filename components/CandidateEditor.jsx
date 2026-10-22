@@ -223,7 +223,7 @@ export default function CandidateEditor({ initial, openQuestions, reps, onSave, 
         )}
       </section>
 
-      <div className="flex gap-3">
+      <div className="modal-footer flex gap-3">
         <button className="btn-primary flex-1" disabled={saving} onClick={handleSave}>{saving ? "שומר…" : "שמירה"}</button>
         <button className="btn-soft flex-1" onClick={handleCancel}>ביטול</button>
       </div>
