@@ -143,6 +143,8 @@ export default function AdminPage() {
   // טעינה הדרגתית (Pagination): כמה כרטיסים להציג בכל מדור, עם "הצג עוד".
   const [shownPer, setShownPer] = useState({});
   const CARD_PAGE = 12;
+  // מעבר לשונית בסרגל התחתון — הלשונית החדשה נפתחת מלמעלה (ולא באמצע, איפה שהקודמת נעצרה).
+  useEffect(() => { window.scrollTo(0, 0); }, [tab]);
 
   if (!data) return <main className="p-8 text-center text-ink/50">טוען…</main>;
   if (!user) return <Login data={data} />;
