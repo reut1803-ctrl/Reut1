@@ -61,6 +61,10 @@ function Login({ data }) {
       setCurrentUser({ role: "admin", supervisor: false }); // מנהלת נוספת - גישת ניהול מלאה
       return;
     }
+    if (data.founderPassword && pw === norm(data.founderPassword)) {
+      setCurrentUser({ role: "admin", supervisor: false, founder: true }); // יזמית - גישה מלאה לכל הנתונים
+      return;
+    }
     const rep = data.reps.find((r) => r.password && norm(r.password) === pw);
     if (rep) {
       setCurrentUser({ role: "rep", repId: rep.id });
@@ -239,7 +243,7 @@ export default function AdminPage() {
       <Header>
         <span className="flex items-center gap-1.5 text-sm text-ink/70">
           {isAdmin ? (
-            isSupervisor ? (<><Crown className="h-4 w-4 text-rose" strokeWidth={1.75} /> מנהלת · בקרה</>) : (data.admin2Name || "מנהלת")
+            isSupervisor ? (<><Crown className="h-4 w-4 text-rose" strokeWidth={1.75} /> מנהלת · בקרה</>) : user.founder ? (<><Crown className="h-4 w-4 text-rose" strokeWidth={1.75} /> {data.founderName ? `${data.founderName} · יזמית` : "יזמית"}</>) : (data.admin2Name || "מנהלת")
           ) : isViewer ? (
             <><Eye className="h-4 w-4" strokeWidth={1.75} /> צפייה בלבד</>
           ) : (

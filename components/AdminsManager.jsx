@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { updateAdmin2, updateAdminPassword } from "../lib/store";
-import { KeyRound, Crown } from "lucide-react";
+import { updateAdmin2, updateAdminPassword, updateFounder } from "../lib/store";
+import { KeyRound, Crown, Sparkles } from "lucide-react";
 
 // ניהול מנהלות (Admins) + סיסמת המנהלת הראשית - נגיש לבקרה (Supervisor) בלבד.
 export default function AdminsManager({ data }) {
@@ -43,6 +43,31 @@ export default function AdminsManager({ data }) {
     setTimeout(() => setSaved(""), 2500);
   }
 
+  // ----- יזמית הפרויקט (גישה מלאה לכל הנתונים) -----
+  const [fName, setFName] = useState(data.founderName || "");
+  const [fPassword, setFPassword] = useState("");
+  const [fSaved, setFSaved] = useState("");
+  const flash = (m) => { setFSaved(m); setTimeout(() => setFSaved(""), 3000); };
+
+  function saveFounder() {
+    const pw = fPassword.trim();
+    if (!pw) { flash("יש להזין סיסמה ליזמית."); return; }
+    // הכניסה מזהה לפי סיסמה — סיסמה כפולה הייתה מכניסה אותה בתפקיד אחר
+    const taken = [data.adminPassword, data.admin2Password, data.viewerPassword, ...(data.reps || []).map((r) => r.password)]
+      .some((x) => x && x.toString().trim() === pw);
+    if (taken) { flash("הסיסמה הזו כבר בשימוש אצל מישהו אחר במערכת — בחרי סיסמה אחרת."); return; }
+    updateFounder(fName.trim(), pw);
+    setFPassword("");
+    flash("✓ נשמר. היזמית יכולה להיכנס עם הסיסמה החדשה.");
+  }
+
+  function removeFounder() {
+    if (!confirm("להסיר את גישת היזמית? היא לא תוכל להיכנס יותר.")) return;
+    updateFounder("", "");
+    setFName(""); setFPassword("");
+    flash("גישת היזמית הוסרה.");
+  }
+
   return (
     <div className="space-y-3">
       {/* שינוי סיסמת המנהלת הראשית - מאובטח */}
@@ -75,6 +100,27 @@ export default function AdminsManager({ data }) {
           {(data.admin2Password || data.admin2Name) && <button className="btn-soft text-roseDark" onClick={removeAdmin2}>הסרה</button>}
         </div>
         {saved && <p className="text-sm font-medium text-roseDark">{saved}</p>}
+      </div>
+
+      {/* יזמית הפרויקט */}
+      <div className="card space-y-2">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-roseDark"><Sparkles className="h-5 w-5" strokeWidth={1.75} /> יזמית הפרויקט</h2>
+        <p className="text-xs text-ink/60">
+          ליזמית יש <b>גישה מלאה וגורפת</b> לכל הנתונים: כל המועמדים, ההתאמות, המשימות, הדיווחים והסיכומים החודשיים, ויומן הפעילות —
+          של כל השגרירים, בלי הגבלה לשגריר מסוים. רק מסך הסיסמאות הזה נשאר אצלך בלבד.
+        </p>
+        {(data.founderName || data.founderPassword) && (
+          <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+            גישת יזמית פעילה{data.founderName ? `: ${data.founderName}` : ""}
+          </div>
+        )}
+        <input className="field-input" value={fName} onChange={(e) => setFName(e.target.value)} placeholder="שם היזמית (למשל: לימור)" />
+        <input className="field-input" type="password" autoComplete="new-password" value={fPassword} onChange={(e) => setFPassword(e.target.value)} placeholder="סיסמה חדשה ליזמית" />
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-primary" onClick={saveFounder}>שמירה</button>
+          {(data.founderPassword || data.founderName) && <button className="btn-soft text-roseDark" onClick={removeFounder}>הסרה</button>}
+        </div>
+        {fSaved && <p className="text-sm font-medium text-roseDark">{fSaved}</p>}
       </div>
     </div>
   );
