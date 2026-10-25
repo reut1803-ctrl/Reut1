@@ -575,13 +575,13 @@ export default function AdminPage() {
                 data-tour="nav-matches"
                 onClick={() => setTab("matches")}
                 aria-label="התאמות"
-                className="relative flex w-24 shrink-0 flex-col items-center justify-end pb-3"
+                className="relative flex w-20 shrink-0 flex-col items-center justify-end pb-3"
               >
                 <span
-                  className={`absolute -top-7 left-1/2 flex h-[66px] w-[66px] -translate-x-1/2 items-center justify-center rounded-full ring-[5px] transition active:scale-95 ${on ? "ring-[#E6CF9F]" : "ring-cream"} shadow-[0_14px_26px_-8px_rgba(85,24,40,0.75),0_4px_10px_rgba(85,24,40,0.25)]`}
+                  className={`absolute -top-5 left-1/2 flex h-[52px] w-[52px] -translate-x-1/2 items-center justify-center rounded-full ring-4 transition active:scale-95 ${on ? "ring-[#E6CF9F]" : "ring-cream"} shadow-[0_10px_20px_-8px_rgba(85,24,40,0.65),0_3px_8px_rgba(85,24,40,0.2)]`}
                   style={{ background: "linear-gradient(155deg,#8a3344,#551828)" }}
                 >
-                  <center.icon className="h-8 w-8 text-[#FBF3E6]" strokeWidth={1.6} />
+                  <center.icon className="h-6 w-6 text-[#FBF3E6]" strokeWidth={1.7} />
                 </span>
                 <span className={`text-xs font-bold ${on ? "text-rose" : "text-[#7a2e3b]"}`}>{center.label}</span>
               </button>
