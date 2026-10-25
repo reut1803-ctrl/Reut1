@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { DEFAULT_FAQ, DEFAULT_REFLECTION_FORM, saveReflection, monthKey, teamMembers, teamRepIds } from "../lib/store";
+import { DEFAULT_FAQ, DEFAULT_REFLECTION_FORM, saveReflection, monthKey, teamMembers, teamRepIds, addContactUpdate } from "../lib/store";
+import { genderLabel } from "../lib/questions";
 import {
   Eye, Phone, MessageSquare, Clock, ChevronDown,
-  Users, PlayCircle, FileDown, BellOff, NotebookPen, Check, UserRound, Sparkles,
+  Users, PlayCircle, FileDown, BellOff, NotebookPen, Check, UserRound, Sparkles, MessageCircleHeart, User,
 } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
 
@@ -13,7 +14,7 @@ import WhatsApp from "./icons/WhatsApp";
 // "המועמדים שלי" — מסך השגריר, בשני אזורים:
 //   א. "המועמדים שלי" — רשימת המועמדים האמיתית שבטיפול השגריר/הצוות (קריאה בלבד).
 //   ב. "אני כשגריר"  — מרכז הכשרה (קופסאות מתנה), "איך עבר החודש?" ושאלות ותשובות.
-// התראות 30 יום ותיעוד "נודניק" במסד יחוברו בשלב ב' — כרגע "נודניק" מקומי בלבד.
+// "עדכון אחרי שיחה" נשמר במסד (contactUpdates) ומגיע להנהלה. "נודניק" — מקומי בלבד.
 // ============================================================================
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -141,6 +142,56 @@ function ReflectionModal({ user, data, onClose }) {
   );
 }
 
+// ---------- עדכון אחרי שיחה ("מה שלומו?") — נשמר ומגיע להנהלה ----------
+const QUICK = ["דיברנו, הכול טוב", "לא ענה/תה — אנסה שוב", "ביקש/ה הפסקה זמנית", "בקשר עם מישהו/י כרגע", "מחפש/ת באופן פעיל"];
+function UpdateModal({ cand, data, user, history, onClose }) {
+  const [text, setText] = useState("");
+  const [state, setState] = useState("idle"); // idle | saving | saved | error
+  const rep = (data?.reps || []).find((r) => r.id === user?.repId);
+  const fmt = (iso) => { try { return new Date(iso).toLocaleDateString("he-IL"); } catch (e) { return ""; } };
+  async function save() {
+    if (!text.trim()) return;
+    setState("saving");
+    try {
+      await addContactUpdate({ candidateId: cand.id, candidateName: cand.fullName, repId: user?.repId || "", repName: rep?.name || "", text: text.trim() });
+      setState("saved");
+      setTimeout(onClose, 900);
+    } catch (e) {
+      setState("error");
+    }
+  }
+  return (
+    <Modal title={`מה שלום ${cand.fullName}?`} onClose={onClose}>
+      <div className="space-y-3">
+        <p className="text-sm text-ink/60">כתבו בכמה מילים מה עלה בשיחה. העדכון נשמר ומגיע ישירות להנהלה.</p>
+        <div className="flex flex-wrap gap-1.5">
+          {QUICK.map((q) => (
+            <button key={q} type="button" onClick={() => setText((t) => (t.trim() ? `${t.trim()} · ${q}` : q))}
+              className="rounded-full border border-[#CBB089]/50 bg-[#FFFBF6] px-3 py-1 text-xs font-medium text-[#7a2e3b] active:scale-95">{q}</button>
+          ))}
+        </div>
+        <textarea className="field-input min-h-[110px] text-sm" value={text} onChange={(e) => setText(e.target.value)}
+          placeholder="למשל: דיברנו היום, הוא במצב רוח טוב, מבקש הצעות מאזור ירושלים…" />
+        {history.length > 0 && (
+          <div className="space-y-1.5 rounded-2xl bg-[#FBF5F3] p-3">
+            <p className="text-xs font-bold text-[#7a2e3b]">עדכונים קודמים</p>
+            {history.slice(0, 3).map((u) => (
+              <p key={u.id} className="text-xs leading-relaxed text-ink/70"><span className="text-ink/45">{fmt(u.createdAt)} · {u.repName || "מנהלת"}:</span> {u.text}</p>
+            ))}
+          </div>
+        )}
+        <div className="modal-footer flex gap-3">
+          <button className="btn-primary flex-1" disabled={!text.trim() || state === "saving"} onClick={save}>
+            {state === "saving" ? "שולח…" : state === "saved" ? (<><Check className="h-4 w-4" strokeWidth={2.25} /> נשלח להנהלה</>) : "שליחת העדכון"}
+          </button>
+          <button className="btn-soft flex-1" onClick={onClose}>ביטול</button>
+        </div>
+        {state === "error" && <p className="text-sm text-roseDark">השליחה נכשלה. בדקו חיבור לאינטרנט ונסו שוב — מה שכתבתם לא נמחק.</p>}
+      </div>
+    </Modal>
+  );
+}
+
 export default function MyCandidatesPanel({ data, user }) {
   const [section, setSection] = useState("cands"); // cands | me
   const [snoozed, setSnoozed] = useState({});
@@ -149,6 +200,7 @@ export default function MyCandidatesPanel({ data, user }) {
   const [flipped, setFlipped] = useState({});
   const [reflecting, setReflecting] = useState(false);
   const [shown, setShown] = useState(PAGE);
+  const [updating, setUpdating] = useState(null);
 
   const reps = data?.reps || [];
   const isAdmin = user?.role === "admin";
@@ -170,6 +222,8 @@ export default function MyCandidatesPanel({ data, user }) {
     return !!(owner && (owner.coveredBy || []).includes(user.repId));
   };
   const statusOf = (c) => ((data?.candidateStatus || []).find((s) => s.id === c.id) || {}).availabilityStatus || "";
+  const updatesOf = (c) => (data?.contactUpdates || []).filter((u) => u.candidateId === c.id)
+    .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
   const daysSince = (iso) => (iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)) : null);
   const myCands = (data?.candidates || []).filter(mine)
     .sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
@@ -181,6 +235,8 @@ export default function MyCandidatesPanel({ data, user }) {
   const candRow = (c) => {
     const digits = (c.phone || "").replace(/[^0-9]/g, "");
     const days = daysSince(c.createdAt);
+    const last = updatesOf(c)[0];
+    const lastDays = last ? daysSince(last.createdAt) : null;
     const st = statusOf(c);
     const isSnoozed = !!snoozed[c.id];
     return (
@@ -190,7 +246,9 @@ export default function MyCandidatesPanel({ data, user }) {
             <p className="truncate text-[17px] font-bold text-ink">{c.fullName}</p>
             <p className="mt-0.5 text-xs text-ink/50">{[c.gender === "female" ? "בחורה" : "בחור", c.age && `גיל ${c.age}`, c.location].filter(Boolean).join(" · ")}</p>
             <div className="mt-1 flex flex-wrap gap-1.5">
-              {days !== null && <span className="inline-flex items-center gap-1 rounded-full bg-[#F3E2DF] px-2 py-0.5 text-[11px] font-semibold text-[#7a2e3b]"><Clock className="h-3 w-3" strokeWidth={2} /> במאגר {days} ימים</span>}
+              {last
+                ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><Check className="h-3 w-3" strokeWidth={2.25} /> עודכן {lastDays === 0 ? "היום" : `לפני ${lastDays} ימים`}</span>
+                : days !== null && <span className="inline-flex items-center gap-1 rounded-full bg-[#F3E2DF] px-2 py-0.5 text-[11px] font-semibold text-[#7a2e3b]"><Clock className="h-3 w-3" strokeWidth={2} /> טרם עודכן · במאגר {days} ימים</span>}
               {st && <span className="rounded-full bg-[#FBF3E6] px-2 py-0.5 text-[11px] font-semibold text-[#a8865a] ring-1 ring-[#CBB089]/40">{st}</span>}
             </div>
           </div>
@@ -208,6 +266,9 @@ export default function MyCandidatesPanel({ data, user }) {
             <BellOff className="h-3.5 w-3.5" strokeWidth={1.75} /> {isSnoozed ? "החזרה לרשימה" : "נודניק"}
           </button>
         </div>
+        <button onClick={() => setUpdating(c)} className="flex w-full items-center justify-center gap-2 border-t border-rose/10 bg-[#FBF5F3] px-4 py-3 text-sm font-bold text-[#7a2e3b] transition active:bg-[#F3E2DF]">
+          <MessageCircleHeart className="h-4 w-4" strokeWidth={1.75} /> עדכון אחרי שיחה — מה שלומו/ה?
+        </button>
       </div>
     );
   };
@@ -239,7 +300,7 @@ export default function MyCandidatesPanel({ data, user }) {
             <SkewTitle>{isAdmin ? "כל המועמדים" : "המועמדים שבטיפולי"}</SkewTitle>
             <span className="rounded-full bg-[#7a2e3b] px-3 py-0.5 text-sm font-bold text-[#FBF3E6]">{active.length}</span>
           </div>
-          <p className="mt-1 text-xs text-ink/45">מגע חם קטן עושה הבדל גדול. העין מציגה סטטוס ופרטים, "נודניק" מעביר לסוף הרשימה.</p>
+          <p className="mt-1 text-xs text-ink/45">מגע חם קטן עושה הבדל גדול. אחרי כל שיחה — "עדכון אחרי שיחה", והעדכון מגיע להנהלה.</p>
         </div>
 
         <div className="space-y-3.5">
@@ -307,28 +368,77 @@ export default function MyCandidatesPanel({ data, user }) {
       </>)}
 
       {/* ===== הצצה מהירה (עין) ===== */}
-      {peek && (
-        <Modal title="הצצה מהירה" onClose={() => setPeek(null)}>
-          <div className="space-y-3">
-            <div>
-              <p className="text-xl font-bold text-ink">{peek.fullName}</p>
-              <p className="text-sm text-ink/55">{[peek.gender === "female" ? "בחורה" : "בחור", peek.age && `גיל ${peek.age}`, peek.location].filter(Boolean).join(" · ")}</p>
+      {peek && (() => {
+        const p = peek;
+        const facts = [
+          ["סטטוס", statusOf(p) || "לא עודכן"],
+          ["גובה", p.height], ["קהילה", p.community], ["מגורים", p.location],
+          ["עיסוק", p.work], ["לימודים", p.degree],
+        ].filter(([, v]) => v);
+        const answers = (data?.openQuestions || []).filter((q) => p.answers?.[q.key]);
+        const hist = updatesOf(p);
+        return (
+          <Modal title="הכרטיס של המועמד" onClose={() => setPeek(null)}>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                {p.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.photo} alt={p.fullName} className="h-28 w-28 shrink-0 rounded-3xl object-cover shadow-[0_10px_24px_-12px_rgba(122,46,59,0.5)] ring-2 ring-[#CBB089]/40" />
+                ) : (
+                  <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl bg-[#F3E2DF] text-[#7a2e3b]"><User className="h-12 w-12" strokeWidth={1.3} /></div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-xl font-bold text-ink">{p.fullName}</p>
+                  <p className="text-sm text-ink/55">{[p.gender === "female" ? "בחורה" : "בחור", p.age && `גיל ${p.age}`].filter(Boolean).join(" · ")}</p>
+                  {p.phone && <p className="mt-1 text-sm text-ink/70" dir="ltr">{p.phone}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {facts.map(([k, v]) => (
+                  <div key={k} className="rounded-2xl bg-[#FBF5F3] px-3 py-2">
+                    <p className="text-[11px] text-ink/45">{k}</p>
+                    <p className="text-sm font-semibold text-ink/85">{v}</p>
+                  </div>
+                ))}
+              </div>
+
+              {(p.description || p.parentsWork || answers.length > 0) && (
+                <div className="space-y-3 rounded-2xl bg-white/80 p-4 ring-1 ring-rose/10">
+                  <p className="text-sm font-bold text-[#7a2e3b]">{p.gender === "female" ? "קצת עליה" : "קצת עליו"}</p>
+                  {p.description && <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink/85">{p.description}</p>}
+                  {p.parentsWork && <p className="text-[15px] leading-relaxed text-ink/85">רקע משפחתי: {p.parentsWork}</p>}
+                  {answers.map((q) => (
+                    <div key={q.key}>
+                      <p className="mb-0.5 text-xs text-ink/45">{genderLabel(q, p.gender)}</p>
+                      <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink/85">{p.answers[q.key]}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {hist.length > 0 && (
+                <div className="space-y-1.5 rounded-2xl bg-[#FBF5F3] p-3">
+                  <p className="text-xs font-bold text-[#7a2e3b]">עדכונים אחרונים</p>
+                  {hist.slice(0, 3).map((u) => (
+                    <p key={u.id} className="text-xs leading-relaxed text-ink/70"><span className="text-ink/45">{new Date(u.createdAt).toLocaleDateString("he-IL")} · {u.repName || "מנהלת"}:</span> {u.text}</p>
+                  ))}
+                </div>
+              )}
+
+              <div className="modal-footer flex flex-wrap gap-2">
+                {p.phone && <a className="btn-soft !rounded-full !px-3.5 !py-2 text-xs" href={`tel:${(p.phone || "").replace(/[^0-9]/g, "")}`}><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> חיוג</a>}
+                {p.phone && <a className="btn-soft !rounded-full !px-3.5 !py-2 text-xs" href={`https://wa.me/${waNum(p.phone)}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>}
+                <button className="btn-primary !rounded-full !px-4 !py-2 text-xs" onClick={() => { setPeek(null); setUpdating(p); }}>
+                  <MessageCircleHeart className="h-3.5 w-3.5" strokeWidth={1.75} /> עדכון אחרי שיחה
+                </button>
+              </div>
             </div>
-            <div className="space-y-1 rounded-2xl bg-[#F3E2DF] p-3 text-sm text-ink/80">
-              <p><b className="text-[#7a2e3b]">סטטוס:</b> {statusOf(peek) || "לא עודכן"}</p>
-              {peek.work && <p><b className="text-[#7a2e3b]">עיסוק:</b> {peek.work}</p>}
-              {peek.community && <p><b className="text-[#7a2e3b]">קהילה:</b> {peek.community}</p>}
-              {peek.createdAt && <p><b className="text-[#7a2e3b]">במאגר:</b> {daysSince(peek.createdAt)} ימים</p>}
-              {peek.phone && <p><b className="text-[#7a2e3b]">טלפון:</b> <span dir="ltr">{peek.phone}</span></p>}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`tel:${(peek.phone || "").replace(/[^0-9]/g, "")}`}><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> חיוג</a>
-              <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`https://wa.me/${waNum(peek.phone)}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>
-            </div>
-            <p className="text-[11px] text-ink/40">לכרטיס המלא — לשונית "מועמדים".</p>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
+
+      {updating && <UpdateModal cand={updating} data={data} user={user} history={updatesOf(updating)} onClose={() => setUpdating(null)} />}
 
       {reflecting && <ReflectionModal user={user} data={data} onClose={() => setReflecting(false)} />}
     </div>

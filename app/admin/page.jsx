@@ -14,7 +14,7 @@ import Logo from "../../components/Logo";
 import Accordion from "../../components/Accordion";
 import { useData, useUser } from "../../lib/useData";
 import { setCurrentUser, addCandidate, updateCandidate, deleteCandidate, displayRep, teamRepIds, ensureFullData, getConnectionError, isDataReady, storageAvailable } from "../../lib/store";
-import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Images, Bell, HelpCircle, NotebookPen } from "lucide-react";
+import { Users, HeartHandshake, ClipboardList, ClipboardCheck, Settings, Crown, Eye, Lock, Search, Plus, Sparkles, Download, UserRound, BarChart3, Megaphone, FileText, ScrollText, PartyPopper, CalendarHeart, Images, Bell, HelpCircle, NotebookPen, MessageCircleHeart } from "lucide-react";
 
 // פיצול קוד (Code Splitting): הפאנלים הכבדים של לוח הבקרה נטענים לפי דרישה,
 // רק כשנכנסים ללשונית/אקורדיון שלהם — כך מסך ההתחברות ולשונית המועמדים עולים קלים ומהר.
@@ -35,6 +35,7 @@ const TestimonialsManager = dyn(() => import("../../components/TestimonialsManag
 const MyCandidatesPanel = dyn(() => import("../../components/MyCandidatesPanel"));
 const FaqManager = dyn(() => import("../../components/FaqManager"));
 const ReflectionsViewer = dyn(() => import("../../components/ReflectionsViewer"));
+const ContactUpdatesViewer = dyn(() => import("../../components/ContactUpdatesViewer"));
 const ReflectionFormEditor = dyn(() => import("../../components/ReflectionFormEditor"));
 const VisionBoardEditor = dyn(() => import("../../components/VisionBoardEditor"));
 
@@ -490,6 +491,9 @@ export default function AdminPage() {
             </Accordion>
             <Accordion icon={HelpCircle} title="שאלות ותשובות (FAQ לשגרירים)" summary={`${(data.faq || []).length} שאלות`} storageKey="faq">
               <FaqManager data={data} />
+            </Accordion>
+            <Accordion icon={MessageCircleHeart} title="עדכוני שגרירים אחרי שיחה" summary={`${(data.contactUpdates || []).filter((u) => Date.now() - new Date(u.createdAt).getTime() < 7 * 86400000).length} השבוע`} storageKey="contactupdates">
+              <ContactUpdatesViewer data={data} />
             </Accordion>
             <Accordion icon={NotebookPen} title="סיכומים חודשיים של השגרירים" summary={`${(data.reflections || []).length} סיכומים`} storageKey="reflections">
               <ReflectionsViewer data={data} />
