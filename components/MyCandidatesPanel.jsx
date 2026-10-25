@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { DEFAULT_FAQ, DEFAULT_REFLECTION_FORM, saveReflection, monthKey, teamMembers } from "../lib/store";
+import { DEFAULT_FAQ, DEFAULT_REFLECTION_FORM, saveReflection, monthKey, teamMembers, teamRepIds } from "../lib/store";
 import {
   Eye, Phone, MessageSquare, Clock, ChevronDown,
-  Users, PlayCircle, FileDown, Pin, BellOff, NotebookPen, Check,
+  Users, PlayCircle, FileDown, BellOff, NotebookPen, Check, UserRound, Sparkles,
 } from "lucide-react";
 import WhatsApp from "./icons/WhatsApp";
 
 // ============================================================================
-// "המועמדים שלי" — מסך השגריר (מרכז קשר והכשרה).
-// רשימת המועמדים עדיין עם נתוני דמה (לוגיקת ההסלמה תחובר בשלב ב').
-// ה-FAQ דינמי מלוח הבקרה, והסיכום החודשי נשמר במסד תחת פרופיל השגריר.
+// "המועמדים שלי" — מסך השגריר, בשני אזורים:
+//   א. "המועמדים שלי" — רשימת המועמדים האמיתית שבטיפול השגריר/הצוות (קריאה בלבד).
+//   ב. "אני כשגריר"  — מרכז הכשרה (קופסאות מתנה), "איך עבר החודש?" ושאלות ותשובות.
+// התראות 30 יום ותיעוד "נודניק" במסד יחוברו בשלב ב' — כרגע "נודניק" מקומי בלבד.
 // ============================================================================
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -22,15 +23,10 @@ const WRAP_URL = `${BASE}/assets/harlequin-pink.jpg`;
 
 const WINE = "#6d2433";
 
-// רשימת "טעון חידוש קשר" עדיין על נתוני דמה — מוסתרת באתר החי עד שיחובר
-// מנגנון ה-30 יום האמיתי (שלב ב'). להצגת הדמו: true.
-const SHOW_DEMO_ALERTS = false;
-const DEMO_ALERTS = [
-  { id: "a1", name: "שמואל אהרון צחור", gender: "male", age: 22, phone: "052-463-0704", lastContact: 34, place: "ירושלים", work: "אברך, כולל 'תורת חיים'" },
-  { id: "a2", name: "רבקה כהן",          gender: "female", age: 21, phone: "054-234-2558", lastContact: 31, place: "צפת", work: "גננת" },
-  { id: "a3", name: "שמואל יוסף הולובר",  gender: "male", age: 22, phone: "053-511-4224", lastContact: 46, place: "יצהר", work: "סטודנט להנדסה" },
-  { id: "a4", name: "מרים פרידמן",        gender: "female", age: 23, phone: "052-980-1123", lastContact: 38, place: "בית שמש", work: "מטפלת רגשית" },
-];
+// תמונת הסרט (סאטן) שמונחת על נייר המעוינים. להחלפה — מחליפים את הקובץ
+// public/assets/gift-ribbon.png (PNG שקוף, באותו שם), בלי לגעת בקוד.
+const RIBBON_URL = `${BASE}/assets/gift-ribbon.png`;
+const PAGE = 15;
 const DEMO_GIFTS = [
   { id: "g1", label: "איך לנהל שיחת שגריר", sub: "סרטון הדרכה", pdf: "מדריך השגריר.pdf" },
   { id: "g2", label: "כרטיסיות ותרגילים להורדה", sub: "כלים מעשיים", pdf: "כרטיסיית שאלות פתיחה.pdf" },
@@ -52,60 +48,24 @@ function SkewTitle({ children, className = "" }) {
   return <h2 className={`text-xl font-bold ${className}`}><span className="title-skew">{children}</span></h2>;
 }
 
-// ---------- פרפר (סרט הקשירה) — SVG בבורדו-יין ----------
-function Bow({ className = "" }) {
-  return (
-    <svg viewBox="0 0 140 78" className={className} aria-hidden="true">
-      <defs>
-        <linearGradient id="ribbonG" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#8a3344" />
-          <stop offset="1" stopColor="#56192a" />
-        </linearGradient>
-      </defs>
-      {/* זנבות */}
-      <path d="M64 44 L48 76 L57 71 L62 77 L69 46 Z" fill="url(#ribbonG)" />
-      <path d="M76 44 L92 76 L83 71 L78 77 L71 46 Z" fill="url(#ribbonG)" />
-      {/* לולאות */}
-      <path d="M70 40 C 52 8, 10 6, 14 32 C 17 52, 50 50, 70 40 Z" fill="url(#ribbonG)" />
-      <path d="M70 40 C 88 8, 130 6, 126 32 C 123 52, 90 50, 70 40 Z" fill="url(#ribbonG)" />
-      {/* קפלי אור עדינים */}
-      <path d="M66 38 C 52 22, 28 18, 24 30" fill="none" stroke="#b25a6b" strokeWidth="2" strokeLinecap="round" opacity=".55" />
-      <path d="M74 38 C 88 22, 112 18, 116 30" fill="none" stroke="#b25a6b" strokeWidth="2" strokeLinecap="round" opacity=".55" />
-      {/* קשר */}
-      <rect x="61" y="30" width="18" height="20" rx="6" fill="#4a1422" />
-    </svg>
-  );
-}
-
 // ---------- קופסת מתנה — "חלון ראווה" ----------
 function GiftBox({ gift, flipped, onToggle }) {
   return (
     <div className="h-[330px] [perspective:1400px]">
       <div className={`flip-3d relative h-full w-full ${flipped ? "flipped" : ""}`}>
-        {/* חזית: הקופסה */}
+        {/* חזית: נייר מעוינים + סרט סאטן (תמונה) + תווית מתנה עדינה */}
         <button type="button" onClick={onToggle} aria-label={`פתיחת המתנה: ${gift.label}`}
-          className="flip-face absolute inset-0 flex items-center justify-center overflow-hidden rounded-[30px] bg-[#F3E2DF]">
-          <div className="relative h-[230px] w-[62%] max-w-[250px]">
-            {/* צל רצפה */}
-            <div className="absolute -bottom-5 left-1/2 h-6 w-[115%] -translate-x-1/2 rounded-[50%] bg-[#7a2e3b]/20 blur-lg" />
-            {/* גוף הקופסה */}
-            <div className="absolute inset-x-0 bottom-0 top-[22%] rounded-[6px] shadow-[inset_0_-10px_18px_rgba(122,46,59,0.10),0_14px_28px_-12px_rgba(122,46,59,0.45)]"
-              style={{ backgroundImage: `url(${WRAP_URL})`, backgroundSize: "120px auto", backgroundPosition: "center" }} />
-            {/* מכסה — רחב מעט מהגוף */}
-            <div className="absolute -inset-x-[5%] top-[10%] h-[18%] rounded-[6px] shadow-[0_8px_14px_-6px_rgba(122,46,59,0.45)]"
-              style={{ backgroundImage: `url(${WRAP_URL})`, backgroundSize: "120px auto", backgroundPosition: "center 30%" }} />
-            {/* סרט אנכי */}
-            <div className="absolute bottom-0 left-1/2 top-[10%] w-[13%] -translate-x-1/2"
-              style={{ background: `linear-gradient(90deg, #4f1626, ${WINE} 30%, #8a3344 55%, ${WINE} 80%, #4f1626)` }} />
-            {/* פרפר */}
-            <Bow className="absolute left-1/2 top-[-14%] w-[62%] -translate-x-1/2 drop-shadow-[0_6px_6px_rgba(74,20,34,0.35)]" />
-            {/* תווית צפה — חורגת מרוחב הקופסה */}
-            <div className="absolute left-1/2 top-[50%] w-[128%] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#CBB089]/60 px-4 py-3.5 text-center shadow-[0_14px_30px_-10px_rgba(60,15,25,0.65)]"
-              style={{ background: `linear-gradient(160deg, #7d2a3b, #551828)` }}>
-              <p className="text-[15px] font-bold leading-snug text-[#FBF3E6]">{gift.label}</p>
-              <p className="mt-0.5 text-[11px] font-medium tracking-wide text-[#E6CF9F]">{gift.sub} · לחצו לפתיחה</p>
-            </div>
-          </div>
+          className="flip-face absolute inset-0 overflow-hidden rounded-[30px] shadow-[0_20px_44px_-22px_rgba(122,46,59,0.45)] ring-1 ring-[#CBB089]/30"
+          style={{ backgroundImage: `url(${WRAP_URL})`, backgroundSize: "130px auto", backgroundPosition: "center" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={RIBBON_URL} alt="" aria-hidden="true" loading="lazy" decoding="async"
+            className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-[center_35%]" />
+          <span className="absolute inset-x-0 bottom-5 flex justify-center px-6">
+            <span className="rounded-xl border border-[#CBB089]/70 bg-[#FFFBF6]/95 px-4 py-2 text-center shadow-[0_6px_18px_-10px_rgba(122,46,59,0.35)] backdrop-blur-sm">
+              <span className="block text-[13.5px] font-bold leading-snug text-[#7a2e3b]">{gift.label}</span>
+              <span className="mt-0.5 block text-[10.5px] tracking-wide text-[#a8865a]">{gift.sub} · לחצו לפתיחה</span>
+            </span>
+          </span>
         </button>
 
         {/* גב: תוכן ההדרכה */}
@@ -182,34 +142,122 @@ function ReflectionModal({ user, data, onClose }) {
 }
 
 export default function MyCandidatesPanel({ data, user }) {
-  const [openNote, setOpenNote] = useState(null);
-  const [notes, setNotes] = useState({});
+  const [section, setSection] = useState("cands"); // cands | me
   const [snoozed, setSnoozed] = useState({});
   const [peek, setPeek] = useState(null);
   const [faqOpen, setFaqOpen] = useState(null);
   const [flipped, setFlipped] = useState({});
   const [reflecting, setReflecting] = useState(false);
+  const [shown, setShown] = useState(PAGE);
 
-  const active = DEMO_ALERTS.filter((c) => !snoozed[c.id]);
+  const reps = data?.reps || [];
+  const isAdmin = user?.role === "admin";
   // באנר צוות — רק כשלשגריר המחובר יש באמת שותפים לצוות (agency_name משותף)
-  const myRep = (data?.reps || []).find((r) => r.id === user?.repId);
-  const partners = myRep ? teamMembers(myRep, data?.reps || []).filter((r) => r.id !== myRep.id) : [];
+  const myRep = reps.find((r) => r.id === user?.repId);
+  const partners = myRep ? teamMembers(myRep, reps).filter((r) => r.id !== myRep.id) : [];
   const faqList = (data && Array.isArray(data.faq) && data.faq.length) ? data.faq : DEFAULT_FAQ;
   const month = monthKey();
   const myReflection = user?.repId ? (data?.reflections || []).find((r) => r.id === `${user.repId}_${month}`) : null;
 
+  // המועמדים שבטיפולי — אותם כללים כמו בלשונית המועמדים: משויכים אליי או לצוות שלי,
+  // או לנציג/ה שאני מכסה; מועמד שהוסתר ממני נקודתית לא מופיע. מנהלת רואה את כולם.
+  const myTeamIds = teamRepIds(user?.repId, reps);
+  const mine = (c) => {
+    if (isAdmin) return true;
+    if (!user?.repId || (c.hiddenFrom || []).includes(user.repId)) return false;
+    if (myTeamIds.has(c.assignedRep)) return true;
+    const owner = reps.find((r) => r.id === c.assignedRep);
+    return !!(owner && (owner.coveredBy || []).includes(user.repId));
+  };
+  const statusOf = (c) => ((data?.candidateStatus || []).find((s) => s.id === c.id) || {}).availabilityStatus || "";
+  const daysSince = (iso) => (iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)) : null);
+  const myCands = (data?.candidates || []).filter(mine)
+    .sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+  const active = myCands.filter((c) => !snoozed[c.id]);
+  const resting = myCands.filter((c) => snoozed[c.id]);
+
   const CARD = "rounded-[26px] bg-white/90 shadow-[0_18px_42px_-18px_rgba(122,46,59,0.22)] ring-1 ring-rose/10";
+
+  const candRow = (c) => {
+    const digits = (c.phone || "").replace(/[^0-9]/g, "");
+    const days = daysSince(c.createdAt);
+    const st = statusOf(c);
+    const isSnoozed = !!snoozed[c.id];
+    return (
+      <div key={c.id} className={`overflow-hidden ${CARD} ${isSnoozed ? "opacity-60" : ""}`}>
+        <div className="flex items-center gap-3 p-4 pb-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[17px] font-bold text-ink">{c.fullName}</p>
+            <p className="mt-0.5 text-xs text-ink/50">{[c.gender === "female" ? "בחורה" : "בחור", c.age && `גיל ${c.age}`, c.location].filter(Boolean).join(" · ")}</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {days !== null && <span className="inline-flex items-center gap-1 rounded-full bg-[#F3E2DF] px-2 py-0.5 text-[11px] font-semibold text-[#7a2e3b]"><Clock className="h-3 w-3" strokeWidth={2} /> במאגר {days} ימים</span>}
+              {st && <span className="rounded-full bg-[#FBF3E6] px-2 py-0.5 text-[11px] font-semibold text-[#a8865a] ring-1 ring-[#CBB089]/40">{st}</span>}
+            </div>
+          </div>
+          <button onClick={() => setPeek(c)} title="הצצה לכרטיס" className="shrink-0 rounded-2xl bg-[#F3E2DF] p-2.5 text-[#7a2e3b] transition hover:scale-105 active:scale-95">
+            <Eye className="h-5 w-5" strokeWidth={1.75} />
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 px-4 pb-4">
+          {digits && <>
+            <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`tel:${digits}`}><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> חיוג</a>
+            <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`sms:${digits}`}><MessageSquare className="h-3.5 w-3.5" strokeWidth={1.75} /> SMS</a>
+            <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`https://wa.me/${waNum(c.phone)}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>
+          </>}
+          <button onClick={() => setSnoozed((s) => ({ ...s, [c.id]: !s[c.id] }))} className="ms-auto flex items-center gap-1 rounded-full border border-[#7a2e3b]/20 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#7a2e3b] transition hover:bg-[#F3E2DF] active:scale-95">
+            <BellOff className="h-3.5 w-3.5" strokeWidth={1.75} /> {isSnoozed ? "החזרה לרשימה" : "נודניק"}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-5">
-      {/* ===== באנר חלוקת עומס לצוות ===== */}
-      {partners.length > 0 && <div className="rounded-[26px] bg-[#F3E2DF] p-5">
-        <p className="flex items-center gap-2 text-base font-bold text-[#7a2e3b]"><Users className="h-5 w-5" strokeWidth={1.75} /> עבודת צוות מנצחת</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-ink/70">
-          חילקנו את רשימת המועמדים לתחזוקת קשר שווה בשווה בינך לבין {partners.map((r) => r.name).join(" ו")} — כך אף אחד לא נופל בין הכיסאות.
-        </p>
-      </div>}
+      {/* ===== בורר אזורים ===== */}
+      <div className="sticky top-[4.25rem] z-10 mx-auto flex max-w-sm rounded-full bg-white/85 p-1 shadow-[0_10px_26px_-14px_rgba(122,46,59,0.4)] ring-1 ring-[#CBB089]/35 backdrop-blur" role="tablist">
+        {[["cands", "המועמדים שלי", UserRound], ["me", "אני כשגריר", Sparkles]].map(([id, label, Icon]) => (
+          <button key={id} type="button" role="tab" aria-selected={section === id}
+            onClick={() => { setSection(id); window.scrollTo(0, 0); }}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2.5 text-sm font-bold transition ${section === id ? "bg-[#7a2e3b] text-[#FBF3E6] shadow" : "text-[#7a2e3b]/70"}`}>
+            <Icon className="h-4 w-4" strokeWidth={1.75} /> {label}
+          </button>
+        ))}
+      </div>
 
+      {section === "cands" && (<>
+        {/* באנר צוות */}
+        {partners.length > 0 && <div className="rounded-[26px] bg-[#F3E2DF] p-5">
+          <p className="flex items-center gap-2 text-base font-bold text-[#7a2e3b]"><Users className="h-5 w-5" strokeWidth={1.75} /> עבודת צוות מנצחת</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-ink/70">
+            הרשימה משותפת לך ול{partners.map((r) => r.name).join(" ול")} — כך אף אחד לא נופל בין הכיסאות.
+          </p>
+        </div>}
+
+        <div className="px-1">
+          <div className="flex items-center justify-between">
+            <SkewTitle>{isAdmin ? "כל המועמדים" : "המועמדים שבטיפולי"}</SkewTitle>
+            <span className="rounded-full bg-[#7a2e3b] px-3 py-0.5 text-sm font-bold text-[#FBF3E6]">{active.length}</span>
+          </div>
+          <p className="mt-1 text-xs text-ink/45">מגע חם קטן עושה הבדל גדול. העין מציגה סטטוס ופרטים, "נודניק" מעביר לסוף הרשימה.</p>
+        </div>
+
+        <div className="space-y-3.5">
+          {active.slice(0, shown).map(candRow)}
+          {active.length > shown && (
+            <button className="btn-soft w-full" onClick={() => setShown((n) => n + PAGE)}>הצגת עוד ({active.length - shown})</button>
+          )}
+          {active.length === 0 && (
+            <div className={`p-7 text-center text-sm text-ink/55 ${CARD}`}>{myCands.length ? "🎉 כל הכבוד! כולם בנודניק כרגע." : "עדיין אין מועמדים משויכים אליך."}</div>
+          )}
+          {resting.length > 0 && (<>
+            <p className="px-1 pt-2 text-xs font-semibold text-ink/45">בנודניק ({resting.length})</p>
+            {resting.map(candRow)}
+          </>)}
+        </div>
+      </>)}
+
+      {section === "me" && (<>
       {/* ===== סיכום חודשי ===== */}
       <button type="button" onClick={() => setReflecting(true)}
         className="flex w-full items-center gap-4 rounded-[26px] p-5 text-right shadow-[0_18px_40px_-18px_rgba(60,15,25,0.6)] transition active:scale-[0.99]"
@@ -225,75 +273,8 @@ export default function MyCandidatesPanel({ data, user }) {
         </span>
       </button>
 
-      {/* ===== רשימת עבודה: התראות 30 יום (מוסתרת עד חיבור הנתונים האמיתיים) ===== */}
-      {SHOW_DEMO_ALERTS && (<>
-      <div className="px-1">
-        <div className="flex items-center justify-between">
-          <SkewTitle>טעון חידוש קשר</SkewTitle>
-          <span className="rounded-full bg-[#7a2e3b] px-3 py-0.5 text-sm font-bold text-[#FBF3E6]">{active.length}</span>
-        </div>
-        <p className="mt-1 text-xs text-ink/45">מועמדים שלא נוצר איתם קשר מעל 30 יום — כדאי מגע חם היום.</p>
-      </div>
-
-      <div className="space-y-3.5">
-        {active.map((c) => {
-          const digits = (c.phone || "").replace(/[^0-9]/g, "");
-          const noteOpen = openNote === c.id;
-          const hasReport = !!(notes[c.id] || "").trim();
-          return (
-            <div key={c.id} className={`overflow-hidden ${CARD}`}>
-              <div className="flex items-center gap-3 p-4 pb-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[17px] font-bold text-ink">{c.name}</p>
-                  <p className="mt-0.5 text-xs text-ink/50">{c.gender === "female" ? "בחורה" : "בחור"} · גיל {c.age} · {c.place}</p>
-                  <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#F3E2DF] px-2 py-0.5 text-[11px] font-semibold text-[#7a2e3b]"><Clock className="h-3 w-3" strokeWidth={2} /> אחרון: לפני {c.lastContact} יום</p>
-                </div>
-                <button onClick={() => setPeek(c)} title="הצצה לכרטיס" className="shrink-0 rounded-2xl bg-[#F3E2DF] p-2.5 text-[#7a2e3b] transition hover:scale-105 active:scale-95">
-                  <Eye className="h-5 w-5" strokeWidth={1.75} />
-                </button>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 px-4 pb-4">
-                <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`tel:${digits}`}><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> חיוג</a>
-                <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`sms:${digits}`}><MessageSquare className="h-3.5 w-3.5" strokeWidth={1.75} /> SMS</a>
-                <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`https://wa.me/${waNum(c.phone)}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>
-                <button onClick={() => setSnoozed((s) => ({ ...s, [c.id]: true }))} className="ms-auto flex items-center gap-1 rounded-full border border-[#7a2e3b]/20 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#7a2e3b] transition hover:bg-[#F3E2DF] active:scale-95">
-                  <BellOff className="h-3.5 w-3.5" strokeWidth={1.75} /> נודניק
-                </button>
-              </div>
-
-              <button onClick={() => setOpenNote(noteOpen ? null : c.id)} className="flex w-full items-center justify-between border-t border-rose/10 bg-[#FBF5F3] px-4 py-3 text-right">
-                <span className="flex items-center gap-1.5 text-[15px] font-bold">
-                  <Pin className="h-4 w-4 text-[#7a2e3b]" strokeWidth={1.75} /> <span className="title-skew">מה התחדש?</span>
-                  {hasReport && <span className="rounded-full bg-[#7a2e3b] px-2 py-0.5 text-[10px] font-bold text-[#FBF3E6]">דווח ✓</span>}
-                </span>
-                <ChevronDown className={`h-4 w-4 text-ink/40 transition-transform duration-300 ${noteOpen ? "rotate-180" : ""}`} />
-              </button>
-              <div className={`acc-smooth ${noteOpen ? "open" : ""}`}>
-                <div className="acc-inner">
-                  <div className="space-y-1.5 px-4 pb-4 pt-2.5">
-                    <textarea
-                      className="field-input min-h-[72px] text-sm"
-                      placeholder="כתוב/י עדכון קצר — למשל: 'דיברנו, מחפש רצינית', 'ביקש הפסקה לחודש'…"
-                      value={notes[c.id] || ""}
-                      onChange={(e) => setNotes((n) => ({ ...n, [c.id]: e.target.value }))}
-                    />
-                    <p className="text-[11px] text-ink/45">🔒 פרטי — גלוי רק לך ולצוות שלך. הזנת טקסט כאן נחשבת כ"דיווח".</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {active.length === 0 && (
-          <div className={`p-7 text-center text-sm text-ink/55 ${CARD}`}>🎉 כל הכבוד! אין כרגע מועמדים שממתינים לחידוש קשר.</div>
-        )}
-      </div>
-      </>)}
-
       {/* ===== מרכז הכשרה וקהילה — חלון ראווה ===== */}
-      <div className="mt-8 space-y-4 border-t border-[#7a2e3b]/10 pt-7">
+      <div className="space-y-4 pt-2">
         <div className="text-center">
           <SkewTitle>מרכז הכשרה וקהילה</SkewTitle>
           <p className="mt-1.5 text-xs text-ink/50">מתנה קטנה מאיתנו לכל שגריר — לחצו על קופסה כדי לפתוח</p>
@@ -323,25 +304,28 @@ export default function MyCandidatesPanel({ data, user }) {
           })}
         </div>
       </div>
+      </>)}
 
       {/* ===== הצצה מהירה (עין) ===== */}
       {peek && (
         <Modal title="הצצה מהירה" onClose={() => setPeek(null)}>
           <div className="space-y-3">
             <div>
-              <p className="text-xl font-bold text-ink">{peek.name}</p>
-              <p className="text-sm text-ink/55">{peek.gender === "female" ? "בחורה" : "בחור"} · גיל {peek.age} · {peek.place}</p>
+              <p className="text-xl font-bold text-ink">{peek.fullName}</p>
+              <p className="text-sm text-ink/55">{[peek.gender === "female" ? "בחורה" : "בחור", peek.age && `גיל ${peek.age}`, peek.location].filter(Boolean).join(" · ")}</p>
             </div>
-            <div className="rounded-2xl bg-[#F3E2DF] p-3 text-sm text-ink/80">
-              <p><b className="text-[#7a2e3b]">עיסוק:</b> {peek.work}</p>
-              <p className="mt-1"><b className="text-[#7a2e3b]">קשר אחרון:</b> לפני {peek.lastContact} יום</p>
-              <p className="mt-1"><b className="text-[#7a2e3b]">טלפון:</b> <span dir="ltr">{peek.phone}</span></p>
+            <div className="space-y-1 rounded-2xl bg-[#F3E2DF] p-3 text-sm text-ink/80">
+              <p><b className="text-[#7a2e3b]">סטטוס:</b> {statusOf(peek) || "לא עודכן"}</p>
+              {peek.work && <p><b className="text-[#7a2e3b]">עיסוק:</b> {peek.work}</p>}
+              {peek.community && <p><b className="text-[#7a2e3b]">קהילה:</b> {peek.community}</p>}
+              {peek.createdAt && <p><b className="text-[#7a2e3b]">במאגר:</b> {daysSince(peek.createdAt)} ימים</p>}
+              {peek.phone && <p><b className="text-[#7a2e3b]">טלפון:</b> <span dir="ltr">{peek.phone}</span></p>}
             </div>
             <div className="flex flex-wrap gap-2">
               <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`tel:${(peek.phone || "").replace(/[^0-9]/g, "")}`}><Phone className="h-3.5 w-3.5" strokeWidth={1.75} /> חיוג</a>
               <a className="btn-soft !rounded-full !px-3.5 !py-1.5 text-xs" href={`https://wa.me/${waNum(peek.phone)}`} target="_blank" rel="noreferrer"><WhatsApp size={14} className="text-green-600" /> וואטסאפ</a>
             </div>
-            <p className="text-[11px] text-ink/40">* הצצה מהירה (נתוני דמה). בגרסה המלאה תיפתח כאן תצוגת הכרטיס המלאה של המועמד.</p>
+            <p className="text-[11px] text-ink/40">לכרטיס המלא — לשונית "מועמדים".</p>
           </div>
         </Modal>
       )}

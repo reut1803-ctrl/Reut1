@@ -253,7 +253,7 @@ export default function AdminPage() {
         <button className="btn-soft !px-3 !py-1.5 text-sm" onClick={() => setCurrentUser(null)}>יציאה</button>
       </Header>
 
-      <main className="mx-auto max-w-3xl px-4 py-5 pb-[calc(7rem+env(safe-area-inset-bottom))]">
+      <main className="mx-auto max-w-3xl px-4 py-5 pb-[calc(8.5rem+env(safe-area-inset-bottom))]">
         {tab === "candidates" && (
           <div className="space-y-4">
             {/* טיפ בשידוכים - קבוע בראש עמוד המועמדים */}
