@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RotateCw } from "lucide-react";
 import { useData } from "../lib/useData";
 import { DEFAULT_VISION_BOARD } from "../lib/store";
@@ -74,8 +74,33 @@ function VisionCard({ item }) {
   );
 }
 
+// כמה זמן מחכים לנתונים מהשרת לפני שנופלים לנוסח ברירת המחדל (רק אם השרת לא זמין).
+const SERVER_WAIT_MS = 6000;
+
 export default function VisionBoard() {
   const data = useData();
+  const [gaveUp, setGaveUp] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setGaveUp(true), SERVER_WAIT_MS);
+    return () => clearTimeout(t);
+  }, []);
+  // מציגים תוכן רק אחרי שההגדרות הגיעו מהשרת — כך לא מהבהב נוסח ישן.
+  // ברירת המחדל משמשת רק אם השרת לא ענה בכלל (כדי שהשער לא יישאר ריק).
+  const fromServer = !!(data && data.configFromServer);
+  if (!fromServer && !gaveUp) {
+    return (
+      <section className="mt-6" aria-busy="true">
+        <div className="mx-auto mb-5 h-8 w-40 animate-pulse rounded-full bg-[#F3E2DF]" />
+        <div className="flex gap-3">
+          {[0, 1].map((c) => (
+            <div key={c} className={`flex flex-1 flex-col gap-3 ${c === 1 ? "pt-8" : ""}`}>
+              {["h-48", "h-36", "h-60"].map((h, i) => <div key={i} className={`${h} animate-pulse rounded-[22px] bg-[#F7ECE8]`} />)}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
   const board = (data && data.visionBoard) || DEFAULT_VISION_BOARD;
   const items = (board.items || []).filter((it) => (it.front || "").trim() || (it.back || "").trim() || !["cream", "wine"].includes(it.style));
   // חלוקה לשתי עמודות לסירוגין — יוצר את המראה הא-סימטרי

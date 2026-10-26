@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { updateVisionBoard, DEFAULT_VISION_BOARD } from "../lib/store";
-import { Plus, Trash2, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { updateVisionBoard, verifyVisionBoardOnServer, DEFAULT_VISION_BOARD } from "../lib/store";
+import { Plus, Trash2, ArrowUp, ArrowDown, Check, AlertTriangle } from "lucide-react";
 
 // עריכת "לוח החזון" שבעמוד השער: כותרת, תת-כותרת, ולכל כרטיס — טקסט חזית,
 // טקסט גב (נחשף בהיפוך), רקע וגודל. נשמר ב-meta/config ומתעדכן בשער מיד.
@@ -19,7 +19,8 @@ const SIZE_OPTIONS = [["s", "נמוך"], ["m", "בינוני"], ["l", "גבוה"
 export default function VisionBoardEditor({ data }) {
   const current = data.visionBoard || DEFAULT_VISION_BOARD;
   const [board, setBoard] = useState(current);
-  const [state, setState] = useState("idle");
+  const [state, setState] = useState("idle"); // idle | saving | saved | error
+  const [errMsg, setErrMsg] = useState("");
   const dirty = JSON.stringify(board) !== JSON.stringify(current);
 
   useEffect(() => {
@@ -43,15 +44,31 @@ export default function VisionBoardEditor({ data }) {
   async function save() {
     if (!valid) return;
     setState("saving");
+    setErrMsg("");
+    const payload = {
+      title: board.title.trim(),
+      subtitle: (board.subtitle || "").trim(),
+      items: board.items.map((it) => ({ id: it.id, style: it.style, size: it.size, front: (it.front || "").trim(), back: (it.back || "").trim() })),
+    };
     try {
-      await updateVisionBoard({
-        title: board.title.trim(),
-        subtitle: (board.subtitle || "").trim(),
-        items: board.items.map((it) => ({ id: it.id, style: it.style, size: it.size, front: (it.front || "").trim(), back: (it.back || "").trim() })),
-      });
+      // שמירה עם מגבלת זמן — כדי שלא "ייתקע על שומר…" בלי תשובה
+      await Promise.race([
+        updateVisionBoard(payload),
+        new Promise((_, rej) => setTimeout(() => rej({ code: "timeout" }), 15000)),
+      ]);
+      // אימות: קוראים חזרה מהשרת עצמו ומוודאים שזה בדיוק מה שנשלח
+      const ok = await verifyVisionBoardOnServer(payload);
+      if (!ok) throw { code: "not-verified" };
       setState("saved");
-      setTimeout(() => setState("idle"), 1600);
+      setTimeout(() => setState("idle"), 4000);
     } catch (e) {
+      const code = (e && e.code) || "";
+      setErrMsg(
+        code === "permission-denied" ? "השרת חסם את השמירה (אין הרשאת כתיבה ב-Firebase). שלחי לי את ההודעה הזו ואתקן את ההרשאה."
+        : code === "timeout" || code === "unavailable" ? "אין תשובה מהשרת — כנראה בעיית חיבור לאינטרנט. השינויים לא נמחקו, נסי שוב."
+        : code === "not-verified" ? "השמירה נשלחה, אבל בבדיקה מול השרת התוכן לא תואם. נסי שוב, ואם זה חוזר — שלחי לי צילום מסך."
+        : `השמירה נכשלה${code ? ` (${code})` : ""}. השינויים לא נמחקו, נסי שוב.`
+      );
       setState("error");
     }
   }
@@ -94,12 +111,22 @@ export default function VisionBoardEditor({ data }) {
 
       <div className="flex gap-2">
         <button className="btn-primary flex-1" disabled={!valid || !dirty || state === "saving"} onClick={save}>
-          {state === "saving" ? "שומר…" : state === "saved" ? (<><Check className="h-4 w-4" strokeWidth={2.25} /> נשמר</>) : "שמירת לוח החזון"}
+          {state === "saving" ? "שומר ומאמת מול השרת…" : "שמירת לוח החזון"}
         </button>
         {dirty && <button className="btn-soft" onClick={() => setBoard(current)}>ביטול שינויים</button>}
       </div>
       {invalid !== -1 && <p className="text-xs text-roseDark">בכרטיס {invalid + 1} (ציטוט) חסר טקסט חזית.</p>}
-      {state === "error" && <p className="text-xs text-roseDark">השמירה נכשלה — בדקי חיבור ונסי שוב.</p>}
+      {!valid && invalid === -1 && <p className="text-xs text-roseDark">לא ניתן לשמור: {!(board.title || "").trim() ? "חסרה כותרת." : "צריך לפחות כרטיס אחד."}</p>}
+      {state === "saved" && (
+        <p className="flex items-center gap-1.5 rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+          <Check className="h-4 w-4 shrink-0" strokeWidth={2.25} /> נשמר ואומת מול השרת — השער כבר מציג את הנוסח החדש.
+        </p>
+      )}
+      {state === "error" && (
+        <p className="flex items-start gap-1.5 rounded-2xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} /> {errMsg}
+        </p>
+      )}
     </div>
   );
 }
