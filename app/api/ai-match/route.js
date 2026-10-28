@@ -4,9 +4,11 @@
 //   * הוא לא קורא ולא כותב למסד הנתונים. את הרשימה האנונימית בונה הדפדפן
 //     של המנהלת מתוך מה שכבר טעון אצלה (lib/crm/aiAnonymize.js).
 //   * הוא מוודא מול Firebase שהפונה היא המנהלת, ורק אז מעביר לבינה.
-//   * מפתח שירות הבינה יושב רק כאן, במשתנה הסביבה ANTHROPIC_API_KEY ב-Vercel,
+//   * מפתח שירות הבינה יושב רק כאן, במשתנה הסביבה GEMINI_API_KEY ב-Vercel,
 //     ולעולם אינו מגיע לדפדפן.
-import Anthropic from "@anthropic-ai/sdk";
+//
+// שירות הבינה: Google Gemini API. מבנה הבקשה (contents, systemInstruction,
+// generationConfig, responseJsonSchema) נבדק מול ה-SDK הרשמי של Google.
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,7 +18,12 @@ const OWNER_EMAIL = "reut1803@gmail.com";
 // ומשמש כאן רק כדי לבקש מ-Firebase לאמת את אסימון הכניסה של הפונה.
 const FIREBASE_WEB_API_KEY = "AIzaSyBKVXp-sbfm-ZfSSmSYKiWcepTEsF_UXNY";
 
-const MODEL = "claude-opus-5-5";
+// אפשר להחליף מודל בלי לגעת בקוד: משתנה הסביבה GEMINI_MODEL ב-Vercel.
+// בדיקת הבריאות (GET על הנתיב) מראה אם המודל קיים בפועל בחשבון.
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
+// מגבלת השרת היא 60 שניות. משאירים מרווח לאימות הזהות ולתשובה.
+const TIME_BUDGET_MS = 52_000;
 const MAX_POOL = 400;
 const MAX_CHAT_TURNS = 24;
 
@@ -98,13 +105,11 @@ const DECISIONS_SCHEMA = {
           "candidate", "optionA", "optionB", "winner", "religiousFit",
           "emotionalFit", "whyNotOther", "blindSpot", "questionToCheck", "evidence",
         ],
-        additionalProperties: false,
       },
     },
     note: { type: "string" },
   },
   required: ["decisions", "note"],
-  additionalProperties: false,
 };
 
 function picksPrompt(focusGender) {
@@ -122,21 +127,115 @@ function picksPrompt(focusGender) {
 ב-note: משפט אחד על מצב המאגר (למשל אם חסר מידע בתיאורים).`;
 }
 
-// מחלקות השגיאה של ה-SDK, מהספציפית לכללית
-function explainApiError(err) {
-  if (err instanceof Anthropic.AuthenticationError) return { status: 502, msg: "מפתח שירות הבינה אינו תקין. יש לבדוק את ANTHROPIC_API_KEY ב-Vercel." };
-  if (err instanceof Anthropic.PermissionDeniedError) return { status: 502, msg: "למפתח שירות הבינה אין הרשאה לפעולה הזו." };
-  if (err instanceof Anthropic.RateLimitError) return { status: 429, msg: "שירות הבינה עמוס כרגע. נסי שוב בעוד דקה." };
-  if (err instanceof Anthropic.BadRequestError) return { status: 502, msg: `הבקשה לשירות הבינה נדחתה: ${err.message}` };
-  if (err instanceof Anthropic.APIConnectionTimeoutError) return { status: 504, msg: "שירות הבינה לא ענה בזמן. נסי שוב." };
-  if (err instanceof Anthropic.APIConnectionError) return { status: 502, msg: "אין חיבור לשירות הבינה. נסי שוב." };
-  if (err instanceof Anthropic.APIError) return { status: 502, msg: `שגיאה בשירות הבינה (${err.status ?? "?"}). נסי שוב.` };
-  return { status: 500, msg: "שגיאה לא צפויה בעוזר ההתאמות." };
+// --- הפנייה ל-Gemini ---
+
+class GeminiError extends Error {
+  constructor(status, message, retryAfterMs = 0) {
+    super(message);
+    this.status = status;
+    this.retryAfterMs = retryAfterMs;
+  }
 }
 
-// בדיקת בריאות: האם הנתיב חי, והאם הוגדר מפתח - בלי לחשוף אותו.
+// Gemini מחזיר במכסת החינם הוראה כמה לחכות ("retryDelay": "30s")
+function retryDelayFrom(errorBody) {
+  const details = errorBody?.error?.details || [];
+  for (const d of details) {
+    const m = /^(\d+(?:\.\d+)?)s$/.exec(String(d?.retryDelay || ""));
+    if (m) return Math.ceil(Number(m[1]) * 1000);
+  }
+  return 0;
+}
+
+async function callGeminiOnce(payload, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(MODEL)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new GeminiError(res.status, data?.error?.message || `HTTP ${res.status}`, retryDelayFrom(data));
+    }
+    return data;
+  } catch (err) {
+    if (err instanceof GeminiError) throw err;
+    if (err?.name === "AbortError") throw new GeminiError(504, "timeout");
+    throw new GeminiError(0, err?.message || "network");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ניסיון חוזר עם השהיה הולכת וגדלה (1, 2, 4 שניות) בשגיאות זמניות בלבד:
+// עומס (429), תקלה בצד השרת (500/503), זמן קצוב או ניתוק. אם השירות מבקש
+// לחכות יותר ממה שנשאר בתקציב הזמן - עוצרים מיד ומסבירים, במקום להיתקע.
+async function callGemini(payload, started) {
+  const RETRYABLE = new Set([0, 429, 500, 502, 503, 504]);
+  let delay = 1000;
+  for (let attempt = 1; ; attempt += 1) {
+    const left = TIME_BUDGET_MS - (Date.now() - started);
+    try {
+      return await callGeminiOnce(payload, Math.max(5000, left));
+    } catch (err) {
+      const wait = Math.max(delay, err.retryAfterMs || 0);
+      const leftAfter = TIME_BUDGET_MS - (Date.now() - started);
+      log(`attempt ${attempt} failed: ${err.status} ${err.message}`);
+      if (!RETRYABLE.has(err.status) || attempt >= 3 || wait + 8000 > leftAfter) throw err;
+      await new Promise((r) => setTimeout(r, wait));
+      delay *= 2;
+    }
+  }
+}
+
+function explainGeminiError(err) {
+  const s = err?.status;
+  const raw = String(err?.message || "");
+  if (s === 400 && /api key/i.test(raw)) return { status: 502, msg: "מפתח Gemini אינו תקין. יש לבדוק את GEMINI_API_KEY ב-Vercel." };
+  if (s === 403) return { status: 502, msg: "למפתח Gemini אין הרשאה לשירות הזה. ייתכן שה-API לא הופעל בפרויקט." };
+  if (s === 404) return { status: 502, msg: `המודל ${MODEL} לא זמין בחשבון. פתחי את בדיקת הבריאות של הנתיב כדי לראות אילו מודלים זמינים.` };
+  if (s === 429) {
+    const sec = err.retryAfterMs ? ` נסי שוב בעוד כ-${Math.ceil(err.retryAfterMs / 1000)} שניות.` : " נסי שוב בעוד דקה.";
+    return { status: 429, msg: `הגעת למגבלת השימוש של המסלול החינמי.${sec}` };
+  }
+  if (s === 504) return { status: 504, msg: "שירות הבינה לא ענה בזמן. נסי שוב." };
+  if (s === 0) return { status: 502, msg: "אין חיבור לשירות הבינה. נסי שוב." };
+  if (s === 400) return { status: 502, msg: `הבקשה לשירות הבינה נדחתה: ${raw}` };
+  return { status: 502, msg: `שגיאה בשירות הבינה (${s ?? "?"}). נסי שוב.` };
+}
+
+const BLOCKED = new Set(["SAFETY", "PROHIBITED_CONTENT", "SPII", "BLOCKLIST", "OTHER", "RECITATION", "LANGUAGE"]);
+
+// בדיקת בריאות: האם הנתיב חי, האם הוגדר מפתח, והאם המודל שנבחר קיים
+// בחשבון בפועל - בלי לחשוף את המפתח עצמו.
 export async function GET() {
-  return Response.json({ ok: true, keyConfigured: !!process.env.ANTHROPIC_API_KEY, model: MODEL });
+  const keyConfigured = !!process.env.GEMINI_API_KEY;
+  const result = { ok: true, keyConfigured, model: MODEL, modelAvailable: null, availableModels: [] };
+  if (!keyConfigured) return Response.json(result);
+  try {
+    const res = await fetch(`${GEMINI_BASE}/models?pageSize=200`, {
+      headers: { "x-goog-api-key": process.env.GEMINI_API_KEY },
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      result.ok = false;
+      result.error = data?.error?.message || `HTTP ${res.status}`;
+      return Response.json(result);
+    }
+    const names = (data?.models || [])
+      .filter((m) => (m.supportedGenerationMethods || m.supportedActions || []).includes("generateContent"))
+      .map((m) => String(m.name || "").replace(/^models\//, ""));
+    result.availableModels = names;
+    result.modelAvailable = names.includes(MODEL);
+  } catch (err) {
+    result.ok = false;
+    result.error = err?.message || "network";
+  }
+  return Response.json(result);
 }
 
 export async function POST(request) {
@@ -158,58 +257,53 @@ export async function POST(request) {
   if (!pool || pool.length === 0) return fail(400, "אין מועמדים פנויים במאגר");
   if (pool.length > MAX_POOL) return fail(400, "המאגר גדול מהצפוי");
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return fail(503, "עוד לא הוגדר מפתח לשירות הבינה (ANTHROPIC_API_KEY ב-Vercel).");
+  if (!process.env.GEMINI_API_KEY) {
+    return fail(503, "עוד לא הוגדר מפתח לשירות הבינה (GEMINI_API_KEY ב-Vercel).");
   }
 
-  // שתי ההנחיות הקבועות קודמות, והמאגר אחריהן עם נקודת מטמון - כך שיחה
-  // חוזרת על אותו מאגר נקראת מהמטמון במקום להיות מחויבת מחדש במלואה.
-  const system = [
-    { type: "text", text: METHOD },
-    { type: "text", text: poolBlock(pool, forbiddenPairs), cache_control: { type: "ephemeral" } },
-  ];
+  // ההנחיות הקבועות קודמות והמאגר אחריהן, באותו סדר בכל בקשה - כך ש-Gemini
+  // יכול לזהות את החלק החוזר ולשמור אותו במטמון בעצמו.
+  const systemInstruction = { parts: [{ text: `${METHOD}\n\n${poolBlock(pool, forbiddenPairs)}` }] };
 
-  let messages;
-  const outputConfig = { effort: "medium" };
+  let contents;
+  const generationConfig = { maxOutputTokens: 16384 };
   if (mode === "picks") {
-    messages = [{ role: "user", content: picksPrompt(body?.focusGender) }];
-    outputConfig.format = { type: "json_schema", schema: DECISIONS_SCHEMA };
+    contents = [{ role: "user", parts: [{ text: picksPrompt(body?.focusGender) }] }];
+    generationConfig.responseMimeType = "application/json";
+    generationConfig.responseJsonSchema = DECISIONS_SCHEMA;
   } else {
     const history = Array.isArray(body?.messages) ? body.messages.slice(-MAX_CHAT_TURNS) : [];
-    messages = history
+    const turns = history
       .filter((m) => (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string" && m.content.trim())
       .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
-    if (messages.length === 0 || messages[0].role !== "user" || messages[messages.length - 1].role !== "user") {
+    if (turns.length === 0 || turns[0].role !== "user" || turns[turns.length - 1].role !== "user") {
       return fail(400, "השיחה לא תקינה");
     }
+    // ב-Gemini תפקיד העוזר נקרא "model"
+    contents = turns.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   }
 
-  log(`mode=${mode} pool=${pool.length} forbidden=${forbiddenPairs.length} turns=${messages.length}`);
-
-  // ה-SDK מנסה שוב לבד בשגיאות זמניות (429, 5xx, ניתוק) עם השהיה הולכת וגדלה.
-  // ניסיון חוזר אחד בלבד, כדי להישאר בתוך מגבלת 60 השניות של השרת.
-  const client = new Anthropic({ maxRetries: 1, timeout: 55_000 });
+  log(`mode=${mode} model=${MODEL} pool=${pool.length} forbidden=${forbiddenPairs.length} turns=${contents.length}`);
 
   try {
-    const stream = client.beta.messages.stream({
-      model: MODEL,
-      max_tokens: 16000,
-      // אם מסנן הבטיחות של המודל דוחה בקשה, השרת מריץ אותה על המודל המומלץ במקום
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: outputConfig,
-      system,
-      messages,
-    });
-    const message = await stream.finalMessage();
-    const u = message.usage || {};
+    const data = await callGemini({ systemInstruction, contents, generationConfig }, started);
+    const u = data?.usageMetadata || {};
+    const cand = data?.candidates?.[0];
+    const finish = cand?.finishReason || "";
     log(
-      `done in ${Date.now() - started}ms stop=${message.stop_reason} in=${u.input_tokens} cache_read=${u.cache_read_input_tokens} out=${u.output_tokens}`
+      `done in ${Date.now() - started}ms finish=${finish} in=${u.promptTokenCount} cached=${u.cachedContentTokenCount ?? 0} out=${u.candidatesTokenCount} thoughts=${u.thoughtsTokenCount ?? 0}`
     );
 
-    if (message.stop_reason === "refusal") return fail(502, "שירות הבינה סירב לבקשה הזו.");
-    const text = (message.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-    if (message.stop_reason === "max_tokens") return fail(502, "התשובה נקטעה באמצע. נסי שוב.");
+    if (data?.promptFeedback?.blockReason) return fail(502, "שירות הבינה סירב לבקשה הזו.");
+    if (BLOCKED.has(finish)) return fail(502, "שירות הבינה עצר את התשובה (מסנן התוכן שלו).");
+    if (finish === "MAX_TOKENS") return fail(502, "התשובה נקטעה באמצע. נסי שוב.");
+
+    // חלקי "מחשבה" של המודל אינם חלק מהתשובה
+    const text = (cand?.content?.parts || [])
+      .filter((part) => typeof part?.text === "string" && !part.thought)
+      .map((part) => part.text)
+      .join("");
+    if (!text.trim()) return fail(502, "התקבלה תשובה ריקה משירות הבינה. נסי שוב.");
 
     if (mode === "picks") {
       let parsed;
@@ -222,7 +316,7 @@ export async function POST(request) {
     }
     return Response.json({ ok: true, reply: text });
   } catch (err) {
-    const { status, msg } = explainApiError(err);
+    const { status, msg } = explainGeminiError(err);
     log(`error after ${Date.now() - started}ms:`, err?.status ?? "", err?.message ?? err);
     return fail(status, msg);
   }
