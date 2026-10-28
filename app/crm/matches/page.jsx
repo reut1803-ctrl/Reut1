@@ -8,6 +8,7 @@ import GenderToggle from "@/components/crm/layout/GenderToggle";
 import ProfileCard from "@/components/crm/profiles/ProfileCard";
 import MatchingWizard from "@/components/crm/quiz/MatchingWizard";
 import Button from "@/components/crm/ui/Button";
+import AiMatchAdvisor from "@/components/crm/matches/AiMatchAdvisor";
 
 export default function MatchesPage() {
   const board = useCrmStore((s) => s.board);
@@ -31,6 +32,7 @@ export default function MatchesPage() {
     return (
       <div className="px-4 py-4">
         <GenderToggle />
+        <AiMatchAdvisor />
 
         <div className="mt-4 rounded-3xl bg-gradient-to-l from-[#8C4A55] to-[#6E3540] p-5 text-white shadow-lg">
           <div className="flex items-center gap-2">
@@ -97,6 +99,7 @@ export default function MatchesPage() {
   return (
     <div className="px-4 py-6">
       <GenderToggle />
+      <AiMatchAdvisor />
 
       {!showWizard ? (
         <div className="mt-8 flex flex-col items-center rounded-3xl border border-[#EAE5E3] bg-white p-6 text-center shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
