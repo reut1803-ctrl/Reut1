@@ -7,6 +7,8 @@
 //   * מפתח שירות הבינה יושב רק כאן, במשתנה הסביבה GEMINI_API_KEY ב-Vercel,
 //     ולעולם אינו מגיע לדפדפן.
 //
+import { pickModel, rankedModels } from "@/lib/crm/geminiModel";
+
 // שירות הבינה: Google Gemini API. מבנה הבקשה (contents, systemInstruction,
 // generationConfig, responseJsonSchema) נבדק מול ה-SDK הרשמי של Google.
 
@@ -18,9 +20,13 @@ const OWNER_EMAIL = "reut1803@gmail.com";
 // ומשמש כאן רק כדי לבקש מ-Firebase לאמת את אסימון הכניסה של הפונה.
 const FIREBASE_WEB_API_KEY = "AIzaSyBKVXp-sbfm-ZfSSmSYKiWcepTEsF_UXNY";
 
-// אפשר להחליף מודל בלי לגעת בקוד: משתנה הסביבה GEMINI_MODEL ב-Vercel.
-// בדיקת הבריאות (GET על הנתיב) מראה אם המודל קיים בפועל בחשבון.
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+// המודל: אם הוגדר GEMINI_MODEL ב-Vercel - משתמשים בדיוק בו. אחרת השרת שואל
+// את Google אילו מודלים זמינים במפתח הזה ובוחר מתוכם (lib/crm/geminiModel.js),
+// כדי לא להיות תלויים בשם מודל שעלול להיעלם. הבחירה נשמרת לכמה שעות.
+const PINNED_MODEL = String(process.env.GEMINI_MODEL || "").trim();
+const MODEL_CACHE_MS = 6 * 60 * 60 * 1000;
+let chosenModel = null;
+let chosenAt = 0;
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 // מגבלת השרת היא 60 שניות. משאירים מרווח לאימות הזהות ולתשובה.
 const TIME_BUDGET_MS = 52_000;
@@ -147,11 +153,31 @@ function retryDelayFrom(errorBody) {
   return 0;
 }
 
-async function callGeminiOnce(payload, timeoutMs) {
+async function listModels() {
+  const res = await fetch(`${GEMINI_BASE}/models?pageSize=200`, {
+    headers: { "x-goog-api-key": process.env.GEMINI_API_KEY },
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new GeminiError(res.status, data?.error?.message || `HTTP ${res.status}`);
+  return data?.models || [];
+}
+
+async function resolveModel({ refresh = false } = {}) {
+  if (PINNED_MODEL) return PINNED_MODEL;
+  if (!refresh && chosenModel && Date.now() - chosenAt < MODEL_CACHE_MS) return chosenModel;
+  const model = pickModel(await listModels());
+  if (!model) throw new GeminiError(404, "no text model in account");
+  chosenModel = model;
+  chosenAt = Date.now();
+  log(`model selected: ${model}`);
+  return model;
+}
+
+async function callGeminiOnce(payload, timeoutMs, model) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(MODEL)}:generateContent`, {
+    const res = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
       body: JSON.stringify(payload),
@@ -176,15 +202,28 @@ async function callGeminiOnce(payload, timeoutMs) {
 // לחכות יותר ממה שנשאר בתקציב הזמן - עוצרים מיד ומסבירים, במקום להיתקע.
 async function callGemini(payload, started) {
   const RETRYABLE = new Set([0, 429, 500, 502, 503, 504]);
+  let model = await resolveModel();
+  let repicked = false;
   let delay = 1000;
   for (let attempt = 1; ; attempt += 1) {
     const left = TIME_BUDGET_MS - (Date.now() - started);
     try {
-      return await callGeminiOnce(payload, Math.max(5000, left));
+      const data = await callGeminiOnce(payload, Math.max(5000, left), model);
+      return { data, model };
     } catch (err) {
+      err.model = model;
+      log(`attempt ${attempt} on ${model} failed: ${err.status} ${err.message}`);
+      // המודל נעלם מאז שנבחר - בוחרים מחדש מתוך הרשימה העדכנית, פעם אחת
+      if (err.status === 404 && !PINNED_MODEL && !repicked) {
+        repicked = true;
+        const next = await resolveModel({ refresh: true });
+        if (next !== model) {
+          model = next;
+          continue;
+        }
+      }
       const wait = Math.max(delay, err.retryAfterMs || 0);
       const leftAfter = TIME_BUDGET_MS - (Date.now() - started);
-      log(`attempt ${attempt} failed: ${err.status} ${err.message}`);
       if (!RETRYABLE.has(err.status) || attempt >= 3 || wait + 8000 > leftAfter) throw err;
       await new Promise((r) => setTimeout(r, wait));
       delay *= 2;
@@ -197,7 +236,11 @@ function explainGeminiError(err) {
   const raw = String(err?.message || "");
   if (s === 400 && /api key/i.test(raw)) return { status: 502, msg: "מפתח Gemini אינו תקין. יש לבדוק את GEMINI_API_KEY ב-Vercel." };
   if (s === 403) return { status: 502, msg: "למפתח Gemini אין הרשאה לשירות הזה. ייתכן שה-API לא הופעל בפרויקט." };
-  if (s === 404) return { status: 502, msg: `המודל ${MODEL} לא זמין בחשבון. פתחי את בדיקת הבריאות של הנתיב כדי לראות אילו מודלים זמינים.` };
+  if (s === 404) {
+    return PINNED_MODEL
+      ? { status: 502, msg: `המודל ${PINNED_MODEL} (שהוגדר ב-GEMINI_MODEL ב-Vercel) לא זמין בחשבון. אפשר למחוק את ההגדרה והמערכת תבחר מודל זמין לבד.` }
+      : { status: 502, msg: "לא נמצא בחשבון ה-Gemini מודל טקסט זמין. פתחי את בדיקת הבריאות של הנתיב כדי לראות מה קיים." };
+  }
   if (s === 429) {
     const sec = err.retryAfterMs ? ` נסי שוב בעוד כ-${Math.ceil(err.retryAfterMs / 1000)} שניות.` : " נסי שוב בעוד דקה.";
     return { status: 429, msg: `הגעת למגבלת השימוש של המסלול החינמי.${sec}` };
@@ -210,27 +253,31 @@ function explainGeminiError(err) {
 
 const BLOCKED = new Set(["SAFETY", "PROHIBITED_CONTENT", "SPII", "BLOCKLIST", "OTHER", "RECITATION", "LANGUAGE"]);
 
-// בדיקת בריאות: האם הנתיב חי, האם הוגדר מפתח, והאם המודל שנבחר קיים
-// בחשבון בפועל - בלי לחשוף את המפתח עצמו.
+// בדיקת בריאות: האם הנתיב חי, האם הוגדר מפתח, ואיזה מודל ייבחר בפועל
+// מתוך מה שזמין בחשבון - בלי לחשוף את המפתח עצמו.
 export async function GET() {
   const keyConfigured = !!process.env.GEMINI_API_KEY;
-  const result = { ok: true, keyConfigured, model: MODEL, modelAvailable: null, availableModels: [] };
+  const result = {
+    ok: true,
+    keyConfigured,
+    pinnedModel: PINNED_MODEL || null,
+    selectedModel: null,
+    modelAvailable: null,
+    textModels: [],
+  };
   if (!keyConfigured) return Response.json(result);
   try {
-    const res = await fetch(`${GEMINI_BASE}/models?pageSize=200`, {
-      headers: { "x-goog-api-key": process.env.GEMINI_API_KEY },
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      result.ok = false;
-      result.error = data?.error?.message || `HTTP ${res.status}`;
-      return Response.json(result);
+    const models = await listModels();
+    const ranked = rankedModels(models);
+    result.textModels = ranked;
+    if (PINNED_MODEL) {
+      const all = models.map((m) => String(m?.name || "").replace(/^models\//, ""));
+      result.selectedModel = PINNED_MODEL;
+      result.modelAvailable = all.includes(PINNED_MODEL);
+    } else {
+      result.selectedModel = pickModel(models);
+      result.modelAvailable = !!result.selectedModel;
     }
-    const names = (data?.models || [])
-      .filter((m) => (m.supportedGenerationMethods || m.supportedActions || []).includes("generateContent"))
-      .map((m) => String(m.name || "").replace(/^models\//, ""));
-    result.availableModels = names;
-    result.modelAvailable = names.includes(MODEL);
   } catch (err) {
     result.ok = false;
     result.error = err?.message || "network";
@@ -283,15 +330,15 @@ export async function POST(request) {
     contents = turns.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   }
 
-  log(`mode=${mode} model=${MODEL} pool=${pool.length} forbidden=${forbiddenPairs.length} turns=${contents.length}`);
+  log(`mode=${mode} pool=${pool.length} forbidden=${forbiddenPairs.length} turns=${contents.length}`);
 
   try {
-    const data = await callGemini({ systemInstruction, contents, generationConfig }, started);
+    const { data, model } = await callGemini({ systemInstruction, contents, generationConfig }, started);
     const u = data?.usageMetadata || {};
     const cand = data?.candidates?.[0];
     const finish = cand?.finishReason || "";
     log(
-      `done in ${Date.now() - started}ms finish=${finish} in=${u.promptTokenCount} cached=${u.cachedContentTokenCount ?? 0} out=${u.candidatesTokenCount} thoughts=${u.thoughtsTokenCount ?? 0}`
+      `done in ${Date.now() - started}ms model=${model} finish=${finish} in=${u.promptTokenCount} cached=${u.cachedContentTokenCount ?? 0} out=${u.candidatesTokenCount} thoughts=${u.thoughtsTokenCount ?? 0}`
     );
 
     if (data?.promptFeedback?.blockReason) return fail(502, "שירות הבינה סירב לבקשה הזו.");
