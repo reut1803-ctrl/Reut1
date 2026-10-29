@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { Search, Check, Camera, Loader2, ArrowRight, Heart, X } from "lucide-react";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/crm/mockData";
 import { successFee, formatFee } from "@/lib/crm/agreement";
 import AgreementModal from "@/components/crm/register/AgreementModal";
+import { compressForUpload } from "@/lib/crm/compressForUpload";
 
 // עמוד ההרשמה החיצוני. פתוח לכל אחד, בלי התחברות ובלי גישה למאגר עצמו:
 //   * שלב א' בודק שם מדויק אחד מול מפתח השמות (ראו lib/crm/nameKey.js).
@@ -112,8 +113,17 @@ export default function RegisterPage() {
   // אישור הצהרת הפרטיות. בלעדיו אי אפשר לשלוח את הטופס.
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
+  // עמוד הסיום נטען מראש, כדי שהמעבר אליו אחרי השליחה יהיה מיידי
+  useEffect(() => {
+    try {
+      router.prefetch("/gifts");
+    } catch {
+      /* טעינה מוקדמת היא שיפור בלבד - בלעדיה המעבר פשוט רגיל */
+    }
+  }, [router]);
   const [showAgreement, setShowAgreement] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const fileRef = useRef(null);
 
@@ -213,8 +223,11 @@ export default function RegisterPage() {
     setPhotoUploading(true);
     setPhotoError("");
     try {
+      // הקטנה בטלפון לפני ההעלאה: מכמה מגה-בייט לכמה מאות קילו-בייט.
+      // אם ההקטנה לא מצליחה - נשלח הקובץ המקורי, כמו קודם.
+      const upload = await compressForUpload(file);
       const body = new FormData();
-      body.append("file", file);
+      body.append("file", upload);
       const res = await fetch("/api/upload", { method: "POST", body });
       const data = await res.json();
       if (!res.ok || !data?.url) throw new Error(data?.error || "ההעלאה נכשלה");
@@ -272,10 +285,12 @@ export default function RegisterPage() {
       });
       // הפרטים נשמרו בהצלחה - מעבירים לעמוד המתנות.
       // העמוד פותח באישור שהפנייה התקבלה, כדי שאיש לא יישאר בלי תשובה.
+      // הכפתור נשאר נעול עד שהמעבר מסתיים: אחרת הוא חזר להיות לחיץ בזמן
+      // המעבר, ולחיצה נוספת שלחה את אותה הרשמה פעמיים.
+      setSubmitted(true);
       router.push("/gifts");
     } catch (err) {
       setSubmitError(`השליחה נכשלה. נסו שוב, ואם זה חוזר - צרו קשר עם המשרד. (${err?.code || ""})`);
-    } finally {
       setSubmitting(false);
     }
   };
@@ -625,8 +640,9 @@ export default function RegisterPage() {
               disabled={!ready || submitting}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#8C4A55] py-4 text-[15px] font-bold text-white transition active:scale-[0.98] disabled:opacity-40"
             >
-              {submitting && <Loader2 size={17} className="animate-spin" />}
-              {submitting ? "שולח..." : "שליחת הפרטים"}
+              {submitting && !submitted && <Loader2 size={17} className="animate-spin" />}
+              {submitted && <Check size={17} />}
+              {submitted ? "נשלח! מעבירים..." : submitting ? "שולח..." : "שליחת הפרטים"}
             </button>
           </div>
         )}
