@@ -9,6 +9,7 @@
 //
 import { pickModel, rankedModels, tryOrder } from "@/lib/crm/geminiModel";
 import { validateDecisions, scrubText } from "@/lib/crm/aiAnonymize";
+import { internalPairProblem, blindSpotAdmitsGap } from "@/lib/crm/dealBreakers";
 
 // שירות הבינה: Google Gemini API. מבנה הבקשה (contents, systemInstruction,
 // generationConfig, responseJsonSchema) נבדק מול ה-SDK הרשמי של Google.
@@ -108,7 +109,14 @@ const METHOD = `את/ה שותף/ת חשיבה שקט/ה של שדכנית מנ�
 - לעולם אל תציע/י זוג שמופיע ברשימת "זוגות שכבר ירדו מהפרק".
 - השתמש/י רק בקודים שמופיעים במאגר. בחור מול בחורה בלבד.
 - התייחס/י לאנשים בכבוד, בשפה עדינה. זה כלי עזר לשדכנית - ההחלטה שלה.
-- כתוב/כתבי בעברית.`;
+- כתוב/כתבי בעברית.
+
+דרישות סף קשיחות - שילוב שלא עומד בהן אסור להציע, גם לא כ"אפשרות שהפסידה":
+- עדיף "לא נמצאה התאמה" מאשר הצעת סרק. אל תייצר/י התאמה בכוח.
+- מגזר והשקפה: רק בתוך אותו עולם. חב"ד, ברסלב, חרדי ודתי-לאומי הם עולמות נפרדים.
+  בתוך הדתי-לאומי, "תורני" ו"דתל"ש/מסורתי" אינם מתאימים זה לזה.
+- גיל: הבחור באותו גיל כמו הבחורה או מבוגר ממנה (לכל היותר חודשים בודדים צעיר ממנה).
+- נקודה עיוורת שהיא פער מהותי בגיל או בהשקפה איננה נושא לבירור - זו פסילה.`;
 
 // זיכרון השדכנית: ההערות שנשמרו בצד, באחסון נפרד בדפדפן שלה (לא בכרטיסים
 // ולא במסד הנתונים), מגיעות עם הבקשה אחרי ניקוי, ועוברות כאן ניקוי נוסף של
@@ -456,8 +464,24 @@ export async function POST(request) {
       // אותה בדיקה שהדפדפן עושה, כבר כאן: מבקשים 6 ומחזירים את 3 התקינות
       // הראשונות - כך שהכרעה שנפסלה (קוד שגוי, זוג שירד מהפרק) מתחלפת בבאה
       const raw = Array.isArray(parsed.decisions) ? parsed.decisions : [];
-      const decisions = validateDecisions(raw, { pool, forbiddenPairs });
-      log(`picks: model returned ${raw.length}, valid ${decisions.length}`);
+      // דרישות הסף נבדקות כאן בקוד, גם אם הבינה טעתה: גם האפשרות שהפסידה
+      // חייבת לעמוד בהן, כי גם היא מוצגת כהצעה
+      const byCode = new Map(pool.map((p) => [p?.code, p]));
+      const rejected = [];
+      const passing = raw.filter((d) => {
+        const c = byCode.get(d?.candidate);
+        const problem =
+          internalPairProblem(c, byCode.get(d?.optionA)) ||
+          internalPairProblem(c, byCode.get(d?.optionB)) ||
+          (blindSpotAdmitsGap(d?.blindSpot) ? "בירור" : null);
+        if (problem) rejected.push(`${d?.candidate}:${problem}`);
+        return !problem;
+      });
+      const decisions = validateDecisions(passing, { pool, forbiddenPairs });
+      log(
+        `picks: model returned ${raw.length}, valid ${decisions.length}` +
+          (rejected.length ? ` rejected by deal-breakers: ${rejected.join(", ")}` : "")
+      );
       return Response.json({ ok: true, decisions, note: parsed.note || "" });
     }
     return Response.json({ ok: true, reply: text });

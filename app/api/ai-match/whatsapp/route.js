@@ -19,6 +19,9 @@ import {
   BLOCKED,
 } from "@/lib/crm/geminiServer";
 import { scrubText } from "@/lib/crm/aiAnonymize";
+import { externalMatchProblem, blindSpotAdmitsGap } from "@/lib/crm/dealBreakers";
+
+const NO_MATCH_NOTE = "לא נמצאו במאגר מועמדים מתאימים להגדרות המבוקשות.";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -53,7 +56,18 @@ const METHOD = `את/ה עוזר/ת של שדכנית מנוסה במגזר הד
 - contact: העתק/י רק תגים שמופיעים בהודעה או בשולח שלה, בדיוק כפי שהם (למשל "[טלפון 3]"). אם אין - ריק.
 - התאמה נשענת על "אותו ראש דתי" קודם כל, אחר כך השלמה רגשית, ואז גיל, אזור ושלב בחיים.
 - השתמש/י רק בקודים שמופיעים במאגר. בחור מול בחורה בלבד.
-- כתוב/כתבי בעברית, בשפה עדינה ומכבדת.`;
+- כתוב/כתבי בעברית, בשפה עדינה ומכבדת.
+
+דרישות סף קשיחות - התאמה שלא עומדת בהן אסור להציע, בשום מקרה:
+1. עדיף "לא נמצאה התאמה" מאשר הצעת סרק. אם אין במאגר מי שעומד/ת בדרישות - אל תייצר/י התאמה בכוח.
+   החזר/י רשימת התאמות ריקה לאותו כרטיס.
+2. מגזר והשקפה: התאמה רק בתוך אותו עולם. חב"ד, ברסלב, חרדי ודתי-לאומי הם עולמות נפרדים.
+   מי שמבקש/ת "דתי לאומי תורני" - חב"ד, ברסלב וחרדי אינם רלוונטיים, וגם לא דתל"ש או מסורתי.
+   מותר לחרוג רק אם בכרטיס נכתב במפורש שיש פתיחות למגזר אחר.
+3. גיל: הבחור באותו גיל כמו הבחורה או מבוגר ממנה. לכל היותר חריגה של חודשים בודדים, ורק כששאר הנתונים מושלמים.
+   בחור צעיר מהבחורה בשנה ומעלה - פסול, אלא אם נכתב במפורש שיש פתיחות לצעירים.
+4. אם נקודת הבירור שאת/ה מזהה היא פער מהותי בגיל או בהשקפה - זה לא נושא לבירור, זו פסילה. אל תציע/י.
+5. openToYounger ו-openToOtherSectors: true רק אם הדבר כתוב במפורש בהודעה. בכל מקרה אחר - false.`;
 
 const SCHEMA = {
   type: "object",
@@ -73,8 +87,13 @@ const SCHEMA = {
           contact: { type: "string" },
           source: { type: "string" },
           quote: { type: "string" },
+          openToYounger: { type: "boolean" },
+          openToOtherSectors: { type: "boolean" },
         },
-        required: ["ref", "gender", "age", "sector", "location", "summary", "requirements", "contact", "source", "quote"],
+        required: [
+          "ref", "gender", "age", "sector", "location", "summary", "requirements", "contact", "source", "quote",
+          "openToYounger", "openToOtherSectors",
+        ],
       },
     },
     matches: {
@@ -103,10 +122,12 @@ const TASK = `חלץ/י את הכרטיסים החיצוניים מההודעו�
 - contact: תגי פרטי הקשר
 - source: תג השולח של ההודעה (למשל "[שולח 2]")
 - quote: ציטוט קצר מההודעה
+- openToYounger / openToOtherSectors: true רק אם נכתב במפורש
 אחר כך matches: עד ${MAX_MATCHES} ההתאמות המובילות בין כרטיס חיצוני (profile = ה-ref) למועמד/ת מהמאגר (candidate = הקוד),
 מהחזקה לחלשה, לכל כרטיס לכל היותר 2. לכל התאמה:
 - reasoning: נימוק שדכני קצר - למה החיבור הזה (2-3 משפטים)
 - blindSpot: מה חשוב לברר לפני שמציעים
+כל התאמה חייבת לעמוד בדרישות הסף הקשיחות. כרטיס שאין לו במאגר אף מועמד/ת שעומד/ת בהן - בלי התאמות.
 אם אין בהודעות אף כרטיס - החזר/י רשימות ריקות, וב-note הסבר/י במשפט.
 ב-note: משפט אחד על מה שנמצא.`;
 
@@ -175,6 +196,8 @@ function validate(parsed, pool, chat) {
       contact: [...new Set(keepTokens(p.contact))],
       source: keepTokens(p.source)[0] || "",
       quote: String(p.quote || "").slice(0, 400),
+      openToYounger: p.openToYounger === true,
+      openToOtherSectors: p.openToOtherSectors === true,
     });
   });
 
@@ -183,12 +206,19 @@ function validate(parsed, pool, chat) {
   const perProfile = {};
   const pairs = new Set();
   const matches = [];
+  const rejected = [];
   (Array.isArray(parsed?.matches) ? parsed.matches : []).forEach((m) => {
     if (matches.length >= MAX_MATCHES) return;
     const p = byRef.get(m?.profile);
     const c = byCode.get(m?.candidate);
     if (!p || !c) return;
     if (c.gender === p.gender) return;
+    // דרישות הסף נבדקות כאן בקוד, גם אם הבינה טעתה
+    const problem = externalMatchProblem(p, c) || (blindSpotAdmitsGap(m.blindSpot) ? "בירור" : null);
+    if (problem) {
+      rejected.push(`${p.ref}+${c.code}:${problem}`);
+      return;
+    }
     const key = `${p.ref}|${c.code}`;
     if (pairs.has(key) || (perProfile[p.ref] || 0) >= 2) return;
     pairs.add(key);
@@ -200,7 +230,7 @@ function validate(parsed, pool, chat) {
       blindSpot: String(m.blindSpot || "").slice(0, 400),
     });
   });
-  return { profiles, matches };
+  return { profiles, matches, rejected };
 }
 
 export async function GET() {
@@ -260,9 +290,14 @@ export async function POST(request) {
     } catch {
       return fail(502, "התשובה מהבינה לא הגיעה בפורמט הצפוי. נסי שוב.");
     }
-    const { profiles, matches } = validate(parsed, pool, safeChat);
-    log(`profiles ${parsed?.profiles?.length ?? 0}→${profiles.length}, matches ${parsed?.matches?.length ?? 0}→${matches.length}`);
-    return Response.json({ ok: true, profiles, matches, note: String(parsed?.note || "").slice(0, 400) });
+    const { profiles, matches, rejected } = validate(parsed, pool, safeChat);
+    log(
+      `profiles ${parsed?.profiles?.length ?? 0}→${profiles.length}, matches ${parsed?.matches?.length ?? 0}→${matches.length}` +
+        (rejected.length ? ` rejected by deal-breakers: ${rejected.join(", ")}` : "")
+    );
+    // כשנמצאו כרטיסים אבל אף התאמה לא עמדה בדרישות הסף - אומרים את זה במפורש
+    const note = profiles.length > 0 && matches.length === 0 ? NO_MATCH_NOTE : String(parsed?.note || "").slice(0, 400);
+    return Response.json({ ok: true, profiles, matches, note });
   } catch (err) {
     const { status, msg } = explainGeminiError(err);
     log(`error after ${Date.now() - started}ms:`, err?.status ?? "", err?.message ?? err);

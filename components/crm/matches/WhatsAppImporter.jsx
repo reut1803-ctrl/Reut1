@@ -330,7 +330,7 @@ export default function WhatsAppImporter({ anon, byId, nowMs, getFeedback, onVie
 
               {result.profiles.some((p) => !matchedRefs.has(p.ref)) && (
                 <>
-                  <p className="text-[13px] font-bold text-[#3A3335]">כרטיסים נוספים מהקבוצה, בלי התאמה במאגר</p>
+                  <p className="text-[13px] font-bold text-[#3A3335]">לא נמצאו במאגר מועמדים מתאימים להגדרות המבוקשות עבור:</p>
                   {result.profiles.filter((p) => !matchedRefs.has(p.ref)).map((p) => <div key={p.ref}>{profileBox(p)}</div>)}
                 </>
               )}
