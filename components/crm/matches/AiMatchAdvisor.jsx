@@ -28,6 +28,8 @@ import { anonymizePool, validateDecisions } from "@/lib/crm/aiAnonymize";
 import { readFeedback, addFeedback, removeFeedback, feedbackForPrompt, FEEDBACK_MAX_CHARS } from "@/lib/crm/aiFeedback";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import WhatsAppImporter from "@/components/crm/matches/WhatsAppImporter";
+import VibeScanner from "@/components/crm/matches/VibeScanner";
+import { readVibes, vibeFor } from "@/lib/crm/aiVibe";
 
 // מעטפת בטיחות מקומית: אם חלונית הצפייה נכשלת, היא פשוט נסגרת -
 // בלי להפיל את ההכרעות ואת שאר המסך.
@@ -120,6 +122,22 @@ export default function AiMatchAdvisor() {
     [everyone, proposals]
   );
 
+  // וייב חזותי שנסרק מתמונות הפרופיל (נשמר בדפדפן בלבד) מצורף לכל מועמד/ת
+  // ברשימה האנונימית. מי שלא נסרק/ה - נשלח/ת בדיוק כמו קודם.
+  const [vibes, setVibes] = useState({});
+  useEffect(() => {
+    setVibes(readVibes());
+  }, []);
+  const pool = useMemo(
+    () =>
+      anon.pool.map((p) => {
+        const v = vibeFor(vibes, byId.get(anon.codeToId[p.code]));
+        return v ? { ...p, visual: v } : p;
+      }),
+    [anon, vibes, byId]
+  );
+  const anonWithVibe = useMemo(() => ({ ...anon, pool }), [anon, pool]);
+
   // שם פרטי בלבד, גם בתצוגה
   const firstName = (id) => String(byId.get(id)?.name || "").trim().split(/\s+/)[0] || "?";
   const withNames = (text) =>
@@ -200,7 +218,7 @@ export default function AiMatchAdvisor() {
       const data = await callAdvisor({
         mode: "picks",
         focusGender: board,
-        pool: anon.pool,
+        pool,
         forbiddenPairs: anon.forbiddenPairs,
         feedback: promptFeedback(),
       });
@@ -273,7 +291,7 @@ export default function AiMatchAdvisor() {
     try {
       const data = await callAdvisor({
         mode: "chat",
-        pool: anon.pool,
+        pool,
         forbiddenPairs: anon.forbiddenPairs,
         feedback: promptFeedback(),
         messages: next,
@@ -501,10 +519,19 @@ export default function AiMatchAdvisor() {
           );
         })}
 
+      {/* ---------- וייב חזותי מהתמונות (בתוך מעטפת בטיחות) ---------- */}
+      <SafeBoundary>
+        <VibeScanner
+          candidates={Object.values(anon.codeToId).map((id) => byId.get(id)).filter(Boolean)}
+          vibes={vibes}
+          onVibes={setVibes}
+        />
+      </SafeBoundary>
+
       {/* ---------- ניתוח מהיר מקבוצת וואטסאפ (בתוך מעטפת בטיחות) ---------- */}
       <SafeBoundary>
         <WhatsAppImporter
-          anon={anon}
+          anon={anonWithVibe}
           byId={byId}
           nowMs={() => Date.now() + (serverOffsetMs || 0)}
           getFeedback={promptFeedback}

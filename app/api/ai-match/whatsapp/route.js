@@ -85,10 +85,12 @@ const SCHEMA = {
           quote: { type: "string" },
           openToYounger: { type: "boolean" },
           openToOtherSectors: { type: "boolean" },
+          height: { type: "string" },
+          openToHeightGap: { type: "boolean" },
         },
         required: [
           "ref", "gender", "age", "sector", "location", "summary", "requirements", "contact", "source", "quote",
-          "openToYounger", "openToOtherSectors",
+          "openToYounger", "openToOtherSectors", "height", "openToHeightGap",
         ],
       },
     },
@@ -118,7 +120,8 @@ const TASK = `חלץ/י את הכרטיסים החיצוניים מההודעו�
 - contact: תגי פרטי הקשר
 - source: תג השולח של ההודעה (למשל "[שולח 2]")
 - quote: ציטוט קצר מההודעה
-- openToYounger / openToOtherSectors: true רק אם נכתב במפורש
+- height: הגובה כפי שנכתב (למשל "1.70"), רק אם כתוב
+- openToYounger / openToOtherSectors / openToHeightGap: true רק אם נכתב במפורש
 אחר כך matches: עד ${MAX_MATCHES} ההתאמות המובילות בין כרטיס חיצוני (profile = ה-ref) למועמד/ת מהמאגר (candidate = הקוד),
 מהחזקה לחלשה, לכל כרטיס לכל היותר 2. לכל התאמה:
 - reasoning: נימוק שדכני קצר (2-4 משפטים) לפי שלושת הצירים: אנרגיה והשלמה, סגנון חיים בפועל,
@@ -194,6 +197,8 @@ function validate(parsed, pool, chat) {
       quote: String(p.quote || "").slice(0, 400),
       openToYounger: p.openToYounger === true,
       openToOtherSectors: p.openToOtherSectors === true,
+      height: String(p.height || "").slice(0, 20),
+      openToHeightGap: p.openToHeightGap === true,
     });
   });
 
