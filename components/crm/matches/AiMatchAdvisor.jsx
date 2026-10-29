@@ -27,6 +27,7 @@ import { crmAuth } from "@/lib/crm/firebaseClient";
 import { anonymizePool, validateDecisions } from "@/lib/crm/aiAnonymize";
 import { readFeedback, addFeedback, removeFeedback, feedbackForPrompt, FEEDBACK_MAX_CHARS } from "@/lib/crm/aiFeedback";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
+import WhatsAppImporter from "@/components/crm/matches/WhatsAppImporter";
 
 // מעטפת בטיחות מקומית: אם חלונית הצפייה נכשלת, היא פשוט נסגרת -
 // בלי להפיל את ההכרעות ואת שאר המסך.
@@ -499,6 +500,17 @@ export default function AiMatchAdvisor() {
             </div>
           );
         })}
+
+      {/* ---------- ניתוח מהיר מקבוצת וואטסאפ (בתוך מעטפת בטיחות) ---------- */}
+      <SafeBoundary>
+        <WhatsAppImporter
+          anon={anon}
+          byId={byId}
+          nowMs={() => Date.now() + (serverOffsetMs || 0)}
+          getFeedback={promptFeedback}
+          onView={setViewId}
+        />
+      </SafeBoundary>
 
       {/* ---------- זיכרון השדכנית: כל ההערות שנשמרו בצד ---------- */}
       <div className="rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
