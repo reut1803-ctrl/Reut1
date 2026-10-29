@@ -6,13 +6,46 @@
 // שכבר טעונים אצל המנהלת רשימה אנונימית (ראו lib/crm/aiAnonymize.js),
 // שולח אותה לנתיב השרת /api/ai-match, ומציג את התשובה.
 // ההכרעות היומיות נשמרות בדפדפן של המנהלת בלבד (localStorage), עד מחר.
+// גם הערות הדיוק של המנהלת נשמרות שם בלבד (ראו lib/crm/aiFeedback.js).
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { Sparkles, RefreshCw, MessageCircle, Send, ChevronDown, AlertTriangle, HelpCircle, Quote } from "lucide-react";
+import { Component, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Sparkles,
+  RefreshCw,
+  MessageCircle,
+  Send,
+  ChevronDown,
+  AlertTriangle,
+  HelpCircle,
+  Quote,
+  Eye,
+  PenLine,
+  Trash2,
+} from "lucide-react";
 import { useCrmStore, PROPOSAL_DROPPED, OWNER_EMAIL } from "@/lib/crm/store";
 import { crmAuth } from "@/lib/crm/firebaseClient";
 import { anonymizePool, validateDecisions } from "@/lib/crm/aiAnonymize";
+import { readFeedback, addFeedback, removeFeedback, feedbackForPrompt, FEEDBACK_MAX_CHARS } from "@/lib/crm/aiFeedback";
+import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
+
+// מעטפת בטיחות מקומית: אם חלונית הצפייה נכשלת, היא פשוט נסגרת -
+// בלי להפיל את ההכרעות ואת שאר המסך.
+class SafeBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { failed: false };
+  }
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error) {
+    console.error("עוזר ההתאמות - חלונית נכשלה:", error);
+    this.props.onError?.();
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 const CACHE_PREFIX = "aiMatchPicks:v2";
 
@@ -103,6 +136,42 @@ export default function AiMatchAdvisor() {
   const [picksError, setPicksError] = useState("");
   const attempted = useRef(new Set());
 
+  // --- הערות לדיוק הבינה ---
+  const [feedback, setFeedback] = useState([]);
+  const [noteFor, setNoteFor] = useState(null); // מזהה המועמד/ת שבכרטיס שלה פתוח שדה הערה
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteError, setNoteError] = useState("");
+  const [notesOpen, setNotesOpen] = useState(false);
+  useEffect(() => {
+    setFeedback(readFeedback());
+  }, []);
+  const promptFeedback = () => feedbackForPrompt(feedback, { byId, idToCode: anon.idToCode });
+
+  const saveNote = (d) => {
+    const next = addFeedback({
+      text: noteDraft,
+      candidateId: d.candidateId,
+      optionAId: d.optionAId,
+      optionBId: d.optionBId,
+      winnerId: d.winnerId,
+    });
+    if (!next) {
+      setNoteError("הדפדפן חסם את השמירה. ההערה לא נשמרה.");
+      return;
+    }
+    setFeedback(next);
+    setNoteFor(null);
+    setNoteDraft("");
+    setNoteError("");
+  };
+  const deleteNote = (id) => {
+    const next = removeFeedback(id);
+    if (next) setFeedback(next);
+  };
+
+  // --- צפייה מהירה בכרטיס, בלי לצאת מהמסך ---
+  const [viewId, setViewId] = useState(null);
+
   const runPicks = async () => {
     if (picksLoading) return;
     setPicksLoading(true);
@@ -113,6 +182,7 @@ export default function AiMatchAdvisor() {
         focusGender: board,
         pool: anon.pool,
         forbiddenPairs: anon.forbiddenPairs,
+        feedback: promptFeedback(),
       });
       // בדיקה שאינה סומכת על הבינה, ואז המרה למזהי הכרטיסים האמיתיים
       const valid = validateDecisions(data.decisions, anon).map((d) => ({
@@ -185,6 +255,7 @@ export default function AiMatchAdvisor() {
         mode: "chat",
         pool: anon.pool,
         forbiddenPairs: anon.forbiddenPairs,
+        feedback: promptFeedback(),
         messages: next,
       });
       setChat([...next, { role: "assistant", content: data.reply || "" }]);
@@ -204,6 +275,25 @@ export default function AiMatchAdvisor() {
     if (!c) return "?";
     return [firstName(id), c.age, c.tag].filter(Boolean).join(" · ");
   };
+  // בכותרת: שם מלא ויישוב, כדי שיהיה ברור מיד במי מדובר. המסך גלוי למנהלת
+  // בלבד, והשם המלא לעולם אינו נשלח לבינה.
+  const personFull = (id) => {
+    const c = byId.get(id);
+    if (!c) return "?";
+    return [String(c.name || "").trim() || firstName(id), c.age, c.tag, c.city].filter(Boolean).join(" · ");
+  };
+  const eyeButton = (id, size = 15) => (
+    <button
+      type="button"
+      onClick={() => setViewId(id)}
+      aria-label={`צפייה בכרטיס של ${firstName(id)}`}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F6E4E6] text-[#8C4A55] transition active:scale-95"
+    >
+      <Eye size={size} />
+    </button>
+  );
+  const viewed = viewId ? byId.get(viewId) : null;
+  const nameOf = (id) => firstName(id);
 
   return (
     <div className="mt-4 space-y-3">
@@ -261,7 +351,10 @@ export default function AiMatchAdvisor() {
               key={d.candidateId}
               className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]"
             >
-              <p className="text-[15px] font-bold text-[#3A3335]">{person(d.candidateId)}</p>
+              <div className="flex items-center gap-2">
+                {eyeButton(d.candidateId, 16)}
+                <p className="text-[15px] font-bold leading-snug text-[#3A3335]">{personFull(d.candidateId)}</p>
+              </div>
 
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {[d.winnerId, loserId].map((id) => {
@@ -280,12 +373,13 @@ export default function AiMatchAdvisor() {
                         {label}
                       </p>
                       <p className="mt-0.5 text-[13px] font-semibold text-[#3A3335]">{person(id)}</p>
-                      <Link
-                        href={`/crm?openCandidate=${id}`}
-                        className="mt-1 inline-block text-[11px] font-semibold text-[#8C4A55] underline underline-offset-2"
+                      <button
+                        type="button"
+                        onClick={() => setViewId(id)}
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-[#8C4A55]"
                       >
-                        לכרטיס
-                      </Link>
+                        <Eye size={13} /> צפייה
+                      </button>
                     </div>
                   );
                 })}
@@ -322,9 +416,106 @@ export default function AiMatchAdvisor() {
                   <Quote size={11} className="mt-0.5 shrink-0" /> {d.evidence}
                 </p>
               )}
+
+              {/* ---------- הערה לדיוק הבינה ---------- */}
+              <div className="mt-3 border-t border-[#EAE5E3] pt-2.5">
+                {feedback
+                  .filter((n) => n.candidateId === d.candidateId)
+                  .map((n) => (
+                    <div key={n.id} className="mb-1.5 flex items-start gap-2 rounded-xl bg-[#F6F5F4] px-2.5 py-2 text-[11.5px] leading-relaxed text-[#3A3335]">
+                      <PenLine size={12} className="mt-0.5 shrink-0 text-[#8C4A55]" />
+                      <span className="flex-1 whitespace-pre-wrap">{n.text}</span>
+                      <button type="button" onClick={() => deleteNote(n.id)} aria-label="מחיקת ההערה" className="shrink-0 text-[#B5AEB0]">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                {noteFor === d.candidateId ? (
+                  <div>
+                    <textarea
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value.slice(0, FEEDBACK_MAX_CHARS))}
+                      rows={2}
+                      autoFocus
+                      placeholder="למשל: היא פתוחה מדי בשבילו"
+                      className="w-full resize-none rounded-2xl border border-[#EAE5E3] bg-white px-3 py-2 text-[12.5px] outline-none focus:border-[#8C4A55]"
+                    />
+                    {noteError && <p className="mt-1 text-[11px] text-[#C24545]">{noteError}</p>}
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => saveNote(d)}
+                        disabled={!noteDraft.trim()}
+                        className="rounded-xl bg-[#8C4A55] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40"
+                      >
+                        שמירה
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNoteFor(null);
+                          setNoteDraft("");
+                          setNoteError("");
+                        }}
+                        className="text-[12px] font-semibold text-[#8A8285]"
+                      >
+                        ביטול
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNoteFor(d.candidateId);
+                      setNoteDraft("");
+                      setNoteError("");
+                    }}
+                    className="flex items-center gap-1 text-[11.5px] font-semibold text-[#8C4A55]"
+                  >
+                    <PenLine size={12} /> הערה לדיוק ה-AI
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
+
+      {/* ---------- כל ההערות שנשמרו ---------- */}
+      {feedback.length > 0 && (
+        <div className="rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+          <button
+            type="button"
+            onClick={() => setNotesOpen((v) => !v)}
+            className="flex w-full items-center justify-between px-4 py-3.5"
+          >
+            <span className="flex items-center gap-2 text-[14px] font-bold text-[#3A3335]">
+              <PenLine size={16} className="text-[#8C4A55]" /> הדגשים שלי לבינה ({feedback.length})
+            </span>
+            <ChevronDown size={16} className={`text-[#8A8285] transition ${notesOpen ? "rotate-180" : ""}`} />
+          </button>
+          {notesOpen && (
+            <div className="space-y-1.5 border-t border-[#EAE5E3] px-4 pb-4 pt-3">
+              <p className="text-[11px] leading-relaxed text-[#8A8285]">
+                {`ה-${Math.min(feedback.length, 25)} האחרונים נשלחים לבינה בכל פנייה. נשמרים במכשיר הזה בלבד.`}
+              </p>
+              {[...feedback].reverse().map((n) => (
+                <div key={n.id} className="flex items-start gap-2 rounded-xl bg-[#F6F5F4] px-2.5 py-2 text-[11.5px] leading-relaxed text-[#3A3335]">
+                  <span className="flex-1">
+                    {n.candidateId && byId.get(n.candidateId) && (
+                      <span className="font-semibold text-[#8C4A55]">{nameOf(n.candidateId)}: </span>
+                    )}
+                    <span className="whitespace-pre-wrap">{n.text}</span>
+                  </span>
+                  <button type="button" onClick={() => deleteNote(n.id)} aria-label="מחיקת ההערה" className="shrink-0 text-[#B5AEB0]">
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ---------- שותף חשיבה ---------- */}
       <div className="rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
@@ -402,6 +593,13 @@ export default function AiMatchAdvisor() {
           </div>
         )}
       </div>
+
+      {/* ---------- צפייה מהירה: אותו כרטיס מלא שמוצג במאגר ---------- */}
+      {viewed && (
+        <SafeBoundary key={viewId} onError={() => setViewId(null)}>
+          <ProfileDetailModal candidate={viewed} onClose={() => setViewId(null)} />
+        </SafeBoundary>
+      )}
     </div>
   );
 }

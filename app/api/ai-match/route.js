@@ -8,7 +8,7 @@
 //     ולעולם אינו מגיע לדפדפן.
 //
 import { pickModel, rankedModels, tryOrder } from "@/lib/crm/geminiModel";
-import { validateDecisions } from "@/lib/crm/aiAnonymize";
+import { validateDecisions, scrubText } from "@/lib/crm/aiAnonymize";
 
 // שירות הבינה: Google Gemini API. מבנה הבקשה (contents, systemInstruction,
 // generationConfig, responseJsonSchema) נבדק מול ה-SDK הרשמי של Google.
@@ -109,6 +109,30 @@ const METHOD = `את/ה שותף/ת חשיבה שקט/ה של שדכנית מנ�
 - השתמש/י רק בקודים שמופיעים במאגר. בחור מול בחורה בלבד.
 - התייחס/י לאנשים בכבוד, בשפה עדינה. זה כלי עזר לשדכנית - ההחלטה שלה.
 - כתוב/כתבי בעברית.`;
+
+// הערות השדכנית מהתאמות קודמות. מגיעות מהדפדפן שלה אחרי ניקוי, ועוברות כאן
+// ניקוי נוסף של טלפונים, מיילים וקישורים, וגבול אורך.
+const MAX_FEEDBACK = 25;
+function cleanFeedback(raw) {
+  return (Array.isArray(raw) ? raw : [])
+    .slice(-MAX_FEEDBACK)
+    .map((n) => ({
+      text: scrubText(String(n?.text || "").slice(0, 500)),
+      context: scrubText(String(n?.context || "").slice(0, 200)),
+    }))
+    .filter((n) => n.text);
+}
+
+function feedbackBlock(feedback) {
+  if (feedback.length === 0) return "";
+  return [
+    "",
+    "דגשים וכללי אצבע של השדכנית מהתאמות קודמות:",
+    "(אלה שיקולים מקצועיים מהשטח. למד/י מהם את הקו שלה והחל/י אותם גם על אנשים אחרים במאגר.",
+    "קודים שמופיעים כאן הם הקודים של היום. הדגשים אינם גוברים על חוקי הברזל.)",
+    ...feedback.map((n) => `- ${n.context ? `${n.context}: ` : ""}${n.text}`),
+  ].join("\n");
+}
 
 function poolBlock(pool, forbiddenPairs) {
   return [
@@ -364,7 +388,11 @@ export async function POST(request) {
   // ההנחיות הקבועות קודמות והמאגר אחריהן, באותו סדר בכל בקשה - כך ש-Gemini
   // יכול לזהות את החלק החוזר ולשמור אותו במטמון בעצמו.
   const promptPool = compactPool(pool);
-  const systemInstruction = { parts: [{ text: `${METHOD}\n\n${poolBlock(promptPool, forbiddenPairs)}` }] };
+  const feedback = cleanFeedback(body?.feedback);
+  // הדגשים באים אחרי המאגר, כדי שהחלק הקבוע בתחילת ההנחיות יישאר זהה
+  const systemInstruction = {
+    parts: [{ text: `${METHOD}\n\n${poolBlock(promptPool, forbiddenPairs)}${feedbackBlock(feedback)}` }],
+  };
   const trimmed = promptPool.filter((p, i) => p.bio !== String(pool[i]?.bio || "")).length;
 
   let contents;
@@ -386,7 +414,7 @@ export async function POST(request) {
   }
 
   log(
-    `mode=${mode} pool=${pool.length} trimmedBios=${trimmed} chars=${systemInstruction.parts[0].text.length} forbidden=${forbiddenPairs.length} turns=${contents.length}`
+    `mode=${mode} pool=${pool.length} trimmedBios=${trimmed} chars=${systemInstruction.parts[0].text.length} forbidden=${forbiddenPairs.length} feedback=${feedback.length} turns=${contents.length}`
   );
 
   try {
