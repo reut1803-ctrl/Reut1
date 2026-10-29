@@ -8,6 +8,7 @@
 //     ולעולם אינו מגיע לדפדפן.
 //
 import { pickModel, rankedModels, tryOrder } from "@/lib/crm/geminiModel";
+import { validateDecisions } from "@/lib/crm/aiAnonymize";
 
 // שירות הבינה: Google Gemini API. מבנה הבקשה (contents, systemInstruction,
 // generationConfig, responseJsonSchema) נבדק מול ה-SDK הרשמי של Google.
@@ -151,8 +152,8 @@ const DECISIONS_SCHEMA = {
 
 function picksPrompt(focusGender) {
   const who = focusGender === "female" ? "בחורות (קוד F)" : "בחורים (קוד M)";
-  return `הפק/י עד 3 "הכרעות שיא" להיום. המועמדים שבמוקד: ${who}.
-לכל הכרעה: בחר/י מועמד/ת אחד/ת מהמוקד, ומצא/י את שתי האפשרויות הבולטות ביותר מהצד השני (optionA, optionB).
+  return `הפק/י את 6 ההכרעות החזקות ביותר שאפשר למצוא היום במאגר, מהחזקה לחלשה. המועמדים שבמוקד: ${who}.
+לכל הכרעה: בחר/י מועמד/ת אחד/ת מהמוקד (כל מועמד/ת פעם אחת לכל היותר), ומצא/י את שתי האפשרויות הבולטות ביותר מהצד השני (optionA, optionB).
 עמת/י ביניהן ראש בראש והכרע/י מי מנצחת (winner = הקוד שלה).
 - religiousFit: למה זה "אותו ראש דתי" (עבודת ה', מפגש עם העולם, חזון הבית).
 - emotionalFit: איך האנרגיות והקצבים משלימים.
@@ -160,7 +161,9 @@ function picksPrompt(focusGender) {
 - blindSpot: נקודה עיוורת אחת שהשדכנית צריכה לבדוק מראש.
 - questionToCheck: שאלה אחת לבירור.
 - evidence: ציטוט קצר מהכרטיסים שעליו נשענת ההכרעה.
-הצג/י רק הכרעות שעומדות ברף "וואו". אם יש פחות משלוש כאלה - החזר/י פחות, ואף אחת אם אין.
+המאגר גדול, ולכן תמיד יש הכרעות להציג: אל תחזיר/י רשימה ריקה רק כי אין התאמה מושלמת.
+בחר/י את הטובות ביותר שיש. אם המידע בכרטיסים חלקי - אמור/אמרי זאת ב-blindSpot, ואל תמציא/י.
+רשימה ריקה מותרת רק אם אין במאגר אף מועמד/ת מאחד הצדדים.
 ב-note: משפט אחד על מצב המאגר (למשל אם חסר מידע בתיאורים).`;
 }
 
@@ -347,7 +350,9 @@ export async function POST(request) {
 
   const mode = body?.mode;
   const pool = Array.isArray(body?.pool) ? body.pool : null;
-  const forbiddenPairs = Array.isArray(body?.forbiddenPairs) ? body.forbiddenPairs : [];
+  const forbiddenPairs = (Array.isArray(body?.forbiddenPairs) ? body.forbiddenPairs : []).filter(
+    (p) => Array.isArray(p) && typeof p[0] === "string" && typeof p[1] === "string"
+  );
   if (mode !== "picks" && mode !== "chat") return fail(400, "מצב לא מוכר");
   if (!pool || pool.length === 0) return fail(400, "אין מועמדים פנויים במאגר");
   if (pool.length > MAX_POOL) return fail(400, "המאגר גדול מהצפוי");
@@ -411,7 +416,12 @@ export async function POST(request) {
       } catch {
         return fail(502, "התשובה מהבינה לא הגיעה בפורמט הצפוי.");
       }
-      return Response.json({ ok: true, decisions: parsed.decisions || [], note: parsed.note || "" });
+      // אותה בדיקה שהדפדפן עושה, כבר כאן: מבקשים 6 ומחזירים את 3 התקינות
+      // הראשונות - כך שהכרעה שנפסלה (קוד שגוי, זוג שירד מהפרק) מתחלפת בבאה
+      const raw = Array.isArray(parsed.decisions) ? parsed.decisions : [];
+      const decisions = validateDecisions(raw, { pool, forbiddenPairs });
+      log(`picks: model returned ${raw.length}, valid ${decisions.length}`);
+      return Response.json({ ok: true, decisions, note: parsed.note || "" });
     }
     return Response.json({ ok: true, reply: text });
   } catch (err) {

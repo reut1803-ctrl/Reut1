@@ -14,7 +14,7 @@ import { useCrmStore, PROPOSAL_DROPPED, OWNER_EMAIL } from "@/lib/crm/store";
 import { crmAuth } from "@/lib/crm/firebaseClient";
 import { anonymizePool, validateDecisions } from "@/lib/crm/aiAnonymize";
 
-const CACHE_PREFIX = "aiMatchPicks:v1";
+const CACHE_PREFIX = "aiMatchPicks:v2";
 
 const readCache = (key) => {
   try {
@@ -129,7 +129,8 @@ export default function AiMatchAdvisor() {
       }));
       const result = { decisions: valid, note: withNames(data.note), at: Date.now() };
       setPicks(result);
-      writeCache(cacheKey, result);
+      // תוצאה ריקה לא נשמרת ליום כולו - בכניסה הבאה מנסים שוב
+      if (valid.length > 0) writeCache(cacheKey, result);
     } catch (err) {
       setPicksError(err?.message || "משהו השתבש");
     } finally {
