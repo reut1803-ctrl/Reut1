@@ -145,7 +145,26 @@ export default function AiMatchAdvisor() {
   useEffect(() => {
     setFeedback(readFeedback());
   }, []);
-  const promptFeedback = () => feedbackForPrompt(feedback, { byId, idToCode: anon.idToCode });
+  // מנגנון הגנה: אם הזיכרון לא נטען או פגום - שולחים בלעדיו, וההכרעות
+  // והשיחה עובדות בדיוק כמו קודם
+  const promptFeedback = () => {
+    try {
+      return feedbackForPrompt(feedback, { byId, idToCode: anon.idToCode, everyone });
+    } catch {
+      return [];
+    }
+  };
+  const [generalDraft, setGeneralDraft] = useState("");
+  const saveGeneralNote = () => {
+    const next = addFeedback({ text: generalDraft });
+    if (!next) {
+      setNoteError("הדפדפן חסם את השמירה. ההערה לא נשמרה.");
+      return;
+    }
+    setFeedback(next);
+    setGeneralDraft("");
+    setNoteError("");
+  };
 
   const saveNote = (d) => {
     const next = addFeedback({
@@ -481,41 +500,57 @@ export default function AiMatchAdvisor() {
           );
         })}
 
-      {/* ---------- כל ההערות שנשמרו ---------- */}
-      {feedback.length > 0 && (
-        <div className="rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-          <button
-            type="button"
-            onClick={() => setNotesOpen((v) => !v)}
-            className="flex w-full items-center justify-between px-4 py-3.5"
-          >
-            <span className="flex items-center gap-2 text-[14px] font-bold text-[#3A3335]">
-              <PenLine size={16} className="text-[#8C4A55]" /> הדגשים שלי לבינה ({feedback.length})
-            </span>
-            <ChevronDown size={16} className={`text-[#8A8285] transition ${notesOpen ? "rotate-180" : ""}`} />
-          </button>
-          {notesOpen && (
-            <div className="space-y-1.5 border-t border-[#EAE5E3] px-4 pb-4 pt-3">
-              <p className="text-[11px] leading-relaxed text-[#8A8285]">
-                {`ה-${Math.min(feedback.length, 25)} האחרונים נשלחים לבינה בכל פנייה. נשמרים במכשיר הזה בלבד.`}
-              </p>
-              {[...feedback].reverse().map((n) => (
-                <div key={n.id} className="flex items-start gap-2 rounded-xl bg-[#F6F5F4] px-2.5 py-2 text-[11.5px] leading-relaxed text-[#3A3335]">
-                  <span className="flex-1">
-                    {n.candidateId && byId.get(n.candidateId) && (
-                      <span className="font-semibold text-[#8C4A55]">{nameOf(n.candidateId)}: </span>
-                    )}
-                    <span className="whitespace-pre-wrap">{n.text}</span>
-                  </span>
-                  <button type="button" onClick={() => deleteNote(n.id)} aria-label="מחיקת ההערה" className="shrink-0 text-[#B5AEB0]">
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
+      {/* ---------- זיכרון השדכנית: כל ההערות שנשמרו בצד ---------- */}
+      <div className="rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+        <button
+          type="button"
+          onClick={() => setNotesOpen((v) => !v)}
+          className="flex w-full items-center justify-between px-4 py-3.5"
+        >
+          <span className="flex items-center gap-2 text-[14px] font-bold text-[#3A3335]">
+            <PenLine size={16} className="text-[#8C4A55]" /> הזיכרון שלי לבינה ({feedback.length})
+          </span>
+          <ChevronDown size={16} className={`text-[#8A8285] transition ${notesOpen ? "rotate-180" : ""}`} />
+        </button>
+        {notesOpen && (
+          <div className="space-y-1.5 border-t border-[#EAE5E3] px-4 pb-4 pt-3">
+            <p className="text-[11px] leading-relaxed text-[#8A8285]">
+              נשמרים בצד, במכשיר הזה בלבד, ולא בכרטיסים. 25 האחרונים נשלחים לבינה בכל פנייה.
+            </p>
+            <div className="flex items-end gap-2">
+              <textarea
+                value={generalDraft}
+                onChange={(e) => setGeneralDraft(e.target.value.slice(0, FEEDBACK_MAX_CHARS))}
+                rows={2}
+                placeholder='למשל: רונן רוצה עד גיל 36'
+                className="min-h-[44px] flex-1 resize-none rounded-2xl border border-[#EAE5E3] bg-white px-3 py-2 text-[12.5px] outline-none focus:border-[#8C4A55]"
+              />
+              <button
+                type="button"
+                onClick={saveGeneralNote}
+                disabled={!generalDraft.trim()}
+                className="h-11 shrink-0 rounded-2xl bg-[#8C4A55] px-3 text-[12px] font-semibold text-white disabled:opacity-40"
+              >
+                שמירה
+              </button>
             </div>
-          )}
-        </div>
-      )}
+            {noteError && noteFor === null && <p className="text-[11px] text-[#C24545]">{noteError}</p>}
+            {[...feedback].reverse().map((n) => (
+              <div key={n.id} className="flex items-start gap-2 rounded-xl bg-[#F6F5F4] px-2.5 py-2 text-[11.5px] leading-relaxed text-[#3A3335]">
+                <span className="flex-1">
+                  {n.candidateId && byId.get(n.candidateId) && (
+                    <span className="font-semibold text-[#8C4A55]">{nameOf(n.candidateId)}: </span>
+                  )}
+                  <span className="whitespace-pre-wrap">{n.text}</span>
+                </span>
+                <button type="button" onClick={() => deleteNote(n.id)} aria-label="מחיקת ההערה" className="shrink-0 text-[#B5AEB0]">
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ---------- שותף חשיבה ---------- */}
       <div className="rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
