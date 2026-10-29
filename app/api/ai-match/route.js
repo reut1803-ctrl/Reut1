@@ -28,8 +28,35 @@ const MODEL_CACHE_MS = 6 * 60 * 60 * 1000;
 let chosenModel = null;
 let chosenAt = 0;
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
-// מגבלת השרת היא 60 שניות. משאירים מרווח לאימות הזהות ולתשובה.
-const TIME_BUDGET_MS = 52_000;
+// מגבלת השרת ב-Vercel היא 60 שניות. אם היא נחצית, Vercel קוטע את השרת בלי
+// הודעה מסודרת - והדפדפן מנסה שוב ומחכה עוד דקה. לכן כל הבקשה, מתחילתה,
+// חייבת להסתיים בתוך 42 שניות, וכל פנייה חיצונית מוגבלת בזמן משלה.
+const TIME_BUDGET_MS = 42_000;
+const SIDE_CALL_TIMEOUT_MS = 8_000;
+
+// מאגר גדול הוא בקשה ענקית למסלול החינמי: איטית, ועלולה לחרוג ממכסת
+// המילים לדקה. לכן כל תיאור נשלח בקיצור עד אורך קבוע. רוב התיאורים קצרים
+// מזה ונשלחים במלואם; רק תיאורים ארוכים במיוחד מקוצרים, ומסומנים ככאלה.
+const BIO_MAX_CHARS = 600;
+const FIELD_MAX_CHARS = 120;
+
+async function fetchWithTimeout(url, options, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function compactPool(pool) {
+  const cut = (v, n) => {
+    const t = String(v || "");
+    return t.length > n ? `${t.slice(0, n).trim()}… [קוצר]` : t;
+  };
+  return pool.map((p) => ({ ...p, bio: cut(p?.bio, BIO_MAX_CHARS), currentOccupation: cut(p?.currentOccupation, FIELD_MAX_CHARS) }));
+}
 const MAX_POOL = 400;
 const MAX_CHAT_TURNS = 24;
 
@@ -44,9 +71,10 @@ function fail(status, message) {
 async function verifyOwner(idToken) {
   if (!idToken || typeof idToken !== "string") return { ok: false, reason: "חסר אסימון כניסה" };
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_WEB_API_KEY}`,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) }
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) },
+      SIDE_CALL_TIMEOUT_MS
     );
     const data = await res.json().catch(() => null);
     const user = data?.users?.[0];
@@ -154,9 +182,11 @@ function retryDelayFrom(errorBody) {
 }
 
 async function listModels() {
-  const res = await fetch(`${GEMINI_BASE}/models?pageSize=200`, {
-    headers: { "x-goog-api-key": process.env.GEMINI_API_KEY },
-  });
+  const res = await fetchWithTimeout(
+    `${GEMINI_BASE}/models?pageSize=200`,
+    { headers: { "x-goog-api-key": process.env.GEMINI_API_KEY } },
+    SIDE_CALL_TIMEOUT_MS
+  );
   const data = await res.json().catch(() => null);
   if (!res.ok) throw new GeminiError(res.status, data?.error?.message || `HTTP ${res.status}`);
   return data?.models || [];
@@ -243,9 +273,11 @@ function explainGeminiError(err) {
   }
   if (s === 429) {
     const sec = err.retryAfterMs ? ` נסי שוב בעוד כ-${Math.ceil(err.retryAfterMs / 1000)} שניות.` : " נסי שוב בעוד דקה.";
-    return { status: 429, msg: `הגעת למגבלת השימוש של המסלול החינמי.${sec}` };
+    // 503 ולא 429: הדפדפן מנסה שוב אוטומטית על 429, ובמסלול החינמי ניסיון
+    // חוזר אחרי שתי שניות כמעט תמיד נכשל שוב - וההמתנה רק מתארכת.
+    return { status: 503, msg: `הגעת למגבלת השימוש של המסלול החינמי.${sec}` };
   }
-  if (s === 504) return { status: 504, msg: "שירות הבינה לא ענה בזמן. נסי שוב." };
+  if (s === 504) return { status: 503, msg: "שירות הבינה לא ענה בזמן (כ-40 שניות). נסי שוב בעוד רגע." };
   if (s === 0) return { status: 502, msg: "אין חיבור לשירות הבינה. נסי שוב." };
   if (s === 400) return { status: 502, msg: `הבקשה לשירות הבינה נדחתה: ${raw}` };
   return { status: 502, msg: `שגיאה בשירות הבינה (${s ?? "?"}). נסי שוב.` };
@@ -310,7 +342,9 @@ export async function POST(request) {
 
   // ההנחיות הקבועות קודמות והמאגר אחריהן, באותו סדר בכל בקשה - כך ש-Gemini
   // יכול לזהות את החלק החוזר ולשמור אותו במטמון בעצמו.
-  const systemInstruction = { parts: [{ text: `${METHOD}\n\n${poolBlock(pool, forbiddenPairs)}` }] };
+  const promptPool = compactPool(pool);
+  const systemInstruction = { parts: [{ text: `${METHOD}\n\n${poolBlock(promptPool, forbiddenPairs)}` }] };
+  const trimmed = promptPool.filter((p, i) => p.bio !== String(pool[i]?.bio || "")).length;
 
   let contents;
   const generationConfig = { maxOutputTokens: 16384 };
@@ -330,7 +364,9 @@ export async function POST(request) {
     contents = turns.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   }
 
-  log(`mode=${mode} pool=${pool.length} forbidden=${forbiddenPairs.length} turns=${contents.length}`);
+  log(
+    `mode=${mode} pool=${pool.length} trimmedBios=${trimmed} chars=${systemInstruction.parts[0].text.length} forbidden=${forbiddenPairs.length} turns=${contents.length}`
+  );
 
   try {
     const { data, model } = await callGemini({ systemInstruction, contents, generationConfig }, started);
