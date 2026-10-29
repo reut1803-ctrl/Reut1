@@ -7,7 +7,7 @@
 //   * מפתח שירות הבינה יושב רק כאן, במשתנה הסביבה GEMINI_API_KEY ב-Vercel,
 //     ולעולם אינו מגיע לדפדפן.
 //
-import { pickModel, rankedModels } from "@/lib/crm/geminiModel";
+import { pickModel, rankedModels, tryOrder } from "@/lib/crm/geminiModel";
 
 // שירות הבינה: Google Gemini API. מבנה הבקשה (contents, systemInstruction,
 // generationConfig, responseJsonSchema) נבדק מול ה-SDK הרשמי של Google.
@@ -25,8 +25,11 @@ const FIREBASE_WEB_API_KEY = "AIzaSyBKVXp-sbfm-ZfSSmSYKiWcepTEsF_UXNY";
 // כדי לא להיות תלויים בשם מודל שעלול להיעלם. הבחירה נשמרת לכמה שעות.
 const PINNED_MODEL = String(process.env.GEMINI_MODEL || "").trim();
 const MODEL_CACHE_MS = 6 * 60 * 60 * 1000;
-let chosenModel = null;
+let chosenModels = null;
 let chosenAt = 0;
+// כמה מודלים לנסות לכל היותר בבקשה אחת, וכמה זמן לתת לכל ניסיון
+const MAX_MODELS_TO_TRY = 3;
+const ATTEMPT_TIMEOUT_MS = 30_000;
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 // מגבלת השרת ב-Vercel היא 60 שניות. אם היא נחצית, Vercel קוטע את השרת בלי
 // הודעה מסודרת - והדפדפן מנסה שוב ומחכה עוד דקה. לכן כל הבקשה, מתחילתה,
@@ -192,15 +195,16 @@ async function listModels() {
   return data?.models || [];
 }
 
-async function resolveModel({ refresh = false } = {}) {
-  if (PINNED_MODEL) return PINNED_MODEL;
-  if (!refresh && chosenModel && Date.now() - chosenAt < MODEL_CACHE_MS) return chosenModel;
-  const model = pickModel(await listModels());
-  if (!model) throw new GeminiError(404, "no text model in account");
-  chosenModel = model;
+// רשימת המודלים לפי סדר העדפה, מתוך מה שזמין בחשבון בפועל
+async function resolveModels({ refresh = false } = {}) {
+  if (PINNED_MODEL) return [PINNED_MODEL];
+  if (!refresh && chosenModels && Date.now() - chosenAt < MODEL_CACHE_MS) return chosenModels;
+  const ranked = rankedModels(await listModels());
+  if (ranked.length === 0) throw new GeminiError(404, "no text model in account");
+  chosenModels = ranked;
   chosenAt = Date.now();
-  log(`model selected: ${model}`);
-  return model;
+  log(`models to try: ${tryOrder(ranked, MAX_MODELS_TO_TRY).join(", ")}`);
+  return ranked;
 }
 
 async function callGeminiOnce(payload, timeoutMs, model) {
@@ -227,38 +231,42 @@ async function callGeminiOnce(payload, timeoutMs, model) {
   }
 }
 
-// ניסיון חוזר עם השהיה הולכת וגדלה (1, 2, 4 שניות) בשגיאות זמניות בלבד:
-// עומס (429), תקלה בצד השרת (500/503), זמן קצוב או ניתוק. אם השירות מבקש
-// לחכות יותר ממה שנשאר בתקציב הזמן - עוצרים מיד ומסבירים, במקום להיתקע.
+// כש-Google עמוס (503), חורג ממכסה (429) או נכשל זמנית (500/502/504/ניתוק),
+// לא מנסים שוב את אותו מודל - עוברים מיד למודל הבא ברשימה של החשבון.
+// במסלול החינמי לכל מודל מכסה ועומס משלו, ולכן המודל הבא לרוב פנוי.
+// מודל שנעלם (404) גורם לרענון הרשימה. כל זה בתוך תקציב הזמן הכולל.
 async function callGemini(payload, started) {
-  const RETRYABLE = new Set([0, 429, 500, 502, 503, 504]);
-  let model = await resolveModel();
-  let repicked = false;
-  let delay = 1000;
-  for (let attempt = 1; ; attempt += 1) {
+  const SWITCH = new Set([0, 429, 500, 502, 503, 504]);
+  let models = tryOrder(await resolveModels(), MAX_MODELS_TO_TRY);
+  let refreshed = false;
+  const tried = [];
+  let lastErr = null;
+
+  for (let i = 0; i < models.length && tried.length < MAX_MODELS_TO_TRY; i += 1) {
+    const model = models[i];
+    if (tried.includes(model)) continue;
     const left = TIME_BUDGET_MS - (Date.now() - started);
+    if (left < 6000) break;
+    tried.push(model);
     try {
-      const data = await callGeminiOnce(payload, Math.max(5000, left), model);
+      const data = await callGeminiOnce(payload, Math.min(ATTEMPT_TIMEOUT_MS, left), model);
+      if (tried.length > 1) log(`succeeded on fallback model ${model} after: ${tried.slice(0, -1).join(", ")}`);
       return { data, model };
     } catch (err) {
-      err.model = model;
-      log(`attempt ${attempt} on ${model} failed: ${err.status} ${err.message}`);
-      // המודל נעלם מאז שנבחר - בוחרים מחדש מתוך הרשימה העדכנית, פעם אחת
-      if (err.status === 404 && !PINNED_MODEL && !repicked) {
-        repicked = true;
-        const next = await resolveModel({ refresh: true });
-        if (next !== model) {
-          model = next;
-          continue;
-        }
+      lastErr = err;
+      log(`model ${model} failed: ${err.status} ${err.message}`);
+      if (err.status === 404 && !PINNED_MODEL && !refreshed) {
+        refreshed = true;
+        models = tryOrder(await resolveModels({ refresh: true }), MAX_MODELS_TO_TRY + 1);
+        i = -1; // מתחילים מחדש ברשימה המעודכנת, בלי לחזור על מה שכבר נוסה
+        continue;
       }
-      const wait = Math.max(delay, err.retryAfterMs || 0);
-      const leftAfter = TIME_BUDGET_MS - (Date.now() - started);
-      if (!RETRYABLE.has(err.status) || attempt >= 3 || wait + 8000 > leftAfter) throw err;
-      await new Promise((r) => setTimeout(r, wait));
-      delay *= 2;
+      if (!SWITCH.has(err.status)) throw err;
     }
   }
+  const err = lastErr || new GeminiError(503, "no model attempted");
+  err.tried = tried;
+  throw err;
 }
 
 function explainGeminiError(err) {
@@ -278,6 +286,13 @@ function explainGeminiError(err) {
     return { status: 503, msg: `הגעת למגבלת השימוש של המסלול החינמי.${sec}` };
   }
   if (s === 504) return { status: 503, msg: "שירות הבינה לא ענה בזמן (כ-40 שניות). נסי שוב בעוד רגע." };
+  const triedCount = err?.tried?.length || 1;
+  if (s === 503 || s === 500 || s === 502) {
+    return {
+      status: 503,
+      msg: `השרתים של Google עמוסים כרגע${triedCount > 1 ? ` (נוסו ${triedCount} מודלים)` : ""}. זה קורה במסלול החינמי בשעות עומס - נסי שוב בעוד כמה דקות.`,
+    };
+  }
   if (s === 0) return { status: 502, msg: "אין חיבור לשירות הבינה. נסי שוב." };
   if (s === 400) return { status: 502, msg: `הבקשה לשירות הבינה נדחתה: ${raw}` };
   return { status: 502, msg: `שגיאה בשירות הבינה (${s ?? "?"}). נסי שוב.` };
@@ -309,6 +324,7 @@ export async function GET() {
     } else {
       result.selectedModel = pickModel(models);
       result.modelAvailable = !!result.selectedModel;
+      result.fallbackOrder = tryOrder(ranked, MAX_MODELS_TO_TRY);
     }
   } catch (err) {
     result.ok = false;
