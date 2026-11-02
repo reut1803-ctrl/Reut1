@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { useCrmStore, AGE_LIMITS, HEIGHT_LIMITS } from "@/lib/crm/store";
-import { REGIONS, occupationsFor, CANDIDATE_TAGS, religiousLevelsFor, smokingOptionsFor, TRAITS } from "@/lib/crm/mockData";
+import { REGIONS, occupationsFor, CANDIDATE_TAGS, religiousLevelsFor, TRAITS } from "@/lib/crm/mockData";
 import RangeSlider from "@/components/crm/ui/RangeSlider";
 import Button from "@/components/crm/ui/Button";
 
@@ -13,7 +13,6 @@ const STEP_TITLES = [
   "רמת תורניות",
   "אזור מועדף",
   "עיסוק",
-  "עישון",
   "סגנון חיים",
   "עד 3 תכונות אופי",
 ];
@@ -25,7 +24,6 @@ export default function MatchingWizard() {
   const setAnswers = useCrmStore((s) => s.setQuizAnswers);
   const completeQuiz = useCrmStore((s) => s.completeQuiz);
   const religiousLevels = religiousLevelsFor(board);
-  const smokingOptions = smokingOptionsFor(board);
   // רשימת המסלולים לפי המאגר הנצפה. מה שכבר סומן ממשיך להופיע גם אם
   // עוברים מאגר, כדי שבחירה קיימת לא תיעלם מהמסך.
   const occupationOptions = occupationsFor(board, answers.occupations);
@@ -130,14 +128,6 @@ export default function MatchingWizard() {
         )}
 
         {step === 5 && (
-          <ChoiceList
-            options={smokingOptions}
-            selected={[answers.smoking]}
-            onSelect={(v) => setAnswers({ smoking: v })}
-          />
-        )}
-
-        {step === 6 && (
           <div className="flex flex-wrap justify-center gap-2">
             {CANDIDATE_TAGS.map((t) => (
               <Chip key={t.name} active={answers.tags?.includes(t.name)} onClick={() => toggleTag(t.name)}>
@@ -147,7 +137,7 @@ export default function MatchingWizard() {
           </div>
         )}
 
-        {step === 7 && (
+        {step === 6 && (
           <div>
             <p className="mb-3 text-center text-[12px] text-[#8A8285]">נבחרו {answers.traits.length} מתוך 3</p>
             <div className="flex flex-wrap justify-center gap-2">

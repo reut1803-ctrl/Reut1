@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, occupationsFor, smokingOptionsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, occupationsFor, TRAITS, CANDIDATE_TAGS } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { optimizedImage } from "@/lib/crm/imageUrl";
@@ -29,7 +29,6 @@ const EMPTY_FORM = {
   yeshivaLevel: YESHIVA_LEVELS[0],
   currentOccupation: "",
   occupations: [],
-  smoking: smokingOptionsFor("male")[0],
   phone: "",
   bio: "",
   tag: "",
@@ -105,10 +104,9 @@ export default function AddCandidatePage() {
   const applyParsedText = ({ fields, traits: parsedTraits }) => {
     setForm((f) => {
       const next = { ...f, ...fields };
-      // רשימות הבחירה של רמה דתית ועישון תלויות במגדר, ולכן מיישרים אותן אם המגדר השתנה
+      // רשימת הבחירה של רמה דתית תלויה במגדר, ולכן מיישרים אותה אם המגדר השתנה
       if (fields.gender && fields.gender !== f.gender) {
         if (!fields.religiousLevel) next.religiousLevel = religiousLevelsFor(fields.gender)[0];
-        if (!fields.smoking) next.smoking = smokingOptionsFor(fields.gender)[0];
       }
       return next;
     });
@@ -116,7 +114,7 @@ export default function AddCandidatePage() {
   };
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
   const setGender = (gender) =>
-    setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
+    setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0] }));
   const clearDraft = () => {
     if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
   };
@@ -228,7 +226,6 @@ export default function AddCandidatePage() {
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
         currentOccupation: form.currentOccupation.trim(),
         occupations: form.occupations || [],
-        smoking: form.smoking,
         tag: form.tag || null,
         phone: form.phone.trim(),
         bio: form.bio.trim(),
@@ -449,16 +446,6 @@ export default function AddCandidatePage() {
           </div>
           <p className="mt-1 text-[11px] text-[#B5AEB0]">כל הדרכים שעברו בחיים - ישיבה, צבא, שירות, לימודים, תארים.</p>
         </div>
-
-        <Field label="עישון">
-          <select value={form.smoking} onChange={(e) => set({ smoking: e.target.value })} className="input-crm">
-            {smokingOptionsFor(form.gender).map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </Field>
 
         <Field label="תווית (רשות)">
           <select value={form.tag} onChange={(e) => set({ tag: e.target.value })} className="input-crm">

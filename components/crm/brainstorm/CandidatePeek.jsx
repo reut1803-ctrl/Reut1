@@ -159,10 +159,6 @@ export default function CandidatePeek({ candidateId, onClose }) {
                 </div>
               )}
 
-              {candidate.smoking && (
-                <p className="mt-3 text-[11px] text-[#8A8285]">* עישון: {candidate.smoking}</p>
-              )}
-
               {/* האזור הפנימי: הקלטות ומידע שמור לצוות בלבד */}
               {canSeeInternal && (
                 <div className="mt-4 space-y-3 border-t border-[#EAE5E3] pt-4">

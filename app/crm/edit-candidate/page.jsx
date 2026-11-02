@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Save, ImagePlus, X, FileText, Music, Trash2 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES } from "@/lib/crm/store";
-import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, occupationsFor, smokingOptionsFor, TRAITS, CANDIDATE_TAGS, normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
+import { REGIONS, religiousLevelsFor, EDUCATION_OPTIONS, YESHIVA_LEVELS, occupationsFor, TRAITS, CANDIDATE_TAGS, normalizeTagName, candidateOccupations } from "@/lib/crm/mockData";
 import { uploadToCloudinary } from "@/lib/crm/cloudinary";
 import { saveMedia } from "@/lib/crm/mediaStore";
 import { optimizedImage } from "@/lib/crm/imageUrl";
@@ -60,7 +60,6 @@ function EditCandidateForm() {
       yeshivaLevel: c.yeshivaLevel || YESHIVA_LEVELS[0],
       currentOccupation: c.currentOccupation || "",
       occupations: candidateOccupations(c),
-      smoking: c.smoking,
       tag: normalizeTagName(c.tag) || "",
       phone: c.phone || "",
       bio: c.bio || "",
@@ -103,7 +102,7 @@ function EditCandidateForm() {
     });
   const toggleTrait = (t) => setTraits((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
   const setGender = (gender) =>
-    setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0], smoking: smokingOptionsFor(gender)[0] }));
+    setForm((f) => ({ ...f, gender, religiousLevel: religiousLevelsFor(gender)[0] }));
 
   // אפשר לבחור כמה תמונות בבת אחת. כל תמונה מועלית בנפרד, וכישלון של אחת
   // אינו מבטל את השאר - מוצג בדיוק מה נכשל ומה עלה בהצלחה.
@@ -213,7 +212,6 @@ function EditCandidateForm() {
         yeshivaLevel: form.gender === "male" ? form.yeshivaLevel : null,
         currentOccupation: (form.currentOccupation || "").trim(),
         occupations: form.occupations || [],
-        smoking: form.smoking,
         tag: form.tag || null,
         phone: form.phone.trim(),
         bio: form.bio.trim(),
@@ -404,16 +402,6 @@ function EditCandidateForm() {
             })}
           </div>
         </div>
-
-        <Field label="עישון">
-          <select value={form.smoking} onChange={(e) => set({ smoking: e.target.value })} className="input-crm">
-            {smokingOptionsFor(form.gender).map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </Field>
 
         <Field label="תווית (רשות)">
           <select value={form.tag} onChange={(e) => set({ tag: e.target.value })} className="input-crm">

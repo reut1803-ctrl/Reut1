@@ -71,13 +71,6 @@ export default function CandidateExportTemplate({ candidate, forwardedRef }) {
           <p style={{ fontSize: "15px", margin: 0 }}>{candidate.traits.join(" · ")}</p>
         </div>
       )}
-
-      {/* עישון מוצג כהערת שוליים בתחתית העמוד, ולא כשורה בטבלה */}
-      {candidate.smoking && (
-        <p style={{ marginTop: "26px", paddingTop: "10px", borderTop: "1px solid #EAE5E3", fontSize: "13px", color: "#8A8285" }}>
-          * עישון: {candidate.smoking}
-        </p>
-      )}
     </div>
   );
 }

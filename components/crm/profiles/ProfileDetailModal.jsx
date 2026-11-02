@@ -107,12 +107,6 @@ export default function ProfileDetailModal({ candidate, onClose }) {
               </div>
             </div>
           )}
-
-          {candidate.smoking && (
-            <p className="mt-4 border-t border-[#EAE5E3] pt-2.5 text-[11px] text-[#8A8285]">
-              * עישון: {candidate.smoking}
-            </p>
-          )}
         </div>
       </div>
 
