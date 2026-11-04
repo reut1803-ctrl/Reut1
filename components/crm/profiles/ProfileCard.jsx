@@ -21,6 +21,7 @@ import {
   Inbox,
   PhoneCall,
   EyeOff,
+  Sparkles,
 } from "lucide-react";
 import { useCrmStore, AVAILABILITY_STATUSES, PROPOSAL_DROPPED, PROPOSAL_ON_HOLD, OWNER_EMAIL } from "@/lib/crm/store";
 import Button from "@/components/crm/ui/Button";
@@ -33,6 +34,7 @@ import { cleanShareText } from "@/lib/crm/shareClean";
 import { getAvailabilityColors } from "@/lib/crm/availability";
 import StageFunnel from "@/components/crm/proposals/StageFunnel";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
+import { SafeCandidateMatchFinder } from "@/components/crm/matches/CandidateMatchFinder";
 import CandidateExportTemplate from "@/components/crm/profiles/CandidateExportTemplate";
 import { generateCandidatePdf } from "@/lib/crm/generatePdf";
 import { CANDIDATE_TAGS, normalizeTagName } from "@/lib/crm/mockData";
@@ -268,6 +270,8 @@ export default function ProfileCard({ candidate, onReadMore }) {
   // המייל שאיתה היא מחוברת - לא לפי תפקיד בלבד.
   const isOwner = String(googleUser?.email || "").trim().toLowerCase() === OWNER_EMAIL;
   const [confirmingDeleteCard, setConfirmingDeleteCard] = useState(false);
+  // "מצא/י התאמה" בעזרת הבינה - לבעלת המערכת בלבד, כמו עוזר ההתאמות
+  const [showFinder, setShowFinder] = useState(false);
   const [deletingCard, setDeletingCard] = useState(false);
 
   const handleDeleteCard = async () => {
@@ -450,6 +454,16 @@ export default function ProfileCard({ candidate, onReadMore }) {
             >
               <HeartHandshake size={16} /> הצע/י התאמה עבור {firstName}
             </Link>
+          )}
+
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setShowFinder(true)}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-2xl border-2 border-[#8C4A55] bg-white px-4 py-3 text-sm font-semibold text-[#8C4A55] transition active:scale-95 hover:bg-[#8C4A55]/5"
+            >
+              <Sparkles size={16} /> מצא/י התאמה עבור {firstName} (בינה)
+            </button>
           )}
 
           <div className="flex gap-2">
@@ -819,6 +833,7 @@ export default function ProfileCard({ candidate, onReadMore }) {
       `}</style>
 
       {showDetail && <ProfileDetailModal candidate={candidate} onClose={() => setShowDetail(false)} />}
+      {showFinder && <SafeCandidateMatchFinder candidateId={candidate.id} onClose={() => setShowFinder(false)} />}
       {pendingDeleteVoiceNoteId && (
         <ConfirmDialog
           message="האם את בטוחה שברצונך למחוק הקלטה זו?"
