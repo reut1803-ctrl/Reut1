@@ -12,6 +12,7 @@
 import { useMemo, useRef, useState } from "react";
 import { ScanSearch, AlertTriangle, Check, ChevronDown, Cloud, Smartphone, Eye } from "lucide-react";
 import { crmAuth } from "@/lib/crm/firebaseClient";
+import { recordAiUsage, isDailyQuotaError, getTodayUsage, BULK_LIMIT, nextResetText } from "@/lib/crm/aiUsage";
 import { scrubText } from "@/lib/crm/aiAnonymize";
 import { OUTLOOK_FIELDS, fieldsFor, sourceHash, effectiveOutlook, labelConflict, UNKNOWN } from "@/lib/crm/outlook";
 
@@ -29,6 +30,8 @@ async function callExtract(items) {
     body: JSON.stringify({ items, idToken }),
   });
   const data = await res.json().catch(() => null);
+  // מד השימוש היומי: כל פנייה נספרת (כמה פניות נשלחו בפועל, כולל מעבר בין מודלים)
+  recordAiUsage(data?.attempts || 1, { exhausted: !res.ok && isDailyQuotaError(data?.error) });
   if (!res.ok || !data?.ok) throw new Error(data?.error || `שגיאה בחילוץ (${res.status})`);
   return data;
 }
@@ -81,6 +84,16 @@ export default function OutlookManager({ candidates, profiles, mode, save, local
     const queue = pending.map((r) => r.c);
     try {
       for (let i = 0; i < queue.length && !stopRef.current; i += BATCH) {
+        // תקציב יומי: הפעולה הגדולה נעצרת לפני שהיא שורפת את המכסה, ומשאירה רזרבה לעבודה השוטפת
+        const used = await getTodayUsage();
+        if (used.exhausted || used.count >= BULK_LIMIT) {
+          setError(
+            used.exhausted
+              ? `המכסה היומית נגמרה. מה שכבר נעשה נשמר - אפשר להמשיך מחר אחרי ${nextResetText()}.`
+              : `נעצר אחרי ${used.count} פניות היום, כדי להשאיר מכסה לעבודה השוטפת. אפשר להמשיך מחר אחרי ${nextResetText()}.`
+          );
+          break;
+        }
         const batch = queue.slice(i, i + BATCH);
         // מפתחות אקראיים לכל קבוצה - שום מזהה של הכרטיס לא יוצא מהדפדפן
         const items = batch.map((c, j) => {

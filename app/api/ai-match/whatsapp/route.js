@@ -267,7 +267,7 @@ export async function POST(request) {
   log(`chat=${safeChat.length} pool=${pool.length} feedback=${feedback.length} chars=${system.length}`);
 
   try {
-    const { data, model } = await callGemini(
+    const { data, model, attempts } = await callGemini(
       {
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: `${TASK}\n\nההודעות:\n${safeChat}` }] }],
@@ -298,7 +298,7 @@ export async function POST(request) {
     );
     // כשנמצאו כרטיסים אבל אף התאמה לא עמדה בדרישות הסף - אומרים את זה במפורש
     const note = profiles.length > 0 && matches.length === 0 ? NO_MATCH_NOTE : String(parsed?.note || "").slice(0, 400);
-    return Response.json({ ok: true, profiles, matches, note });
+    return Response.json({ ok: true, profiles, matches, note, attempts });
   } catch (err) {
     const { status, msg } = explainGeminiError(err);
     log(`error after ${Date.now() - started}ms:`, err?.status ?? "", err?.message ?? err);

@@ -202,5 +202,11 @@ service cloud.firestore {
     match /aiOutlookProfiles/{id} {
       allow read, write: if isOwner();
     }
+
+    // מטמון תוצאות "מצא/י התאמה" ומד השימוש היומי בבינה - אוסף נפרד מהכרטיסים.
+    // התוצאות שמורות עם מזהי כרטיסים ושמות פרטיים בלבד. לבעלת המערכת בלבד.
+    match /aiMatchCache/{id} {
+      allow read, write: if isOwner();
+    }
   }
 }

@@ -4,12 +4,12 @@
 //
 // שני שלבים:
 //   1. משפך בקוד, בלי בינה (lib/crm/aiShortlist.js): מי בכלל רלוונטי, ומי
-//      הכי קרוב - עד 12. מוצג מיד, כולל כמה נפסלו ולמה.
+//      הכי קרוב - עד 6. מוצג מיד, כולל כמה נפסלו ולמה.
 //   2. הבינה שופטת לעומק רק את הרשימה הקצרה (/api/ai-match/candidate).
 // קריאה בלבד: לא נכתב שום דבר למסד הנתונים. המידע שנשלח אנונימי, כמו
 // בעוזר ההתאמות - קוד ושם פרטי בלבד, וכרטיס חסוי לא נשלח לעולם.
 
-import { Component, useMemo, useState } from "react";
+import { Component, useEffect, useMemo, useState } from "react";
 import { X, Sparkles, Eye, Filter, AlertTriangle, HelpCircle, Quote, ChevronDown } from "lucide-react";
 import { useCrmStore, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { crmAuth } from "@/lib/crm/firebaseClient";
@@ -19,6 +19,8 @@ import { readVibes, vibeFor } from "@/lib/crm/aiVibe";
 import { readFeedback, feedbackForPrompt } from "@/lib/crm/aiFeedback";
 import { useOutlookProfiles } from "@/lib/crm/outlookStore";
 import { effectiveOutlook } from "@/lib/crm/outlook";
+import { hashInput, readFinderCache, writeFinderCache } from "@/lib/crm/aiCache";
+import { recordAiUsage, isDailyQuotaError, useAiUsage } from "@/lib/crm/aiUsage";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 
@@ -95,6 +97,43 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
       const id = anon.codeToId[code];
       return id ? firstName(id) : code;
     });
+  // הזיכרון של השדכנית, בצורה שנשלחת לבינה
+  const feedbackNow = () => {
+    try {
+      return feedbackForPrompt(readFeedback(), { byId, idToCode: anon.idToCode, everyone });
+    } catch {
+      return [];
+    }
+  };
+
+  // חתימת הקלט: לפי מזהי הכרטיסים ולא לפי הקודים האנונימיים (שמשתנים כשהמאגר משתנה)
+  const signature = useMemo(() => {
+    if (!funnel.focus) return "";
+    const strip = (p) => {
+      const { code, ...rest } = p;
+      return { ...rest, id: anon.codeToId[code] };
+    };
+    const fb = feedbackNow().map((n) => n.text);
+    return hashInput({ focus: strip(funnel.focus), options: funnel.options.map(strip), fb });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funnel, anon]);
+
+  // תוצאה שמורה: אם החתימה זהה - מוצגת מיד, בלי פנייה לבינה
+  const [cacheInfo, setCacheInfo] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    if (!signature) return undefined;
+    readFinderCache(candidateId).then((entry) => {
+      if (!alive || !entry?.result) return;
+      setResult(entry.result);
+      setCacheInfo({ at: entry.at, stale: entry.hash !== signature });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [candidateId, signature]);
+  const usage = useAiUsage(true);
+
   const fullLine = (id) => {
     const c = byId.get(id);
     return c ? [String(c.name || "").trim(), c.age, c.height && `${c.height} ס״מ`, c.tag, c.city].filter(Boolean).join(" · ") : "?";
@@ -105,16 +144,36 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
     setLoading(true);
     setError("");
     try {
-      let feedback = [];
-      try {
-        feedback = feedbackForPrompt(readFeedback(), { byId, idToCode: anon.idToCode, everyone });
-      } catch {
-        feedback = [];
-      }
-      const data = await callFinder({ focus: funnel.focus, options: funnel.options, feedback });
-      setResult(data);
+      const data = await callFinder({ focus: funnel.focus, options: funnel.options, feedback: feedbackNow() });
+      recordAiUsage(data.attempts || 1);
+      // שמירה עם מזהי כרטיסים ושמות פרטיים - כדי שהתוצאה תישאר נכונה גם כשהקודים משתנים
+      const normalized = {
+        model: data.model || "",
+        note: withNames(data.note),
+        recommendations: (data.recommendations || [])
+          .map((r) => ({
+            ...r,
+            candidateId: anon.codeToId[r.candidate],
+            lifestyle: withNames(r.lifestyle),
+            coreValues: withNames(r.coreValues),
+            energy: withNames(r.energy),
+            communication: withNames(r.communication),
+            blindSpot: withNames(r.blindSpot),
+            question: withNames(r.question),
+            evidence: withNames(r.evidence),
+          }))
+          .filter((r) => r.candidateId),
+        rejected: (data.rejected || [])
+          .map((r) => ({ candidateId: anon.codeToId[r.candidate], reason: withNames(r.reason) }))
+          .filter((r) => r.candidateId),
+      };
+      setResult(normalized);
+      setCacheInfo(null);
+      writeFinderCache(candidateId, { hash: signature, result: normalized });
     } catch (err) {
-      setError(err?.message || "משהו השתבש");
+      const msg = err?.message || "משהו השתבש";
+      recordAiUsage(1, { exhausted: isDailyQuotaError(msg) });
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -154,6 +213,7 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
                 {funnel.options.length > 0 && ` ${funnel.options.length} הקרובים ביותר נשלחים לבינה לבדיקה מעמיקה.`}
               </p>
               {excludedText && <p className="mt-1 text-[11px] text-[#8A8285]">נפסלו - {excludedText}</p>}
+              <p className="mt-1 text-[11px] text-[#B5AEB0]">שימוש היום בבינה: {usage.count} פניות</p>
             </div>
 
             {funnel.options.length === 0 ? (
@@ -180,19 +240,26 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
             {/* ---------- שלב 2: תוצאות הבינה ---------- */}
             {result && (
               <>
+                {cacheInfo && (
+                  <p className={`rounded-2xl p-2.5 text-[11px] ${cacheInfo.stale ? "bg-[#FFF8E7] text-[#946200]" : "bg-[#E9F6EF] text-[#178A57]"}`}>
+                    {cacheInfo.stale
+                      ? `תוצאה קודמת מ-${new Date(cacheInfo.at).toLocaleDateString("he-IL")}. מאז השתנו נתונים (מועמדים, תיאורים או פרופילים) - כדאי לבדוק מחדש.`
+                      : `תוצאה שמורה מ-${new Date(cacheInfo.at).toLocaleDateString("he-IL")} - בלי פנייה לבינה. שום דבר לא השתנה מאז.`}
+                  </p>
+                )}
                 {/lite/i.test(result.model || "") && (
                   <p className="rounded-2xl bg-[#FFF8E7] p-2.5 text-[11px] text-[#946200]">
                     השרתים של Google היו עמוסים, והתשובה הגיעה ממודל מהיר ופשוט יותר. כדאי לנסות שוב מאוחר יותר.
                   </p>
                 )}
                 {result.recommendations.length === 0 && (
-                  <p className="rounded-2xl bg-white p-4 text-center text-[13px] text-[#8A8285]">{withNames(result.note)}</p>
+                  <p className="rounded-2xl bg-white p-4 text-center text-[13px] text-[#8A8285]">{result.note}</p>
                 )}
                 {result.recommendations.map((r, i) => {
-                  const id = anon.codeToId[r.candidate];
+                  const id = r.candidateId;
                   if (!id || !byId.get(id)) return null;
                   return (
-                    <div key={r.candidate} className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+                    <div key={id} className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
@@ -210,34 +277,34 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
                       <div className="mt-2.5 space-y-1.5 text-[12.5px] leading-relaxed text-[#3A3335]">
                         <p>
                           <span className="font-bold text-[#8C4A55]">אורח חיים: </span>
-                          {withNames(r.lifestyle)}
+                          {r.lifestyle}
                         </p>
                         <p>
                           <span className="font-bold text-[#8C4A55]">ערכי ליבה: </span>
-                          {withNames(r.coreValues)}
+                          {r.coreValues}
                         </p>
                         <p>
                           <span className="font-bold text-[#8C4A55]">אנרגיה והשלמה: </span>
-                          {withNames(r.energy)}
+                          {r.energy}
                         </p>
                         <p>
                           <span className="font-bold text-[#8C4A55]">תקשורת וצרכים: </span>
-                          {withNames(r.communication)}
+                          {r.communication}
                         </p>
                       </div>
                       <div className="mt-2.5 rounded-2xl border border-[#F0D3A0] bg-[#FFF8E7] p-2.5 text-[12px] leading-relaxed">
                         <p className="flex items-center gap-1 font-bold text-[#946200]">
                           <AlertTriangle size={12} /> לבדוק מראש
                         </p>
-                        <p>{withNames(r.blindSpot)}</p>
+                        <p>{r.blindSpot}</p>
                         <p className="mt-1.5 flex items-center gap-1 font-bold text-[#946200]">
                           <HelpCircle size={12} /> שאלה לבירור
                         </p>
-                        <p>{withNames(r.question)}</p>
+                        <p>{r.question}</p>
                       </div>
                       {r.evidence && (
                         <p className="mt-2 flex gap-1.5 text-[11px] italic leading-relaxed text-[#8A8285]">
-                          <Quote size={11} className="mt-0.5 shrink-0" /> {withNames(r.evidence)}
+                          <Quote size={11} className="mt-0.5 shrink-0" /> {r.evidence}
                         </p>
                       )}
                     </div>
@@ -257,13 +324,13 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
                     {showRejected && (
                       <div className="space-y-1.5 border-t border-[#EAE5E3] px-3 pb-3 pt-2">
                         {result.rejected.map((r) => {
-                          const id = anon.codeToId[r.candidate];
+                          const id = r.candidateId;
                           return (
-                            <p key={r.candidate} className="text-[11.5px] leading-relaxed text-[#8A8285]">
+                            <p key={id} className="text-[11.5px] leading-relaxed text-[#8A8285]">
                               <button type="button" onClick={() => id && setViewId(id)} className="font-semibold text-[#8C4A55]">
                                 {firstName(id)}
                               </button>
-                              : {withNames(r.reason)}
+                              : {r.reason}
                             </p>
                           );
                         })}
@@ -274,10 +341,11 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
 
                 <button
                   type="button"
-                  onClick={() => setResult(null)}
-                  className="w-full text-center text-[12px] font-semibold text-[#8A8285] underline underline-offset-2"
+                  onClick={run}
+                  disabled={loading}
+                  className="w-full text-center text-[12px] font-semibold text-[#8A8285] underline underline-offset-2 disabled:opacity-50"
                 >
-                  בדיקה חוזרת
+                  {loading ? "בודקת..." : "בדיקה מחודשת (פנייה אחת לבינה)"}
                 </button>
               </>
             )}

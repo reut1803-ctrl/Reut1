@@ -113,12 +113,14 @@ export async function POST(request) {
   });
 
   try {
-    const { data, model } = await callGemini(
+    // סריקת תמונות היא משימה פשוטה: המודל הקל קודם, כדי לא לשרוף את המכסה של החזק
+    const { data, model, attempts } = await callGemini(
       {
         contents: [{ role: "user", parts }],
         generationConfig: { maxOutputTokens: 2048, responseMimeType: "application/json", responseJsonSchema: SCHEMA },
       },
-      started
+      started,
+      { prefer: "lite" }
     );
     const cand = data?.candidates?.[0];
     const finish = cand?.finishReason;
@@ -145,7 +147,7 @@ export async function POST(request) {
       results[x.key] = { visual_style: ok("visual_style"), setting_vibe: ok("setting_vibe"), energy_vibe: ok("energy_vibe") };
     });
     log(`vibe done in ${Date.now() - started}ms model=${model} images=${usable.length} results=${Object.keys(results).length}`);
-    return Response.json({ ok: true, results, skipped });
+    return Response.json({ ok: true, results, skipped, attempts });
   } catch (err) {
     const { status, msg } = explainGeminiError(err);
     log(`vibe error after ${Date.now() - started}ms:`, err?.status ?? "", err?.message ?? err);

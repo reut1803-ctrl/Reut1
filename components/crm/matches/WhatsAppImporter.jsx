@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { MessagesSquare, Upload, Sparkles, AlertTriangle, Eye, Copy, Check, ChevronDown, UserPlus, Phone } from "lucide-react";
 import { crmAuth } from "@/lib/crm/firebaseClient";
+import { recordAiUsage, isDailyQuotaError } from "@/lib/crm/aiUsage";
 import { parseChat, messagesInWindow, lastMessageAt, tokenizeChat, restoreTokens } from "@/lib/crm/whatsappChat";
 
 const SESSION_KEY = "aiWhatsapp:v1";
@@ -51,6 +52,8 @@ async function callWhatsapp(payload) {
     body: JSON.stringify({ ...payload, idToken }),
   });
   const data = await res.json().catch(() => null);
+  // מד השימוש היומי: כל פנייה נספרת (כמה פניות נשלחו בפועל, כולל מעבר בין מודלים)
+  recordAiUsage(data?.attempts || 1, { exhausted: !res.ok && isDailyQuotaError(data?.error) });
   if (!res.ok || !data?.ok) throw new Error(data?.error || `שגיאה בניתוח (${res.status})`);
   return data;
 }

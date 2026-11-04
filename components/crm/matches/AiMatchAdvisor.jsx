@@ -32,6 +32,7 @@ import VibeScanner from "@/components/crm/matches/VibeScanner";
 import { readVibes, vibeFor } from "@/lib/crm/aiVibe";
 import OutlookManager from "@/components/crm/matches/OutlookManager";
 import { useOutlookProfiles } from "@/lib/crm/outlookStore";
+import { recordAiUsage, isDailyQuotaError, nextResetText, useAiUsage } from "@/lib/crm/aiUsage";
 import { effectiveOutlook } from "@/lib/crm/outlook";
 
 // מעטפת בטיחות מקומית: אם חלונית הצפייה נכשלת, היא פשוט נסגרת -
@@ -84,6 +85,8 @@ async function callAdvisor(payload) {
       body: JSON.stringify({ ...payload, idToken }),
     });
     const data = await res.json().catch(() => null);
+    // מד השימוש היומי: כל פנייה נספרת (כמה פניות נשלחו בפועל, כולל מעבר בין מודלים)
+    recordAiUsage(data?.attempts || 1, { exhausted: !res.ok && isDailyQuotaError(data?.error) });
     if (!res.ok || !data?.ok) {
       const err = new Error(data?.error || `שגיאה בעוזר ההתאמות (${res.status})`);
       err.status = res.status;
@@ -133,6 +136,7 @@ export default function AiMatchAdvisor() {
   }, []);
   // פרופיל ההשקפה (אם חולץ) - מטריצת תנאי הסף בשרת משתמשת בו לפסילה
   const outlookStore = useOutlookProfiles(isOwner);
+  const aiUsage = useAiUsage(isOwner);
   const pool = useMemo(
     () =>
       anon.pool.map((p) => {
@@ -351,6 +355,11 @@ export default function AiMatchAdvisor() {
             </p>
             <p className="mt-1 text-[12.5px] text-white/80">
               {board === "female" ? "בחורות" : "בחורים"} במוקד · {anon.pool.length} פנויים במאגר · גלוי לך בלבד
+            </p>
+            <p className="mt-0.5 text-[11px] text-white/70">
+              {aiUsage.exhausted
+                ? `המכסה היומית בבינה נגמרה · מתחדשת ב-${nextResetText()}`
+                : `שימוש היום בבינה: ${aiUsage.count} פניות · מתאפס ב-${nextResetText()}`}
             </p>
           </div>
           <button

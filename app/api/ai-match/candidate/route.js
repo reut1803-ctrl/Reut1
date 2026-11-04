@@ -141,7 +141,7 @@ export async function POST(request) {
   log(`candidate focus=${focus.code} options=${options.length} feedback=${feedback.length} chars=${system.length}`);
 
   try {
-    const { data, model } = await callGemini(
+    const { data, model, attempts } = await callGemini(
       {
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: TASK }] }],
@@ -202,7 +202,7 @@ export async function POST(request) {
         (dropped.length ? ` dropped=${dropped.join(",")}` : "")
     );
     const note = recommendations.length === 0 ? NO_MATCH_TEXT : String(parsed?.note || "").slice(0, 400);
-    return Response.json({ ok: true, recommendations, rejected, note, model });
+    return Response.json({ ok: true, recommendations, rejected, note, model, attempts });
   } catch (err) {
     const { status, msg } = explainGeminiError(err);
     log(`candidate error after ${Date.now() - started}ms:`, err?.status ?? "", err?.message ?? err);

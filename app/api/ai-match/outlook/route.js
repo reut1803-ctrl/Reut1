@@ -112,13 +112,15 @@ export async function POST(request) {
   const genderOf = Object.fromEntries(items.map((it) => [it.key, it.gender === "בחור" ? "male" : "female"]));
 
   try {
-    const { data, model } = await callGemini(
+    // חילוץ הוא משימת קריאה פשוטה: המודל הקל קודם, כדי לא לשרוף את המכסה של החזק
+    const { data, model, attempts } = await callGemini(
       {
         systemInstruction: { parts: [{ text: PROMPT }] },
         contents: [{ role: "user", parts: [{ text: JSON.stringify(items) }] }],
         generationConfig: { maxOutputTokens: 8192, responseMimeType: "application/json", responseJsonSchema: SCHEMA },
       },
-      started
+      started,
+      { prefer: "lite" }
     );
     const cand = data?.candidates?.[0];
     const finish = cand?.finishReason;
@@ -154,7 +156,7 @@ export async function POST(request) {
       results[r.key] = fields;
     });
     log(`outlook done in ${Date.now() - started}ms model=${model} items=${items.length} results=${Object.keys(results).length}`);
-    return Response.json({ ok: true, results, model });
+    return Response.json({ ok: true, results, model, attempts });
   } catch (err) {
     const { status, msg } = explainGeminiError(err);
     log(`outlook error after ${Date.now() - started}ms:`, err?.status ?? "", err?.message ?? err);

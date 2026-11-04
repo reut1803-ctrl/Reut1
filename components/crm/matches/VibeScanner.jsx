@@ -11,6 +11,7 @@
 import { useRef, useState } from "react";
 import { Camera, AlertTriangle, ChevronDown } from "lucide-react";
 import { crmAuth } from "@/lib/crm/firebaseClient";
+import { recordAiUsage, isDailyQuotaError, getTodayUsage, BULK_LIMIT, nextResetText } from "@/lib/crm/aiUsage";
 import { readVibes, writeVibes, mainPhoto, needsScan } from "@/lib/crm/aiVibe";
 
 const BATCH = 6;
@@ -26,6 +27,8 @@ async function callVibe(items) {
     body: JSON.stringify({ items, idToken }),
   });
   const data = await res.json().catch(() => null);
+  // מד השימוש היומי: כל פנייה נספרת (כמה פניות נשלחו בפועל, כולל מעבר בין מודלים)
+  recordAiUsage(data?.attempts || 1, { exhausted: !res.ok && isDailyQuotaError(data?.error) });
   if (!res.ok || !data?.ok) throw new Error(data?.error || `שגיאה בסריקה (${res.status})`);
   return data;
 }
@@ -50,6 +53,16 @@ export default function VibeScanner({ candidates, vibes, onVibes }) {
     const queue = candidates.filter((c) => needsScan(map, c));
     try {
       for (let i = 0; i < queue.length && !stopRef.current; i += BATCH) {
+        // תקציב יומי: הפעולה הגדולה נעצרת לפני שהיא שורפת את המכסה, ומשאירה רזרבה לעבודה השוטפת
+        const used = await getTodayUsage();
+        if (used.exhausted || used.count >= BULK_LIMIT) {
+          setError(
+            used.exhausted
+              ? `המכסה היומית נגמרה. מה שכבר נעשה נשמר - אפשר להמשיך מחר אחרי ${nextResetText()}.`
+              : `נעצר אחרי ${used.count} פניות היום, כדי להשאיר מכסה לעבודה השוטפת. אפשר להמשיך מחר אחרי ${nextResetText()}.`
+          );
+          break;
+        }
         const batch = queue.slice(i, i + BATCH);
         // מפתחות אקראיים לכל קבוצה - שום מזהה של הכרטיס לא יוצא מהדפדפן
         const items = batch.map((c, j) => ({ key: `k${j}`, url: mainPhoto(c) }));
