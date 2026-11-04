@@ -17,6 +17,8 @@ import { anonymizePool } from "@/lib/crm/aiAnonymize";
 import { buildShortlist, serviceSignal } from "@/lib/crm/aiShortlist";
 import { readVibes, vibeFor } from "@/lib/crm/aiVibe";
 import { readFeedback, feedbackForPrompt } from "@/lib/crm/aiFeedback";
+import { useOutlookProfiles } from "@/lib/crm/outlookStore";
+import { effectiveOutlook } from "@/lib/crm/outlook";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 
@@ -65,14 +67,17 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
   );
   const byId = useMemo(() => new Map(everyone.map((c) => [c.id, c])), [everyone]);
   const anon = useMemo(() => anonymizePool(everyone, proposals, { droppedStatus: PROPOSAL_DROPPED }), [everyone, proposals]);
-  // הרשימה האנונימית, עם הוייב החזותי (אם נסרק) וסימן השירות
+  // הרשימה האנונימית, עם הוייב החזותי (אם נסרק), סימן השירות ופרופיל ההשקפה (אם חולץ)
+  const { profiles } = useOutlookProfiles(true);
   const pool = useMemo(() => {
     const vibes = readVibes();
     return anon.pool.map((p) => {
-      const v = vibeFor(vibes, byId.get(anon.codeToId[p.code]));
-      return { ...p, ...(v ? { visual: v } : {}), service: serviceSignal(p) };
+      const id = anon.codeToId[p.code];
+      const v = vibeFor(vibes, byId.get(id));
+      const o = effectiveOutlook(profiles[id]);
+      return { ...p, ...(v ? { visual: v } : {}), ...(o ? { outlook: o } : {}), service: serviceSignal(p) };
     });
-  }, [anon, byId]);
+  }, [anon, byId, profiles]);
 
   const me = byId.get(candidateId);
   const focusCode = anon.idToCode[candidateId];

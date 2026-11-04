@@ -195,5 +195,12 @@ service cloud.firestore {
     match /userPrefs/{email} {
       allow read, write: if request.auth != null && myEmail() == email;
     }
+
+    // פרופילי השקפה של עוזר ההתאמות - אוסף נפרד לגמרי מהכרטיסים.
+    // מזהה המסמך = מזהה הכרטיס, בלי שם, טלפון או פרט מזהה אחר.
+    // קריאה וכתיבה לבעלת המערכת בלבד, כמו עוזר ההתאמות עצמו.
+    match /aiOutlookProfiles/{id} {
+      allow read, write: if isOwner();
+    }
   }
 }

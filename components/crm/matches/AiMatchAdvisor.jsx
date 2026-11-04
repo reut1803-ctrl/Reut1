@@ -30,6 +30,9 @@ import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 import WhatsAppImporter from "@/components/crm/matches/WhatsAppImporter";
 import VibeScanner from "@/components/crm/matches/VibeScanner";
 import { readVibes, vibeFor } from "@/lib/crm/aiVibe";
+import OutlookManager from "@/components/crm/matches/OutlookManager";
+import { useOutlookProfiles } from "@/lib/crm/outlookStore";
+import { effectiveOutlook } from "@/lib/crm/outlook";
 
 // מעטפת בטיחות מקומית: אם חלונית הצפייה נכשלת, היא פשוט נסגרת -
 // בלי להפיל את ההכרעות ואת שאר המסך.
@@ -128,13 +131,17 @@ export default function AiMatchAdvisor() {
   useEffect(() => {
     setVibes(readVibes());
   }, []);
+  // פרופיל ההשקפה (אם חולץ) - מטריצת תנאי הסף בשרת משתמשת בו לפסילה
+  const outlookStore = useOutlookProfiles(isOwner);
   const pool = useMemo(
     () =>
       anon.pool.map((p) => {
-        const v = vibeFor(vibes, byId.get(anon.codeToId[p.code]));
-        return v ? { ...p, visual: v } : p;
+        const id = anon.codeToId[p.code];
+        const v = vibeFor(vibes, byId.get(id));
+        const o = effectiveOutlook(outlookStore.profiles[id]);
+        return { ...p, ...(v ? { visual: v } : {}), ...(o ? { outlook: o } : {}) };
       }),
-    [anon, vibes, byId]
+    [anon, vibes, byId, outlookStore.profiles]
   );
   const anonWithVibe = useMemo(() => ({ ...anon, pool }), [anon, pool]);
 
@@ -525,6 +532,19 @@ export default function AiMatchAdvisor() {
           candidates={Object.values(anon.codeToId).map((id) => byId.get(id)).filter(Boolean)}
           vibes={vibes}
           onVibes={setVibes}
+        />
+      </SafeBoundary>
+
+      {/* ---------- פרופילי השקפה: חילוץ ואישור (בתוך מעטפת בטיחות) ---------- */}
+      <SafeBoundary>
+        <OutlookManager
+          candidates={Object.values(anon.codeToId).map((id) => byId.get(id)).filter(Boolean)}
+          profiles={outlookStore.profiles}
+          mode={outlookStore.mode}
+          save={outlookStore.save}
+          localCount={outlookStore.localCount}
+          migrateLocal={outlookStore.migrateLocal}
+          onView={setViewId}
         />
       </SafeBoundary>
 
