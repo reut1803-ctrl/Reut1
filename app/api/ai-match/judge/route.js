@@ -203,6 +203,8 @@ export async function POST(request) {
     log(`judge error after ${Date.now() - started}ms:`, err?.status ?? "", err?.message ?? err);
     // המודל החזק לא זמין - מציעים לשדכנית במפורש לנסות במודל הקל
     const strongUnavailable = !allowLite && [429, 503, 500, 502, 504, 0].includes(err?.status);
-    return fail(status, msg, strongUnavailable ? { canUseLite: true } : {});
+    // כמה פניות נשלחו בפועל לפני הכישלון - כדי שמד השימוש היומי יהיה מדויק
+    const attempts = Array.isArray(err?.tried) ? err.tried.length : 1;
+    return fail(status, msg, { attempts, ...(strongUnavailable ? { canUseLite: true } : {}) });
   }
 }
