@@ -17,6 +17,7 @@ import { MessagesSquare, Upload, Sparkles, AlertTriangle, Eye, Copy, Check, Chev
 import { crmAuth } from "@/lib/crm/firebaseClient";
 import { recordAiUsage, isDailyQuotaError } from "@/lib/crm/aiUsage";
 import { parseChat, messagesInWindow, lastMessageAt, tokenizeChat, restoreTokens } from "@/lib/crm/whatsappChat";
+import { chatTextFromZip } from "@/lib/crm/zipText";
 
 const SESSION_KEY = "aiWhatsapp:v1";
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -94,21 +95,30 @@ export default function WhatsAppImporter({ anon, byId, nowMs, getFeedback, onVie
     e.target.value = "";
     if (!f) return;
     setError("");
-    if (/\.zip$/i.test(f.name)) {
-      setError('זה קובץ ZIP. בייצוא מוואטסאפ בחרי "ללא מדיה", ויתקבל קובץ טקסט.');
-      return;
-    }
-    if (f.size > MAX_FILE_BYTES) {
-      setError("הקובץ גדול מדי. אפשר לייצא קבוצה עם פחות היסטוריה, או להדביק רק את ההודעות הרלוונטיות.");
-      return;
-    }
     try {
-      const text = await f.text();
+      // ZIP מזוהה לפי תוכן הקובץ ולא רק לפי הסיומת - בחלק מהטלפונים הקובץ
+      // מגיע בלי סיומת. מתוך ZIP נקרא רק קובץ הטקסט של הצ'אט, גם כשיש בו מדיה.
+      const head = new Uint8Array(await f.slice(0, 4).arrayBuffer());
+      const isZip = head[0] === 0x50 && head[1] === 0x4b && head[2] === 0x03 && head[3] === 0x04;
+      let text;
+      if (isZip) {
+        text = await chatTextFromZip(f);
+      } else {
+        if (f.size > MAX_FILE_BYTES) {
+          setError("הקובץ גדול מדי. אפשר לייצא קבוצה עם פחות היסטוריה, או להדביק רק את ההודעות הרלוונטיות.");
+          return;
+        }
+        text = await f.text();
+      }
+      if (!String(text || "").trim()) {
+        setError("הקובץ ריק.");
+        return;
+      }
       setRaw(text);
-      setFileName(f.name);
+      setFileName(f.name || "צ'אט");
       setUseFileEnd(false);
-    } catch {
-      setError("לא הצלחתי לקרוא את הקובץ.");
+    } catch (err) {
+      setError(err?.message || "לא הצלחתי לקרוא את הקובץ.");
     }
   };
 
@@ -222,17 +232,17 @@ export default function WhatsAppImporter({ anon, byId, nowMs, getFeedback, onVie
           {!result && (
             <>
               <p className="text-[11.5px] leading-relaxed text-[#8A8285]">
-                בוואטסאפ: פותחים את הקבוצה ← ⋮ ← עוד ← ייצוא צ&apos;אט ← ללא מדיה. מעלים כאן את קובץ הטקסט, או מדביקים הודעות.
+                בוואטסאפ: פותחים את הקבוצה ← ⋮ ← עוד ← ייצוא צ&apos;אט ← ללא מדיה. מעלים כאן את הקובץ שהתקבל (טקסט או ZIP), או מדביקים הודעות.
                 אין כאן חיבור לוואטסאפ, ולכן אין שום סיכון למספר. טלפונים ושמות שולחים לא נשלחים לבינה.
               </p>
 
-              <input ref={fileRef} type="file" accept=".txt,text/plain,.zip" onChange={onFile} className="hidden" />
+              <input ref={fileRef} type="file" accept=".txt,text/plain,.zip,application/zip" onChange={onFile} className="hidden" />
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#C98894] bg-[#FBF5F6] py-3 text-[13px] font-semibold text-[#8C4A55]"
               >
-                <Upload size={15} /> {fileName ? `נבחר: ${fileName}` : "העלאת קובץ צ'אט (txt)"}
+                <Upload size={15} /> {fileName ? `נטען: ${fileName}` : "העלאת קובץ צ'אט (txt או zip)"}
               </button>
 
               <textarea

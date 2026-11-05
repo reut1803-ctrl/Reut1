@@ -9,6 +9,7 @@
 // גם הערות הדיוק של המנהלת נשמרות שם בלבד (ראו lib/crm/aiFeedback.js).
 
 import { Component, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Sparkles,
   RefreshCw,
@@ -367,6 +368,12 @@ export default function AiMatchAdvisor() {
             ? `המכסה היומית בבינה נגמרה · מתחדשת ב-${nextResetText()}`
             : `שימוש היום בבינה: ${aiUsage.count} פניות · מתאפס ב-${nextResetText()}`}
         </p>
+        <Link
+          href="/crm"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-2xl bg-white/15 px-3.5 py-2 text-[12.5px] font-semibold transition hover:bg-white/25 active:scale-95"
+        >
+          <Sparkles size={14} /> למאגר הכרטיסים - שם נמצא &quot;מצא/י התאמה&quot;
+        </Link>
       </div>
 
       {SHOW_LEGACY_TOOLS && (
