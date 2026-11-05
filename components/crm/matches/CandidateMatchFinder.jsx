@@ -5,12 +5,14 @@
 // שני שלבים:
 //   1. משפך בקוד, בלי בינה (lib/crm/aiShortlist.js): מי בכלל רלוונטי, ומי
 //      הכי קרוב - עד 6. מוצג מיד, כולל כמה נפסלו ולמה.
-//   2. הבינה שופטת לעומק רק את הרשימה הקצרה (/api/ai-match/candidate).
+//   2. הסוכן השופט (/api/ai-match/judge): הבינה נותנת לכל אפשרות "פסק דין"
+//      לכל ציר, והציון מחושב בקוד (lib/crm/judgeScore.js). מידע חסר אינו
+//      מוריד ציון - הוא מסומן "לא ידוע" וההכרעה עוברת לשדכנית.
 // קריאה בלבד: לא נכתב שום דבר למסד הנתונים. המידע שנשלח אנונימי, כמו
 // בעוזר ההתאמות - קוד ושם פרטי בלבד, וכרטיס חסוי לא נשלח לעולם.
 
 import { Component, useEffect, useMemo, useState } from "react";
-import { X, Sparkles, Eye, Filter, AlertTriangle, HelpCircle, Quote, ChevronDown } from "lucide-react";
+import { X, Sparkles, Eye, Filter, AlertTriangle, HelpCircle, ChevronDown } from "lucide-react";
 import { useCrmStore, PROPOSAL_DROPPED } from "@/lib/crm/store";
 import { crmAuth } from "@/lib/crm/firebaseClient";
 import { anonymizePool } from "@/lib/crm/aiAnonymize";
@@ -22,6 +24,7 @@ import { effectiveOutlook } from "@/lib/crm/outlook";
 import { hashInput, readFinderCache, writeFinderCache } from "@/lib/crm/aiCache";
 import { recordAiUsage, isDailyQuotaError, useAiUsage } from "@/lib/crm/aiUsage";
 import { useBackToClose } from "@/lib/crm/useBackToClose";
+import { AXES, AXIS_KEYS } from "@/lib/crm/judgeScore";
 import ProfileDetailModal from "@/components/crm/profiles/ProfileDetailModal";
 
 class SafeBoundary extends Component {
@@ -41,19 +44,43 @@ class SafeBoundary extends Component {
   }
 }
 
-async function callFinder(payload) {
+// גרסת התוצאה השמורה. תוצאה מגרסה קודמת (לפני השופט) נחשבת "ישנה".
+const RESULT_VERSION = "judge-v1";
+
+async function callJudge(payload) {
   const user = crmAuth.currentUser;
   if (!user) throw new Error("נדרשת התחברות מחדש");
   const idToken = await user.getIdToken();
-  const res = await fetch("/api/ai-match/candidate/", {
+  const res = await fetch("/api/ai-match/judge/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...payload, idToken }),
   });
   const data = await res.json().catch(() => null);
-  if (!res.ok || !data?.ok) throw new Error(data?.error || `שגיאה בחיפוש ההתאמה (${res.status})`);
+  // מד השימוש היומי: כל פנייה נספרת (כמה פניות נשלחו בפועל, כולל מעבר בין מודלים)
+  recordAiUsage(data?.attempts ?? 1, { exhausted: !res.ok && isDailyQuotaError(data?.error) });
+  if (!res.ok || !data?.ok) {
+    const err = new Error(data?.error || `שגיאה בחיפוש ההתאמה (${res.status})`);
+    err.canUseLite = !!data?.canUseLite;
+    throw err;
+  }
   return data;
 }
+
+const VERDICT_STYLE = {
+  מתאים: "bg-[#E9F6EF] text-[#178A57]",
+  "פער קל": "bg-[#FFF8E7] text-[#946200]",
+  "פער מהותי": "bg-[#FBEDED] text-[#C24545]",
+  "לא ידוע": "bg-[#F6F5F4] text-[#B5AEB0]",
+};
+
+const STATUS_STYLE = {
+  מומלץ: "bg-[#E9F6EF] text-[#178A57]",
+  "פחות מתאים": "bg-[#F6F5F4] text-[#8A8285]",
+  "חסר מידע": "bg-[#EEF2FB] text-[#3C5AA6]",
+  "פער מהותי": "bg-[#FBEDED] text-[#C24545]",
+  "נפסל בתנאי סף": "bg-[#FBEDED] text-[#C24545]",
+};
 
 export default function CandidateMatchFinder({ candidateId, onClose }) {
   useBackToClose(true, onClose);
@@ -87,9 +114,10 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [canUseLite, setCanUseLite] = useState(false);
   const [result, setResult] = useState(null);
   const [viewId, setViewId] = useState(null);
-  const [showRejected, setShowRejected] = useState(false);
+  const [showOthers, setShowOthers] = useState(false);
 
   const firstName = (id) => String(byId.get(id)?.name || "").trim().split(/\s+/)[0] || "?";
   const withNames = (text) =>
@@ -114,17 +142,18 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
       return { ...rest, id: anon.codeToId[code] };
     };
     const fb = feedbackNow().map((n) => n.text);
-    return hashInput({ focus: strip(funnel.focus), options: funnel.options.map(strip), fb });
+    return hashInput({ v: RESULT_VERSION, focus: strip(funnel.focus), options: funnel.options.map(strip), fb });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnel, anon]);
 
-  // תוצאה שמורה: אם החתימה זהה - מוצגת מיד, בלי פנייה לבינה
+  // תוצאה שמורה: אם החתימה זהה - מוצגת מיד, בלי פנייה לבינה.
+  // תוצאה מגרסה קודמת (לפני השופט) אינה מוצגת - המבנה שלה שונה.
   const [cacheInfo, setCacheInfo] = useState(null);
   useEffect(() => {
     let alive = true;
     if (!signature) return undefined;
     readFinderCache(candidateId).then((entry) => {
-      if (!alive || !entry?.result) return;
+      if (!alive || entry?.result?.version !== RESULT_VERSION) return;
       setResult(entry.result);
       setCacheInfo({ at: entry.at, stale: entry.hash !== signature });
     });
@@ -139,41 +168,33 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
     return c ? [String(c.name || "").trim(), c.age, c.height && `${c.height} ס״מ`, c.tag, c.city].filter(Boolean).join(" · ") : "?";
   };
 
-  const run = async () => {
+  const run = async ({ allowLite = false } = {}) => {
     if (loading || !funnel.focus) return;
     setLoading(true);
     setError("");
+    setCanUseLite(false);
     try {
-      const data = await callFinder({ focus: funnel.focus, options: funnel.options, feedback: feedbackNow() });
-      recordAiUsage(data.attempts || 1);
+      const data = await callJudge({ focus: funnel.focus, options: funnel.options, feedback: feedbackNow(), allowLite });
       // שמירה עם מזהי כרטיסים ושמות פרטיים - כדי שהתוצאה תישאר נכונה גם כשהקודים משתנים
-      const normalized = {
-        model: data.model || "",
-        note: withNames(data.note),
-        recommendations: (data.recommendations || [])
-          .map((r) => ({
-            ...r,
-            candidateId: anon.codeToId[r.candidate],
-            lifestyle: withNames(r.lifestyle),
-            coreValues: withNames(r.coreValues),
-            energy: withNames(r.energy),
-            communication: withNames(r.communication),
-            blindSpot: withNames(r.blindSpot),
-            question: withNames(r.question),
-            evidence: withNames(r.evidence),
-          }))
-          .filter((r) => r.candidateId),
-        rejected: (data.rejected || [])
-          .map((r) => ({ candidateId: anon.codeToId[r.candidate], reason: withNames(r.reason) }))
-          .filter((r) => r.candidateId),
-      };
+      const evaluations = (data.evaluations || [])
+        .map((e) => ({
+          ...e,
+          candidateId: anon.codeToId[e.candidate],
+          verdicts: Object.fromEntries(
+            AXIS_KEYS.map((k) => [k, { ...e.verdicts?.[k], reason: withNames(e.verdicts?.[k]?.reason), evidence: withNames(e.verdicts?.[k]?.evidence) }])
+          ),
+          summary: withNames(e.summary),
+          blindSpot: withNames(e.blindSpot),
+          question: withNames(e.question),
+        }))
+        .filter((e) => e.candidateId);
+      const normalized = { version: RESULT_VERSION, model: data.model || "", lite: !!data.lite, evaluations };
       setResult(normalized);
       setCacheInfo(null);
       writeFinderCache(candidateId, { hash: signature, result: normalized });
     } catch (err) {
-      const msg = err?.message || "משהו השתבש";
-      recordAiUsage(1, { exhausted: isDailyQuotaError(msg) });
-      setError(msg);
+      setError(err?.message || "משהו השתבש");
+      setCanUseLite(!!err?.canUseLite);
     } finally {
       setLoading(false);
     }
@@ -183,6 +204,78 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
   const excludedText = Object.entries(funnel.excluded || {})
     .map(([k, v]) => `${k}: ${v}`)
     .join(" · ");
+
+  const evals = result?.evaluations || [];
+  const top = evals.filter((e) => e.status === "מומלץ");
+  const needYou = evals.filter((e) => e.status === "חסר מידע");
+  const others = evals.filter((e) => e.status !== "מומלץ" && e.status !== "חסר מידע");
+
+  const card = (e, { compact = false } = {}) => {
+    const id = e.candidateId;
+    if (!id || !byId.get(id)) return null;
+    return (
+      <div key={id} className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setViewId(id)}
+            aria-label={`צפייה בכרטיס של ${firstName(id)}`}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F6E4E6] text-[#8C4A55]"
+          >
+            <Eye size={15} />
+          </button>
+          <p className="flex-1 text-[14px] font-bold leading-snug text-[#3A3335]">{fullLine(id)}</p>
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[e.status] || ""}`}>
+            {e.score === null || e.score === undefined ? e.status : `${e.score}/10`}
+          </span>
+        </div>
+        <p className="mt-1 text-[11px] text-[#8A8285]">
+          {e.status === "נפסל בתנאי סף"
+            ? `נפסל בבדיקת הקוד: ${e.hardReason}`
+            : `${e.status} · מבוסס על ${e.known} מתוך ${AXIS_KEYS.length} צירים`}
+          {e.unknown?.length > 0 && ` · לא ידוע: ${e.unknown.join(", ")}`}
+        </p>
+        {e.summary && <p className="mt-2 text-[12.5px] leading-relaxed text-[#3A3335]">{e.summary}</p>}
+        {!compact && (
+          <div className="mt-2 space-y-1.5">
+            {AXIS_KEYS.map((k) => {
+              const v = e.verdicts?.[k] || {};
+              if (v.verdict === "לא ידוע") return null;
+              return (
+                <div key={k} className="text-[12px] leading-relaxed text-[#3A3335]">
+                  <span className={`ml-1.5 inline-block rounded-full px-2 py-0.5 text-[10.5px] font-bold ${VERDICT_STYLE[v.verdict] || ""}`}>
+                    {AXES[k].label}: {v.verdict}
+                  </span>
+                  {v.reason}
+                  {v.evidence && <span className="block text-[10.5px] italic text-[#B5AEB0]">&quot;{v.evidence}&quot;</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {!compact && (e.blindSpot || e.question) && (
+          <div className="mt-2.5 rounded-2xl border border-[#F0D3A0] bg-[#FFF8E7] p-2.5 text-[12px] leading-relaxed">
+            {e.blindSpot && (
+              <>
+                <p className="flex items-center gap-1 font-bold text-[#946200]">
+                  <AlertTriangle size={12} /> לבדוק מראש
+                </p>
+                <p>{e.blindSpot}</p>
+              </>
+            )}
+            {e.question && (
+              <>
+                <p className="mt-1.5 flex items-center gap-1 font-bold text-[#946200]">
+                  <HelpCircle size={12} /> שאלה לבירור
+                </p>
+                <p>{e.question}</p>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-[140] flex items-end justify-center sm:items-center" dir="rtl">
@@ -210,7 +303,7 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
               </p>
               <p className="mt-1">
                 מתוך {funnel.considered} {me?.gender === "female" ? "בחורים" : "בחורות"} פנויים - {funnel.passed} עברו את דרישות הסף.
-                {funnel.options.length > 0 && ` ${funnel.options.length} הקרובים ביותר נשלחים לבינה לבדיקה מעמיקה.`}
+                {funnel.options.length > 0 && ` ${funnel.options.length} הקרובים ביותר נשלחים לשופט.`}
               </p>
               {excludedText && <p className="mt-1 text-[11px] text-[#8A8285]">נפסלו - {excludedText}</p>}
               <p className="mt-1 text-[11px] text-[#B5AEB0]">שימוש היום בבינה: {usage.count} פניות</p>
@@ -222,22 +315,34 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
               !result && (
                 <button
                   type="button"
-                  onClick={run}
+                  onClick={() => run()}
                   disabled={loading}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#8C4A55] py-3 text-[14px] font-bold text-white transition active:scale-[0.98] disabled:opacity-50"
                 >
-                  <Sparkles size={15} /> {loading ? "הבינה בוחנת כל אפשרות... עד חצי דקה" : "בדיקה מעמיקה של הרשימה הקצרה"}
+                  <Sparkles size={15} /> {loading ? "השופט בוחן כל אפשרות... עד חצי דקה" : "בדיקה מעמיקה של הרשימה הקצרה"}
                 </button>
               )
             )}
 
             {error && (
-              <p className="flex items-start gap-1.5 rounded-2xl bg-[#FBEDED] p-3 text-[12px] text-[#C24545]">
-                <AlertTriangle size={13} className="mt-0.5 shrink-0" /> {error}
-              </p>
+              <div className="rounded-2xl bg-[#FBEDED] p-3 text-[12px] text-[#C24545]">
+                <p className="flex items-start gap-1.5">
+                  <AlertTriangle size={13} className="mt-0.5 shrink-0" /> {error}
+                </p>
+                {canUseLite && (
+                  <button
+                    type="button"
+                    onClick={() => run({ allowLite: true })}
+                    disabled={loading}
+                    className="mt-2 w-full rounded-xl border border-[#C24545] bg-white py-1.5 font-semibold text-[#C24545] disabled:opacity-50"
+                  >
+                    בדיקה מהירה במודל הקל (פחות מדויק)
+                  </button>
+                )}
+              </div>
             )}
 
-            {/* ---------- שלב 2: תוצאות הבינה ---------- */}
+            {/* ---------- שלב 2: פסקי הדין של השופט ---------- */}
             {result && (
               <>
                 {cacheInfo && (
@@ -247,101 +352,46 @@ export default function CandidateMatchFinder({ candidateId, onClose }) {
                       : `תוצאה שמורה מ-${new Date(cacheInfo.at).toLocaleDateString("he-IL")} - בלי פנייה לבינה. שום דבר לא השתנה מאז.`}
                   </p>
                 )}
-                {/lite/i.test(result.model || "") && (
+                {result.lite && (
                   <p className="rounded-2xl bg-[#FFF8E7] p-2.5 text-[11px] text-[#946200]">
-                    השרתים של Google היו עמוסים, והתשובה הגיעה ממודל מהיר ופשוט יותר. כדאי לנסות שוב מאוחר יותר.
+                    הבדיקה נעשתה במודל הקל, לבקשתך. פסקי הדין פחות מדויקים - כדאי לבדוק שוב כשהמודל החזק זמין.
                   </p>
                 )}
-                {result.recommendations.length === 0 && (
-                  <p className="rounded-2xl bg-white p-4 text-center text-[13px] text-[#8A8285]">{result.note}</p>
-                )}
-                {result.recommendations.map((r, i) => {
-                  const id = r.candidateId;
-                  if (!id || !byId.get(id)) return null;
-                  return (
-                    <div key={id} className="rounded-3xl border border-[#EAE5E3] bg-white p-4 shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setViewId(id)}
-                          aria-label={`צפייה בכרטיס של ${firstName(id)}`}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F6E4E6] text-[#8C4A55]"
-                        >
-                          <Eye size={15} />
-                        </button>
-                        <p className="flex-1 text-[14px] font-bold leading-snug text-[#3A3335]">
-                          {i + 1}. {fullLine(id)}
-                        </p>
-                        <span className="rounded-full bg-[#E9F6EF] px-2 py-0.5 text-[11px] font-bold text-[#178A57]">{r.fitScore}/10</span>
-                      </div>
-                      <div className="mt-2.5 space-y-1.5 text-[12.5px] leading-relaxed text-[#3A3335]">
-                        <p>
-                          <span className="font-bold text-[#8C4A55]">אורח חיים: </span>
-                          {r.lifestyle}
-                        </p>
-                        <p>
-                          <span className="font-bold text-[#8C4A55]">ערכי ליבה: </span>
-                          {r.coreValues}
-                        </p>
-                        <p>
-                          <span className="font-bold text-[#8C4A55]">אנרגיה והשלמה: </span>
-                          {r.energy}
-                        </p>
-                        <p>
-                          <span className="font-bold text-[#8C4A55]">תקשורת וצרכים: </span>
-                          {r.communication}
-                        </p>
-                      </div>
-                      <div className="mt-2.5 rounded-2xl border border-[#F0D3A0] bg-[#FFF8E7] p-2.5 text-[12px] leading-relaxed">
-                        <p className="flex items-center gap-1 font-bold text-[#946200]">
-                          <AlertTriangle size={12} /> לבדוק מראש
-                        </p>
-                        <p>{r.blindSpot}</p>
-                        <p className="mt-1.5 flex items-center gap-1 font-bold text-[#946200]">
-                          <HelpCircle size={12} /> שאלה לבירור
-                        </p>
-                        <p>{r.question}</p>
-                      </div>
-                      {r.evidence && (
-                        <p className="mt-2 flex gap-1.5 text-[11px] italic leading-relaxed text-[#8A8285]">
-                          <Quote size={11} className="mt-0.5 shrink-0" /> {r.evidence}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
 
-                {result.rejected.length > 0 && (
+                {top.length > 0 ? (
+                  <p className="text-[13px] font-bold text-[#3A3335]">מומלצים</p>
+                ) : (
+                  <p className="rounded-2xl bg-white p-4 text-center text-[13px] text-[#8A8285]">אין התאמה מתאימה כרגע.</p>
+                )}
+                {top.map((e) => card(e))}
+
+                {needYou.length > 0 && (
+                  <>
+                    <p className="text-[13px] font-bold text-[#3C5AA6]">חסר מידע - להכרעתך ({needYou.length})</p>
+                    <p className="-mt-1.5 text-[11px] text-[#8A8285]">
+                      אין בתיאורים מספיק כדי לשפוט. זה לא פער - זו שאלה שרק את יכולה להכריע בה.
+                    </p>
+                    {needYou.map((e) => card(e))}
+                  </>
+                )}
+
+                {others.length > 0 && (
                   <div className="rounded-2xl bg-white">
                     <button
                       type="button"
-                      onClick={() => setShowRejected((v) => !v)}
+                      onClick={() => setShowOthers((v) => !v)}
                       className="flex w-full items-center justify-between px-3 py-2.5 text-[12.5px] font-semibold text-[#3A3335]"
                     >
-                      למה לא האחרים ({result.rejected.length})
-                      <ChevronDown size={15} className={`transition ${showRejected ? "rotate-180" : ""}`} />
+                      פחות מתאימים ({others.length})
+                      <ChevronDown size={15} className={`transition ${showOthers ? "rotate-180" : ""}`} />
                     </button>
-                    {showRejected && (
-                      <div className="space-y-1.5 border-t border-[#EAE5E3] px-3 pb-3 pt-2">
-                        {result.rejected.map((r) => {
-                          const id = r.candidateId;
-                          return (
-                            <p key={id} className="text-[11.5px] leading-relaxed text-[#8A8285]">
-                              <button type="button" onClick={() => id && setViewId(id)} className="font-semibold text-[#8C4A55]">
-                                {firstName(id)}
-                              </button>
-                              : {r.reason}
-                            </p>
-                          );
-                        })}
-                      </div>
-                    )}
+                    {showOthers && <div className="space-y-2 border-t border-[#EAE5E3] p-2">{others.map((e) => card(e, { compact: false }))}</div>}
                   </div>
                 )}
 
                 <button
                   type="button"
-                  onClick={run}
+                  onClick={() => run()}
                   disabled={loading}
                   className="w-full text-center text-[12px] font-semibold text-[#8A8285] underline underline-offset-2 disabled:opacity-50"
                 >
