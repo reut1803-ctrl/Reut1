@@ -56,6 +56,13 @@ class SafeBoundary extends Component {
 
 const CACHE_PREFIX = "aiMatchPicks:v2";
 
+// כלים ותיקים שהוסתרו מהמסך (נובמבר 2026): "3 הכרעות שיא" ו"שותף חשיבה".
+// שניהם שולחים את כל המאגר בבקשה אחת למודל החזק - השיטה שהתבררה כשטחית,
+// ושורפת את המכסה היומית (ההכרעות אף רצו אוטומטית בכל כניסה). את מקומם תפס
+// "מצא/י התאמה" בכל כרטיס: משפך בקוד, שופט, ומטמון.
+// הקוד והנתונים השמורים לא נמחקו - החזרה למסך = שינוי הערך ל-true.
+const SHOW_LEGACY_TOOLS = false;
+
 const readCache = (key) => {
   try {
     const raw = window.localStorage.getItem(key);
@@ -259,6 +266,7 @@ export default function AiMatchAdvisor() {
 
   // פעם ביום לכל מאגר: אם אין הכרעות שמורות מהיום - מפיקים אוטומטית
   useEffect(() => {
+    if (!SHOW_LEGACY_TOOLS) return;
     if (!isOwner || !candidatesLoaded) return;
     const cached = readCache(cacheKey);
     if (cached) {
@@ -346,6 +354,23 @@ export default function AiMatchAdvisor() {
 
   return (
     <div className="mt-4 space-y-3">
+      {/* ---------- כותרת עוזר ההתאמות ומד השימוש היומי ---------- */}
+      <div className="rounded-3xl bg-gradient-to-l from-[#8C4A55] to-[#6E3540] p-5 text-white shadow-lg">
+        <p className="flex items-center gap-2 text-lg font-bold">
+          <Sparkles size={20} /> עוזר ההתאמות
+        </p>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-white/80">
+          לחיפוש התאמה: כפתור &quot;מצא/י התאמה (בינה)&quot; בכל כרטיס במאגר · {anon.pool.length} פנויים · גלוי לך בלבד
+        </p>
+        <p className="mt-0.5 text-[11px] text-white/70">
+          {aiUsage.exhausted
+            ? `המכסה היומית בבינה נגמרה · מתחדשת ב-${nextResetText()}`
+            : `שימוש היום בבינה: ${aiUsage.count} פניות · מתאפס ב-${nextResetText()}`}
+        </p>
+      </div>
+
+      {SHOW_LEGACY_TOOLS && (
+        <>
       {/* ---------- 3 הכרעות שיא ---------- */}
       <div className="rounded-3xl bg-gradient-to-l from-[#8C4A55] to-[#6E3540] p-5 text-white shadow-lg">
         <div className="flex items-start justify-between gap-3">
@@ -535,6 +560,9 @@ export default function AiMatchAdvisor() {
           );
         })}
 
+        </>
+      )}
+
       {/* ---------- וייב חזותי מהתמונות (בתוך מעטפת בטיחות) ---------- */}
       <SafeBoundary>
         <VibeScanner
@@ -620,6 +648,8 @@ export default function AiMatchAdvisor() {
         )}
       </div>
 
+      {SHOW_LEGACY_TOOLS && (
+        <>
       {/* ---------- שותף חשיבה ---------- */}
       <div className="rounded-3xl border border-[#EAE5E3] bg-white shadow-[0_4px_18px_rgba(58,51,53,0.06)]">
         <button
@@ -696,6 +726,9 @@ export default function AiMatchAdvisor() {
           </div>
         )}
       </div>
+
+        </>
+      )}
 
       {/* ---------- צפייה מהירה: אותו כרטיס מלא שמוצג במאגר ---------- */}
       {viewed && (
