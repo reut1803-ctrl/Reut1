@@ -29,14 +29,24 @@ body {
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
   z-index: -2;
   pointer-events: none;
   background-image: url("/Reut1/assets/bg-texture.jpg");
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  /* גלילה חלקה: הרקע הוא שכבה קבועה משלו (בלי background-attachment: fixed, שגרם
+     לצביעה מחדש של כל המסך בכל תזוזת גלילה), ובגובה הקבוע של המסך הגדול (lvh) —
+     כך שהוא לא משנה גודל כשסרגל הכתובת של הדפדפן מתכווץ/נפתח. */
+  transform: translateZ(0);
+  will-change: transform;
+}
+@supports (height: 100lvh) {
+  body::before { height: 100lvh; }
 }
 /* שכבת הלבנה עדינה מעל הרקע - מרככת את הטקסטורה ושומרת על קריאות, בלי להעלים את הזהב */
 body::after {

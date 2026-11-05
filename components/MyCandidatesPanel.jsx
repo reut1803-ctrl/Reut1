@@ -62,7 +62,7 @@ function GiftBox({ gift, flipped, onToggle }) {
           <img src={RIBBON_URL} alt="" aria-hidden="true" loading="lazy" decoding="async"
             className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-[center_35%]" />
           <span className="absolute inset-x-0 bottom-5 flex justify-center px-6">
-            <span className="rounded-xl border border-[#CBB089]/70 bg-[#FFFBF6]/95 px-4 py-2 text-center shadow-[0_6px_18px_-10px_rgba(122,46,59,0.35)] backdrop-blur-sm">
+            <span className="rounded-xl border border-[#CBB089]/70 bg-[#FFFBF6]/95 px-4 py-2 text-center shadow-[0_6px_18px_-10px_rgba(122,46,59,0.35)]">
               <span className="block text-[13.5px] font-bold leading-snug text-[#7a2e3b]">{gift.label}</span>
               <span className="mt-0.5 block text-[10.5px] tracking-wide text-[#a8865a]">{gift.sub} · לחצו לפתיחה</span>
             </span>
@@ -276,7 +276,7 @@ export default function MyCandidatesPanel({ data, user }) {
   return (
     <div className="space-y-5">
       {/* ===== בורר אזורים ===== */}
-      <div className="sticky top-[4.25rem] z-10 mx-auto flex max-w-sm rounded-full bg-white/85 p-1 shadow-[0_10px_26px_-14px_rgba(122,46,59,0.4)] ring-1 ring-[#CBB089]/35 backdrop-blur" role="tablist">
+      <div className="sticky top-[4.25rem] z-10 mx-auto flex max-w-sm rounded-full bg-white/95 p-1 shadow-[0_10px_26px_-14px_rgba(122,46,59,0.4)] ring-1 ring-[#CBB089]/35" role="tablist">
         {[["cands", "המועמדים שלי", UserRound], ["me", "אני כשגריר", Sparkles]].map(([id, label, Icon]) => (
           <button key={id} type="button" role="tab" aria-selected={section === id}
             onClick={() => { setSection(id); window.scrollTo(0, 0); }}

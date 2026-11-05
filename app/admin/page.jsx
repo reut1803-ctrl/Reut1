@@ -545,7 +545,7 @@ export default function AdminPage() {
       {!isViewer && <GuidedTour role={user.role} onBeforeStart={() => setTab("candidates")} />}
 
       {/* ניווט קבוע בתחתית העמוד - קטגוריות הפעולה */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-sand bg-cream/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-sand bg-cream/[0.97] pb-[env(safe-area-inset-bottom)]">
         {(() => {
           // "התאמות" — הכפתור המרכזי והבולט: עגול, חוצה את הגבול העליון של הסרגל.
           // שאר הלשוניות מתחלקות שווה לשני צדדיו (מימין המועמדים, כמו קודם).

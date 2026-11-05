@@ -53,7 +53,7 @@ function VisionCard({ item }) {
             </span>
           )}
           {!isQuote && front && (
-            <span className="animate-float absolute inset-x-3 bottom-3 rounded-2xl bg-white/85 px-3 py-2 text-[13px] font-semibold leading-snug text-[#7a2e3b] shadow-[0_8px_18px_-8px_rgba(122,46,59,0.45)] backdrop-blur-sm">
+            <span className="animate-float absolute inset-x-3 bottom-3 rounded-2xl bg-white/85 px-3 py-2 text-[13px] font-semibold leading-snug text-[#7a2e3b] shadow-[0_8px_18px_-8px_rgba(122,46,59,0.45)]">
               {front}
             </span>
           )}

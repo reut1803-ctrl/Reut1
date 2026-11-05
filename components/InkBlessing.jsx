@@ -20,6 +20,8 @@ export default function InkBlessing() {
       const [{ gsap }, { ScrollTrigger }] = await Promise.all([import("gsap"), import("gsap/ScrollTrigger")]);
       if (cancelled) return;
       gsap.registerPlugin(ScrollTrigger);
+      // במובייל: לא לחשב מחדש את כל הגלילה כשסרגל הכתובת מתכווץ/נפתח (גורם לקפיצות)
+      ScrollTrigger.config({ ignoreMobileResize: true });
 
       const glyphs = Array.from(svgRef.current.querySelectorAll("path.ink-glyph"));
       const flourish = svgRef.current.querySelector("path.ink-flourish");
@@ -47,7 +49,7 @@ export default function InkBlessing() {
             start: "top top",
             end: () => "+=" + Math.round(window.innerHeight * 2.8),
             pin: true,
-            scrub: true, // הכתיבה צמודה במדויק למיקום הגלילה
+            scrub: 0.5, // הכתיבה צמודה לגלילה, עם החלקה קלה (חצי שנייה) — בלי "מדרגות" במגע של אצבע
             anticipatePin: 1,
             invalidateOnRefresh: true,
           },
