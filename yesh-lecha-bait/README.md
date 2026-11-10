@@ -1,7 +1,19 @@
 # יש לך בית · יצהר
 
-מערכת המיזם "יש לך בית יצהר" — Next.js 14 · Tailwind · Framer Motion · Firebase (Google Login + Firestore).
+Next.js 14 · Tailwind · Framer Motion · Firebase (Google Login + Firestore) · Claude Vision.
 
-משתני סביבה נדרשים (ב-Vercel → Settings → Environment Variables):
-NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, NEXT_PUBLIC_FIREBASE_APP_ID
+## תפקידים
+pending (ממתינה) · ambassador (שגרירה) · staff (צוות) · admin (הנהלה). התפקיד נשמר ב-`users/{uid}.role`.
+
+## מודול חילוץ המשפחות (צוות + הנהלה)
+- `/admin/extract` — העלאת צילומי דפי קשר. כל צילום נחתך לאריחים בדפדפן (`lib/imageTiles.js`) ונשלח ל-`/api/extract`,
+  שקורא רק את הרשימה השמית בעזרת Claude Vision ומחזיר כותרת כיתה/שנתון. הגיל מחושב ב-`lib/hebrewYear.js`
+  (הועתק מ"הקהילה איתך"). השמירה משייכת כל משפחה לפי הטריטוריות (`lib/territory.js`).
+- `/staff/families` — הגדרת טריטוריה חד-פעמית, כרטיסי משפחה (סטטוס, WhatsApp, SMS) והפצת אירוע עם פלייר.
+- `/admin/families`, `/admin/users` — מאגר מלא וניהול תפקידים.
+
+## משתני סביבה (Vercel)
+ראו `.env.example`. `ANTHROPIC_API_KEY` סודי ונשאר בשרת בלבד.
+
+## כללי אבטחה
+`firestore.rules` — להדביק ב-Firebase Console ← Firestore ← Rules.

@@ -85,7 +85,7 @@ export default function LoginPage() {
 
         {!firebaseReady && (
           <motion.p variants={item} className="mt-5 text-sm text-gold-dark">
-            המערכת בהקמה — הכניסה תיפתח בקרוב ✨
+            המערכת בהקמה. הכניסה תיפתח בקרוב.
           </motion.p>
         )}
 
