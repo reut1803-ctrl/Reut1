@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// כללי האבטחה של מסד הנתונים (Firestore).
+// רק מי שהמייל שלו ברשימת memberEmails של הטיול יכול לקרוא או לכתוב משהו בטיול.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+    function isMember(tripId) {
+      return signedIn()
+        && myEmail() in get(/databases/$(database)/documents/trips/$(tripId)).data.memberEmails;
+    }
+
+    match /trips/{tripId} {
+      // resource == null: מותר לבדוק אם הטיול קיים, כדי שהכניסה הראשונה תוכל לפתוח אותו.
+      allow read: if signedIn() && (resource == null || myEmail() in resource.data.memberEmails);
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.memberEmails == [myEmail()];
+      allow update: if signedIn()
+        && myEmail() in resource.data.memberEmails
+        && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if false;
+
+      // כל מה שבתוך הטיול: דמויות, ימים, פעילויות, מקומות, ציוד, יומן, תמונות, הוצאות.
+      match /{sub=**} {
+        allow read, write: if isMember(tripId);
+      }
+    }
+  }
+}
