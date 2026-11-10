@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// כללי האבטחה של אחסון הקבצים (תמונות והקלטות).
+// רק חברי הטיול יכולים להעלות ולראות קבצים, עד 15MB לקובץ, תמונות והקלטות בלבד.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /trips/{tripId}/{allPaths=**} {
+      function isMember() {
+        return request.auth != null
+          && request.auth.token.email != null
+          && request.auth.token.email.lower() in
+             firestore.get(/databases/(default)/documents/trips/$(tripId)).data.memberEmails;
+      }
+      allow read: if isMember();
+      allow write: if isMember()
+        && request.resource.size < 15 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType.matches('audio/.*'));
+    }
+  }
+}
