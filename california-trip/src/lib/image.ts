@@ -28,3 +28,12 @@ export async function squareFace(file: File, size = 512): Promise<Blob> {
     URL.revokeObjectURL(url);
   }
 }
+
+export function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("לא הצלחנו לקרוא את התמונה"));
+    r.readAsDataURL(blob);
+  });
+}

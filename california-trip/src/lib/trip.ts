@@ -12,9 +12,8 @@ import {
   updateDoc,
   type Timestamp,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { fb } from "./firebase";
-import { squareFace } from "./image";
+import { blobToDataUrl, squareFace } from "./image";
 import { TRIP_ID, TRIP_TIMEZONE, type AppUser, type Look, type Member } from "./types";
 
 export type TripState = "loading" | "member" | "denied" | "error";
@@ -60,7 +59,7 @@ function useDemoTrip(user: AppUser | null): TripApi {
   };
 }
 
-/** מצב אמיתי: הטיול נשמר ב-Firestore, ותמונות הפנים ב-Storage. */
+/** מצב אמיתי: הטיול ותמונות הפנים נשמרים ב-Firestore. */
 function useFirebaseTrip(user: AppUser | null): TripApi {
   const [state, setState] = useState<TripState>("loading");
   const [members, setMembers] = useState<Member[]>([]);
@@ -157,10 +156,9 @@ function useFirebaseTrip(user: AppUser | null): TripApi {
   const uploadFace = useCallback(async (file: File) => {
     const u = userRef.current;
     if (!u) return;
-    const blob = await squareFace(file);
-    const r = ref(fb.storage(), `trips/${TRIP_ID}/avatars/${u.uid}.jpg`);
-    await uploadBytes(r, blob, { contentType: "image/jpeg" });
-    const url = await getDownloadURL(r);
+    // תמונת פנים קטנה (בערך 20KB) נשמרת ישירות במסד הנתונים — בלי צורך בשירות אחסון בתשלום.
+    const blob = await squareFace(file, 256);
+    const url = await blobToDataUrl(blob);
     await updateDoc(doc(fb.db(), "trips", TRIP_ID, "members", u.uid), { avatarUrl: url });
   }, []);
 
