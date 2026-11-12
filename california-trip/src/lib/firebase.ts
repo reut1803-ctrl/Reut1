@@ -1,7 +1,6 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { firebaseConfig, isFirebaseConfigured } from "./firebase-config";
 
 let app: FirebaseApp | null = null;
@@ -19,5 +18,4 @@ function getApp(): FirebaseApp {
 export const fb = {
   auth: (): Auth => getAuth(getApp()),
   db: (): Firestore => getFirestore(getApp()),
-  storage: (): FirebaseStorage => getStorage(getApp()),
 };

@@ -21,9 +21,10 @@ trips/california                 הטיול: שם, תאריכים, אזור זמ
   photos/{id}                    תמונות: קובץ, מיקום, תאריך, מי העלה
   expenses/{id}                  הוצאות: סכום, קטגוריה, יום
 ```
-קבצים (Storage): `trips/california/avatars/`, `trips/california/photos/`, `trips/california/audio/`.
+תמונות הפנים נשמרות כתמונה קטנה ודחוסה בתוך `members/{uid}` (בלי Firebase Storage, שדורש כרטיס אשראי).
+`firebase/storage.rules` מוכן לשימוש עתידי, אם נחליט להפעיל Storage לתמונות הטיול.
 
-כללי האבטחה נמצאים ב-`firebase/firestore.rules` ו-`firebase/storage.rules`.
+כללי האבטחה של מסד הנתונים: `firebase/firestore.rules`.
 
 ## הרצה מקומית
 ```bash
