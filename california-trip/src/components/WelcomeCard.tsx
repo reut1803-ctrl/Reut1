@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import AnalogClocks from "./AnalogClocks";
 import FlagEmblem from "./FlagEmblem";
+import { FLIGHT } from "@/content/flight";
 import { useAuth } from "@/lib/auth";
 import type { TripApi } from "@/lib/trip";
 
@@ -63,7 +64,7 @@ export default function WelcomeCard({
     <section className="gate-card gate-card--wide glass" aria-labelledby="welcome-title">
       {demo && <span className="demo-pill">תצוגה מקדימה · התמונות נשארות רק אצלך במסך</span>}
       <FlagEmblem />
-      <p className="gate-eyebrow">נחתנו בלוס אנג׳לס</p>
+      <p className="gate-eyebrow">נחתנו ב{FLIGHT.to.city}</p>
       <h1 id="welcome-title" className="gate-title gate-title--sm">
         ברוכים הבאים,<br />{joinNames(names) || user?.name}
       </h1>

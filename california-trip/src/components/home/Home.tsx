@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useAuth } from "@/lib/auth";
 import type { TripApi } from "@/lib/trip";
@@ -10,6 +10,7 @@ import TabBar from "../app/TabBar";
 import Reminders from "../app/Reminders";
 import InviteFromLink from "../app/InviteFromLink";
 import TodayGlance from "./TodayGlance";
+import { FLIGHT, distanceKm, hoursDifference } from "@/content/flight";
 import FlagsSection from "./FlagsSection";
 import { useBatteryNight } from "@/lib/battery";
 import Cloud from "./Cloud";
@@ -18,8 +19,13 @@ import { FlagSymbols } from "./flags";
 
 
 
+// מרחק אווירי מעוגל ל-100 ק״מ
+const KM = Math.round(distanceKm() / 100) * 100;
+
 export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () => void }) {
   const root = useRef<HTMLDivElement>(null);
+  const [hoursDiff, setHoursDiff] = useState<number | null>(null);
+  useEffect(() => { setHoursDiff(hoursDifference()); }, []);
   const { user, signOut } = useAuth();
   const { night, turnOff } = useBatteryNight();
 
@@ -80,7 +86,7 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
           );
         });
 
-        // ---- המסע: הסעיף ננעץ, הקו נמתח והמטוס עף מתל אביב ללוס אנג׳לס ----
+        // ---- המסע: הסעיף ננעץ, הקו נמתח והמטוס עף מתל אביב לסן פרנסיסקו ----
         const path = scope.querySelector(".journey-path") as SVGPathElement;
         const len = path.getTotalLength();
         gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
@@ -95,7 +101,7 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
             motionPath: { path, align: path, alignOrigin: [0.5, 0.5], autoRotate: true },
           }, 0)
           .to(km, {
-            v: 12200, duration: 0.85, ease: "none",
+            v: KM, duration: 0.85, ease: "none",
             onUpdate: () => { kmEl.textContent = (Math.round(km.v / 100) * 100).toLocaleString("he-IL"); },
           }, 0.1)
           .from(q(".journey-end"), { opacity: 0, scale: 0.6, duration: 0.15 }, 0.85);
@@ -158,11 +164,11 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
         <div className="journey-inner">
           <div className="section-head">
             <p className="eyebrow-home">הדרך</p>
-            <h2 className="section-title">מנתב״ג ל-LAX.</h2>
+            <h2 className="section-title">מנתב״ג ל-{FLIGHT.to.code}.</h2>
           </div>
           <div className="journey-map">
-            <span className="journey-label journey-label--from">תל אביב<small>TLV</small></span>
-            <span className="journey-label journey-label--to">לוס אנג׳לס<small>LAX</small></span>
+            <span className="journey-label journey-label--from">{FLIGHT.from.city}<small>{FLIGHT.from.code}</small></span>
+            <span className="journey-label journey-label--to">{FLIGHT.to.city}<small>{FLIGHT.to.code}</small></span>
             <svg className="journey-svg" viewBox="0 0 1000 360" aria-hidden="true">
               <path className="journey-ghost" d="M70 290 C 300 10, 700 10, 930 290" />
               <path className="journey-path" d="M70 290 C 300 10, 700 10, 930 290" />
@@ -174,9 +180,9 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
             </svg>
           </div>
           <div className="stats">
-            <div className="stat glass"><span className="stat-num"><span className="stat-km">12,200</span></span><span className="stat-label">ק״מ, בערך, באוויר</span></div>
-            <div className="stat glass"><span className="stat-num">10</span><span className="stat-label">שעות הפרש בשעון</span></div>
-            <div className="stat glass"><span className="stat-num">15</span><span className="stat-label">שעות טיסה ישירה, בערך</span></div>
+            <div className="stat glass"><span className="stat-num"><span className="stat-km">{KM.toLocaleString("he-IL")}</span></span><span className="stat-label">ק״מ, בערך, באוויר</span></div>
+            <div className="stat glass"><span className="stat-num">{hoursDiff ?? "–"}</span><span className="stat-label">שעות הפרש בשעון</span></div>
+            <div className="stat glass"><span className="stat-num">{FLIGHT.approxHours}</span><span className="stat-label">שעות טיסה ישירה, בערך</span></div>
           </div>
         </div>
       </section>

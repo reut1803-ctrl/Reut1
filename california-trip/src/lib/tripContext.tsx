@@ -25,14 +25,14 @@ function demoSeed() {
     rows: {
       activities: [
         { id: "a1", date: today, time: "09:30", title: `${ex}ארוחת בוקר`, address: "", status: "done", reminder: 0 },
-        { id: "a2", date: today, time: "16:00", title: `${ex}שקיעה במזח סנטה מוניקה`, address: "Santa Monica Pier", lat: 34.0094, lng: -118.4973, status: "planned", reminder: 30 },
-        { id: "a3", date: addDays(today, 1), time: "11:00", title: `${ex}מצפה גריפית׳`, address: "Griffith Observatory", lat: 34.1184, lng: -118.3004, status: "planned", reminder: 60 },
+        { id: "a2", date: today, time: "16:00", title: `${ex}שקיעה על גשר הזהב`, address: "Golden Gate Bridge Welcome Center", lat: 37.8077, lng: -122.475, status: "planned", reminder: 30 },
+        { id: "a3", date: addDays(today, 1), time: "11:00", title: `${ex}מזח 39`, address: "Pier 39, San Francisco", lat: 37.8087, lng: -122.4098, status: "planned", reminder: 60 },
       ],
-      days: [{ id: today, lodging: `${ex}אכסניה בלוס אנג׳לס`, lodgingAddress: "Los Angeles" }],
+      days: [{ id: today, lodging: `${ex}אכסניה בסן פרנסיסקו`, lodgingAddress: "San Francisco" }],
       packing: [
         { id: "p1", label: "דרכונים", category: "מסמכים", checked: true },
         { id: "p2", label: "מטען לטלפון", category: "חשמל", checked: false },
-        { id: "p3", label: "קרם הגנה", category: "טואלטיקה", checked: false },
+        { id: "p3", label: "מעיל — בסן פרנסיסקו קריר בערב", category: "בגדים", checked: false },
         { id: "p4", label: "נרות שבת", category: "שבת", checked: false },
       ],
       expenses: [
@@ -40,9 +40,9 @@ function demoSeed() {
         { id: "e2", date: today, amount: 42, category: "תחבורה", note: `${ex}דלק` },
       ],
       places: [
-        { id: "pl1", name: `${ex}מזח סנטה מוניקה`, category: "attraction", lat: 34.0094, lng: -118.4973, address: "Santa Monica Pier" },
-        { id: "pl2", name: `${ex}אכסניה א׳`, category: "lodging", lat: 34.0928, lng: -118.3287, address: "Hollywood", price: 45 },
-        { id: "pl3", name: `${ex}אכסניה ב׳`, category: "lodging", lat: 34.0195, lng: -118.4912, address: "Santa Monica", price: 62 },
+        { id: "pl1", name: `${ex}גשר הזהב`, category: "attraction", lat: 37.8199, lng: -122.4783, address: "Golden Gate Bridge" },
+        { id: "pl2", name: `${ex}אכסניה א׳`, category: "lodging", lat: 37.7599, lng: -122.4148, address: "Mission District", price: 48 },
+        { id: "pl3", name: `${ex}אכסניה ב׳`, category: "lodging", lat: 37.808, lng: -122.4177, address: "Fisherman's Wharf", price: 65 },
       ],
     } as Record<string, Row[]>,
   };

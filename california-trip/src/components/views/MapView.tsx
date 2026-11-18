@@ -34,13 +34,13 @@ const LAYERS: { id: Layer; label: string }[] = [
 // אזורי הטיול המרכזיים — לחיצה מעיפה את המפה לשם
 const REGIONS: { name: string; lat: number; lng: number; z: number }[] = [
   { name: "כל קליפורניה", lat: 36.7, lng: -119.4, z: 6 },
+  { name: "סן פרנסיסקו", lat: 37.7749, lng: -122.4194, z: 12 },
   { name: "לוס אנג׳לס", lat: 34.0522, lng: -118.2437, z: 10 },
   { name: "סן דייגו", lat: 32.7157, lng: -117.1611, z: 11 },
   { name: "פאלם ספרינגס", lat: 33.8303, lng: -116.5453, z: 11 },
   { name: "סנטה ברברה", lat: 34.4208, lng: -119.6982, z: 11 },
   { name: "ביג סור", lat: 36.2704, lng: -121.8081, z: 10 },
   { name: "יוסמיטי", lat: 37.7456, lng: -119.5936, z: 11 },
-  { name: "סן פרנסיסקו", lat: 37.7749, lng: -122.4194, z: 11 },
   { name: "לייק טאהו", lat: 39.0968, lng: -120.0324, z: 10 },
 ];
 
@@ -291,7 +291,7 @@ export default function MapView() {
         )}
         <div className="act-actions">
           <a className="chip-btn" href={mapsSearchUrl("hostel", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">אכסניות באזור</a>
-          <a className="chip-btn" href={mapsSearchUrl("hostel Los Angeles")} target="_blank" rel="noopener noreferrer">אכסניות בלוס אנג׳לס</a>
+          <a className="chip-btn" href={mapsSearchUrl("hostel San Francisco")} target="_blank" rel="noopener noreferrer">אכסניות בסן פרנסיסקו</a>
         </div>
       </div>
     </div>

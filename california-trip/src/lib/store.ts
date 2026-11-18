@@ -61,7 +61,7 @@ export function firebaseStore(): Store {
 
 /** מצב תצוגה: נשמר רק בדפדפן הזה. */
 export function demoStore(seed: Record<string, Row[]>, seedTrip: Data): Store {
-  const KEY = "ct-demo-v1";
+  const KEY = "ct-demo-v2";
   let db: Record<string, Row[]> = seed;
   let trip: Data = seedTrip;
   try {
