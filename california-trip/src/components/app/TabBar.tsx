@@ -6,6 +6,7 @@ import Icon, { type IconName } from "./Icon";
 
 export const SECTIONS: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "בית", icon: "home" },
+  { href: "/discover", label: "גילוי", icon: "compass" },
   { href: "/map", label: "מפה", icon: "map" },
   { href: "/plan", label: "מסלול", icon: "route" },
   { href: "/packing", label: "ציוד", icon: "bag" },

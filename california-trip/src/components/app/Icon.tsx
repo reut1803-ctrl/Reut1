@@ -1,4 +1,4 @@
-export type IconName = "home" | "map" | "route" | "bag" | "heart" | "cup" | "capsule" | "waze" | "pause" | "play" | "move" | "check" | "trash" | "mic" | "stop" | "photo" | "pin" | "plus" | "search" | "bell" | "candle";
+export type IconName = "home" | "map" | "route" | "bag" | "heart" | "cup" | "capsule" | "waze" | "pause" | "play" | "move" | "check" | "trash" | "mic" | "stop" | "photo" | "pin" | "plus" | "search" | "bell" | "candle" | "compass" | "spark";
 
 export default function Icon({ name, className = "icon" }: { name: IconName; className?: string }) {
   const p = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -24,6 +24,8 @@ export default function Icon({ name, className = "icon" }: { name: IconName; cla
       {name === "plus" && <path {...p} d="M12 5v14M5 12h14" />}
       {name === "search" && <><circle {...p} cx="11" cy="11" r="6" /><path {...p} d="m20 20-4.5-4.5" /></>}
       {name === "bell" && <><path {...p} d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Z" /><path {...p} d="M10 20a2 2 0 0 0 4 0" /></>}
+      {name === "compass" && <><circle {...p} cx="12" cy="12" r="9" /><path {...p} d="m15.5 8.5-2 5-5 2 2-5 5-2Z" /></>}
+      {name === "spark" && <path {...p} d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" />}
       {name === "candle" && <><path {...p} d="M9 10h6v11H9z" /><path {...p} d="M12 3c1.5 2 1.5 3.5 0 5-1.5-1.5-1.5-3 0-5Z" /></>}
     </svg>
   );

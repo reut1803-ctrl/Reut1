@@ -9,9 +9,10 @@ import Icon from "../app/Icon";
 import PlaceSearch from "../app/PlaceSearch";
 import type { Activity } from "./PlanView";
 import type { Photo } from "./JournalView";
+import { SPOTS } from "@/content/sfGuide";
 
 type Cat = "attraction" | "chabad" | "kosher" | "torah" | "candles" | "lodging";
-type SavedPlace = { id: string; name: string; category: Cat; lat: number; lng: number; address?: string; price?: number | null; notes?: string };
+type SavedPlace = { id: string; name: string; category: Cat; lat: number; lng: number; address?: string; price?: number | null; notes?: string; guide?: boolean };
 
 const CATS: Record<Cat, { label: string; mark: string; layer: Layer }> = {
   attraction: { label: "אטרקציה", mark: "★", layer: "attractions" },
@@ -22,8 +23,9 @@ const CATS: Record<Cat, { label: string; mark: string; layer: Layer }> = {
   lodging: { label: "לינה", mark: "⌂", layer: "lodging" },
 };
 
-type Layer = "attractions" | "jewish" | "lodging" | "photos" | "plan";
+type Layer = "must" | "attractions" | "jewish" | "lodging" | "photos" | "plan";
 const LAYERS: { id: Layer; label: string }[] = [
+  { id: "must", label: "אסור לפספס" },
   { id: "attractions", label: "אטרקציות" },
   { id: "jewish", label: "יהדות וכשרות" },
   { id: "lodging", label: "לינה" },
@@ -66,7 +68,7 @@ export default function MapView() {
   const groupRef = useRef<Leaflet.LayerGroup | null>(null);
   const [ready, setReady] = useState(false);
   const [center, setCenter] = useState({ lat: 36.7, lng: -119.4 });
-  const [layers, setLayers] = useState<Record<Layer, boolean>>({ attractions: true, jewish: true, lodging: true, photos: true, plan: true });
+  const [layers, setLayers] = useState<Record<Layer, boolean>>({ must: true, attractions: true, jewish: true, lodging: true, photos: true, plan: true });
   const [sel, setSel] = useState<Selected | null>(null);
   const [adding, setAdding] = useState<Place | null>(null);
   const [addCat, setAddCat] = useState<Cat>("attraction");
@@ -118,6 +120,13 @@ export default function MapView() {
       L.marker([p.lat, p.lng], { icon: icon(`pin--${p.category}`, esc(c.mark)), title: p.name })
         .on("click", () => setSel({ kind: "place", p }))
         .addTo(g);
+    }
+    if (layers.must) {
+      for (const sp of SPOTS) {
+        L.marker([sp.lat, sp.lng], { icon: icon("pin--must", "★"), title: sp.name })
+          .on("click", () => setSel({ kind: "place", p: { id: sp.id, name: sp.name, category: "attraction", lat: sp.lat, lng: sp.lng, address: `${sp.why}${sp.tip ? " · " + sp.tip : ""}`, guide: true } as SavedPlace }))
+          .addTo(g);
+      }
     }
     if (layers.photos) {
       for (const ph of photos ?? []) {
@@ -200,11 +209,11 @@ export default function MapView() {
             <>
               <span className="label">{CATS[sel.p.category]?.label}</span>
               <h2 className="panel-title">{sel.p.name}</h2>
-              {sel.p.address && <p className="hint">{sel.p.address.split(",").slice(0, 3).join(",")}</p>}
+              {sel.p.address && <p className="hint">{sel.p.guide ? sel.p.address : sel.p.address.split(",").slice(0, 3).join(",")}</p>}
               {sel.p.category === "lodging" && sel.p.price != null && <p className="price-tag">{usd(sel.p.price)} ללילה</p>}
               <div className="act-actions">
                 {wazeUrl(sel.p) && <a className="chip-btn chip-btn--waze" href={wazeUrl(sel.p)!} target="_blank" rel="noopener noreferrer"><Icon name="waze" />ניווט ב-Waze</a>}
-                <button type="button" className="chip-btn chip-btn--danger" onClick={async () => { await store.remove("places", sel.p.id); setSel(null); }}><Icon name="trash" />הסרה מהמפה</button>
+                {!sel.p.guide && <button type="button" className="chip-btn chip-btn--danger" onClick={async () => { await store.remove("places", sel.p.id); setSel(null); }}><Icon name="trash" />הסרה מהמפה</button>}
               </div>
             </>
           )}

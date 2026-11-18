@@ -5,6 +5,8 @@ import { useAuth } from "./auth";
 import { useTrip, type TripApi } from "./trip";
 import { demoStore, firebaseStore, type Row, type Store } from "./store";
 import { addDays, caNow } from "./time";
+import { withSaveTracking } from "./saveStatus";
+import { DEFAULT_PREFS, type Prefs } from "./recommend";
 
 export type TripDoc = {
   title?: string;
@@ -12,7 +14,12 @@ export type TripDoc = {
   endDate?: string | null;
   dailyBudget?: number | null;
   flagsContent?: Record<string, string>;
+  prefs?: Partial<Prefs>;
 };
+
+export function prefsOf(t: TripDoc): Prefs {
+  return { ...DEFAULT_PREFS, ...(t.prefs ?? {}) };
+}
 
 type Ctx = { trip: TripApi; store: Store; tripDoc: TripDoc };
 const TripCtx = createContext<Ctx | null>(null);
@@ -52,9 +59,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const { user, demo } = useAuth();
   const trip = useTrip(user, demo);
   const store = useMemo(() => {
-    if (!demo) return firebaseStore();
+    if (!demo) return withSaveTracking(firebaseStore());
     const s = demoSeed();
-    return demoStore(s.rows, s.trip);
+    return withSaveTracking(demoStore(s.rows, s.trip));
   }, [demo]);
   const [tripDoc, setTripDoc] = useState<TripDoc>({});
 

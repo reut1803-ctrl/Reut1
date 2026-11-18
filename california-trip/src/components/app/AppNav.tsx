@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import OrigamiPlane from "../home/OrigamiPlane";
+import SaveStatus from "./SaveStatus";
 import { useAuth } from "@/lib/auth";
 import { useTripCtx } from "@/lib/tripContext";
 
@@ -17,6 +18,7 @@ export default function AppNav({ night, onNightOff }: { night?: boolean; onNight
           קליפורניה שלנו
         </Link>
         <div className="nav-side">
+          <SaveStatus />
           {night && <button type="button" className="nav-night" onClick={onNightOff} aria-label="כיבוי מצב חיסכון סוללה">☾ כיבוי</button>}
           {demo && !night && <span className="nav-demo">מצב תצוגה</span>}
           <div className="nav-faces" aria-label={`מטיילים: ${names.join(", ")}`}>

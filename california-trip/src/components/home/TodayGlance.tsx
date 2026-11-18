@@ -6,6 +6,10 @@ import { caToDate, heDate } from "@/lib/time";
 import { wazeUrl } from "@/lib/places";
 import Icon from "../app/Icon";
 import type { Activity } from "../views/PlanView";
+import { prefsOf } from "@/lib/tripContext";
+import { useOrigin, useShabbat, useWeather } from "@/lib/context";
+import { nextStep, rank } from "@/lib/recommend";
+import { useEffect, useState } from "react";
 
 type Day = { id: string; lodging?: string; lodgingAddress?: string; lat?: number; lng?: number };
 type Expense = { id: string; date: string; amount: number };
@@ -22,7 +26,15 @@ export default function TodayGlance() {
   const expenses = useRows<Expense>("expenses");
   const packing = useRows<Item>("packing");
 
-  const now = Date.now();
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
+  const { origin } = useOrigin();
+  const { weather } = useWeather(origin.lat, origin.lng);
+  const shabbat = useShabbat(origin.lat, origin.lng);
+  const situation = { now, origin, weather, shabbat };
+  const top = rank(prefsOf(tripDoc), situation)[0];
+  const step = nextStep(situation, acts ?? [], top, days?.find((d) => d.id === today)?.lodging);
+  const stepWaze = step.plan ? wazeUrl(step.plan) : step.spot ? wazeUrl({ lat: step.spot.lat, lng: step.spot.lng }) : null;
   const next = (acts ?? [])
     .filter((a) => a.date === today && a.status !== "done" && a.status !== "paused" && caToDate(a.date, a.time).getTime() > now - 30 * 60000)
     .sort((a, b) => a.time.localeCompare(b.time))[0];
@@ -41,18 +53,34 @@ export default function TodayGlance() {
         <h2 id="today-title" className="section-title">היום שלנו.</h2>
       </div>
       <div className="today-card glass reveal">
-        <div className="today-row">
-          <span className="today-ic"><Icon name="route" /></span>
-          <div className="today-main">
-            <span className="today-label">הבא בתור</span>
-            {next ? <strong>{next.time} · {next.title}</strong> : <strong className="today-empty">אין עוד פעילויות להיום</strong>}
+        <div className={`next-step next-step--${step.tone}`}>
+          <div className="next-top">
+            <span className="next-label"><Icon name="spark" />הצעד הבא</span>
+            {weather && <span className="next-wx">{weather.temp}° · {weather.label}</span>}
           </div>
-          {nextWaze ? (
-            <a className="chip-btn chip-btn--waze" href={nextWaze} target="_blank" rel="noopener noreferrer"><Icon name="waze" />Waze</a>
-          ) : (
-            <Link className="today-go" href="/plan" aria-label="למסלול">←</Link>
-          )}
+          <strong className="next-title">{step.title}</strong>
+          <p className="next-text">{step.text}</p>
+          <div className="act-actions">
+            {stepWaze && step.tone !== "shabbat" && step.tone !== "rest" && (
+              <a className="chip-btn chip-btn--waze" href={stepWaze} target="_blank" rel="noopener noreferrer"><Icon name="waze" />ניווט</a>
+            )}
+            <Link className="chip-btn" href="/discover"><Icon name="compass" />עוד רעיונות</Link>
+          </div>
         </div>
+        {!step.plan && (
+        <div className="today-row">
+            <span className="today-ic"><Icon name="route" /></span>
+            <div className="today-main">
+              <span className="today-label">הבא בתור</span>
+              {next ? <strong>{next.time} · {next.title}</strong> : <strong className="today-empty">אין עוד פעילויות להיום</strong>}
+            </div>
+            {nextWaze ? (
+              <a className="chip-btn chip-btn--waze" href={nextWaze} target="_blank" rel="noopener noreferrer"><Icon name="waze" />Waze</a>
+            ) : (
+              <Link className="today-go" href="/plan" aria-label="למסלול">←</Link>
+            )}
+          </div>
+        )}
         <div className="today-row">
           <span className="today-ic"><Icon name="home" /></span>
           <div className="today-main">
