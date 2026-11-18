@@ -27,8 +27,9 @@ service cloud.firestore {
         && request.resource.data.ownerUid == resource.data.ownerUid;
       allow delete: if false;
 
-      // כל מה שבתוך הטיול: דמויות, ימים, פעילויות, מקומות, ציוד, יומן, תמונות, הוצאות.
-      match /{sub=**} {
+      // כל מה שבתוך הטיול: מטיילים, ימים, פעילויות, מקומות, ציוד, יומן, תמונות, הוצאות.
+      // שימו לב: {rest=**} לבדו תופס גם את מסמך הטיול עצמו, ולכן מחייבים לפחות קטע אחד ({sub}).
+      match /{sub}/{rest=**} {
         allow read, write: if isMember(tripId);
       }
     }

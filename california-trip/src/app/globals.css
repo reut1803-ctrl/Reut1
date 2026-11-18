@@ -175,6 +175,10 @@ button { cursor: pointer; }
 .pill-btn:disabled { opacity: .6; cursor: progress; }
 .pill-btn--dark { background: var(--h-ink); color: #fff; border-color: var(--h-ink); }
 .pill-btn--block { width: 100%; min-height: 54px; margin-top: 20px; font-size: 17px; }
+.open-outside { display: grid; gap: 12px; padding: 16px; border-radius: 22px; background: rgba(255, 255, 255, 0.7); font-size: 15px; line-height: 1.5; }
+.open-outside p { margin: 0; }
+.open-outside .pill-btn--block { margin-top: 0; display: grid; place-items: center; text-decoration: none; }
+.open-outside-hint { font-weight: 600; }
 .text-btn { background: none; border: 0; padding: 6px 4px; font-size: 14px; font-weight: 500; color: var(--h-soft); }
 .text-btn:hover { color: var(--h-ink); }
 

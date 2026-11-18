@@ -11,10 +11,10 @@ import {
 } from "react";
 import {
   GoogleAuthProvider,
-  getRedirectResult,
+  browserLocalPersistence,
   onAuthStateChanged,
+  setPersistence,
   signInWithPopup,
-  signInWithRedirect,
   signOut as fbSignOut,
 } from "firebase/auth";
 import { fb } from "./firebase";
@@ -49,6 +49,11 @@ function friendlyError(code: string): string | null {
       return null;
     case "auth/network-request-failed":
       return "אין חיבור לאינטרנט כרגע. נסו שוב בעוד רגע.";
+    case "auth/popup-blocked":
+      return "הדפדפן חסם את חלון ההתחברות. לחצו שוב על הכפתור.";
+    case "auth/web-storage-unsupported":
+    case "auth/operation-not-supported-in-this-environment":
+      return "הדפדפן הזה לא מאפשר התחברות. פתחו את האתר בכרום או בספארי.";
     case "auth/unauthorized-domain":
       return "כתובת האתר עוד לא אושרה ב-Firebase. צריך להוסיף אותה ברשימת הדומיינים המורשים.";
     default:
@@ -66,9 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (demo) return;
     const auth = fb.auth();
-    getRedirectResult(auth).catch((e: { code?: string }) => {
-      setError(friendlyError(e.code ?? ""));
-    });
+    // נשארים מחוברים גם אחרי סגירת הדפדפן — לא צריך להתחבר מחדש בכל פתיחה.
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
     return onAuthStateChanged(auth, (u) => {
       if (u) {
         setUser({
@@ -95,22 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus("signedIn");
         return;
       }
-      const auth = fb.auth();
+      // חלון קופץ בלבד: שיטת ה"הפניה" לא אמינה בדפדפנים של היום כשהאתר יושב על vercel.app.
+      // הקריאה נעשית ישירות מהלחיצה, כדי שהדפדפן לא יחסום את החלון.
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (e) {
-        const code = (e as { code?: string }).code ?? "";
-        if (
-          code === "auth/popup-blocked" ||
-          code === "auth/operation-not-supported-in-this-environment"
-        ) {
-          await signInWithRedirect(auth, provider);
-          return;
-        }
-        throw e;
-      }
+      await signInWithPopup(fb.auth(), provider);
     } catch (e) {
       setError(friendlyError((e as { code?: string }).code ?? ""));
     } finally {

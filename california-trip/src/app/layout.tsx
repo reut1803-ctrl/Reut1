@@ -6,13 +6,14 @@ import "./home.css";
 export const metadata: Metadata = {
   title: "קליפורניה שלנו",
   description: "האפליקציה של רעות וזכריה לטיול בקליפורניה",
+  appleWebApp: { capable: true, title: "קליפורניה", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f2d2cb",
+  themeColor: "#86c8f0",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

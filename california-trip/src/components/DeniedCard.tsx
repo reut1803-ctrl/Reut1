@@ -12,7 +12,14 @@ export default function DeniedCard({ error }: { error?: boolean }) {
           ? "לא הצלחנו לטעון את הטיול. בדקו את החיבור לאינטרנט ונסו שוב."
           : `החשבון ${user?.email ?? ""} עדיין לא ברשימת המטיילים. מי שפתח/ה את הטיול יכול/ה להוסיף אותו.`}
       </p>
-      <button className="pill-btn" onClick={signOut}>כניסה עם חשבון אחר</button>
+      {error && (
+        <button className="pill-btn pill-btn--dark pill-btn--block" onClick={() => window.location.reload()}>
+          לנסות שוב
+        </button>
+      )}
+      <div className="gate-links">
+        <button type="button" className="text-btn" onClick={signOut}>כניסה עם חשבון אחר</button>
+      </div>
     </section>
   );
 }
