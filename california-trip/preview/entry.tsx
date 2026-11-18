@@ -9,11 +9,12 @@ import JournalPage from "../src/app/journal/page";
 import BudgetPage from "../src/app/budget/page";
 import CapsulePage from "../src/app/capsule/page";
 import DiscoverPage from "../src/app/discover/page";
+import AssistantPage from "../src/app/assistant/page";
 import { usePathname } from "./shims/navigation";
 
 const PAGES: Record<string, () => JSX.Element> = {
   "/": Home, "/map": MapPage, "/plan": PlanPage, "/packing": PackingPage,
-  "/journal": JournalPage, "/discover": DiscoverPage, "/budget": BudgetPage, "/capsule": CapsulePage,
+  "/journal": JournalPage, "/discover": DiscoverPage, "/assistant": AssistantPage, "/budget": BudgetPage, "/capsule": CapsulePage,
 };
 
 function Router() {

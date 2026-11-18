@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0",
     "@types/leaflet": "^1.9.12",
     "firebase": "^10.14.1",
     "gsap": "^3.13.0",

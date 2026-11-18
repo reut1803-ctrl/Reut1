@@ -64,7 +64,7 @@ export default function TodayGlance() {
             {stepWaze && step.tone !== "shabbat" && step.tone !== "rest" && (
               <a className="chip-btn chip-btn--waze" href={stepWaze} target="_blank" rel="noopener noreferrer"><Icon name="waze" />ניווט</a>
             )}
-            <Link className="chip-btn" href="/discover"><Icon name="compass" />עוד רעיונות</Link>
+            <Link className="chip-btn" href="/assistant"><Icon name="spark" />לשאול את העוזרת</Link>
           </div>
         </div>
         {!step.plan && (

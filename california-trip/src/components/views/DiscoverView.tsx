@@ -8,6 +8,7 @@ import { CATS, INTERESTS, KIDS, SPOTS, type GuideCat, type Spot } from "@/conten
 import { mapsSearchUrl, wazeUrl } from "@/lib/places";
 import { addDays, heDate, caNow } from "@/lib/time";
 import Icon from "../app/Icon";
+import Link from "next/link";
 
 type Saved = { id: string };
 
@@ -182,6 +183,11 @@ export default function DiscoverView() {
 
   return (
     <div className="stack">
+      <Link className="ask-card glass" href="/assistant">
+        <span className="chat-avatar"><Icon name="spark" /></span>
+        <span className="ask-text"><strong>שאלו את העוזרת</strong><small>למשל: ״מה עושים היום עם הבנות בגשם?״</small></span>
+        <span aria-hidden="true">←</span>
+      </Link>
       <div className="ctx-strip glass">
         <span className="ctx-item">{weather ? <><strong>{weather.temp}°</strong> {weather.label}{weather.rainSoon && weather.kind !== "rain" ? " · גשם בקרוב" : ""}</> : failed ? "מזג אוויר לא זמין" : "בודקים מזג אוויר…"}</span>
         <span className="ctx-item">{free.limit === "shabbat" ? `עד שבת: ${formatDrive(free.hours)}` : `זמן פנוי היום: ${formatDrive(free.hours)}`}</span>
