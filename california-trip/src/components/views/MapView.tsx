@@ -11,6 +11,7 @@ import {
 import { driveHours, formatDrive, useOrigin } from "@/lib/context";
 import { SPOTS } from "@/content/sfGuide";
 import Icon from "../app/Icon";
+import PlaceSheet, { type SheetPlace } from "../app/PlaceSheet";
 import type { Activity } from "./PlanView";
 import type { Photo } from "./JournalView";
 
@@ -76,7 +77,7 @@ function writePrefs(p: MapPrefs) {
 type Sel = {
   name: string; lat: number; lng: number; label: string;
   text?: string; address?: string; price?: number | null; photo?: string;
-  savedId?: string; canSave?: boolean;
+  savedId?: string; canSave?: boolean; spotId?: string;
 };
 
 type Hit = { key: string; name: string; sub: string; lat: number; lng: number; address?: string; local: boolean };
@@ -112,6 +113,11 @@ export default function MapView() {
   const [areaMsg, setAreaMsg] = useState<string | null>(null);
 
   const [sel, setSel] = useState<Sel | null>(null);
+  const [sheet, setSheet] = useState<SheetPlace | null>(null);
+  const openSheet = (x: Sel) => {
+    const sp = x.spotId ? SPOTS.find((g) => g.id === x.spotId) : undefined;
+    setSheet({ name: x.name, enName: sp?.titleEn, lat: x.lat, lng: x.lng, spot: sp, label: x.label, address: x.address });
+  };
   const selRef = useRef<HTMLDivElement>(null);
   const [saveCat, setSaveCat] = useState<Cat>("attraction");
   const [savePrice, setSavePrice] = useState("");
@@ -194,7 +200,7 @@ export default function MapView() {
     if (L_.must) {
       for (const sp of SPOTS) {
         L.marker([sp.lat, sp.lng], { icon: icon("pin--must", "★"), title: sp.name })
-          .on("click", () => setSel({ name: sp.name, lat: sp.lat, lng: sp.lng, label: "אסור לפספס", text: sp.why + (sp.tip ? ` · ${sp.tip}` : "") }))
+          .on("click", () => setSel({ name: sp.name, lat: sp.lat, lng: sp.lng, label: "אסור לפספס", text: sp.why, spotId: sp.id }))
           .addTo(g);
       }
     }
@@ -306,7 +312,7 @@ export default function MapView() {
     setQ(h.name);
     fly(h.lat, h.lng, 15);
     const saved = (places ?? []).find((p) => Math.abs(p.lat - h.lat) < 1e-5 && Math.abs(p.lng - h.lng) < 1e-5);
-    setSel({ name: h.name, lat: h.lat, lng: h.lng, label: h.sub || "תוצאת חיפוש", address: h.address, savedId: saved?.id, canSave: !h.local });
+    setSel({ name: h.name, lat: h.lat, lng: h.lng, label: h.sub || "תוצאת חיפוש", address: h.address, savedId: saved?.id, canSave: !h.local, spotId: h.key.startsWith("g-") ? h.key.slice(2) : undefined });
   }
 
   async function findArea(kind: Poi["kind"]) {
@@ -350,6 +356,7 @@ export default function MapView() {
 
   return (
     <div className="stack">
+      <PlaceSheet place={sheet} origin={origin} onClose={() => setSheet(null)} />
       <div className="chips-row chips-row--scroll" aria-label="קפיצה לאזור">
         {REGIONS.map((r) => (
           <button key={r.name} type="button" className="chip-btn" onClick={() => fly(r.lat, r.lng, r.z)}>{r.name}</button>
@@ -421,7 +428,7 @@ export default function MapView() {
           <p className="sel-dist"><Icon name="route" />{formatDrive(driveHours(origin, sel))} נסיעה {fromLabel}</p>
           <div className="act-actions">
             {wazeUrl(sel) && <a className="chip-btn chip-btn--waze" href={wazeUrl(sel)!} target="_blank" rel="noopener noreferrer"><Icon name="waze" />ניווט ב-Waze</a>}
-            <a className="chip-btn" href={mapsSearchUrl(sel.name, sel.lat, sel.lng)} target="_blank" rel="noopener noreferrer">שעות וטלפון</a>
+            <button type="button" className="chip-btn chip-btn--dark" onClick={() => openSheet(sel)}>שעות, מחיר ופרטים</button>
             {sel.savedId && (
               <button type="button" className="chip-btn chip-btn--danger" onClick={async () => { await store.remove("places", sel.savedId!); setSel(null); }}><Icon name="trash" />הסרה מהמפה</button>
             )}

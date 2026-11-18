@@ -84,15 +84,73 @@ async function area(kind: Poi["kind"], b: Bbox): Promise<Poi[]> {
   throw lastErr;
 }
 
+// ---------- פרטי מקום: תמונה (ויקיפדיה/ויקימדיה) + שעות, טלפון ואתר (OpenStreetMap) ----------
+
+type Details = { image: string | null; imageFull: string | null; extract: string | null; hours: string | null; fee: string | null; website: string | null; phone: string | null };
+const detailsCache = new Map<string, { at: number; v: Details }>();
+
+async function wikiSummary(title: string) {
+  const r = await withTimeout(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, { headers: { "User-Agent": UA, Accept: "application/json" } }, 8000);
+  if (!r.ok) return null;
+  const d = (await r.json()) as { thumbnail?: { source: string }; originalimage?: { source: string }; extract?: string };
+  const thumb = d.thumbnail?.source ?? null;
+  // מבקשים גרסה ברוחב 960 — חדה גם בטלפון ועדיין קלה
+  const big = thumb ? thumb.replace(/\/(\d+)px-/, "/960px-") : null;
+  return { image: big ?? d.originalimage?.source ?? null, imageFull: d.originalimage?.source ?? big, extract: d.extract ?? null };
+}
+
+function rxEscape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+async function osmTags(name: string, lat: number, lng: number) {
+  const core = name.split(/[(,]/)[0].trim();
+  const query = `[out:json][timeout:15];nwr(around:450,${lat.toFixed(5)},${lng.toFixed(5)})["name"~"${rxEscape(core).replace(/"/g, "")}",i];out tags 5;`;
+  for (const url of OVERPASS) {
+    try {
+      const r = await withTimeout(url, { method: "POST", body: "data=" + encodeURIComponent(query), headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": UA } }, 12000);
+      if (!r.ok) continue;
+      const d = (await r.json()) as { elements: { tags?: Record<string, string> }[] };
+      const tags = d.elements.map((e) => e.tags ?? {}).sort((a, b) => Number(!!b.opening_hours) - Number(!!a.opening_hours))[0];
+      return tags ?? null;
+    } catch { /* המראה הבאה */ }
+  }
+  return null;
+}
+
+async function details(b: { name: string; enName?: string; wiki?: string; lat: number; lng: number }): Promise<Details> {
+  const key = `${b.wiki ?? ""}|${b.enName ?? b.name}|${b.lat.toFixed(4)}`;
+  const hit = detailsCache.get(key);
+  if (hit && Date.now() - hit.at < 6 * 3600_000) return hit.v;
+  const [w, t] = await Promise.allSettled([
+    b.wiki ? wikiSummary(b.wiki) : Promise.resolve(null),
+    osmTags(b.enName || b.name, b.lat, b.lng),
+  ]);
+  const wiki = w.status === "fulfilled" ? w.value : null;
+  const tags = t.status === "fulfilled" ? t.value : null;
+  const v: Details = {
+    image: wiki?.image ?? null,
+    imageFull: wiki?.imageFull ?? null,
+    extract: wiki?.extract ?? null,
+    hours: tags?.opening_hours ?? null,
+    fee: tags?.fee ?? tags?.charge ?? null,
+    website: tags?.website ?? tags?.["contact:website"] ?? null,
+    phone: tags?.phone ?? tags?.["contact:phone"] ?? null,
+  };
+  detailsCache.set(key, { at: Date.now(), v });
+  return v;
+}
+
 export async function POST(req: Request) {
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token || !(await isMember(token))) return fail(401, "not_member");
 
-  let body: { action?: string; q?: string; bbox?: Bbox; kind?: Poi["kind"] };
+  let body: { action?: string; q?: string; bbox?: Bbox; kind?: Poi["kind"]; name?: string; enName?: string; wiki?: string; lat?: number; lng?: number };
   try { body = await req.json(); } catch { return fail(400, "bad_request"); }
 
   try {
+    if (body.action === "details" && body.name && typeof body.lat === "number" && typeof body.lng === "number") {
+      return ok({ results: await details({ name: body.name.slice(0, 120), enName: body.enName?.slice(0, 120), wiki: body.wiki?.slice(0, 120), lat: body.lat, lng: body.lng }) });
+    }
     if (body.action === "area" && body.bbox && (body.kind === "kosher" || body.kind === "jewish")) {
       return ok({ results: await area(body.kind, body.bbox) });
     }

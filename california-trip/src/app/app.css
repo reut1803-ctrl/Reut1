@@ -478,3 +478,76 @@ body:has(.app) { background: var(--h-bg); overflow: auto; }
 .map-fail { position: absolute; z-index: 1000; left: 12px; right: 12px; top: 74px; margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--surface); color: var(--h-ink); font-size: 13.5px; box-shadow: 0 8px 20px rgba(20, 40, 70, 0.16); }
 .leaflet-container { background: #e8eef3; }
 :root[data-night] .leaflet-container { background: #262230; }
+
+/* ---------- שמנת-פסטל: כרטיסי מקומות עם תמונה ---------- */
+.spot {
+  padding: 0; overflow: hidden; gap: 0; border-radius: 26px;
+  background: var(--cream); border: 1px solid rgba(201, 170, 120, 0.18);
+  box-shadow: 0 1px 0 #fff inset, 0 14px 36px rgba(120, 90, 50, 0.1);
+}
+.spot--top { box-shadow: 0 0 0 2px var(--paper-yellow), 0 18px 40px rgba(120, 90, 50, 0.14); }
+.spot-open { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.spot-img { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: linear-gradient(135deg, var(--blush-soft), var(--mint-soft) 60%, #e3eefb); display: grid; place-items: center; }
+.spot-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .6s ease, transform 1.2s cubic-bezier(.2, .8, .2, 1); transform: scale(1.04); }
+.spot-img--ok img { opacity: 1; transform: none; }
+.spot-img-mark { font-size: 34px; color: rgba(201, 143, 14, 0.45); }
+.spot-img--loading::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%); animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.spot-open .spot-n { position: absolute; top: 12px; right: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+.spot-free { position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); color: #1f7a3a; font-size: 12px; font-weight: 800; }
+.spot-content { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.spot-title { flex: 1; min-width: 0; border: 0; background: none; padding: 0; text-align: start; color: var(--h-ink); cursor: pointer; display: flex; flex-direction: column; gap: 1px; }
+.spot-title h3 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+.spot-en { font-size: 13.5px; font-weight: 600; color: var(--h-soft); letter-spacing: 0.01em; text-align: right; }
+.chip-btn--dark { background: var(--h-ink); color: var(--on-ink); border-color: var(--h-ink); }
+:root[data-night] .spot { background: var(--glass); border-color: var(--glass-line); box-shadow: var(--glass-shadow); }
+
+/* ---------- מגירת פרטים (נפתחת מלמטה) ---------- */
+:root.sheet-open, :root.sheet-open body { overflow: hidden; }
+.sheet-root { position: fixed; inset: 0; z-index: 2000; }
+.sheet-back { position: absolute; inset: 0; background: rgba(40, 30, 20, 0.38); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; width: min(100%, 640px);
+  max-height: calc(92svh - env(safe-area-inset-top, 0px)); display: flex; flex-direction: column;
+  background: var(--cream); border-radius: 30px 30px 0 0; box-shadow: 0 -20px 60px rgba(60, 40, 20, 0.25);
+  padding-bottom: env(safe-area-inset-bottom, 0px); will-change: transform;
+}
+:root[data-night] .sheet { background: #2a2338; }
+.sheet-grab { flex: none; height: 26px; display: grid; place-items: center; cursor: grab; touch-action: none; }
+.sheet-grab span { width: 44px; height: 5px; border-radius: 3px; background: rgba(120, 100, 80, 0.3); }
+.sheet-x { position: absolute; top: 10px; left: 14px; z-index: 2; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.92); color: #1d1d1f; font-size: 24px; line-height: 1; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+.sheet-body { overflow-y: auto; overscroll-behavior: contain; padding: 0 18px 22px; display: flex; flex-direction: column; gap: 14px; }
+.sheet-hero { position: relative; margin: 0 -18px; aspect-ratio: 16 / 10; max-height: 300px; overflow: hidden; background: linear-gradient(135deg, var(--blush-soft), var(--mint-soft) 60%, #e3eefb); display: grid; place-items: center; }
+.sheet-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .5s ease; }
+.sheet-hero--ok img { opacity: 1; }
+.sheet-hero .shimmer { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%); animation: shimmer 1.4s linear infinite; }
+.sheet-head { display: flex; flex-direction: column; gap: 4px; }
+.sheet-head h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.sheet-en { margin: 0; font-size: 15px; font-weight: 600; color: var(--h-soft); text-align: right; }
+.sheet-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip-soft { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; background: var(--cream-2); color: var(--h-ink); font-size: 13px; font-weight: 600; }
+.chip-soft .icon { width: 15px; height: 15px; }
+:root[data-night] .chip-soft { background: rgba(255, 255, 255, 0.1); }
+.entry--free { background: #e3f4e8; color: #1f6a35; }
+.entry--paid { background: #fbe7df; color: #8a3f2a; }
+.entry--mixed { background: #fff1c9; color: #7a5a06; }
+.sheet-why { margin: 0; font-size: 17px; line-height: 1.6; color: var(--text-body); }
+.sheet-card { padding: 14px; border-radius: 20px; background: var(--surface); border: 1px solid rgba(201, 170, 120, 0.16); display: flex; flex-direction: column; gap: 6px; }
+.sheet-card p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--text-body); }
+.sheet-card-t { font-size: 12.5px; font-weight: 800; letter-spacing: 0.02em; color: var(--h-soft); }
+.sheet-card--kids { background: linear-gradient(135deg, var(--mint-soft), var(--blush-soft)); border-color: transparent; }
+:root[data-night] .sheet-card { background: rgba(255, 255, 255, 0.06); border-color: var(--h-line); }
+:root[data-night] .sheet-card--kids { background: rgba(127, 203, 152, 0.14); }
+.sheet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 420px) { .sheet-grid { grid-template-columns: 1fr; } }
+.hours { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 14.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sheet-tip { margin: 0; padding: 12px 14px; border-radius: 16px; background: rgba(247, 201, 72, 0.18); font-size: 14.5px; line-height: 1.5; }
+.sheet-contact p { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--h-soft); }
+.sheet-contact .phone { font-weight: 700; color: var(--h-ink); }
+.sheet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sheet-actions .pill-btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.pill-btn--waze { background: #33ccff; border-color: #33ccff; color: #08263a; }
+.pill-btn--saved { color: #e5484d; }
+.pill-btn--saved .icon { fill: currentColor; }
+.sheet-credit { margin: 0; font-size: 12px; color: var(--h-soft); }
+.sheet-credit a { color: inherit; }

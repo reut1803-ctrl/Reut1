@@ -131,7 +131,7 @@ async function idToken(): Promise<string | null> {
   }
 }
 
-async function viaServer<T>(payload: Record<string, unknown>): Promise<T | null> {
+export async function viaServer<T>(payload: Record<string, unknown>): Promise<T | null> {
   const token = await idToken();
   if (!token) return null;
   const r = await fetch("/api/geo", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });

@@ -3,7 +3,11 @@
    טיפוגרפיה עברית חדה. עיצוב בהיר בלבד, בכוונה. */
 :root {
   color-scheme: light;
-  --h-bg: #fbfbfd;
+  --h-bg: #fbf8f3;
+  --cream: #fffaf2;
+  --cream-2: #f6efe3;
+  --blush-soft: #fbe7df;
+  --mint-soft: #e3f4e8;
   --h-ink: #1d1d1f;
   --h-soft: #6e6e73;
   --h-line: rgba(29, 29, 31, 0.08);
@@ -12,14 +16,14 @@
   --paper-yellow: #f7c948;
   --paper-mint: #9eddb2;
   --gold: #c98f0e;
-  --glass: rgba(255, 255, 255, 0.58);
+  --glass: rgba(255, 252, 246, 0.66);
   --glass-line: rgba(255, 255, 255, 0.78);
   --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 24px 70px rgba(30, 60, 100, 0.14);
   --font-home: "Noto Sans Hebrew", "Heebo", "Assistant", system-ui, sans-serif;
 
   /* משטחים וטקסט — מוגדרים פעם אחת, ומצב החיסכון מחליף רק אותם */
   --sky-3: #eef7fd;
-  --surface: #ffffff;
+  --surface: #fffdfa;
   --surface-soft: rgba(255, 255, 255, 0.9);
   --chip-soft: rgba(29, 29, 31, 0.06);
   --text-body: #48484d;

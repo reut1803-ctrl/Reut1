@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, query, setDoc, updateDoc, where,
+  addDoc, collection, deleteDoc, doc, getDoc, getDocFromServer, onSnapshot, query, setDoc, updateDoc, where,
 } from "firebase/firestore";
 import { fb } from "./firebase";
 import { TRIP_ID } from "./types";
@@ -19,6 +19,10 @@ export type Store = {
   remove: (col: string, id: string) => Promise<void>;
   listenTrip: (cb: (data: Data) => void) => () => void;
   updateTrip: (patch: Data) => Promise<void>;
+  /** קריאה ישירה מהשרת (לא מהזיכרון המקומי) — כדי לוודא ששמירה באמת הגיעה לענן */
+  readTripFromServer: () => Promise<Data | null>;
+  /** האם הנתונים נשמרים בענן (Firebase) או רק בדפדפן (תצוגה מקדימה) */
+  cloud: boolean;
 };
 
 export function firebaseStore(): Store {
@@ -56,6 +60,11 @@ export function firebaseStore(): Store {
     async updateTrip(patch) {
       await updateDoc(tripRef(), patch);
     },
+    async readTripFromServer() {
+      const snap = await getDocFromServer(tripRef());
+      return snap.exists() ? snap.data() : null;
+    },
+    cloud: true,
   };
 }
 
@@ -98,5 +107,7 @@ export function demoStore(seed: Record<string, Row[]>, seedTrip: Data): Store {
     async remove(c, i) { db[c] = rows(c).filter((r) => r.id !== i); save(); },
     listenTrip(cb) { const run = () => cb({ ...trip }); subs.add(run); run(); return () => { subs.delete(run); }; },
     async updateTrip(patch) { trip = { ...trip, ...patch }; save(); },
+    async readTripFromServer() { return { ...trip }; },
+    cloud: false,
   };
 }

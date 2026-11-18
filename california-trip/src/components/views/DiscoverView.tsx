@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { prefsOf, useRows, useTripCtx, useTripToday } from "@/lib/tripContext";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { prefsOf, useRows, useTripCtx } from "@/lib/tripContext";
 import { formatDrive, jewishCalendar, driveHours, useOrigin, useShabbat, useWeather, type JewishDay } from "@/lib/context";
 import { rank, freeHours, isShabbatNow, type Prefs, type Rec } from "@/lib/recommend";
 import { CATS, INTERESTS, KIDS, SPOTS, type GuideCat, type Spot } from "@/content/sfGuide";
@@ -9,6 +9,8 @@ import { mapsSearchUrl, wazeUrl } from "@/lib/places";
 import { addDays, heDate, caNow } from "@/lib/time";
 import Icon from "../app/Icon";
 import Link from "next/link";
+import PlaceSheet, { SpotImage, type SheetPlace } from "../app/PlaceSheet";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
 
 type Saved = { id: string };
 
@@ -18,59 +20,42 @@ const PACES: { id: Prefs["pace"]; label: string }[] = [
   { id: "active", label: "הרבה חוויות" },
 ];
 
-function AddToPlan({ spot, onDone }: { spot: Spot; onDone: () => void }) {
-  const { store, tripDoc } = useTripCtx();
-  const today = useTripToday(tripDoc);
-  const [date, setDate] = useState(today);
-  const [time, setTime] = useState("10:00");
-  async function save(e: FormEvent) {
-    e.preventDefault();
-    await store.add("activities", { title: spot.name, date, time, address: spot.en, lat: spot.lat, lng: spot.lng, status: "planned", reminder: 30 });
-    onDone();
-  }
-  return (
-    <form className="add-plan" onSubmit={save}>
-      <input id={`ap-d-${spot.id}`} className="field" type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="יום" required />
-      <input id={`ap-t-${spot.id}`} className="field" type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="שעה" required />
-      <button className="pill-btn pill-btn--dark" type="submit">הוספה</button>
-    </form>
-  );
-}
-
-function SpotCard({ spot, drive, reasons, saved, rank: n }: { spot: Spot; drive: number; reasons?: string[]; saved: boolean; rank?: number }) {
+function SpotCard({ spot, drive, reasons, saved, rank: n, onOpen }: { spot: Spot; drive: number; reasons?: string[]; saved: boolean; rank?: number; onOpen: (s: Spot) => void }) {
   const { store } = useTripCtx();
-  const [planning, setPlanning] = useState(false);
-  const [added, setAdded] = useState(false);
   const w = wazeUrl({ lat: spot.lat, lng: spot.lng });
   return (
-    <article className={`spot glass ${n === 1 ? "spot--top" : ""}`}>
-      <div className="spot-head">
+    <article className={`spot ${n === 1 ? "spot--top" : ""}`}>
+      <button type="button" className="spot-open" onClick={() => onOpen(spot)} aria-label={`פרטים מלאים: ${spot.name}`}>
+        <SpotImage spot={spot} />
         {n ? <span className="spot-n">{n}</span> : null}
-        <div className="spot-title">
-          <h3>{spot.name}</h3>
-          <span className="spot-meta">{formatDrive(drive)} נסיעה · כ-{spot.hours >= 1 ? `${spot.hours} שע׳` : `${Math.round(spot.hours * 60)} דק׳`} במקום{spot.indoor ? " · מקורה" : ""}</span>
+        {spot.entry === "free" && <span className="spot-free">חינם</span>}
+      </button>
+      <div className="spot-content">
+        <div className="spot-head">
+          <button type="button" className="spot-title" onClick={() => onOpen(spot)}>
+            <h3>{spot.name}</h3>
+            {spot.titleEn && <span className="spot-en" dir="ltr">{spot.titleEn}</span>}
+          </button>
+          <button
+            type="button"
+            className={`heart ${saved ? "heart--on" : ""}`}
+            aria-pressed={saved}
+            aria-label={saved ? "הסרה מהשמורים" : "שמירה"}
+            onClick={() => (saved ? store.remove("saved", spot.id) : store.set("saved", spot.id, { savedAt: Date.now() }))}
+          >
+            <Icon name="heart" />
+          </button>
         </div>
-        <button
-          type="button"
-          className={`heart ${saved ? "heart--on" : ""}`}
-          aria-pressed={saved}
-          aria-label={saved ? "הסרה מהשמורים" : "שמירה"}
-          onClick={() => (saved ? store.remove("saved", spot.id) : store.set("saved", spot.id, { savedAt: Date.now() }))}
-        >
-          <Icon name="heart" />
-        </button>
+        <span className="spot-meta">{formatDrive(drive)} נסיעה · כ-{spot.hours >= 1 ? `${spot.hours} שע׳` : `${Math.round(spot.hours * 60)} דק׳`} במקום{spot.indoor ? " · מקורה" : ""}</span>
+        <p className="spot-why">{spot.why}</p>
+        {reasons && reasons.length > 0 && (
+          <div className="reasons">{reasons.filter((r) => !r.startsWith("נסיעה")).slice(0, 3).map((r) => <span key={r} className="reason">{r}</span>)}</div>
+        )}
+        <div className="act-actions">
+          <button type="button" className="chip-btn chip-btn--dark" onClick={() => onOpen(spot)}>שעות, מחיר ופרטים</button>
+          {w && <a className="chip-btn chip-btn--waze" href={w} target="_blank" rel="noopener noreferrer"><Icon name="waze" />Waze</a>}
+        </div>
       </div>
-      <p className="spot-why">{spot.why}</p>
-      {reasons && reasons.length > 0 && (
-        <div className="reasons">{reasons.filter((r) => !r.startsWith("נסיעה")).slice(0, 3).map((r) => <span key={r} className="reason">{r}</span>)}</div>
-      )}
-      {spot.tip && <p className="spot-tip"><strong>טיפ:</strong> {spot.tip}</p>}
-      <div className="act-actions">
-        {w && <a className="chip-btn chip-btn--waze" href={w} target="_blank" rel="noopener noreferrer"><Icon name="waze" />Waze</a>}
-        <button type="button" className="chip-btn" onClick={() => setPlanning((v) => !v)}><Icon name="plus" />{added ? "נוסף למסלול ✓" : "למסלול"}</button>
-        <a className="chip-btn" href={mapsSearchUrl(spot.en)} target="_blank" rel="noopener noreferrer"><Icon name="pin" />מידע ושעות</a>
-      </div>
-      {planning && <AddToPlan spot={spot} onDone={() => { setPlanning(false); setAdded(true); }} />}
     </article>
   );
 }
@@ -164,6 +149,9 @@ export default function DiscoverView() {
   const [cat, setCat] = useState<GuideCat | "saved">("city");
   const [now, setNow] = useState(Date.now());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [sheet, setSheet] = useState<SheetPlace | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const openSpot = (sp: Spot) => setSheet({ name: sp.name, enName: sp.titleEn, lat: sp.lat, lng: sp.lng, spot: sp, label: CATS.find((c) => c.id === sp.cat)?.label });
 
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
   useEffect(() => { setPrefs(prefsOf(tripDoc)); }, [tripDoc.prefs]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -175,6 +163,24 @@ export default function DiscoverView() {
     saveTimer.current = setTimeout(() => { void store.updateTrip({ prefs: p }); }, 600);
   }
 
+  // כניסה רכה של הכרטיסים בגלילה (GSAP)
+  useEffect(() => {
+    const root = listRef.current;
+    if (!root) return;
+    const mm = gsap.matchMedia();
+    mm.add("(prefers-reduced-motion: no-preference)", () => {
+      const cards = root.querySelectorAll(".spot:not([data-in])");
+      cards.forEach((c) => c.setAttribute("data-in", "1"));
+      gsap.set(cards, { opacity: 0, y: 36 });
+      ScrollTrigger.batch(Array.from(cards), {
+        start: "top 92%",
+        onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, duration: 0.8, ease: "expo.out", stagger: 0.08, overwrite: true }),
+      });
+      ScrollTrigger.refresh();
+    }, root);
+    return () => mm.revert();
+  });
+
   const situation = { now, origin, weather, shabbat };
   const recs: Rec[] = rank(prefs, situation, saved);
   const free = freeHours(situation);
@@ -182,7 +188,8 @@ export default function DiscoverView() {
   const list = cat === "saved" ? SPOTS.filter((s) => saved.has(s.id)) : SPOTS.filter((s) => s.cat === cat);
 
   return (
-    <div className="stack">
+    <div className="stack" ref={listRef}>
+      <PlaceSheet place={sheet} origin={origin} onClose={() => setSheet(null)} />
       <Link className="ask-card glass" href="/assistant">
         <span className="chat-avatar"><Icon name="spark" /></span>
         <span className="ask-text"><strong>שאלו את העוזרת</strong><small>למשל: ״מה עושים היום עם הבנות בגשם?״</small></span>
@@ -207,7 +214,7 @@ export default function DiscoverView() {
         ) : recs.length === 0 ? (
           <div className="empty glass"><p>אין מקומות בטווח הנסיעה שבחרתם. הגדילו את ״עד כמה רחוק״.</p></div>
         ) : (
-          recs.slice(0, 4).map((r, i) => <SpotCard key={r.spot.id} spot={r.spot} drive={r.drive} reasons={r.reasons} saved={saved.has(r.spot.id)} rank={i + 1} />)
+          recs.slice(0, 4).map((r, i) => <SpotCard key={r.spot.id} spot={r.spot} drive={r.drive} reasons={r.reasons} saved={saved.has(r.spot.id)} rank={i + 1} onOpen={openSpot} />)
         )}
       </section>
 
@@ -223,7 +230,7 @@ export default function DiscoverView() {
         {list
           .map((s) => ({ s, d: driveHours(origin, s) }))
           .sort((a, b) => a.d - b.d)
-          .map(({ s, d }) => <SpotCard key={s.id} spot={s} drive={d} saved={saved.has(s.id)} />)}
+          .map(({ s, d }) => <SpotCard key={s.id} spot={s} drive={d} saved={saved.has(s.id)} onOpen={openSpot} />)}
         <div className="act-actions">
           <a className="chip-btn" href={mapsSearchUrl("kosher restaurant", origin.lat, origin.lng)} target="_blank" rel="noopener noreferrer">מסעדות כשרות קרובות</a>
           <a className="chip-btn" href={mapsSearchUrl("Chabad", origin.lat, origin.lng)} target="_blank" rel="noopener noreferrer">✡ בית חב״ד קרוב</a>

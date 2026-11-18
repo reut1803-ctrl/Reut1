@@ -28,7 +28,7 @@ export default function FlagsSection() {
   const c: FlagsContent = { ...FLAGS_DEFAULT, ...saved };
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<FlagsContent>(c);
-  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "local" | "pending" | "error">("idle");
 
   function open() {
     setDraft(c);
@@ -43,8 +43,20 @@ export default function FlagsSection() {
       const clean = Object.fromEntries(
         (Object.keys(FLAGS_DEFAULT) as (keyof FlagsContent)[]).map((k) => [k, (draft[k] || "").trim() || FLAGS_DEFAULT[k]]),
       );
+      if (store.cloud && !navigator.onLine) {
+        // בלי קליטה: נשמר בטלפון ויישלח לענן לבד כשהחיבור יחזור
+        void store.updateTrip({ flagsContent: clean });
+        setState("pending");
+        setEditing(false);
+        return;
+      }
       await store.updateTrip({ flagsContent: clean });
-      setState("saved");
+      // אימות: קוראים את המסמך מחדש מהשרת ומוודאים שהטקסט שם
+      const server = await store.readTripFromServer();
+      const back = (server?.flagsContent ?? {}) as Partial<FlagsContent>;
+      const okAll = (Object.keys(clean) as (keyof FlagsContent)[]).every((k) => back[k] === clean[k]);
+      if (!okAll) throw new Error("verify");
+      setState(store.cloud ? "saved" : "local");
       setEditing(false);
     } catch {
       setState("error");
@@ -107,7 +119,8 @@ export default function FlagsSection() {
                 <small className="fld-count">{draft[f.key].length}/{FLAGS_LIMITS[f.key]}</small>
               </label>
             ))}
-            {state === "error" && <p className="gate-error">השמירה לא הצליחה. בדקו את החיבור ונסו שוב.</p>}
+            {state === "error" && <p className="gate-error">השמירה לא הצליחה. בדקו את החיבור לאינטרנט ונסו שוב — הטקסט שכתבתם עדיין כאן.</p>}
+            {!store.cloud && <p className="hint">שימו לב: זו תצוגה מקדימה, והשינויים נשמרים רק בדפדפן הזה. באתר האמיתי הם נשמרים בענן ומופיעים אצל שניכם.</p>}
             <div className="row-between">
               <button type="button" className="text-btn" onClick={() => setDraft(FLAGS_DEFAULT)}>חזרה לנוסח המקורי</button>
               <div className="row-end">
@@ -120,7 +133,7 @@ export default function FlagsSection() {
           </form>
         ) : (
           <button type="button" className="text-btn flags-edit-btn" onClick={open}>
-            ✎ עריכת הטקסטים{state === "saved" ? " · נשמר ✓" : ""}
+            ✎ עריכת הטקסטים{state === "saved" ? " · נשמר בענן ✓" : state === "local" ? " · נשמר בדפדפן (תצוגה מקדימה)" : state === "pending" ? " · יישמר כשתחזור קליטה" : ""}
           </button>
         )}
       </div>

@@ -28,6 +28,8 @@ export function withSaveTracking(store: Store): Store {
     update: (c, i, p) => track(store.update(c, i, p)),
     remove: (c, i) => track(store.remove(c, i)),
     updateTrip: (p) => track(store.updateTrip(p)),
+    readTripFromServer: () => store.readTripFromServer(),
+    cloud: store.cloud,
   };
 }
 
