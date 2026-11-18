@@ -35,7 +35,6 @@ body {
   font-family: var(--font-body);
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
 }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }

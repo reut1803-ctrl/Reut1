@@ -11,7 +11,15 @@ function joinNames(names: string[]) {
   return `${names.slice(0, -1).join(", ")} ו${names[names.length - 1]}`;
 }
 
-export default function WelcomeCard({ trip, onReplay }: { trip: TripApi; onReplay: () => void }) {
+export default function WelcomeCard({
+  trip,
+  onReplay,
+  onEnter,
+}: {
+  trip: TripApi;
+  onReplay: () => void;
+  onEnter: () => void;
+}) {
   const { user, signOut, demo } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -134,6 +142,7 @@ export default function WelcomeCard({ trip, onReplay }: { trip: TripApi; onRepla
       {msg && <p className="note" role="status">{msg}</p>}
 
       <div className="welcome-actions">
+        <button type="button" className="btn btn-primary" onClick={onEnter}>כניסה לאתר</button>
         <button type="button" className="btn btn-soft" onClick={onReplay}>לראות שוב את הנחיתה</button>
         <button type="button" className="btn btn-ghost" onClick={signOut}>יציאה</button>
       </div>
