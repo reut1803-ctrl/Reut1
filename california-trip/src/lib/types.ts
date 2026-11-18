@@ -1,5 +1,3 @@
-export type Look = "hat" | "kippah";
-
 export type AppUser = {
   uid: string;
   name: string;
@@ -12,7 +10,6 @@ export type Member = {
   name: string;
   email: string;
   avatarUrl: string | null;
-  look: Look;
   joinedAt: number;
 };
 

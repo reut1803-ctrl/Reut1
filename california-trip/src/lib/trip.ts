@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import { fb } from "./firebase";
 import { blobToDataUrl, squareFace } from "./image";
-import { TRIP_ID, TRIP_TIMEZONE, type AppUser, type Look, type Member } from "./types";
+import { TRIP_ID, TRIP_TIMEZONE, type AppUser, type Member } from "./types";
 
 export type TripState = "loading" | "member" | "denied" | "error";
 
@@ -24,7 +24,6 @@ export type TripApi = {
   isOwner: boolean;
   invite: (email: string) => Promise<void>;
   uploadFace: (file: File) => Promise<void>;
-  setLook: (look: Look) => Promise<void>;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,8 +34,8 @@ function useDemoTrip(user: AppUser | null): TripApi {
   useEffect(() => {
     if (!user) return;
     setMembers([
-      { uid: user.uid, name: user.name, email: user.email, avatarUrl: null, look: "hat", joinedAt: 1 },
-      { uid: "demo-zecharia", name: "זכריה", email: "", avatarUrl: null, look: "kippah", joinedAt: 2 },
+      { uid: user.uid, name: user.name, email: user.email, avatarUrl: null, joinedAt: 1 },
+      { uid: "demo-zecharia", name: "זכריה", email: "", avatarUrl: null, joinedAt: 2 },
     ]);
   }, [user]);
 
@@ -55,7 +54,6 @@ function useDemoTrip(user: AppUser | null): TripApi {
       const blob = await squareFace(file);
       patchMe({ avatarUrl: URL.createObjectURL(blob) });
     },
-    setLook: async (look) => patchMe({ look }),
   };
 }
 
@@ -112,7 +110,6 @@ function useFirebaseTrip(user: AppUser | null): TripApi {
             name: user.name,
             email: user.email,
             avatarUrl: null,
-            look: owner === user.uid ? "hat" : "kippah",
             joinedAt: serverTimestamp(),
           });
         }
@@ -127,7 +124,6 @@ function useFirebaseTrip(user: AppUser | null): TripApi {
               name: v.name ?? "",
               email: v.email ?? "",
               avatarUrl: v.avatarUrl ?? null,
-              look: v.look === "kippah" ? "kippah" : "hat",
               joinedAt: ts?.toMillis?.() ?? Date.now(),
             };
           });
@@ -162,13 +158,8 @@ function useFirebaseTrip(user: AppUser | null): TripApi {
     await updateDoc(doc(fb.db(), "trips", TRIP_ID, "members", u.uid), { avatarUrl: url });
   }, []);
 
-  const setLook = useCallback(async (look: Look) => {
-    const u = userRef.current;
-    if (!u) return;
-    await updateDoc(doc(fb.db(), "trips", TRIP_ID, "members", u.uid), { look });
-  }, []);
 
-  return { state, members, isOwner: !!user && ownerUid === user.uid, invite, uploadFace, setLook };
+  return { state, members, isOwner: !!user && ownerUid === user.uid, invite, uploadFace };
 }
 
 export function useTrip(user: AppUser | null, demo: boolean): TripApi {

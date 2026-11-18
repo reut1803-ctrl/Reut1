@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useAuth } from "@/lib/auth";
 import type { TripApi } from "@/lib/trip";
-import Clocks from "../Clocks";
+import AnalogClocks from "../AnalogClocks";
 import Cloud from "./Cloud";
 import OrigamiPlane, { PlaneShape } from "./OrigamiPlane";
 import WavingFlag from "./WavingFlag";
@@ -281,7 +281,7 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
         <div className="section-head reveal">
           <h2 className="section-title">נתראה<br />בקליפורניה.</h2>
         </div>
-        <div className="finale-clocks reveal"><Clocks /></div>
+        <div className="finale-clocks reveal glass"><AnalogClocks /></div>
         <div className="finale-actions reveal">
           <button type="button" className="pill-btn pill-btn--dark" onClick={onReplay}>לראות שוב את הנחיתה</button>
           <button type="button" className="pill-btn" onClick={signOut}>יציאה</button>

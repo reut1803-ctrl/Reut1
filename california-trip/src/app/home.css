@@ -1,21 +1,6 @@
 /* עמוד הבית — "קליפורניה." בקו נקי ומואר.
    פריסה: סיפור גלילה אנכי. שמיים בהירים ← דגלים על לבן ← מסלול טיסה ננעץ ← כרטיסי זכוכית על אורות צבעוניים ← סיום. */
 .home {
-  --h-bg: #fbfbfd;
-  --h-ink: #1d1d1f;
-  --h-soft: #6e6e73;
-  --h-line: rgba(29, 29, 31, 0.08);
-  --sky-1: #86c8f0;
-  --sky-2: #c4e5f9;
-  --paper-yellow: #f7c948;
-  --paper-mint: #9eddb2;
-  --flag-yellow: #ffd21f;
-  --flag-purple: #4b2a7b;
-  --glass: rgba(255, 255, 255, 0.58);
-  --glass-line: rgba(255, 255, 255, 0.75);
-  --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 20px 60px rgba(30, 60, 100, 0.12);
-  --font-home: "Noto Sans Hebrew", "Heebo", "Assistant", system-ui, sans-serif;
-
   background: var(--h-bg);
   color: var(--h-ink);
   font-family: var(--font-home);
@@ -25,13 +10,6 @@
 }
 body:has(.home) { background: #fbfbfd; overflow: auto; }
 
-.home .glass {
-  background: var(--glass);
-  border: 1px solid var(--glass-line);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-}
 
 /* ---------- טיפוגרפיה ---------- */
 .eyebrow-home {
@@ -134,30 +112,8 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
 .hero-plane--mint { width: clamp(130px, 19vw, 270px); bottom: 17%; left: 6%; }
 .hero-plane--yellow .origami-svg { transform: scaleX(-1) rotate(-14deg); }
 .hero-plane--mint .origami-svg { transform: rotate(-10deg); }
-.origami-svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 22px 26px rgba(30, 70, 120, 0.22)); }
 
-.origami--yellow { --f1: #ffe48a; --f2: #f7c948; --f3: #e3ad2b; --f4: #c98f17; }
-.origami--mint { --f1: #d5f5de; --f2: #a6e3b9; --f3: #7fcb98; --f4: #5fb07c; }
-.origami--white { --f1: #ffffff; --f2: #eef2f6; --f3: #d9e1ea; --f4: #c2cdd9; }
-.origami .f1 { fill: var(--f1); }
-.origami .f2 { fill: var(--f2); }
-.origami .f3 { fill: var(--f3); }
-.origami .f4 { fill: var(--f4); }
-.origami .crease { stroke: rgba(255, 255, 255, 0.7); stroke-width: 1.2; }
 
-.cloud {
-  position: absolute;
-  z-index: 1;
-  aspect-ratio: 2.3;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 24% 52% at 28% 62%, #fff 55%, #eaf3fa 92%, transparent 100%),
-    radial-gradient(ellipse 26% 60% at 52% 42%, #fff 55%, #ecf4fb 92%, transparent 100%),
-    radial-gradient(ellipse 20% 46% at 75% 60%, #fff 55%, #eaf3fa 92%, transparent 100%),
-    radial-gradient(ellipse 46% 30% at 50% 74%, #fff 60%, #e8f1f9 94%, transparent 100%);
-  filter: drop-shadow(0 18px 22px rgba(50, 100, 150, 0.16));
-  opacity: 0.95;
-}
 
 .scroll-cue {
   position: absolute; bottom: max(28px, env(safe-area-inset-bottom, 0px)); left: 50%;
@@ -196,10 +152,6 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
   background: radial-gradient(circle at 35% 30%, #fff5c9, #e8b931 55%, #a87a12);
 }
 .flag-mount { position: absolute; top: 10px; left: 6px; height: var(--fh); will-change: transform; }
-.flag { position: relative; height: 100%; filter: drop-shadow(0 16px 20px rgba(20, 30, 60, 0.18)); }
-.flag-strip { position: absolute; top: 0; bottom: 0; will-change: transform; }
-.flag-strip svg { display: block; width: 100%; height: 100%; }
-.flag-shade { position: absolute; inset: 0; pointer-events: none; }
 .flag-caption { direction: rtl; margin: 18px 0 0; font-size: 15px; font-weight: 600; color: var(--h-soft); }
 
 /* ---------- המסע ---------- */
@@ -267,19 +219,9 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
 .finale-plane--a { top: 12%; right: 10%; }
 .finale-plane--a .origami-svg { transform: scaleX(-1); }
 .finale-plane--b { bottom: 22%; left: 8%; }
-.finale-clocks { max-width: 440px; margin: 40px auto 0; position: relative; z-index: 2; }
-.finale-clocks .clocks { margin: 0; }
-.finale-clocks .clock { background: var(--glass); border-color: var(--glass-line); border-radius: 22px; padding: 16px 10px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-.finale-clocks .clock-time { font-family: var(--font-home); font-weight: 800; font-size: 34px; letter-spacing: -0.02em; color: var(--h-ink); }
-.finale-clocks .clock--ca .clock-time { color: #d39b12; }
+.finale-clocks { max-width: 420px; margin: 40px auto 0; position: relative; z-index: 2; padding: 22px 16px 18px; border-radius: 30px; }
+.finale-clocks .aclocks { margin: 0; }
 .finale-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 34px; position: relative; z-index: 2; }
-.pill-btn {
-  min-height: 48px; padding: 0 24px; border-radius: 999px; font-weight: 600; font-size: 16px;
-  border: 1px solid var(--h-line); background: #fff; color: var(--h-ink);
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-.pill-btn:hover { transform: translateY(-1px); }
-.pill-btn--dark { background: var(--h-ink); color: #fff; border-color: var(--h-ink); }
 .footer-note { margin: 70px 0 0; font-size: 13px; color: var(--h-soft); }
 
 @media (max-width: 640px) {

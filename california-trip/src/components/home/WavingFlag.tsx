@@ -55,8 +55,9 @@ export default function WavingFlag({
       ref={ref}
       className="flag"
       style={{ aspectRatio: `${art.w} / ${art.h}` }}
-      role="img"
-      aria-label={label}
+      role={label ? "img" : undefined}
+      aria-label={label || undefined}
+      aria-hidden={label ? undefined : true}
     >
       {Array.from({ length: STRIPS }, (_, i) => (
         <div
