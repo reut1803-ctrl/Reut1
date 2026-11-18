@@ -39,6 +39,10 @@ trips/california                 הטיול: שם, תאריכים, אזור זמ
 
 כללי האבטחה של מסד הנתונים: `firebase/firestore.rules`.
 
+## עריכת הטקסטים של מסך הדגלים
+באתר: בתחתית מסך הדגלים ← "עריכת הטקסטים". נשמר ב-`trips/california.flagsContent` ומופיע מיד אצל שניכם.
+הנוסח המקורי (ומה שחוזר ב"חזרה לנוסח המקורי") נמצא ב-`src/content/flags.ts`.
+
 ## תצוגה מקדימה בצ'אט
 `node preview/build.mjs` בונה את `preview/california-trip-preview.html` מאותו קוד, במצב תצוגה.
 

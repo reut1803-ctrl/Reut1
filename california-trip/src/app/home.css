@@ -152,7 +152,17 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
   background: radial-gradient(circle at 35% 30%, #fff5c9, #e8b931 55%, #a87a12);
 }
 .flag-mount { position: absolute; top: 10px; left: 6px; height: var(--fh); will-change: transform; }
-.flag-caption { direction: rtl; margin: 18px 0 0; font-size: 15px; font-weight: 600; color: var(--h-soft); }
+.pole-rig { margin: 0; }
+.flag-caption {
+  direction: rtl; align-self: stretch; margin-top: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+}
+.flag-caption strong { font-size: clamp(17px, 2.2vw, 21px); font-weight: 800; letter-spacing: -0.01em; color: var(--h-ink); }
+.flag-caption span { font-size: clamp(13.5px, 1.6vw, 15.5px); line-height: 1.5; color: var(--h-soft); max-width: 22ch; text-wrap: balance; }
+.flags-edit { display: flex; justify-content: center; margin-top: clamp(36px, 5vw, 56px); position: relative; z-index: 2; }
+.flags-edit-btn { font-size: 14px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--h-line); }
+.flags-form { width: min(100%, 560px); border-radius: 26px; padding: 20px; display: flex; flex-direction: column; gap: 12px; text-align: start; }
+.fld-count { align-self: flex-end; font-size: 11.5px; font-weight: 500; color: var(--h-soft); font-variant-numeric: tabular-nums; }
 
 /* ---------- המסע ---------- */
 .journey {

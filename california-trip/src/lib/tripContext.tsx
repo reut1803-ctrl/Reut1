@@ -11,6 +11,7 @@ export type TripDoc = {
   startDate?: string | null;
   endDate?: string | null;
   dailyBudget?: number | null;
+  flagsContent?: Record<string, string>;
 };
 
 type Ctx = { trip: TripApi; store: Store; tripDoc: TripDoc };

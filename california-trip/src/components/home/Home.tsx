@@ -10,11 +10,11 @@ import TabBar from "../app/TabBar";
 import Reminders from "../app/Reminders";
 import InviteFromLink from "../app/InviteFromLink";
 import TodayGlance from "./TodayGlance";
+import FlagsSection from "./FlagsSection";
 import { useBatteryNight } from "@/lib/battery";
 import Cloud from "./Cloud";
 import OrigamiPlane, { PlaneShape } from "./OrigamiPlane";
-import WavingFlag from "./WavingFlag";
-import { FlagSymbols, MOSHIACH_FLAG, US_FLAG } from "./flags";
+import { FlagSymbols } from "./flags";
 
 
 
@@ -151,27 +151,7 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
       </section>
 
       {/* ---------- שני דגלים ---------- */}
-      <section className="flags section">
-        <div className="section-head reveal">
-          <p className="eyebrow-home">הדגלים שלנו</p>
-          <h2 className="section-title">שני דגלים.<br />מסע אחד.</h2>
-          <p className="lede">
-            הכוכבים והפסים של אמריקה, ולצידם הדגל הצהוב עם הכתר. לכל מקום שנגיע בקליפורניה, נביא איתנו את בשורת הגאולה.
-          </p>
-        </div>
-        <div className="flag-stage">
-          <div className="pole-rig" style={{ ["--ratio" as string]: US_FLAG.w / US_FLAG.h }}>
-            <div className="pole"><span className="pole-cap" /></div>
-            <div className="flag-mount"><WavingFlag art={US_FLAG} label="דגל ארצות הברית" /></div>
-            <p className="flag-caption">ארצות הברית</p>
-          </div>
-          <div className="pole-rig" style={{ ["--ratio" as string]: MOSHIACH_FLAG.w / MOSHIACH_FLAG.h }}>
-            <div className="pole"><span className="pole-cap" /></div>
-            <div className="flag-mount"><WavingFlag art={MOSHIACH_FLAG} label="דגל משיח" phase={1.3} /></div>
-            <p className="flag-caption">משיח</p>
-          </div>
-        </div>
-      </section>
+      <FlagsSection />
 
       {/* ---------- המסע ---------- */}
       <section className="journey">
