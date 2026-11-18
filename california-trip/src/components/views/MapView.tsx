@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type * as Leaflet from "leaflet";
 import { useRows, useTripCtx } from "@/lib/tripContext";
 import {
-  mapsSearchUrl, searchArea, searchPlacesNear, shabbatTimes, wazeUrl,
+  jewishIntent, mapsSearchUrl, searchArea, searchPlacesNear, shabbatTimes, wazeUrl,
   type Bbox, type Place, type Poi, type ShabbatTimes,
 } from "@/lib/places";
 import { driveHours, formatDrive, useOrigin } from "@/lib/context";
@@ -98,6 +98,7 @@ export default function MapView() {
   const [bbox, setBbox] = useState<Bbox | null>(null);
   const [zoom, setZoom] = useState(DEFAULT_VIEW.z);
   const [layersOpen, setLayersOpen] = useState(false);
+  const [tilesFailed, setTilesFailed] = useState(false);
 
   // חיפוש
   const [q, setQ] = useState("");
@@ -131,7 +132,27 @@ export default function MapView() {
       const v = readPrefs().view;
       map = L.map(el.current, { zoomControl: false, attributionControl: true }).setView([v.lat, v.lng], v.z);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+      // שכבת המפה: CARTO (נקייה, מתאימה לאתרים), ואם לא נטענת — Esri, ואחריה OpenStreetMap.
+      const night = document.documentElement.hasAttribute("data-night");
+      const providers: { url: string; opts: Leaflet.TileLayerOptions }[] = [
+        { url: night ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", opts: { subdomains: "abcd", maxZoom: 20, attribution: "© OpenStreetMap © CARTO" } },
+        { url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", opts: { maxZoom: 19, attribution: "Tiles © Esri" } },
+        { url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", opts: { maxZoom: 19, attribution: "© OpenStreetMap" } },
+      ];
+      const useProvider = (i: number) => {
+        if (i >= providers.length) { setTilesFailed(true); return; }
+        let loaded = 0;
+        let errors = 0;
+        const layer = L.tileLayer(providers[i].url, { ...providers[i].opts, crossOrigin: true });
+        layer.on("tileload", () => { loaded++; setTilesFailed(false); });
+        layer.on("tileerror", () => {
+          errors++;
+          if (errors >= 4 && loaded === 0) { map?.removeLayer(layer); useProvider(i + 1); }
+        });
+        layer.addTo(map!);
+        layer.bringToBack();
+      };
+      useProvider(0);
       groupRef.current = L.layerGroup().addTo(map);
       tempRef.current = L.layerGroup().addTo(map);
       const sync = () => {
@@ -250,20 +271,34 @@ export default function MapView() {
     if (!term) return;
     setSearching(true);
     setSearchErr(null);
-    const low = term.toLowerCase();
-    const local = (localIndex as (Hit & { search: string })[]).filter((h) => h.search.toLowerCase().includes(low)).slice(0, 4);
-    setHits(local);
-    try {
-      const remote = await searchPlacesNear(term, bbox ?? undefined);
-      const merged = [...local, ...remote.map((r, i) => ({ key: `r-${i}`, name: r.name, sub: r.address.split(",").slice(1, 3).join(","), lat: r.lat, lng: r.lng, address: r.address, local: false }))];
-      setHits(merged);
-      if (!merged.length) setSearchErr("לא נמצא. נסו באנגלית, למשל Chabad Berkeley או Pier 39.");
-      else if (merged.length === 1) pick(merged[0]);
-    } catch {
-      if (!local.length) setSearchErr("החיפוש לא זמין כרגע. בדקו את החיבור לאינטרנט.");
-    } finally {
-      setSearching(false);
-    }
+    // גרשיים בכל צורה (" ״ ׳ ') נחשבים אותו דבר
+    const norm = (x: string) => x.toLowerCase().replace(/["״׳'`]/g, "").replace(/\s+/g, " ");
+    const low = norm(term);
+    const local = (localIndex as (Hit & { search: string })[]).filter((h) => norm(h.search).includes(low)).slice(0, 4);
+    setHits(local.length ? local : null);
+
+    // "חב״ד" / "כשר" — מחפשים גם מקומות יהודיים אמיתיים סביב האזור שעל המפה
+    const kind = jewishIntent(term);
+    const around: Bbox = bbox && zoom >= 10 ? bbox : { s: center.lat - 0.12, n: center.lat + 0.12, w: center.lng - 0.16, e: center.lng + 0.16 };
+    const [remoteRes, areaRes] = await Promise.allSettled([
+      searchPlacesNear(term, bbox ?? undefined),
+      kind ? searchArea(kind, around) : Promise.resolve([] as Poi[]),
+    ]);
+    const areaHits: Hit[] = areaRes.status === "fulfilled"
+      ? areaRes.value.slice(0, 8).map((p) => ({ key: `o-${p.id}`, name: p.name, sub: `${p.kind === "kosher" ? "כשר" : "בית כנסת / חב״ד"} · ${formatDrive(driveHours(origin, p))}${p.address ? " · " + p.address : ""}`, lat: p.lat, lng: p.lng, address: p.address, local: false }))
+      : [];
+    if (areaRes.status === "fulfilled" && areaRes.value.length) setPois((cur) => [...cur.filter((x) => x.kind !== kind), ...areaRes.value]);
+    const remoteHits: Hit[] = remoteRes.status === "fulfilled"
+      ? remoteRes.value.map((r, i) => ({ key: `r-${i}`, name: r.name, sub: r.address.split(",").slice(1, 3).join(","), lat: r.lat, lng: r.lng, address: r.address, local: false }))
+      : [];
+    const merged = [...local, ...areaHits, ...remoteHits];
+    setHits(merged.length ? merged : null);
+    if (!merged.length) {
+      setSearchErr(remoteRes.status === "rejected" && areaRes.status !== "fulfilled"
+        ? "החיפוש לא הצליח להתחבר כרגע. נסו שוב בעוד רגע, או השתמשו בכפתורים ״כשר כאן״ / ״חב״ד בגוגל מפות״ למטה."
+        : "לא נמצא. נסו לנסח אחרת, למשל Pier 39 או שם של רחוב.");
+    } else if (merged.length === 1) pick(merged[0]);
+    setSearching(false);
   }
 
   function pick(h: Hit) {
@@ -323,6 +358,7 @@ export default function MapView() {
 
       <div className="map-wrap glass">
         <div ref={el} className="map" />
+        {tilesFailed && <p className="map-fail">המפה לא נטענת כרגע — בדקו את החיבור לאינטרנט. הנעצים והחיפוש ממשיכים לעבוד.</p>}
 
         <div className="map-search">
           <form className="map-search-bar" onSubmit={runSearch} role="search">
