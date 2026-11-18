@@ -21,26 +21,26 @@ export default function WelcomeCard({
   onEnter: () => void;
 }) {
   const { user, signOut, demo } = useAuth();
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
 
   const names = trip.members.map((m) => m.name).filter(Boolean);
 
-  async function onFile(e: ChangeEvent<HTMLInputElement>) {
+  async function onFile(e: ChangeEvent<HTMLInputElement>, memberUid: string) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    setUploading(true);
+    setUploading(memberUid);
     setMsg(null);
     try {
-      await trip.uploadFace(file);
+      await trip.uploadFace(file, memberUid);
       setMsg("התמונה עלתה.");
     } catch (err) {
       setMsg((err as Error).message || "ההעלאה לא הצליחה, נסו שוב.");
     } finally {
-      setUploading(false);
+      setUploading(null);
     }
   }
 
@@ -82,15 +82,18 @@ export default function WelcomeCard({
               >
                 {!m.avatarUrl && m.name.slice(0, 1)}
               </span>
-              <span className="person-name">{m.name}</span>
-              {isMe && (
-                <>
-                  <label className="person-upload" htmlFor="face-upload">
-                    {uploading ? "מעלה…" : m.avatarUrl ? "החלפת תמונה" : "הוספת תמונה"}
-                  </label>
-                  <input id="face-upload" className="sr-file" type="file" accept="image/*" onChange={onFile} disabled={uploading} />
-                </>
-              )}
+              <span className="person-name">{m.name}{isMe ? " (אני)" : ""}</span>
+              <label className="person-upload" htmlFor={`face-${m.uid}`}>
+                {uploading === m.uid ? "מעלה…" : m.avatarUrl ? "החלפת תמונה" : "הוספת תמונה"}
+              </label>
+              <input
+                id={`face-${m.uid}`}
+                className="sr-file"
+                type="file"
+                accept="image/*"
+                onChange={(e) => onFile(e, m.uid)}
+                disabled={uploading !== null}
+              />
             </div>
           );
         })}

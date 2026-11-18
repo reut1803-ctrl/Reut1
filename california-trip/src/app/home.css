@@ -79,9 +79,9 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
   width: 28px; height: 28px; border-radius: 50%;
   margin-inline-start: -8px;
   border: 2px solid var(--h-bg);
-  background: #f3e2d6 center/cover no-repeat;
+  background: linear-gradient(145deg, #fff, #eef3f8) center/cover no-repeat;
   display: grid; place-items: center;
-  font-size: 12px; font-weight: 700; color: #b06a5f;
+  font-size: 12px; font-weight: 700; color: var(--h-soft);
 }
 .nav-face:first-child { margin-inline-start: 0; }
 .nav-link { background: none; border: 0; padding: 6px 2px; font-size: 14px; color: var(--h-ink); opacity: 0.8; }

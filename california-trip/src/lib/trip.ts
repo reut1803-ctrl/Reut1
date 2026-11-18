@@ -23,10 +23,17 @@ export type TripApi = {
   members: Member[];
   isOwner: boolean;
   invite: (email: string) => Promise<void>;
-  uploadFace: (file: File) => Promise<void>;
+  uploadFace: (file: File, memberUid: string) => Promise<void>;
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// בתצוגה המקדימה הפרטית אפשר להזריק תמונות פנים מראש (הן לא נשמרות בקוד).
+function demoFace(uid: string): string | null {
+  if (typeof window === "undefined") return null;
+  const faces = (window as unknown as { __ctDemoFaces?: Record<string, string> }).__ctDemoFaces;
+  return faces?.[uid] ?? null;
+}
 
 /** מצב תצוגה: הכול נשמר בזיכרון של הדפדפן בלבד. */
 function useDemoTrip(user: AppUser | null): TripApi {
@@ -34,25 +41,20 @@ function useDemoTrip(user: AppUser | null): TripApi {
   useEffect(() => {
     if (!user) return;
     setMembers([
-      { uid: user.uid, name: user.name, email: user.email, avatarUrl: null, joinedAt: 1 },
-      { uid: "demo-zecharia", name: "זכריה", email: "", avatarUrl: null, joinedAt: 2 },
+      { uid: user.uid, name: user.name, email: user.email, avatarUrl: demoFace(user.uid), joinedAt: 1 },
+      { uid: "demo-zecharia", name: "זכריה", email: "", avatarUrl: demoFace("demo-zecharia"), joinedAt: 2 },
     ]);
   }, [user]);
-
-  const patchMe = useCallback(
-    (patch: Partial<Member>) =>
-      setMembers((ms) => ms.map((m) => (m.uid === user?.uid ? { ...m, ...patch } : m))),
-    [user],
-  );
 
   return {
     state: user ? "member" : "loading",
     members,
     isOwner: true,
     invite: async () => {},
-    uploadFace: async (file) => {
+    uploadFace: async (file, memberUid) => {
       const blob = await squareFace(file);
-      patchMe({ avatarUrl: URL.createObjectURL(blob) });
+      const url = URL.createObjectURL(blob);
+      setMembers((ms) => ms.map((m) => (m.uid === memberUid ? { ...m, avatarUrl: url } : m)));
     },
   };
 }
@@ -149,13 +151,12 @@ function useFirebaseTrip(user: AppUser | null): TripApi {
     await updateDoc(doc(fb.db(), "trips", TRIP_ID), { memberEmails: arrayUnion(email) });
   }, []);
 
-  const uploadFace = useCallback(async (file: File) => {
-    const u = userRef.current;
-    if (!u) return;
+  // כל אחד מאיתנו יכול להעלות תמונה גם בשביל השני.
+  const uploadFace = useCallback(async (file: File, memberUid: string) => {
     // תמונת פנים קטנה (בערך 20KB) נשמרת ישירות במסד הנתונים — בלי צורך בשירות אחסון בתשלום.
     const blob = await squareFace(file, 256);
     const url = await blobToDataUrl(blob);
-    await updateDoc(doc(fb.db(), "trips", TRIP_ID, "members", u.uid), { avatarUrl: url });
+    await updateDoc(doc(fb.db(), "trips", TRIP_ID, "members", memberUid), { avatarUrl: url });
   }, []);
 
 
