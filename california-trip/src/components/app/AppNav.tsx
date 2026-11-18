@@ -5,7 +5,7 @@ import OrigamiPlane from "../home/OrigamiPlane";
 import { useAuth } from "@/lib/auth";
 import { useTripCtx } from "@/lib/tripContext";
 
-export default function AppNav({ night }: { night?: boolean }) {
+export default function AppNav({ night, onNightOff }: { night?: boolean; onNightOff?: () => void }) {
   const { signOut, demo } = useAuth();
   const { trip } = useTripCtx();
   const names = trip.members.map((m) => m.name).filter(Boolean);
@@ -17,7 +17,7 @@ export default function AppNav({ night }: { night?: boolean }) {
           קליפורניה שלנו
         </Link>
         <div className="nav-side">
-          {night && <span className="nav-demo">מצב חיסכון</span>}
+          {night && <button type="button" className="nav-night" onClick={onNightOff} aria-label="כיבוי מצב חיסכון סוללה">☾ כיבוי</button>}
           {demo && !night && <span className="nav-demo">מצב תצוגה</span>}
           <div className="nav-faces" aria-label={`מטיילים: ${names.join(", ")}`}>
             {trip.members.slice(0, 3).map((m) => (

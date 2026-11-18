@@ -12,7 +12,7 @@ import Reminders from "./Reminders";
 export default function AppShell({ eyebrow, title, children, wide }: { eyebrow: string; title: string; children: ReactNode; wide?: boolean }) {
   const { status } = useAuth();
   const { trip } = useTripCtx();
-  const night = useBatteryNight();
+  const { night, turnOff } = useBatteryNight();
 
   if (status === "loading" || (status === "signedIn" && trip.state === "loading")) {
     return (
@@ -34,7 +34,7 @@ export default function AppShell({ eyebrow, title, children, wide }: { eyebrow: 
   }
   return (
     <div className="app">
-      <AppNav night={night} />
+      <AppNav night={night} onNightOff={turnOff} />
       <main className={`app-main ${wide ? "app-main--wide" : ""}`}>
         <header className="page-head">
           <p className="eyebrow-home">{eyebrow}</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { gsap } from "@/lib/gsap";
+import { useBatteryNight } from "@/lib/battery";
 import Cloud from "./home/Cloud";
 import OrigamiPlane from "./home/OrigamiPlane";
 import { FlagSymbols } from "./home/flags";
@@ -19,6 +20,7 @@ export default function Gate({
   onFlown: () => void;
   children: ReactNode;
 }) {
+  useBatteryNight();
   const root = useRef<HTMLDivElement>(null);
   const trail = useRef<SVGPolylineElement>(null);
   const flownRef = useRef(onFlown);

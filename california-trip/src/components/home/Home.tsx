@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useAuth } from "@/lib/auth";
 import type { TripApi } from "@/lib/trip";
@@ -10,27 +9,19 @@ import AppNav from "../app/AppNav";
 import TabBar from "../app/TabBar";
 import Reminders from "../app/Reminders";
 import InviteFromLink from "../app/InviteFromLink";
-import Icon, { type IconName } from "../app/Icon";
+import TodayGlance from "./TodayGlance";
 import { useBatteryNight } from "@/lib/battery";
 import Cloud from "./Cloud";
 import OrigamiPlane, { PlaneShape } from "./OrigamiPlane";
 import WavingFlag from "./WavingFlag";
 import { FlagSymbols, MOSHIACH_FLAG, US_FLAG } from "./flags";
 
-const FEATURES = [
-  { href: "/map", icon: "map", title: "מפת קליפורניה", text: "אזורי הטיול, אטרקציות לפי התאריכים שלנו, בתי חב״ד, אוכל כשר וזמני הדלקת נרות." },
-  { href: "/plan", icon: "route", title: "מסלול וזמנים", text: "שעון קליפורניה, ניווט ב-Waze בלחיצה, הזזה והשהיה של חוויות, ותזכורות בזמן." },
-  { href: "/packing", icon: "bag", title: "ציוד חכם", text: "איפה ישנים היום ומה לארוז, עם רשימה שמסמנים בה ומקבלים אנימציה של הצלחה." },
-  { href: "/journal", icon: "heart", title: "יומן הודיה", text: "על מה הודינו אחד לשני היום, בכתב או בהקלטה, ותמונות שננעצות על המפה." },
-  { href: "/budget", icon: "cup", title: "מד תקציב", text: "כוס קפה שמתרוקנת ככל שמתקרבים לתקציב היומי. רואים בשנייה כמה נשאר." },
-  { href: "/capsule", icon: "capsule", title: "קפסולת זמן", text: "בסוף הטיול: כל התמונות, ההקלטות והמקומות באלבום אחד נגלל." },
-];
 
 
 export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () => void }) {
   const root = useRef<HTMLDivElement>(null);
   const { user, signOut } = useAuth();
-  const night = useBatteryNight();
+  const { night, turnOff } = useBatteryNight();
 
   useEffect(() => {
     const scope = root.current;
@@ -109,18 +100,6 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
           }, 0.1)
           .from(q(".journey-end"), { opacity: 0, scale: 0.6, duration: 0.15 }, 0.85);
 
-        // ---- כרטיסי הזכוכית צפים פנימה ----
-        ScrollTrigger.batch(q(".feature"), {
-          start: "top 90%",
-          onEnter: (els) =>
-            gsap.fromTo(els,
-              { y: 70, opacity: 0, rotateX: 12, filter: "blur(8px)" },
-              { y: 0, opacity: 1, rotateX: 0, filter: "blur(0px)", duration: 1.1, ease: "expo.out", stagger: 0.09, overwrite: true }),
-        });
-        gsap.to(q(".blob"), {
-          yPercent: (i: number) => (i % 2 ? -35 : 25), xPercent: (i: number) => (i % 2 ? 12 : -10), ease: "none",
-          scrollTrigger: { trigger: q(".features")[0], start: "top bottom", end: "bottom top", scrub: 1.5 },
-        });
 
         // ---- סיום: מטוסים חוצים את המסך ----
         gsap.fromTo(q(".finale-plane--a"), { x: "30vw", y: 60, rotate: -6 }, {
@@ -148,7 +127,7 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
     <div className="home" ref={root}>
       <FlagSymbols />
 
-      <AppNav night={night} />
+      <AppNav night={night} onNightOff={turnOff} />
 
       {/* ---------- פתיחה ---------- */}
       <section className="hero" id="top">
@@ -222,30 +201,8 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
         </div>
       </section>
 
-      {/* ---------- מה בונים ---------- */}
-      <section className="features section">
-        <div className="blob blob--yellow" aria-hidden="true" />
-        <div className="blob blob--mint" aria-hidden="true" />
-        <div className="blob blob--sky" aria-hidden="true" />
-        <div className="blob blob--lilac" aria-hidden="true" />
-        <div className="section-head reveal">
-          <p className="eyebrow-home">הכלים שלנו</p>
-          <h2 className="section-title">כל הטיול.<br />במקום אחד.</h2>
-          <p className="lede">כל חלק נפתח בלחיצה. מה שאחד מוסיף, השני רואה מיד.</p>
-        </div>
-        <div className="feature-grid">
-          {FEATURES.map((f) => (
-            <Link className="feature glass" key={f.title} href={f.href}>
-              <div className="feature-top">
-                <span className="feature-badge"><Icon name={f.icon as IconName} className="feature-icon" /></span>
-                <span className="feature-go" aria-hidden="true">←</span>
-              </div>
-              <h3>{f.title}</h3>
-              <p>{f.text}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* ---------- היום שלנו ---------- */}
+      <TodayGlance />
 
       {/* ---------- סיום ---------- */}
       <section className="finale section">

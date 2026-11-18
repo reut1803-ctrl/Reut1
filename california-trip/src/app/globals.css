@@ -16,6 +16,16 @@
   --glass-line: rgba(255, 255, 255, 0.78);
   --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 24px 70px rgba(30, 60, 100, 0.14);
   --font-home: "Noto Sans Hebrew", "Heebo", "Assistant", system-ui, sans-serif;
+
+  /* משטחים וטקסט — מוגדרים פעם אחת, ומצב החיסכון מחליף רק אותם */
+  --sky-3: #eef7fd;
+  --surface: #ffffff;
+  --surface-soft: rgba(255, 255, 255, 0.9);
+  --chip-soft: rgba(29, 29, 31, 0.06);
+  --text-body: #48484d;
+  --on-ink: #ffffff;
+  --nav-bg: rgba(251, 251, 253, 0.74);
+  --tab-bg: rgba(255, 255, 255, 0.8);
 }
 
 * { box-sizing: border-box; }
@@ -84,7 +94,7 @@ button { cursor: pointer; }
   background:
     radial-gradient(55% 45% at 72% 16%, rgba(255, 255, 255, 0.7), transparent 70%),
     radial-gradient(40% 35% at 20% 85%, rgba(255, 244, 214, 0.55), transparent 70%),
-    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 52%, #eef7fd 100%);
+    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 52%, var(--sky-3) 100%);
 }
 .gate-layer { position: absolute; inset: 0; pointer-events: none; }
 .gate-plane { position: absolute; z-index: 2; pointer-events: none; }
@@ -126,7 +136,7 @@ button { cursor: pointer; }
 .gate-error { margin: 12px 0 0; color: #b3261e; font-weight: 600; font-size: 14px; }
 .demo-pill {
   display: inline-block; margin-bottom: 14px; padding: 4px 12px; border-radius: 999px;
-  background: rgba(29, 29, 31, 0.06); color: var(--h-soft); font-size: 12px; font-weight: 600;
+  background: var(--chip-soft); color: var(--h-soft); font-size: 12px; font-weight: 600;
 }
 .gate-links { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 12px; color: var(--h-soft); }
 .gate-skip {
@@ -159,7 +169,7 @@ button { cursor: pointer; }
   display: inline-flex; align-items: center; justify-content: center; gap: 12px;
   width: 100%; min-height: 56px; padding: 0 22px;
   border-radius: 999px; border: 1px solid rgba(29, 29, 31, 0.08);
-  background: #fff; font-weight: 600; font-size: 17px; color: var(--h-ink);
+  background: var(--surface); font-weight: 600; font-size: 17px; color: var(--h-ink);
   box-shadow: 0 1px 0 #fff inset, 0 10px 26px rgba(30, 60, 100, 0.14);
   transition: transform .2s ease, box-shadow .2s ease;
 }
@@ -168,12 +178,12 @@ button { cursor: pointer; }
 .btn-google svg { width: 22px; height: 22px; flex: none; }
 .pill-btn {
   min-height: 48px; padding: 0 24px; border-radius: 999px; font-weight: 600; font-size: 16px;
-  border: 1px solid var(--h-line); background: #fff; color: var(--h-ink);
+  border: 1px solid var(--h-line); background: var(--surface); color: var(--h-ink);
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
 .pill-btn:hover { transform: translateY(-1px); }
 .pill-btn:disabled { opacity: .6; cursor: progress; }
-.pill-btn--dark { background: var(--h-ink); color: #fff; border-color: var(--h-ink); }
+.pill-btn--dark { background: var(--h-ink); color: var(--on-ink); border-color: var(--h-ink); }
 .pill-btn--block { width: 100%; min-height: 54px; margin-top: 20px; font-size: 17px; }
 .open-outside { display: grid; gap: 12px; padding: 16px; border-radius: 22px; background: rgba(255, 255, 255, 0.7); font-size: 15px; line-height: 1.5; }
 .open-outside p { margin: 0; }
@@ -208,7 +218,7 @@ button { cursor: pointer; }
 .invite { display: flex; gap: 8px; margin-top: 18px; }
 .invite input {
   flex: 1; min-width: 0; min-height: 48px; padding: 0 16px;
-  border-radius: 999px; border: 1px solid var(--h-line); background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px; border: 1px solid var(--h-line); background: var(--surface-soft);
   direction: ltr; text-align: right;
 }
 
@@ -220,8 +230,8 @@ button { cursor: pointer; }
 .tick { stroke: rgba(29, 29, 31, 0.25); stroke-width: 1.2; stroke-linecap: round; }
 .tick--major { stroke: rgba(29, 29, 31, 0.6); stroke-width: 2.2; }
 .hand { stroke-linecap: round; }
-.hand--hour { stroke: var(--h-ink); stroke-width: 3.6; }
-.hand--min { stroke: var(--h-ink); stroke-width: 2.4; }
+.hand--hour { stroke: #1d1d1f; stroke-width: 3.6; }
+.hand--min { stroke: #1d1d1f; stroke-width: 2.4; }
 .hand--sec { stroke: #e0a020; stroke-width: 1.1; }
 .dial--accent .hand--hour, .dial--accent .hand--min { stroke: #2b2b2f; }
 .dial--accent .dial-face { fill: rgba(255, 249, 230, 0.9); }

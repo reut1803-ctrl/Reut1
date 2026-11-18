@@ -54,7 +54,7 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
   inset: 0 0 auto;
   z-index: 50;
   padding-top: env(safe-area-inset-top, 0px);
-  background: rgba(251, 251, 253, 0.68);
+  background: var(--nav-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--h-line);
@@ -73,7 +73,7 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
 .nav-brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; color: var(--h-ink); text-decoration: none; }
 .nav .nav-plane { width: 30px; height: auto; transform: scaleX(-1); filter: none; }
 .nav-side { display: flex; align-items: center; gap: 12px; }
-.nav-demo { font-size: 12px; font-weight: 600; color: var(--h-soft); padding: 3px 10px; border-radius: 999px; background: rgba(29, 29, 31, 0.05); }
+.nav-demo { font-size: 12px; font-weight: 600; color: var(--h-soft); padding: 3px 10px; border-radius: 999px; background: var(--chip-soft); border: 0; }
 .nav-faces { display: flex; }
 .nav-face {
   width: 28px; height: 28px; border-radius: 50%;
@@ -97,7 +97,7 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
   padding: 120px max(20px, env(safe-area-inset-right, 0px)) 120px max(20px, env(safe-area-inset-left, 0px));
   background:
     radial-gradient(60% 50% at 70% 18%, rgba(255, 255, 255, 0.65), transparent 70%),
-    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 46%, #eef7fd 78%, var(--h-bg) 100%);
+    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 46%, var(--sky-3) 78%, var(--h-bg) 100%);
 }
 .hero-copy { position: relative; z-index: 3; text-align: center; will-change: transform, opacity; }
 .hero-pill {
@@ -118,11 +118,11 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
 .scroll-cue {
   position: absolute; bottom: max(28px, env(safe-area-inset-bottom, 0px)); left: 50%;
   width: 26px; height: 42px; margin-left: -13px;
-  border: 2px solid rgba(29, 29, 31, 0.28); border-radius: 14px; z-index: 3;
+  border: 2px solid var(--h-soft); border-radius: 14px; z-index: 3; opacity: .6;
 }
 .scroll-cue span {
   position: absolute; top: 8px; left: 50%; width: 4px; height: 8px; margin-left: -2px;
-  border-radius: 2px; background: rgba(29, 29, 31, 0.45);
+  border-radius: 2px; background: var(--h-soft);
   animation: cue 1.8s ease-in-out infinite;
 }
 @keyframes cue { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(12px); opacity: 0; } 100% { opacity: 0; } }
@@ -159,7 +159,7 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
   min-height: 100svh;
   display: grid;
   place-items: center;
-  background: linear-gradient(180deg, var(--h-bg), #f1f7fc 50%, var(--h-bg));
+  background: linear-gradient(180deg, var(--h-bg), var(--sky-3) 50%, var(--h-bg));
   padding-block: 90px 40px;
   padding-left: max(20px, env(safe-area-inset-left, 0px));
   padding-right: max(20px, env(safe-area-inset-right, 0px));
@@ -185,36 +185,26 @@ body:has(.home) { background: #fbfbfd; overflow: auto; }
 .stat-num { font-size: clamp(30px, 5vw, 60px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat-label { font-size: clamp(13px, 1.4vw, 16px); color: var(--h-soft); font-weight: 500; }
 
-/* ---------- כרטיסי זכוכית ---------- */
-.features { overflow: hidden; background: var(--h-bg); }
-.blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.75; z-index: 0; will-change: transform; }
-.blob--yellow { width: 42vw; height: 42vw; background: #ffe58f; top: 18%; right: -8%; }
-.blob--mint { width: 36vw; height: 36vw; background: #b6ecc8; bottom: 6%; left: -6%; }
-.blob--sky { width: 30vw; height: 30vw; background: #b9e0fa; top: 44%; left: 30%; }
-.blob--lilac { width: 26vw; height: 26vw; background: #ddd0f0; top: 8%; left: 6%; }
-.feature-grid {
-  position: relative; z-index: 2;
-  max-width: 1080px;
-  margin: clamp(48px, 7vw, 80px) auto 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  gap: 18px;
-  perspective: 1200px;
+/* ---------- היום שלנו ---------- */
+.today { background: linear-gradient(180deg, var(--h-bg), var(--sky-3)); }
+.today-card { max-width: 640px; margin: clamp(32px, 5vw, 56px) auto 0; border-radius: 30px; padding: 6px 0; position: relative; z-index: 2; }
+.today-row {
+  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+  color: var(--h-ink); text-decoration: none; border-bottom: 1px solid var(--h-line);
 }
-.feature { border-radius: 28px; padding: 26px 26px 28px; min-width: 0; transform-origin: 50% 100%; }
-.feature-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; }
-.feature-badge {
-  width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
-  background: rgba(255, 255, 255, 0.85); color: var(--h-ink);
-  box-shadow: 0 6px 16px rgba(30, 60, 100, 0.1);
-}
-.feature-icon { width: 24px; height: 24px; }
-.feature-status { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; color: #8a6a10; background: rgba(247, 201, 72, 0.3); }
-.feature h3 { margin: 0 0 8px; font-size: 24px; font-weight: 700; letter-spacing: -0.015em; }
-.feature p { margin: 0; font-size: 16px; line-height: 1.55; color: #48484d; }
+.today-row:last-child { border-bottom: 0; }
+.today-ic { width: 42px; height: 42px; flex: none; border-radius: 13px; display: grid; place-items: center; background: var(--surface); color: var(--h-ink); box-shadow: 0 4px 12px rgba(30, 60, 100, 0.08); }
+.today-ic .icon { width: 22px; height: 22px; }
+.today-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.today-label { font-size: 13px; font-weight: 600; color: var(--h-soft); }
+.today-main strong { font-size: 17px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.today-empty { color: var(--h-soft); font-weight: 600 !important; }
+.today-over { color: #b3261e; }
+.today-go { font-size: 20px; font-weight: 700; color: var(--h-soft); text-decoration: none; padding: 4px 6px; }
+a.today-row:hover .today-go { color: var(--h-ink); }
 
 /* ---------- סיום ---------- */
-.finale { text-align: center; overflow: hidden; background: linear-gradient(180deg, var(--h-bg), #eef7fd); }
+.finale { text-align: center; overflow: hidden; background: linear-gradient(180deg, var(--h-bg), var(--sky-3)); }
 .finale-plane { position: absolute; width: clamp(110px, 14vw, 190px); z-index: 1; pointer-events: none; }
 .finale-plane--a { top: 12%; right: 10%; }
 .finale-plane--a .origami-svg { transform: scaleX(-1); }

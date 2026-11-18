@@ -1,22 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type BatteryLike = { level: number; charging: boolean; addEventListener: (t: string, f: () => void) => void; removeEventListener: (t: string, f: () => void) => void };
 
+const OFF_KEY = "ct-night-off";
+
+function readOff(): boolean {
+  try { return sessionStorage.getItem(OFF_KEY) === "1"; } catch { return false; }
+}
+
 // מצב חיסכון: כשהסוללה מתחת ל-20% ולא בטעינה — האתר עובר לגווני סגול עמום וכהה.
-export function useBatteryNight(): boolean {
-  const [night, setNight] = useState(false);
+// אפשר לכבות אותו לביקור הנוכחי בלחיצה.
+export function useBatteryNight(): { night: boolean; turnOff: () => void } {
+  const [low, setLow] = useState(false);
+  const [off, setOff] = useState(false);
+
   useEffect(() => {
+    setOff(readOff());
     const nav = navigator as Navigator & { getBattery?: () => Promise<BatteryLike> };
     if (!nav.getBattery) return;
     let bat: BatteryLike | null = null;
-    const check = () => {
-      if (!bat) return;
-      const on = bat.level <= 0.2 && !bat.charging;
-      setNight(on);
-      document.documentElement.toggleAttribute("data-night", on);
-    };
+    const check = () => { if (bat) setLow(bat.level <= 0.2 && !bat.charging); };
     nav.getBattery().then((b) => {
       bat = b;
       check();
@@ -28,5 +33,16 @@ export function useBatteryNight(): boolean {
       bat?.removeEventListener("chargingchange", check);
     };
   }, []);
-  return night;
+
+  const night = low && !off;
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-night", night);
+  }, [night]);
+
+  const turnOff = useCallback(() => {
+    try { sessionStorage.setItem(OFF_KEY, "1"); } catch { /* */ }
+    setOff(true);
+  }, []);
+
+  return { night, turnOff };
 }
