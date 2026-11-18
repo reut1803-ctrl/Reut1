@@ -4,15 +4,18 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type * as Leaflet from "leaflet";
 import { useRows, useTripCtx } from "@/lib/tripContext";
-import { mapsSearchUrl, shabbatTimes, wazeUrl, type Place, type ShabbatTimes } from "@/lib/places";
+import {
+  mapsSearchUrl, searchArea, searchPlacesNear, shabbatTimes, wazeUrl,
+  type Bbox, type Place, type Poi, type ShabbatTimes,
+} from "@/lib/places";
+import { driveHours, formatDrive, useOrigin } from "@/lib/context";
+import { SPOTS } from "@/content/sfGuide";
 import Icon from "../app/Icon";
-import PlaceSearch from "../app/PlaceSearch";
 import type { Activity } from "./PlanView";
 import type { Photo } from "./JournalView";
-import { SPOTS } from "@/content/sfGuide";
 
 type Cat = "attraction" | "chabad" | "kosher" | "torah" | "candles" | "lodging";
-type SavedPlace = { id: string; name: string; category: Cat; lat: number; lng: number; address?: string; price?: number | null; notes?: string; guide?: boolean };
+type SavedPlace = { id: string; name: string; category: Cat; lat: number; lng: number; address?: string; price?: number | null };
 
 const CATS: Record<Cat, { label: string; mark: string; layer: Layer }> = {
   attraction: { label: "אטרקציה", mark: "★", layer: "attractions" },
@@ -23,169 +26,296 @@ const CATS: Record<Cat, { label: string; mark: string; layer: Layer }> = {
   lodging: { label: "לינה", mark: "⌂", layer: "lodging" },
 };
 
-type Layer = "must" | "attractions" | "jewish" | "lodging" | "photos" | "plan";
+type Layer = "must" | "attractions" | "jewish" | "lodging" | "plan" | "photos";
 const LAYERS: { id: Layer; label: string }[] = [
   { id: "must", label: "אסור לפספס" },
-  { id: "attractions", label: "אטרקציות" },
+  { id: "attractions", label: "אטרקציות ששמרנו" },
   { id: "jewish", label: "יהדות וכשרות" },
   { id: "lodging", label: "לינה" },
   { id: "plan", label: "המסלול שלנו" },
-  { id: "photos", label: "תמונות" },
+  { id: "photos", label: "התמונות שלנו" },
 ];
 
-// אזורי הטיול המרכזיים — לחיצה מעיפה את המפה לשם
 const REGIONS: { name: string; lat: number; lng: number; z: number }[] = [
-  { name: "כל קליפורניה", lat: 36.7, lng: -119.4, z: 6 },
   { name: "סן פרנסיסקו", lat: 37.7749, lng: -122.4194, z: 12 },
-  { name: "לוס אנג׳לס", lat: 34.0522, lng: -118.2437, z: 10 },
-  { name: "סן דייגו", lat: 32.7157, lng: -117.1611, z: 11 },
-  { name: "פאלם ספרינגס", lat: 33.8303, lng: -116.5453, z: 11 },
-  { name: "סנטה ברברה", lat: 34.4208, lng: -119.6982, z: 11 },
+  { name: "המפרץ", lat: 37.75, lng: -122.3, z: 9 },
+  { name: "מרין ומיור וודס", lat: 37.92, lng: -122.58, z: 11 },
+  { name: "סנטה קרוז ומונטריי", lat: 36.8, lng: -121.95, z: 9 },
   { name: "ביג סור", lat: 36.2704, lng: -121.8081, z: 10 },
   { name: "יוסמיטי", lat: 37.7456, lng: -119.5936, z: 11 },
   { name: "לייק טאהו", lat: 39.0968, lng: -120.0324, z: 10 },
+  { name: "לוס אנג׳לס", lat: 34.0522, lng: -118.2437, z: 10 },
+  { name: "כל קליפורניה", lat: 36.9, lng: -119.6, z: 6 },
 ];
 
+const DEFAULT_VIEW = { lat: 37.7749, lng: -122.4194, z: 11 };
+const PREF_KEY = "ct-map-v1";
 const usd = (n: number) => (n === 0 ? "חינם" : "$" + n.toLocaleString("en-US"));
 
 function esc(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
-type Selected =
-  | { kind: "place"; p: SavedPlace }
-  | { kind: "photo"; p: Photo }
-  | { kind: "act"; p: Activity };
+type MapPrefs = { layers: Record<Layer, boolean>; view: { lat: number; lng: number; z: number } };
+function readPrefs(): MapPrefs {
+  const base: MapPrefs = { layers: { must: true, attractions: true, jewish: true, lodging: true, plan: true, photos: true }, view: DEFAULT_VIEW };
+  try {
+    const raw = localStorage.getItem(PREF_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      return { layers: { ...base.layers, ...(p.layers ?? {}) }, view: p.view ?? base.view };
+    }
+  } catch { /* */ }
+  return base;
+}
+function writePrefs(p: MapPrefs) {
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(p)); } catch { /* */ }
+}
+
+/** מה שנבחר במפה — כל סוגי הנקודות מוצגים באותו כרטיס */
+type Sel = {
+  name: string; lat: number; lng: number; label: string;
+  text?: string; address?: string; price?: number | null; photo?: string;
+  savedId?: string; canSave?: boolean;
+};
+
+type Hit = { key: string; name: string; sub: string; lat: number; lng: number; address?: string; local: boolean };
 
 export default function MapView() {
   const { store } = useTripCtx();
   const places = useRows<SavedPlace>("places");
   const photos = useRows<Photo>("photos");
   const acts = useRows<Activity>("activities");
+  const { origin, locate } = useOrigin();
+
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const LRef = useRef<typeof Leaflet | null>(null);
   const groupRef = useRef<Leaflet.LayerGroup | null>(null);
+  const tempRef = useRef<Leaflet.LayerGroup | null>(null);
   const [ready, setReady] = useState(false);
-  const [center, setCenter] = useState({ lat: 36.7, lng: -119.4 });
-  const [layers, setLayers] = useState<Record<Layer, boolean>>({ must: true, attractions: true, jewish: true, lodging: true, photos: true, plan: true });
-  const [sel, setSel] = useState<Selected | null>(null);
-  const [adding, setAdding] = useState<Place | null>(null);
-  const [addCat, setAddCat] = useState<Cat>("attraction");
-  const [addPrice, setAddPrice] = useState("");
+  const [prefs, setPrefs] = useState<MapPrefs>(() => (typeof window === "undefined" ? { layers: { must: true, attractions: true, jewish: true, lodging: true, plan: true, photos: true }, view: DEFAULT_VIEW } : readPrefs()));
+  const [bbox, setBbox] = useState<Bbox | null>(null);
+  const [zoom, setZoom] = useState(DEFAULT_VIEW.z);
+  const [layersOpen, setLayersOpen] = useState(false);
+
+  // חיפוש
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState<Hit[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchErr, setSearchErr] = useState<string | null>(null);
+
+  // תוצאות אזור (כשר / בתי כנסת)
+  const [pois, setPois] = useState<Poi[]>([]);
+  const [areaBusy, setAreaBusy] = useState<Poi["kind"] | null>(null);
+  const [areaMsg, setAreaMsg] = useState<string | null>(null);
+
+  const [sel, setSel] = useState<Sel | null>(null);
+  const selRef = useRef<HTMLDivElement>(null);
+  const [saveCat, setSaveCat] = useState<Cat>("attraction");
+  const [savePrice, setSavePrice] = useState("");
   const [shabbat, setShabbat] = useState<ShabbatTimes | null>(null);
   const [shabbatErr, setShabbatErr] = useState<string | null>(null);
   const [shabbatBusy, setShabbatBusy] = useState(false);
 
-  // יצירת המפה פעם אחת
+  const center = bbox ? { lat: (bbox.n + bbox.s) / 2, lng: (bbox.e + bbox.w) / 2 } : { lat: prefs.view.lat, lng: prefs.view.lng };
+
+  // יצירת המפה — עם תיקון מידות (בלי זה המפה "זזה" למקום אחר כשהמסך עוד לא סיים להיטען)
   useEffect(() => {
     let map: Leaflet.Map | null = null;
+    let ro: ResizeObserver | null = null;
     let cancelled = false;
     (async () => {
       const L = (await import("leaflet")).default;
       if (cancelled || !el.current) return;
-      map = L.map(el.current, { zoomControl: true, attributionControl: true }).setView([36.7, -119.4], 6);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "© OpenStreetMap",
-      }).addTo(map);
+      const v = readPrefs().view;
+      map = L.map(el.current, { zoomControl: false, attributionControl: true }).setView([v.lat, v.lng], v.z);
+      L.control.zoom({ position: "bottomright" }).addTo(map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
       groupRef.current = L.layerGroup().addTo(map);
-      map.on("moveend", () => {
+      tempRef.current = L.layerGroup().addTo(map);
+      const sync = () => {
+        const b = map!.getBounds();
+        setBbox({ s: b.getSouth(), w: b.getWest(), n: b.getNorth(), e: b.getEast() });
+        setZoom(map!.getZoom());
         const c = map!.getCenter();
-        setCenter({ lat: c.lat, lng: c.lng });
-      });
+        const cur = readPrefs();
+        writePrefs({ ...cur, view: { lat: c.lat, lng: c.lng, z: map!.getZoom() } });
+      };
+      map.on("moveend", sync);
+      ro = new ResizeObserver(() => map?.invalidateSize());
+      ro.observe(el.current);
+      setTimeout(() => { map?.invalidateSize(); map?.setView([v.lat, v.lng], v.z); sync(); }, 120);
       LRef.current = L;
       mapRef.current = map;
       setReady(true);
     })();
     return () => {
       cancelled = true;
+      ro?.disconnect();
       map?.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // נעצים
+  useEffect(() => { writePrefs({ ...readPrefs(), layers: prefs.layers }); }, [prefs.layers]);
+
+  // נעצים קבועים (מהטיול)
   useEffect(() => {
     const L = LRef.current;
     const g = groupRef.current;
     if (!ready || !L || !g) return;
     g.clearLayers();
-    const icon = (cls: string, html: string) =>
-      L.divIcon({ className: "pin-wrap", html: `<span class="pin ${cls}">${html}</span>`, iconSize: [34, 34], iconAnchor: [17, 34] });
+    const icon = (cls: string, html: string, size = 34) =>
+      L.divIcon({ className: "pin-wrap", html: `<span class="pin ${cls}">${html}</span>`, iconSize: [size, size], iconAnchor: [size / 2, size] });
+    const L_ = prefs.layers;
 
-    for (const p of places ?? []) {
-      const c = CATS[p.category] ?? CATS.attraction;
-      if (!layers[c.layer] || typeof p.lat !== "number") continue;
-      L.marker([p.lat, p.lng], { icon: icon(`pin--${p.category}`, esc(c.mark)), title: p.name })
-        .on("click", () => setSel({ kind: "place", p }))
-        .addTo(g);
-    }
-    if (layers.must) {
+    if (L_.must) {
       for (const sp of SPOTS) {
         L.marker([sp.lat, sp.lng], { icon: icon("pin--must", "★"), title: sp.name })
-          .on("click", () => setSel({ kind: "place", p: { id: sp.id, name: sp.name, category: "attraction", lat: sp.lat, lng: sp.lng, address: `${sp.why}${sp.tip ? " · " + sp.tip : ""}`, guide: true } as SavedPlace }))
+          .on("click", () => setSel({ name: sp.name, lat: sp.lat, lng: sp.lng, label: "אסור לפספס", text: sp.why + (sp.tip ? ` · ${sp.tip}` : "") }))
           .addTo(g);
       }
     }
-    if (layers.photos) {
-      for (const ph of photos ?? []) {
-        if (typeof ph.lat !== "number" || typeof ph.lng !== "number") continue;
-        L.marker([ph.lat, ph.lng], {
-          icon: L.divIcon({ className: "pin-wrap", html: `<span class="pin pin--photo"><img src="${ph.thumb}" alt=""/></span>`, iconSize: [44, 44], iconAnchor: [22, 44] }),
-        })
-          .on("click", () => setSel({ kind: "photo", p: ph }))
-          .addTo(g);
-      }
+    for (const p of places ?? []) {
+      const c = CATS[p.category] ?? CATS.attraction;
+      if (!L_[c.layer] || typeof p.lat !== "number") continue;
+      L.marker([p.lat, p.lng], { icon: icon(`pin--${p.category}`, esc(c.mark)), title: p.name })
+        .on("click", () => setSel({ name: p.name, lat: p.lat, lng: p.lng, label: c.label, address: p.address, price: p.price, savedId: p.id }))
+        .addTo(g);
     }
-    if (layers.plan) {
+    if (L_.plan) {
       for (const a of acts ?? []) {
         if (typeof a.lat !== "number" || typeof a.lng !== "number") continue;
         L.marker([a.lat, a.lng], { icon: icon("pin--plan", esc(a.time || "•")), title: a.title })
-          .on("click", () => setSel({ kind: "act", p: a }))
+          .on("click", () => setSel({ name: a.title, lat: a.lat!, lng: a.lng!, label: `מהמסלול · ${a.time}`, address: a.address }))
           .addTo(g);
       }
     }
-  }, [ready, places, photos, acts, layers]);
+    if (L_.photos) {
+      for (const ph of photos ?? []) {
+        if (typeof ph.lat !== "number" || typeof ph.lng !== "number") continue;
+        L.marker([ph.lat, ph.lng], { icon: L.divIcon({ className: "pin-wrap", html: `<span class="pin pin--photo"><img src="${ph.thumb}" alt=""/></span>`, iconSize: [44, 44], iconAnchor: [22, 44] }) })
+          .on("click", () => setSel({ name: ph.caption || "תמונה", lat: ph.lat!, lng: ph.lng!, label: `תמונה · ${ph.byName}`, photo: ph.thumb }))
+          .addTo(g);
+      }
+    }
+  }, [ready, places, photos, acts, prefs.layers]);
 
-  const lodgingLA = useMemo(
-    () =>
-      (places ?? [])
-        .filter((p) => p.category === "lodging")
-        .sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999)),
-    [places],
-  );
-  const maxPrice = Math.max(1, ...lodgingLA.map((p) => p.price ?? 0));
+  // נעצים זמניים: תוצאות אזור + המקום שנבחר בחיפוש + המיקום שלי
+  useEffect(() => {
+    const L = LRef.current;
+    const t = tempRef.current;
+    if (!ready || !L || !t) return;
+    t.clearLayers();
+    for (const p of pois) {
+      L.marker([p.lat, p.lng], {
+        icon: L.divIcon({ className: "pin-wrap", html: `<span class="pin pin--${p.kind === "kosher" ? "kosher" : "chabad"} pin--found">${p.kind === "kosher" ? "K" : "✡"}</span>`, iconSize: [34, 34], iconAnchor: [17, 34] }),
+        title: p.name,
+      })
+        .on("click", () => setSel({ name: p.name, lat: p.lat, lng: p.lng, label: p.kind === "kosher" ? "כשר (OpenStreetMap)" : "בית כנסת / חב״ד (OpenStreetMap)", address: p.address, canSave: true }))
+        .addTo(t);
+    }
+    if (sel?.canSave && !pois.some((p) => p.lat === sel.lat && p.lng === sel.lng)) {
+      L.marker([sel.lat, sel.lng], { icon: L.divIcon({ className: "pin-wrap", html: `<span class="pin pin--search">●</span>`, iconSize: [34, 34], iconAnchor: [17, 34] }) }).addTo(t);
+    }
+    if (origin.source === "gps") {
+      L.circleMarker([origin.lat, origin.lng], { radius: 8, color: "#fff", weight: 3, fillColor: "#0a84ff", fillOpacity: 1 }).addTo(t);
+    }
+  }, [ready, pois, sel, origin]);
+
+  // כשבוחרים מקום — הכרטיס שלו נגלל לתצוגה (אם הוא מתחת למסך)
+  useEffect(() => {
+    if (!sel || !selRef.current) return;
+    const r = selRef.current.getBoundingClientRect();
+    if (r.top > window.innerHeight - 140) {
+      setTimeout(() => selRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 450);
+    }
+  }, [sel?.lat, sel?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function fly(lat: number, lng: number, z: number) {
-    mapRef.current?.flyTo([lat, lng], z, { duration: 1.2 });
+    mapRef.current?.flyTo([lat, lng], z, { duration: 1.1 });
   }
 
-  async function savePlace(e: FormEvent) {
+  // ---- חיפוש: קודם במקומות שלנו, אחר כך בכל הכתובות, עם העדפה לאזור שעל המפה
+  const localIndex = useMemo<Hit[]>(() => [
+    ...SPOTS.map((s) => ({ key: `g-${s.id}`, name: s.name, sub: "אסור לפספס", lat: s.lat, lng: s.lng, local: true, search: `${s.name} ${s.en}` })),
+    ...(places ?? []).map((p) => ({ key: `p-${p.id}`, name: p.name, sub: CATS[p.category]?.label ?? "", lat: p.lat, lng: p.lng, address: p.address, local: true, search: `${p.name} ${p.address ?? ""}` })),
+    ...(acts ?? []).filter((a) => typeof a.lat === "number").map((a) => ({ key: `a-${a.id}`, name: a.title, sub: `מהמסלול · ${a.time}`, lat: a.lat!, lng: a.lng!, address: a.address, local: true, search: `${a.title} ${a.address ?? ""}` })),
+  ] as (Hit & { search: string })[], [places, acts]);
+
+  async function runSearch(e?: FormEvent) {
+    e?.preventDefault();
+    const term = q.trim();
+    if (!term) return;
+    setSearching(true);
+    setSearchErr(null);
+    const low = term.toLowerCase();
+    const local = (localIndex as (Hit & { search: string })[]).filter((h) => h.search.toLowerCase().includes(low)).slice(0, 4);
+    setHits(local);
+    try {
+      const remote = await searchPlacesNear(term, bbox ?? undefined);
+      const merged = [...local, ...remote.map((r, i) => ({ key: `r-${i}`, name: r.name, sub: r.address.split(",").slice(1, 3).join(","), lat: r.lat, lng: r.lng, address: r.address, local: false }))];
+      setHits(merged);
+      if (!merged.length) setSearchErr("לא נמצא. נסו באנגלית, למשל Chabad Berkeley או Pier 39.");
+      else if (merged.length === 1) pick(merged[0]);
+    } catch {
+      if (!local.length) setSearchErr("החיפוש לא זמין כרגע. בדקו את החיבור לאינטרנט.");
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function pick(h: Hit) {
+    setHits(null);
+    setQ(h.name);
+    fly(h.lat, h.lng, 15);
+    const saved = (places ?? []).find((p) => Math.abs(p.lat - h.lat) < 1e-5 && Math.abs(p.lng - h.lng) < 1e-5);
+    setSel({ name: h.name, lat: h.lat, lng: h.lng, label: h.sub || "תוצאת חיפוש", address: h.address, savedId: saved?.id, canSave: !h.local });
+  }
+
+  async function findArea(kind: Poi["kind"]) {
+    if (!bbox) return;
+    if (zoom < 10) {
+      setAreaMsg("התקרבו קצת במפה (לעיר או לשכונה), ואז חפשו שוב.");
+      return;
+    }
+    setAreaBusy(kind);
+    setAreaMsg(null);
+    try {
+      const r = await searchArea(kind, bbox);
+      setPois((cur) => [...cur.filter((p) => p.kind !== kind), ...r]);
+      setAreaMsg(r.length ? `נמצאו ${r.length} מקומות באזור שעל המפה. מקור: OpenStreetMap — כדאי לוודא כשרות ושעות במקום.` : "לא נמצאו מקומות באזור הזה במפה הפתוחה. אפשר לנסות את גוגל מפות.");
+    } catch {
+      setAreaMsg("החיפוש באזור לא זמין כרגע. נסו שוב בעוד רגע.");
+    } finally {
+      setAreaBusy(null);
+    }
+  }
+
+  async function saveSel(e: FormEvent) {
     e.preventDefault();
-    if (!adding) return;
-    const price = addCat === "lodging" && addPrice !== "" ? Math.max(0, Number(addPrice)) : null;
-    await store.add("places", { name: adding.name, address: adding.address, lat: adding.lat, lng: adding.lng, category: addCat, price });
-    fly(adding.lat, adding.lng, 14);
-    setAdding(null);
-    setAddPrice("");
+    if (!sel) return;
+    const price = saveCat === "lodging" && savePrice !== "" ? Math.max(0, Number(savePrice)) : null;
+    const id = await store.add("places", { name: sel.name, address: sel.address ?? "", lat: sel.lat, lng: sel.lng, category: saveCat, price });
+    setSel({ ...sel, savedId: id, canSave: false, label: CATS[saveCat].label, price });
+    setSavePrice("");
   }
 
   async function loadShabbat() {
     setShabbatBusy(true);
     setShabbatErr(null);
-    try {
-      setShabbat(await shabbatTimes(center.lat, center.lng));
-    } catch {
-      setShabbatErr("לא הצלחנו להביא את הזמנים כרגע. בדקו את החיבור לאינטרנט.");
-    } finally {
-      setShabbatBusy(false);
-    }
+    try { setShabbat(await shabbatTimes(center.lat, center.lng)); } catch { setShabbatErr("לא הצלחנו להביא את הזמנים כרגע."); } finally { setShabbatBusy(false); }
   }
+
+  const fromLabel = origin.source === "gps" ? "ממך" : "ממרכז סן פרנסיסקו";
+  const lodging = (places ?? []).filter((p) => p.category === "lodging").sort((a, b) => (a.price ?? 9999) - (b.price ?? 9999));
+  const maxPrice = Math.max(1, ...lodging.map((p) => p.price ?? 0));
+  const activeLayers = LAYERS.filter((l) => prefs.layers[l.id]).length;
 
   return (
     <div className="stack">
-      <div className="chips-row chips-row--scroll" aria-label="אזורי הטיול">
+      <div className="chips-row chips-row--scroll" aria-label="קפיצה לאזור">
         {REGIONS.map((r) => (
           <button key={r.name} type="button" className="chip-btn" onClick={() => fly(r.lat, r.lng, r.z)}>{r.name}</button>
         ))}
@@ -193,79 +323,103 @@ export default function MapView() {
 
       <div className="map-wrap glass">
         <div ref={el} className="map" />
-      </div>
 
-      <div className="chips-row" aria-label="שכבות במפה">
-        {LAYERS.map((l) => (
-          <button key={l.id} type="button" aria-pressed={layers[l.id]} className={`chip-btn ${layers[l.id] ? "chip-btn--on" : ""}`}
-            onClick={() => setLayers((s) => ({ ...s, [l.id]: !s[l.id] }))}>{l.label}</button>
-        ))}
+        <div className="map-search">
+          <form className="map-search-bar" onSubmit={runSearch} role="search">
+            <Icon name="search" />
+            <input
+              id="map-q"
+              value={q}
+              onChange={(e) => { setQ(e.target.value); if (!e.target.value) setHits(null); }}
+              placeholder="כתובת, אטרקציה, בית חב״ד…"
+              aria-label="חיפוש במפה"
+              enterKeyHint="search"
+              autoComplete="off"
+            />
+            {q && <button type="button" className="map-search-x" aria-label="ניקוי" onClick={() => { setQ(""); setHits(null); setSearchErr(null); }}>×</button>}
+            <button type="submit" className="map-search-go" disabled={searching}>{searching ? <span className="spinner spinner--light" /> : "חיפוש"}</button>
+          </form>
+          {(hits || searchErr) && (
+            <div className="map-results">
+              {searchErr && <p className="hint">{searchErr}</p>}
+              {hits?.map((h) => (
+                <button key={h.key} type="button" onClick={() => pick(h)}>
+                  <strong>{h.name}</strong>
+                  <span>{h.local ? "★ " : ""}{h.sub}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="map-tools">
+          <button type="button" className="map-tool" onClick={() => setLayersOpen((v) => !v)} aria-expanded={layersOpen}>
+            שכבות <span className="map-tool-n">{activeLayers}</span>
+          </button>
+          <button type="button" className="map-tool" onClick={() => { locate(); if (origin.source === "gps") fly(origin.lat, origin.lng, 13); }} aria-label="המיקום שלי">
+            <Icon name="pin" />המיקום שלי
+          </button>
+          {layersOpen && (
+            <div className="layers-pop glass" role="group" aria-label="מה מוצג על המפה">
+              {LAYERS.map((l) => (
+                <label key={l.id} className="layer-row">
+                  <input type="checkbox" checked={prefs.layers[l.id]} onChange={() => setPrefs((p) => ({ ...p, layers: { ...p.layers, [l.id]: !p.layers[l.id] } }))} />
+                  {l.label}
+                </label>
+              ))}
+              <p className="hint">הבחירה נשמרת לפעם הבאה.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {sel && (
-        <div className="panel glass sel-panel">
+        <div className="panel glass sel-panel" ref={selRef}>
           <button type="button" className="toast-x" onClick={() => setSel(null)} aria-label="סגירה">×</button>
-          {sel.kind === "place" && (
-            <>
-              <span className="label">{CATS[sel.p.category]?.label}</span>
-              <h2 className="panel-title">{sel.p.name}</h2>
-              {sel.p.address && <p className="hint">{sel.p.guide ? sel.p.address : sel.p.address.split(",").slice(0, 3).join(",")}</p>}
-              {sel.p.category === "lodging" && sel.p.price != null && <p className="price-tag">{usd(sel.p.price)} ללילה</p>}
-              <div className="act-actions">
-                {wazeUrl(sel.p) && <a className="chip-btn chip-btn--waze" href={wazeUrl(sel.p)!} target="_blank" rel="noopener noreferrer"><Icon name="waze" />ניווט ב-Waze</a>}
-                {!sel.p.guide && <button type="button" className="chip-btn chip-btn--danger" onClick={async () => { await store.remove("places", sel.p.id); setSel(null); }}><Icon name="trash" />הסרה מהמפה</button>}
+          <span className="label">{sel.label}</span>
+          <h2 className="panel-title">{sel.name}</h2>
+          {sel.photo && <img className="sel-photo" src={sel.photo} alt={sel.name} />}
+          {sel.text && <p className="hint">{sel.text}</p>}
+          {sel.address && <p className="hint">{sel.address.split(",").slice(0, 3).join(",")}</p>}
+          {sel.price != null && <p className="price-tag">{usd(sel.price)} ללילה</p>}
+          <p className="sel-dist"><Icon name="route" />{formatDrive(driveHours(origin, sel))} נסיעה {fromLabel}</p>
+          <div className="act-actions">
+            {wazeUrl(sel) && <a className="chip-btn chip-btn--waze" href={wazeUrl(sel)!} target="_blank" rel="noopener noreferrer"><Icon name="waze" />ניווט ב-Waze</a>}
+            <a className="chip-btn" href={mapsSearchUrl(sel.name, sel.lat, sel.lng)} target="_blank" rel="noopener noreferrer">שעות וטלפון</a>
+            {sel.savedId && (
+              <button type="button" className="chip-btn chip-btn--danger" onClick={async () => { await store.remove("places", sel.savedId!); setSel(null); }}><Icon name="trash" />הסרה מהמפה</button>
+            )}
+          </div>
+          {sel.canSave && !sel.savedId && (
+            <form className="stack-sm save-place" onSubmit={saveSel}>
+              <span className="label">לשמור במפה שלנו בתור:</span>
+              <div className="chips-row">
+                {(Object.keys(CATS) as Cat[]).map((c) => (
+                  <button key={c} type="button" aria-pressed={saveCat === c} className={`chip-btn ${saveCat === c ? "chip-btn--on" : ""}`} onClick={() => setSaveCat(c)}>{CATS[c].label}</button>
+                ))}
               </div>
-            </>
-          )}
-          {sel.kind === "photo" && (
-            <>
-              <img className="sel-photo" src={sel.p.thumb} alt={sel.p.caption || "תמונה מהטיול"} />
-              <p className="hint">{sel.p.caption || "תמונה"} · {sel.p.byName}</p>
-            </>
-          )}
-          {sel.kind === "act" && (
-            <>
-              <span className="label">מהמסלול · {sel.p.time}</span>
-              <h2 className="panel-title">{sel.p.title}</h2>
-              {wazeUrl(sel.p) && <a className="chip-btn chip-btn--waze" href={wazeUrl(sel.p)!} target="_blank" rel="noopener noreferrer"><Icon name="waze" />ניווט ב-Waze</a>}
-            </>
+              {saveCat === "lodging" && (
+                <label className="fld"><span>מחיר ללילה בדולרים (0 = חינם)</span>
+                  <input id="sel-price" className="field" type="number" inputMode="decimal" min="0" value={savePrice} onChange={(e) => setSavePrice(e.target.value)} />
+                </label>
+              )}
+              <button type="submit" className="pill-btn pill-btn--dark">שמירה במפה</button>
+            </form>
           )}
         </div>
       )}
 
       <div className="panel glass">
-        <h2 className="panel-title">הוספת מקום למפה</h2>
-        {adding ? (
-          <form onSubmit={savePlace} className="stack-sm">
-            <div className="picked"><Icon name="pin" /><span><strong>{adding.name}</strong> · {adding.address.split(",").slice(1, 3).join(",")}</span></div>
-            <div className="chips-row" role="radiogroup" aria-label="סוג המקום">
-              {(Object.keys(CATS) as Cat[]).map((c) => (
-                <button key={c} type="button" role="radio" aria-checked={addCat === c} className={`chip-btn ${addCat === c ? "chip-btn--on" : ""}`} onClick={() => setAddCat(c)}>{CATS[c].label}</button>
-              ))}
-            </div>
-            {addCat === "lodging" && (
-              <label className="fld"><span>מחיר ללילה בדולרים (0 = חינם)</span>
-                <input id="place-price" className="field" type="number" inputMode="decimal" min="0" value={addPrice} onChange={(e) => setAddPrice(e.target.value)} />
-              </label>
-            )}
-            <div className="row-end">
-              <button type="button" className="text-btn" onClick={() => setAdding(null)}>ביטול</button>
-              <button type="submit" className="pill-btn pill-btn--dark">נעיצה במפה</button>
-            </div>
-          </form>
-        ) : (
-          <PlaceSearch idPrefix="map-add" onPick={(p) => { setAdding(p); fly(p.lat, p.lng, 14); }} placeholder="שם מקום, למשל Chabad of Santa Monica" />
-        )}
-      </div>
-
-      <div className="panel glass">
         <h2 className="panel-title">יהדות וכשרות באזור שעל המפה</h2>
-        <p className="hint">החיפושים נפתחים בגוגל מפות, סביב המקום שבמרכז המפה כרגע.</p>
         <div className="act-actions">
-          <a className="chip-btn" href={mapsSearchUrl("Chabad", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">✡ בתי חב״ד קרובים</a>
-          <a className="chip-btn" href={mapsSearchUrl("kosher restaurant", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">מסעדות כשרות</a>
-          <a className="chip-btn" href={mapsSearchUrl("Chabad Torah class", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">שיעורי תורה</a>
-          <a className="chip-btn" href={mapsSearchUrl("kosher grocery", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">מכולת כשרה</a>
+          <button type="button" className="chip-btn" onClick={() => findArea("kosher")} disabled={!!areaBusy}>{areaBusy === "kosher" ? "מחפשים…" : "K · כשר כאן"}</button>
+          <button type="button" className="chip-btn" onClick={() => findArea("jewish")} disabled={!!areaBusy}>{areaBusy === "jewish" ? "מחפשים…" : "✡ בתי כנסת וחב״ד כאן"}</button>
+          {pois.length > 0 && <button type="button" className="text-btn" onClick={() => { setPois([]); setAreaMsg(null); }}>ניקוי מהמפה</button>}
+        </div>
+        {areaMsg && <p className="hint">{areaMsg}</p>}
+        <div className="act-actions">
+          <a className="chip-btn" href={mapsSearchUrl("kosher restaurant", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">כשר בגוגל מפות</a>
+          <a className="chip-btn" href={mapsSearchUrl("Chabad", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">חב״ד בגוגל מפות</a>
         </div>
         <div className="shabbat">
           <button type="button" className="pill-btn pill-btn--dark" onClick={loadShabbat} disabled={shabbatBusy}>
@@ -277,7 +431,7 @@ export default function MapView() {
               {shabbat.parasha && <span className="label">{shabbat.parasha}</span>}
               {shabbat.candles && <p><span>הדלקת נרות</span><strong>{shabbat.candles.time}</strong><small>{shabbat.candles.date}</small></p>}
               {shabbat.havdalah && <p><span>צאת שבת</span><strong>{shabbat.havdalah.time}</strong><small>{shabbat.havdalah.date}</small></p>}
-              <small className="hint">לפי המיקום שבמרכז המפה · מקור: Hebcal</small>
+              <small className="hint">לפי מרכז המפה · מקור: Hebcal</small>
             </div>
           )}
         </div>
@@ -285,24 +439,27 @@ export default function MapView() {
 
       <div className="panel glass">
         <h2 className="panel-title">השוואת לינה</h2>
-        {lodgingLA.length === 0 ? (
-          <p className="hint">עוד אין מקומות לינה. חפשו אכסניה למעלה, סמנו ״לינה״ והוסיפו מחיר, והיא תופיע כאן בהשוואה.</p>
+        {lodging.length === 0 ? (
+          <p className="hint">חפשו אכסניה בשורת החיפוש, ושמרו אותה בתור ״לינה״ עם מחיר — והיא תופיע כאן בהשוואה.</p>
         ) : (
-          <ul className="cat-bars">
-            {lodgingLA.map((p) => (
+          <ul className="lodge-list">
+            {lodging.map((p) => (
               <li key={p.id}>
-                <button type="button" className="link-like" onClick={() => { fly(p.lat, p.lng, 14); setSel({ kind: "place", p }); }}>{p.name}</button>
+                <button type="button" className="link-like" onClick={() => { fly(p.lat, p.lng, 14); setSel({ name: p.name, lat: p.lat, lng: p.lng, label: "לינה", address: p.address, price: p.price, savedId: p.id }); }}>{p.name}</button>
                 <span className="cat-bar"><i style={{ width: `${((p.price ?? 0) / maxPrice) * 100}%` }} /></span>
                 <b>{p.price == null ? "—" : usd(p.price)}</b>
+                <small>{formatDrive(driveHours(origin, p))}</small>
               </li>
             ))}
           </ul>
         )}
         <div className="act-actions">
-          <a className="chip-btn" href={mapsSearchUrl("hostel", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">אכסניות באזור</a>
-          <a className="chip-btn" href={mapsSearchUrl("hostel San Francisco")} target="_blank" rel="noopener noreferrer">אכסניות בסן פרנסיסקו</a>
+          <a className="chip-btn" href={mapsSearchUrl("hostel", center.lat, center.lng)} target="_blank" rel="noopener noreferrer">אכסניות באזור שעל המפה</a>
         </div>
       </div>
     </div>
   );
 }
+
+// לשימוש עתידי בבחירת מקום מתוך החיפוש בדפים אחרים
+export type { Place };

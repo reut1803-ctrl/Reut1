@@ -56,3 +56,41 @@ export function currentPosition(): Promise<{ lat: number; lng: number } | null> 
     );
   });
 }
+
+// ---------- חיפוש באזור שעל המפה (OpenStreetMap / Overpass, חינם) ----------
+
+export type Poi = { id: string; name: string; lat: number; lng: number; kind: "kosher" | "jewish"; address: string };
+export type Bbox = { s: number; w: number; n: number; e: number };
+
+/** מקומות כשרים / בתי כנסת וחב״ד בתוך התחום שעל המפה. הנתונים מ-OpenStreetMap — ייתכן שחסרים מקומות. */
+export async function searchArea(kind: Poi["kind"], b: Bbox): Promise<Poi[]> {
+  const bb = `(${b.s.toFixed(4)},${b.w.toFixed(4)},${b.n.toFixed(4)},${b.e.toFixed(4)})`;
+  const body =
+    kind === "kosher"
+      ? `[out:json][timeout:20];(nwr["diet:kosher"~"yes|only"]${bb};nwr["cuisine"~"kosher"]${bb};);out center 60;`
+      : `[out:json][timeout:20];(nwr["amenity"="place_of_worship"]["religion"="jewish"]${bb};nwr["name"~"Chabad",i]${bb};);out center 60;`;
+  const res = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + encodeURIComponent(body), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+  if (!res.ok) throw new Error("overpass");
+  const data = (await res.json()) as { elements: { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string> }[] };
+  const seen = new Set<string>();
+  return data.elements
+    .map((el) => {
+      const lat = el.lat ?? el.center?.lat;
+      const lng = el.lon ?? el.center?.lon;
+      const t = el.tags ?? {};
+      const name = t["name:he"] || t.name || (kind === "kosher" ? "מקום כשר" : "בית כנסת");
+      const address = [t["addr:housenumber"], t["addr:street"], t["addr:city"]].filter(Boolean).join(" ");
+      return { id: `${el.type}/${el.id}`, name, lat: lat!, lng: lng!, kind, address };
+    })
+    .filter((p) => typeof p.lat === "number" && typeof p.lng === "number" && !seen.has(p.name + p.lat.toFixed(3)) && seen.add(p.name + p.lat.toFixed(3)));
+}
+
+/** חיפוש כתובת/מקום עם העדפה לאזור שמוצג על המפה */
+export async function searchPlacesNear(q: string, b?: Bbox): Promise<Place[]> {
+  const vb = b ? `&viewbox=${b.w},${b.n},${b.e},${b.s}&bounded=0` : "";
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&accept-language=he,en&countrycodes=us${vb}&q=${encodeURIComponent(q)}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error("search failed");
+  const data = (await res.json()) as { name?: string; display_name: string; lat: string; lon: string }[];
+  return data.map((d) => ({ name: d.name || d.display_name.split(",")[0], address: d.display_name, lat: Number(d.lat), lng: Number(d.lon) }));
+}

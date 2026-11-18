@@ -401,3 +401,40 @@ body:has(.app) { background: var(--h-bg); overflow: auto; }
 :root[data-night] .save--ok { color: #9be3b0; }
 :root[data-night] .save--err { color: #ffb4b0; }
 @media (max-width: 400px) { .nav-brand { font-size: 14px; } .nav-faces { display: none; } }
+
+/* ---------- מפה: חיפוש, שכבות ומרחקים ---------- */
+.map-wrap { position: relative; }
+.map { height: min(60svh, 600px); min-height: 380px; }
+.map-search { position: absolute; z-index: 1001; top: 12px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+.map-search-bar {
+  display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 6px 0 14px;
+  border-radius: 999px; background: var(--surface); border: 1px solid var(--h-line);
+  box-shadow: 0 10px 28px rgba(20, 40, 70, 0.18); color: var(--h-soft);
+}
+.map-search-bar .icon { flex: none; }
+.map-search-bar input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; font: inherit; font-size: 16px; color: var(--h-ink); outline: none; }
+.map-search-x { border: 0; background: none; font-size: 22px; line-height: 1; color: var(--h-soft); padding: 4px; }
+.map-search-go { height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--h-ink); color: var(--on-ink); font-weight: 700; font-size: 14px; flex: none; }
+.map-results { max-height: 260px; overflow-y: auto; border-radius: 18px; background: var(--surface); border: 1px solid var(--h-line); box-shadow: 0 14px 34px rgba(20, 40, 70, 0.2); }
+.map-results .hint { padding: 12px 14px; }
+.map-results button { width: 100%; text-align: start; display: flex; flex-direction: column; gap: 2px; padding: 11px 14px; border: 0; border-bottom: 1px solid var(--h-line); background: none; color: var(--h-ink); }
+.map-results button:last-child { border-bottom: 0; }
+.map-results span { font-size: 12.5px; color: var(--h-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-tools { position: absolute; z-index: 1001; bottom: 14px; left: 12px; display: flex; gap: 6px; align-items: flex-end; }
+.map-tool { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--h-line); background: var(--surface); color: var(--h-ink); font-weight: 700; font-size: 13.5px; box-shadow: 0 8px 20px rgba(20, 40, 70, 0.16); }
+.map-tool .icon { width: 16px; height: 16px; }
+.map-tool-n { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--h-ink); color: var(--on-ink); font-size: 11.5px; display: grid; place-items: center; }
+.layers-pop { position: absolute; bottom: 50px; left: 0; width: 220px; border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.layer-row { display: flex; align-items: center; gap: 10px; padding: 7px 2px; font-size: 15px; font-weight: 600; color: var(--h-ink); cursor: pointer; }
+.layer-row input { width: 18px; height: 18px; accent-color: var(--h-ink); }
+.leaflet-bottom.leaflet-right .leaflet-control-zoom { margin-bottom: 26px; }
+.pin--found { box-shadow: 0 0 0 3px rgba(255, 210, 31, 0.6), 0 6px 14px rgba(20, 40, 70, 0.3); }
+.pin--search { background: #0a84ff; color: #fff; font-size: 12px; }
+.sel-dist { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--h-ink); }
+.sel-dist .icon { width: 16px; height: 16px; color: var(--gold); }
+.save-place { padding-top: 10px; border-top: 1px solid var(--h-line); }
+.lodge-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lodge-list li { display: grid; grid-template-columns: minmax(80px, 1.3fr) 1.5fr auto auto; align-items: center; gap: 10px; font-size: 14px; }
+.lodge-list li > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lodge-list b { font-variant-numeric: tabular-nums; direction: ltr; }
+.lodge-list small { color: var(--h-soft); white-space: nowrap; }
