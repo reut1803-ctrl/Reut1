@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/lib/auth";
+import { TripProvider } from "@/lib/tripContext";
 import "./globals.css";
 import "./home.css";
+import "./app.css";
 
 export const metadata: Metadata = {
   title: "קליפורניה שלנו",
@@ -28,7 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <TripProvider>{children}</TripProvider>
+        </AuthProvider>
       </body>
     </html>
   );

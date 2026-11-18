@@ -7,7 +7,7 @@ import WelcomeCard from "@/components/WelcomeCard";
 import DeniedCard from "@/components/DeniedCard";
 import Home from "@/components/home/Home";
 import { useAuth } from "@/lib/auth";
-import { useTrip } from "@/lib/trip";
+import { useTripCtx } from "@/lib/tripContext";
 
 const LANDED_KEY = "ct-landed";
 
@@ -19,8 +19,8 @@ function writeLanded(v: boolean) {
 }
 
 export default function Page() {
-  const { status, user, demo } = useAuth();
-  const trip = useTrip(user, demo);
+  const { status } = useAuth();
+  const { trip } = useTripCtx();
   const [phase, setPhase] = useState<GatePhase>("idle");
   const [run, setRun] = useState(0);
   const [entered, setEntered] = useState(false);

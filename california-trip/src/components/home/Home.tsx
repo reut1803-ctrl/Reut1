@@ -1,41 +1,35 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useAuth } from "@/lib/auth";
 import type { TripApi } from "@/lib/trip";
 import AnalogClocks from "../AnalogClocks";
+import AppNav from "../app/AppNav";
+import TabBar from "../app/TabBar";
+import Reminders from "../app/Reminders";
+import Icon, { type IconName } from "../app/Icon";
+import { useBatteryNight } from "@/lib/battery";
 import Cloud from "./Cloud";
 import OrigamiPlane, { PlaneShape } from "./OrigamiPlane";
 import WavingFlag from "./WavingFlag";
 import { FlagSymbols, MOSHIACH_FLAG, US_FLAG } from "./flags";
 
 const FEATURES = [
-  { icon: "map", title: "מפת קליפורניה", text: "אזורי הטיול, אטרקציות לפי התאריכים שלנו, בתי חב״ד, אוכל כשר וזמני הדלקת נרות." },
-  { icon: "route", title: "מסלול וזמנים", text: "שעון קליפורניה, ניווט ב-Waze בלחיצה, הזזה והשהיה של חוויות, ותזכורות בזמן." },
-  { icon: "bag", title: "ציוד חכם", text: "איפה ישנים היום ומה לארוז, עם רשימה שמסמנים בה ומקבלים אנימציה של הצלחה." },
-  { icon: "heart", title: "יומן הודיה", text: "על מה הודינו אחד לשני היום, בכתב או בהקלטה, ותמונות שננעצות על המפה." },
-  { icon: "cup", title: "מד תקציב", text: "כוס קפה שמתרוקנת ככל שמתקרבים לתקציב היומי. רואים בשנייה כמה נשאר." },
-  { icon: "capsule", title: "קפסולת זמן", text: "בסוף הטיול: כל התמונות, ההקלטות והמקומות באלבום אחד נגלל." },
+  { href: "/map", icon: "map", title: "מפת קליפורניה", text: "אזורי הטיול, אטרקציות לפי התאריכים שלנו, בתי חב״ד, אוכל כשר וזמני הדלקת נרות." },
+  { href: "/plan", icon: "route", title: "מסלול וזמנים", text: "שעון קליפורניה, ניווט ב-Waze בלחיצה, הזזה והשהיה של חוויות, ותזכורות בזמן." },
+  { href: "/packing", icon: "bag", title: "ציוד חכם", text: "איפה ישנים היום ומה לארוז, עם רשימה שמסמנים בה ומקבלים אנימציה של הצלחה." },
+  { href: "/journal", icon: "heart", title: "יומן הודיה", text: "על מה הודינו אחד לשני היום, בכתב או בהקלטה, ותמונות שננעצות על המפה." },
+  { href: "/budget", icon: "cup", title: "מד תקציב", text: "כוס קפה שמתרוקנת ככל שמתקרבים לתקציב היומי. רואים בשנייה כמה נשאר." },
+  { href: "/capsule", icon: "capsule", title: "קפסולת זמן", text: "בסוף הטיול: כל התמונות, ההקלטות והמקומות באלבום אחד נגלל." },
 ];
 
-function Icon({ name }: { name: string }) {
-  const p = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  return (
-    <svg viewBox="0 0 24 24" className="feature-icon" aria-hidden="true">
-      {name === "map" && <><path {...p} d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" /><path {...p} d="M9 4v14M15 6v14" /></>}
-      {name === "route" && <><circle {...p} cx="6" cy="18" r="2.2" /><circle {...p} cx="18" cy="6" r="2.2" /><path {...p} d="M8 18h6a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h6" /></>}
-      {name === "bag" && <><rect {...p} x="4" y="8" width="16" height="12" rx="3" /><path {...p} d="M9 8V6a3 3 0 0 1 6 0v2M9 14l2 2 4-4" /></>}
-      {name === "heart" && <path {...p} d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />}
-      {name === "cup" && <><path {...p} d="M5 8h11v6a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5V8Z" /><path {...p} d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3v2M11 3v2" /></>}
-      {name === "capsule" && <><rect {...p} x="3" y="5" width="18" height="14" rx="3" /><circle {...p} cx="9" cy="11" r="2" /><path {...p} d="m21 16-5-5-8 8" /></>}
-    </svg>
-  );
-}
 
 export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () => void }) {
   const root = useRef<HTMLDivElement>(null);
-  const { user, signOut, demo } = useAuth();
+  const { user, signOut } = useAuth();
+  const night = useBatteryNight();
 
   useEffect(() => {
     const scope = root.current;
@@ -153,29 +147,7 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
     <div className="home" ref={root}>
       <FlagSymbols />
 
-      <header className="nav">
-        <div className="nav-inner">
-          <a className="nav-brand" href="#top">
-            <OrigamiPlane tone="yellow" className="nav-plane" />
-            קליפורניה שלנו
-          </a>
-          <div className="nav-side">
-            {demo && <span className="nav-demo">מצב תצוגה</span>}
-            <div className="nav-faces" aria-label={`מטיילים: ${names.join(", ")}`}>
-              {trip.members.slice(0, 3).map((m) => (
-                <span
-                  key={m.uid}
-                  className="nav-face"
-                  style={m.avatarUrl ? { backgroundImage: `url("${m.avatarUrl}")` } : undefined}
-                >
-                  {!m.avatarUrl && m.name.slice(0, 1)}
-                </span>
-              ))}
-            </div>
-            <button type="button" className="nav-link" onClick={signOut}>יציאה</button>
-          </div>
-        </div>
-      </header>
+      <AppNav night={night} />
 
       {/* ---------- פתיחה ---------- */}
       <section className="hero" id="top">
@@ -256,20 +228,20 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
         <div className="blob blob--sky" aria-hidden="true" />
         <div className="blob blob--lilac" aria-hidden="true" />
         <div className="section-head reveal">
-          <p className="eyebrow-home">מה מחכה כאן</p>
+          <p className="eyebrow-home">הכלים שלנו</p>
           <h2 className="section-title">כל הטיול.<br />במקום אחד.</h2>
-          <p className="lede">אלה החלקים שנבנה יחד, אחד אחרי השני.</p>
+          <p className="lede">כל חלק נפתח בלחיצה. מה שאחד מוסיף, השני רואה מיד.</p>
         </div>
         <div className="feature-grid">
           {FEATURES.map((f) => (
-            <article className="feature glass" key={f.title}>
+            <Link className="feature glass" key={f.title} href={f.href}>
               <div className="feature-top">
-                <span className="feature-badge"><Icon name={f.icon} /></span>
-                <span className="feature-status">בבנייה</span>
+                <span className="feature-badge"><Icon name={f.icon as IconName} className="feature-icon" /></span>
+                <span className="feature-go" aria-hidden="true">←</span>
               </div>
               <h3>{f.title}</h3>
               <p>{f.text}</p>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
@@ -288,6 +260,8 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
         </div>
         <p className="footer-note">נבנה באהבה, לרעות ולזכריה.</p>
       </section>
+      <Reminders />
+      <TabBar />
     </div>
   );
 }
