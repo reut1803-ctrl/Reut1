@@ -9,6 +9,7 @@ import AnalogClocks from "../AnalogClocks";
 import AppNav from "../app/AppNav";
 import TabBar from "../app/TabBar";
 import Reminders from "../app/Reminders";
+import InviteFromLink from "../app/InviteFromLink";
 import Icon, { type IconName } from "../app/Icon";
 import { useBatteryNight } from "@/lib/battery";
 import Cloud from "./Cloud";
@@ -261,6 +262,7 @@ export default function Home({ trip, onReplay }: { trip: TripApi; onReplay: () =
         <p className="footer-note">נבנה באהבה, לרעות ולזכריה.</p>
       </section>
       <Reminders />
+      <InviteFromLink />
       <TabBar />
     </div>
   );

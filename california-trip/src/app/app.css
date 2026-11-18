@@ -333,3 +333,14 @@ body:has(.app) { background: var(--h-bg); overflow: auto; }
 :root[data-night] .tabbar { background: rgba(42, 36, 54, 0.82); border-color: var(--h-line); }
 :root[data-night] .ca-clock { background: #3b3150; }
 :root[data-night] .cloud { opacity: .25; }
+
+/* חלון הזמנה מקישור */
+.invite-pop {
+  position: fixed; z-index: 55; left: 50%; transform: translateX(-50%);
+  top: calc(52px + env(safe-area-inset-top, 0px) + 14px);
+  width: min(calc(100% - 24px), 420px);
+  border-radius: 26px; padding: 20px; display: flex; flex-direction: column; gap: 10px; text-align: center;
+  animation: toast-in .5s cubic-bezier(.2, .9, .3, 1.2) both;
+}
+.invite-pop .pill-btn--block { margin-top: 6px; }
+.invite-email { font-weight: 700; color: var(--h-ink); direction: ltr; }
